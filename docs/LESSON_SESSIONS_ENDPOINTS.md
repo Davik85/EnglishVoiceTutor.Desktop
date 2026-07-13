@@ -1,10 +1,10 @@
 # Lesson Session Endpoints
 
-Review date: 2026-07-08.
+Review date: 2026-07-13.
 
 ## Status
 
-- **Implemented + Validated:** authenticated create/finish/read session endpoints, backend-owned lesson summaries, persisted messages, and the authenticated mobile lesson-session reply placeholder route.
+- **Implemented + Validated:** authenticated create/finish/read session endpoints, backend-owned lesson summaries, persisted messages, the authenticated mobile lesson-session reply placeholder route, and backend-owned initial voice scenario semantic resolution.
 - **Development-only:** legacy diagnostic routes remain under `/api/dev/*`.
 - **Production mobile contract:** `POST /api/me/lesson-sessions/{sessionId}/reply` is authenticated and backend-owned, but is intentionally not AI-enabled yet.
 - **Transitional product behavior:** request identity is auth-aware in Development for dev routes.
@@ -18,6 +18,7 @@ Review date: 2026-07-08.
 - `GET /api/me/lesson-sessions/{sessionId}/summary`
 - `POST /api/me/lesson-sessions/{sessionId}/messages`
 - `POST /api/me/lesson-sessions/{sessionId}/reply`
+- `POST /api/me/lesson-sessions/{sessionId}/voice-scenario-resolution`
 
 `PUT /api/me/lesson-sessions/{sessionId}/finish` marks the owned session complete first, then makes a best-effort backend-owned summary-generation attempt using persisted lesson messages and safe runtime metadata. It is idempotent. `GET /api/me/lesson-sessions/{sessionId}/summary` is read-only: it returns the learner-safe persisted result when ready, or a stable safe unavailable status when generation is not ready or unavailable; it does not regenerate a missing summary. Authenticated production clients do not upload or author `summary`, `strengths`, `improvements`, `vocabulary`, `grammar`, or `nextSteps`; those fields are generated and owned by the backend.
 
@@ -71,7 +72,58 @@ Architecture boundary:
 - This endpoint is not the real production lesson runtime yet; it is a safe placeholder contract and must not be treated as the production cross-platform chat implementation.
 - The next implementation direction is for the backend to hydrate lesson runtime/server-side context before enabling AI replies. Mobile should continue to send only `sessionId` and `messageText`, and should not duplicate desktop prompt/scenario/turn logic.
 
-Production deployment note: backend `0.1.35-backend.110` deployed this placeholder contract without adding or running an EF/database migration. Backend `0.1.35-backend.111` later deployed backend-owned authenticated lesson completion and summaries without adding or running an EF/database migration. Backend `0.1.35-backend.112` is the current production backend and fixes authenticated summary provider-output extraction without adding or running an EF/database migration; rollback is `0.1.35-backend.111`. The old `POST /api/lesson-chat/reply` desktop endpoint was not changed, and `POST /api/me/lesson-sessions/{sessionId}/messages` remains unchanged.
+Production deployment note: backend `0.1.35-backend.110` deployed this placeholder contract without adding or running an EF/database migration. Backend `0.1.35-backend.111` later deployed backend-owned authenticated lesson completion and summaries without adding or running an EF/database migration. Backend `0.1.35-backend.113` is the current production backend and adds authenticated initial voice scenario semantic resolution without adding or running an EF/database migration; rollback is `0.1.35-backend.112`. The old `POST /api/lesson-chat/reply` desktop endpoint was not changed, and `POST /api/me/lesson-sessions/{sessionId}/messages` remains unchanged.
+
+
+## Initial voice scenario semantic resolution
+
+`POST /api/me/lesson-sessions/{sessionId}/voice-scenario-resolution` is an authenticated, backend-owned helper for the initial voice scenario selection turn only. It was added by source commit `c850f4b` (`feat: add voice scenario semantic resolution`) and is deployed in production backend `0.1.35-backend.113`. The endpoint verifies that the authenticated user owns the active lesson session before resolving anything. It does not replace the normal lesson reply endpoint and must not be used for ongoing lesson dialogue.
+
+The endpoint compares the learner's recognized text against the current CMS scenario candidates supplied by the client for that initial selection turn. It uses the backend-configured OpenAI Responses structured-output infrastructure; clients never receive or provide a model ID, API key, provider prompt, or secret. The backend validates model output against the supplied candidate list and rejects any matched or clarification candidate IDs that are not present in that list, so it never invents a CMS context ID. Production code contains no lesson-specific aliases, scenario phrases, topic keywords, or hardcoded provider model IDs for this resolver.
+
+Request body contract:
+
+```json
+{
+  "studyLanguage": "English",
+  "learnerLevel": "A2",
+  "topicId": "travel",
+  "subtopicId": "hotel_check_in",
+  "runtimeScenarioId": "travel_hotel_check_in",
+  "runtimeVersion": "...",
+  "recognizedText": "I'd like to check in at a hotel",
+  "isInitialScenarioSelectionTurn": true,
+  "candidates": [
+    {
+      "id": "hotel_front_desk",
+      "title": "Check in at a hotel",
+      "description": "Practice arriving at a hotel and speaking with reception."
+    }
+  ]
+}
+```
+
+Response body contract:
+
+```json
+{
+  "decision": "published_context",
+  "matchedContextId": "hotel_front_desk",
+  "confidence": 0.92,
+  "candidateContextIds": ["hotel_front_desk"],
+  "normalizedFreeContext": null,
+  "clarificationText": null
+}
+```
+
+Supported `decision` values:
+
+- `published_context`: selects one real supplied CMS context.
+- `free_context`: preserves the learner's specific custom scenario instead of mapping it to a CMS candidate.
+- `clarify`: starts no scenario and returns likely supplied candidates plus clarification text.
+- `unsafe`: starts no scenario.
+
+Desktop boundary: no Desktop client source code changed in commit `c850f4b`; the endpoint is additive; existing Desktop API usage remains compatible; no new Windows installer was required; and these docs must not claim that Desktop already uses this endpoint. A Desktop voice-scenario parity review may be considered later, but it is only a possible future task, not a completed audit or confirmed defect.
 
 ## Runtime identity resolution (Development)
 
