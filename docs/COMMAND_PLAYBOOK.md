@@ -181,10 +181,25 @@ Expected output path:
 ```
 
 
-When a manual SQL migration creates a new table, include a runtime DB role grant check after the reviewed SQL is applied. For the current production setup, the runtime app DB role is `lvt_app`. After creating a new table through `postgres`-owned reviewed SQL, inspect privileges without pasting database passwords or connection strings into docs or commands:
+When a manual SQL migration creates a new table, include runtime DB role owner and grant checks after the reviewed SQL is applied. For the current production setup, the runtime app DB role is `lvt_app`. If reviewed SQL is applied under the `postgres` role and creates a new application table, verify the new object's owner and required grants before considering the migration complete. Do not introduce a blanket ownership change for unrelated existing tables.
+
+For the feedback-report table, the documented expected owner is `lvt_app`. Inspect ownership and privileges without pasting database passwords or connection strings into docs or commands:
 
 ```sql
-\dp public.<table_name>
+SELECT
+    schemaname,
+    tablename,
+    tableowner
+FROM pg_tables
+WHERE tablename = 'user_feedback_reports';
+
+SELECT
+    grantee,
+    privilege_type
+FROM information_schema.role_table_grants
+WHERE table_schema = 'public'
+  AND table_name = 'user_feedback_reports'
+ORDER BY grantee, privilege_type;
 ```
 
 Grant expected runtime privileges intentionally when required, for example:
@@ -193,7 +208,7 @@ Grant expected runtime privileges intentionally when required, for example:
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.<table_name> TO lvt_app;
 ```
 
-This grant check does not replace SQL review. Review migration SQL first, then verify and grant runtime table privileges as an explicit rollout step.
+This owner/grant check does not replace SQL review. Review migration SQL first, then verify ownership and grant runtime table privileges as explicit rollout steps.
 
 ## Downloaded update installer cleanup
 
