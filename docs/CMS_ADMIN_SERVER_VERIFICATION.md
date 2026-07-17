@@ -1,6 +1,6 @@
 # CMS/Admin Server Verification Runbook
 
-Review date: 2026-06-09.
+Review date: 2026-07-17.
 
 Public release is still not ready. This runbook prepares the production/server CMS/Admin connection foundation for Language Voice Tutor at `https://api.languagevoicetutor.com`. It does not change billing, Paddle, subscriptions, entitlements, password reset/change behavior, lesson JSON, or desktop runtime startup behavior.
 
@@ -108,6 +108,22 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File tools/verify_cms_admin_server_read
 ```
 
 The helper does not contain secrets. Without tokens it verifies the public Admin shell, public non-secret CMS source diagnostic, and unauthenticated rejection. With an admin token it also verifies admin CMS status endpoints. With a non-admin token in `EVT_NON_ADMIN_BEARER_TOKEN`, it verifies authenticated non-admin rejection.
+
+## Admin Feedback & reports production validation
+
+Backend `0.1.35-backend.119` packages the Admin CMS Feedback & reports workflow inside the backend release. No public static-site upload is required for this Admin CMS change. The deployed workflow includes list, filters, pagination, details, status controls, reply form, and reply history. Report text and reply text are rendered as plain text. Reply drafts are in memory only: failed sends preserve the current draft, successful sends clear it, switching reports clears the previous draft and history, and no reply data is stored in localStorage, sessionStorage, cookies, URLs, or console logs.
+
+Operational validation should confirm the production role boundary: `super_admin` and `support` can use Feedback & reports according to `feedback_reports.read`, `feedback_reports.status.manage`, and `feedback_reports.reply`; `content_editor`, `billing_support`, and `read_only_auditor` do not receive those permissions. Support must not gain unrelated Website CMS, legal content, billing/Premium, AI model settings, role management, secrets, or unrelated system-administration access.
+
+Status controls must match the deployed workflow: `new` can be marked `reviewed` or `resolved`; `reviewed` can be resolved; `resolved` can be reopened as `reviewed`; manual reset to `new` is not supported; same-status updates are idempotent; `ReviewedAtUtc` records the first review/resolution; successful reply changes only `new` to `reviewed`; successful reply does not automatically resolve a report; and final resolution remains a deliberate Admin action.
+
+Reply validation must not document recipient addresses or SMTP secrets. The recipient is resolved from the report user and cannot be changed by the Admin. From address and subject cannot be changed by the Admin, and the subject is exactly `Language Voice Tutor support`. Reply attempts are persisted before delivery with `pending`, `sent`, and `failed` states. Failed delivery does not change report status. Successful delivery changes only `new` to `reviewed`. Reply history is visible in report details, newest first, and failed attempts remain visible. No automatic retry, outbox, attachments, ticketing, OpenAI processing, reply editing/deletion, exports, or bulk operations exist.
+
+Production smoke validation for backend `.119` recorded both the safe failure and the successful delivery path. First, with `SmtpEmail__Enabled` absent, a reply attempt failed safely: the reply text stayed in the CMS, the failed attempt was stored in reply history, and the UI showed “Email delivery is not configured” without SMTP/provider details. Operators then added `SmtpEmail__Enabled=true` to the existing `/etc/languagevoicetutor/backend.env` without copying SMTP host, username, password, From address, recipient email, or other secret values into documentation. After backend restart, `/health` and `/api/health/database` remained HTTP 200; a second reply was delivered with the expected support subject and sender identity; the successful reply appeared in history; the report status updated correctly; the report was resolved successfully; and reply history remained available.
+
+The generic email sender uses real SMTP only when all requirements are true: `SmtpEmail__Enabled=true`, `Host` is configured, `Port` is greater than zero, and `FromAddress` is configured. If any requirement is missing, `NoOpEmailSender` is selected, `IsConfigured` is false, and no SMTP connection is attempted. Password reset and support replies share the same generic `IEmailSender` transport; only `SmtpEmailSender` contains SMTP transport logic; password reset formatting and external behavior remain unchanged; and reviewed safe failure logs must not contain raw provider exceptions, user IDs, token IDs, recipient emails, reset URLs, reset codes, token hashes, or SMTP details.
+
+Database validation for the deployed workflow is separate from backend deployment. Migration `20260717151432_AddUserFeedbackReportReplies` is applied in production, `user_feedback_report_replies` exists, the table owner is `lvt_app`, `lvt_app` has application access, and `lvt_analytics_reader` has no access to reply content. No additional migration is required for backend `.119`.
 
 ## CMS workflow verification
 
