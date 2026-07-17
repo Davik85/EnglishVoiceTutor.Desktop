@@ -52,6 +52,7 @@ public static class ApiConstants
     public const string AuthPasswordResetRequestRoute = "/api/auth/password-reset/request";
     public const string AuthPasswordResetConfirmRoute = "/api/auth/password-reset/confirm";
     public const string MeUserSettingsRoute = "/api/me/settings";
+    public const string MeFeedbackReportsRoute = "/api/me/feedback-reports";
     public const string MeDevicesRoute = "/api/me/devices";
     public const string MeLessonSessionsRoute = "/api/me/lesson-sessions";
     public const string MeLessonContentScenarioRoute = "/api/me/lesson-content/scenarios/{scenarioKey}";

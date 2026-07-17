@@ -13,6 +13,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<LessonSessionEntity> LessonSessions => Set<LessonSessionEntity>();
     public DbSet<LessonMessageEntity> LessonMessages => Set<LessonMessageEntity>();
     public DbSet<FeedbackResultEntity> FeedbackResults => Set<FeedbackResultEntity>();
+    public DbSet<UserFeedbackReportEntity> UserFeedbackReports => Set<UserFeedbackReportEntity>();
     public DbSet<LessonSummaryEntity> LessonSummaries => Set<LessonSummaryEntity>();
     public DbSet<UsageEventEntity> UsageEvents => Set<UsageEventEntity>();
     public DbSet<DailyUsageCounterEntity> DailyUsageCounters => Set<DailyUsageCounterEntity>();
@@ -53,6 +54,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureLessonSessions(modelBuilder);
         ConfigureLessonMessages(modelBuilder);
         ConfigureFeedbackResults(modelBuilder);
+        ConfigureUserFeedbackReports(modelBuilder);
         ConfigureLessonSummaries(modelBuilder);
         ConfigureUsageEvents(modelBuilder);
         ConfigureDailyUsageCounters(modelBuilder);
@@ -210,6 +212,23 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .WithMany(message => message.FeedbackResults)
             .HasForeignKey(feedback => feedback.MessageId)
             .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureUserFeedbackReports(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<UserFeedbackReportEntity>();
+        entity.ToTable(EntityConstants.TableNames.UserFeedbackReports);
+        entity.HasKey(report => report.Id);
+        entity.Property(report => report.Category).IsRequired().HasMaxLength(EntityConstants.Lengths.FeedbackReportCategoryMaxLength);
+        entity.Property(report => report.Message).IsRequired().HasMaxLength(EntityConstants.Lengths.FeedbackReportMessageMaxLength);
+        entity.Property(report => report.ReportedAiText).HasMaxLength(EntityConstants.Lengths.FeedbackReportMessageMaxLength);
+        entity.Property(report => report.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
+        entity.Property(report => report.ClientPlatform).IsRequired().HasMaxLength(32);
+        entity.Property(report => report.ClientVersion).IsRequired().HasMaxLength(EntityConstants.Lengths.FeedbackReportClientVersionMaxLength);
+        entity.Property(report => report.CreatedAtUtc).IsRequired();
+        entity.HasIndex(report => report.UserId);
+        entity.HasIndex(report => report.CreatedAtUtc);
+        entity.HasOne(report => report.User).WithMany().HasForeignKey(report => report.UserId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureLessonSummaries(ModelBuilder modelBuilder)

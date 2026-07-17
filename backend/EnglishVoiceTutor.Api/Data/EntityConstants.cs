@@ -11,6 +11,7 @@ public static class EntityConstants
         public const string LessonSessions = "lesson_sessions";
         public const string LessonMessages = "lesson_messages";
         public const string FeedbackResults = "feedback_results";
+        public const string UserFeedbackReports = "user_feedback_reports";
         public const string LessonSummaries = "lesson_summaries";
         public const string UsageEvents = "usage_events";
         public const string DailyUsageCounters = "daily_usage_counters";
@@ -66,6 +67,9 @@ public static class EntityConstants
         public const int RoleMaxLength = 64;
         public const int SourceMaxLength = 64;
         public const int FeedbackTypeMaxLength = 80;
+        public const int FeedbackReportCategoryMaxLength = 32;
+        public const int FeedbackReportMessageMaxLength = 4000;
+        public const int FeedbackReportClientVersionMaxLength = 64;
         public const int PlanIdMaxLength = 128;
         public const int CurrencyMaxLength = 3;
         public const int PlatformMaxLength = 80;

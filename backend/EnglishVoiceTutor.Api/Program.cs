@@ -415,6 +415,7 @@ if (rateLimitingEnabled)
     realtimeVoiceEndpoint.RequireRateLimiting(RateLimitingConstants.RealtimeVoicePolicyName);
 }
 app.MapAuthEndpoints();
+app.MapUserFeedbackReportEndpoints();
 app.MapDeviceEndpoints();
 app.MapSubscriptionStatusEndpoints();
 app.MapLessonAccessDecisionEndpoints();
