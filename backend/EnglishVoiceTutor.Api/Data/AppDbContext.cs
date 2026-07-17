@@ -14,6 +14,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<LessonMessageEntity> LessonMessages => Set<LessonMessageEntity>();
     public DbSet<FeedbackResultEntity> FeedbackResults => Set<FeedbackResultEntity>();
     public DbSet<UserFeedbackReportEntity> UserFeedbackReports => Set<UserFeedbackReportEntity>();
+    public DbSet<UserFeedbackReportReplyEntity> UserFeedbackReportReplies => Set<UserFeedbackReportReplyEntity>();
     public DbSet<LessonSummaryEntity> LessonSummaries => Set<LessonSummaryEntity>();
     public DbSet<UsageEventEntity> UsageEvents => Set<UsageEventEntity>();
     public DbSet<DailyUsageCounterEntity> DailyUsageCounters => Set<DailyUsageCounterEntity>();
@@ -55,6 +56,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureLessonMessages(modelBuilder);
         ConfigureFeedbackResults(modelBuilder);
         ConfigureUserFeedbackReports(modelBuilder);
+        ConfigureUserFeedbackReportReplies(modelBuilder);
         ConfigureLessonSummaries(modelBuilder);
         ConfigureUsageEvents(modelBuilder);
         ConfigureDailyUsageCounters(modelBuilder);
@@ -229,6 +231,30 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.HasIndex(report => report.UserId);
         entity.HasIndex(report => report.CreatedAtUtc);
         entity.HasOne(report => report.User).WithMany().HasForeignKey(report => report.UserId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureUserFeedbackReportReplies(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<UserFeedbackReportReplyEntity>();
+        entity.ToTable(EntityConstants.TableNames.UserFeedbackReportReplies);
+        entity.HasKey(reply => reply.Id);
+        entity.Property(reply => reply.ReplyText).IsRequired().HasMaxLength(EntityConstants.Lengths.FeedbackReportMessageMaxLength);
+        entity.Property(reply => reply.RecipientEmail).IsRequired().HasMaxLength(EntityConstants.Lengths.EmailMaxLength);
+        entity.Property(reply => reply.DeliveryStatus).IsRequired().HasMaxLength(EntityConstants.Lengths.FeedbackReportReplyDeliveryStatusMaxLength);
+        entity.Property(reply => reply.CreatedAtUtc).IsRequired();
+        entity.Property(reply => reply.FailureCode).HasMaxLength(EntityConstants.Lengths.FeedbackReportReplyFailureCodeMaxLength);
+        entity.Property(reply => reply.FailureMessage).HasMaxLength(EntityConstants.Lengths.ErrorMessageMaxLength);
+        entity.HasIndex(reply => reply.FeedbackReportId);
+        entity.HasIndex(reply => reply.AdminUserId);
+        entity.HasIndex(reply => new { reply.FeedbackReportId, reply.CreatedAtUtc });
+        entity.HasOne(reply => reply.FeedbackReport)
+            .WithMany(report => report.Replies)
+            .HasForeignKey(reply => reply.FeedbackReportId)
+            .OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne(reply => reply.AdminUser)
+            .WithMany(adminUser => adminUser.FeedbackReportReplies)
+            .HasForeignKey(reply => reply.AdminUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureLessonSummaries(ModelBuilder modelBuilder)

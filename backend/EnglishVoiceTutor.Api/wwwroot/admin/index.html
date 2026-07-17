@@ -36,6 +36,7 @@
                     <button id="tab-button-free-lesson" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-free-lesson" aria-selected="false" data-tab-id="free-lesson">Free Lesson</button>
                     <button id="tab-button-audit-log" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-audit-log" aria-selected="false" data-tab-id="audit-log">Audit Log</button>
                     <button id="tab-button-admin-activity" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-admin-activity" aria-selected="false" data-tab-id="admin-activity">Admin Activity</button>
+                    <button id="tab-button-feedback-reports" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-feedback-reports" aria-selected="false" data-tab-id="feedback-reports">Feedback &amp; reports</button>
                     <button id="tab-button-cms-content" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-cms-content" aria-selected="false" data-tab-id="cms-content">CMS Content</button>
                     <button id="tab-button-website" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-website" aria-selected="false" data-tab-id="website">Website</button>
                     <button id="tab-button-role-management" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-role-management" aria-selected="false" data-tab-id="role-management">Role Assignments</button>
@@ -191,6 +192,48 @@
                         <article class="card audit-card" aria-labelledby="admin-activity-heading">
 <h2 id="admin-activity-heading">Admin Activity</h2><p class="muted">Read-only actor-centric activity built from approved audit tables, including dedicated Admin auth audit events after migration.</p><div class="audit-controls admin-activity-controls"><div class="field"><label for="activity-actor-admin-user-id">Actor admin user ID</label><input id="activity-actor-admin-user-id" type="text" autocomplete="off" /></div><div class="field"><label for="activity-actor-user-id">Actor user ID</label><input id="activity-actor-user-id" type="text" autocomplete="off" /></div><div class="field"><label for="activity-target-user-id">Target user ID</label><input id="activity-target-user-id" type="text" autocomplete="off" /></div><div class="field"><label for="activity-target-admin-user-id">Target admin user ID</label><input id="activity-target-admin-user-id" type="text" autocomplete="off" /></div><div class="field"><label for="activity-source">Source</label><select id="activity-source"><option value="">Any</option><option value="admin_actions">admin_actions</option><option value="admin_role_assignment_events">admin_role_assignment_events</option><option value="admin_auth_audit_events">admin_auth_audit_events</option><option value="cms_content_audit_logs">cms_content_audit_logs</option></select></div><div class="field"><label for="activity-result">Result</label><input id="activity-result" type="text" autocomplete="off" /></div><div class="field"><label for="activity-action-type">Action</label><input id="activity-action-type" type="text" autocomplete="off" /></div><div class="field"><label for="activity-from-utc">From UTC</label><input id="activity-from-utc" type="datetime-local" /></div><div class="field"><label for="activity-to-utc">To UTC</label><input id="activity-to-utc" type="datetime-local" /></div><div class="field audit-limit-field"><label for="activity-limit">Limit</label><select id="activity-limit"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option><option value="200">200</option></select></div><button id="load-activity-button" type="button">Load Admin Activity</button></div><p id="activity-loading" class="audit-loading hidden" role="status">Loading Admin Activity...</p><p id="activity-error" class="error" role="alert"></p><div id="activity-result-table" class="audit-result"></div>
 </article>
+                    </div>
+
+                    <div id="tab-panel-feedback-reports" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-feedback-reports">
+                        <article class="card feedback-reports-card" aria-labelledby="feedback-reports-heading">
+                            <h2 id="feedback-reports-heading">Feedback &amp; reports</h2>
+                            <p class="muted">Read-only customer feedback and reported AI responses.</p>
+                            <div class="feedback-reports-controls">
+                                <div class="field"><label for="feedback-reports-status-filter">Status</label><select id="feedback-reports-status-filter"><option value="">All</option><option value="new">New</option><option value="reviewed">Reviewed</option><option value="resolved">Resolved</option></select></div>
+                                <div class="field"><label for="feedback-reports-category-filter">Type</label><select id="feedback-reports-category-filter"><option value="">All types</option><option value="suggestion">Suggestion</option><option value="app_issue">App problem</option><option value="ai_response">AI response</option></select></div>
+                            </div>
+                            <p id="feedback-reports-loading" class="lookup-loading hidden" role="status">Loading feedback reports...</p>
+                            <p id="feedback-reports-error" class="error" role="alert"></p>
+                            <div id="feedback-reports-list" class="feedback-reports-list" aria-live="polite"></div>
+                            <div class="feedback-reports-pagination" aria-label="Feedback report pagination"><button id="feedback-reports-previous" type="button">Previous</button><p id="feedback-reports-summary" class="muted">No reports loaded.</p><button id="feedback-reports-next" type="button">Next</button></div>
+                        </article>
+                        <article id="feedback-report-details-card" class="card feedback-report-details-card hidden" aria-labelledby="feedback-report-details-heading">
+                            <h2 id="feedback-report-details-heading">Selected report</h2>
+                            <p id="feedback-report-details-loading" class="lookup-loading hidden" role="status">Loading report details...</p>
+                            <p id="feedback-report-details-error" class="error" role="alert"></p>
+                            <div id="feedback-report-details" aria-live="polite"></div>
+                            <section id="feedback-report-status-actions" class="feedback-report-action-area hidden" aria-labelledby="feedback-report-status-heading">
+                                <h3 id="feedback-report-status-heading">Manage status</h3>
+                                <p id="feedback-report-current-status" class="muted" aria-live="polite"></p>
+                                <div id="feedback-report-status-buttons" class="feedback-report-action-buttons"></div>
+                                <p id="feedback-report-status-progress" class="lookup-loading hidden" role="status"></p>
+                                <p id="feedback-report-status-error" class="error" role="alert"></p>
+                                <p id="feedback-report-status-success" class="success" role="status"></p>
+                            </section>
+                            <section id="feedback-report-reply-actions" class="feedback-report-action-area hidden" aria-labelledby="feedback-report-reply-heading">
+                                <h3 id="feedback-report-reply-heading">Reply to user</h3>
+                                <p id="feedback-report-reply-recipient" class="muted"></p>
+                                <div class="field"><label for="feedback-report-reply-text">Reply message</label><textarea id="feedback-report-reply-text" rows="5" maxlength="4000" aria-describedby="feedback-report-reply-length"></textarea><p id="feedback-report-reply-length" class="muted">0 of 4000 characters</p></div>
+                                <div class="feedback-report-action-buttons"><button id="feedback-report-send-reply" type="button">Send reply</button></div>
+                                <p id="feedback-report-reply-progress" class="lookup-loading hidden" role="status"></p>
+                                <p id="feedback-report-reply-error" class="error" role="alert"></p>
+                                <p id="feedback-report-reply-success" class="success" role="status"></p>
+                            </section>
+                            <section id="feedback-report-reply-history" class="feedback-report-action-area hidden" aria-labelledby="feedback-report-reply-history-heading">
+                                <h3 id="feedback-report-reply-history-heading">Reply history</h3>
+                                <div id="feedback-report-reply-history-content" aria-live="polite"></div>
+                            </section>
+                        </article>
                     </div>
 
                     <div id="tab-panel-cms-content" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-cms-content">

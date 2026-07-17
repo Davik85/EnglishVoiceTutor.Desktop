@@ -3,6 +3,7 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.FeedbackReports;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Auth;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,7 +42,7 @@ public static class UserFeedbackReportEndpoints
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            loggerFactory.CreateLogger("UserFeedbackReportEndpoints").LogWarning(exception, "Feedback report persistence failed.");
+            SafeFailureLogger.LogFeedbackReportPersistenceFailed(loggerFactory.CreateLogger("UserFeedbackReportEndpoints"));
             return Results.Json(new { error = "Feedback is temporarily unavailable." }, statusCode: StatusCodes.Status503ServiceUnavailable);
         }
     }

@@ -157,6 +157,9 @@ builder.Services.AddAuthorization(options =>
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.SystemDiagnosticsPermissionPolicyName, AdminPermissionConstants.SystemDiagnosticsRead);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.SystemAiModelSettingsManagePermissionPolicyName, AdminPermissionConstants.SystemAiModelSettingsManage);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName, AdminPermissionConstants.AdminRolesManage);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.FeedbackReportsReadPermissionPolicyName, AdminPermissionConstants.FeedbackReportsRead);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.FeedbackReportsStatusManagePermissionPolicyName, AdminPermissionConstants.FeedbackReportsStatusManage);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.FeedbackReportsReplyPermissionPolicyName, AdminPermissionConstants.FeedbackReportsReply);
 });
 builder.Services.AddHttpContextAccessor();
 
@@ -197,29 +200,16 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IDeviceRegistrationService, DeviceRegistrationService>();
-builder.Services.AddSingleton<IPasswordResetEmailSender>(services =>
+builder.Services.AddSingleton<IEmailSender>(services =>
 {
     var smtpOptions = services.GetRequiredService<IConfiguration>().GetSection(SmtpEmailOptions.SectionName).Get<SmtpEmailOptions>() ?? new SmtpEmailOptions();
-    var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("PasswordResetEmailSenderConfiguration");
-    var smtpConfigured = !string.IsNullOrWhiteSpace(smtpOptions.Host)
-        && smtpOptions.Port > 0
-        && !string.IsNullOrWhiteSpace(smtpOptions.FromAddress);
-
-    logger.LogInformation(
-        "Password reset SMTP configuration loaded. Enabled={Enabled}; HostPresent={HostPresent}; PortConfigured={PortConfigured}; FromAddressPresent={FromAddressPresent}; UsernamePresent={UsernamePresent}; UseStartTls={UseStartTls}.",
-        smtpOptions.Enabled,
-        !string.IsNullOrWhiteSpace(smtpOptions.Host),
-        smtpOptions.Port > 0,
-        !string.IsNullOrWhiteSpace(smtpOptions.FromAddress),
-        !string.IsNullOrWhiteSpace(smtpOptions.UserName),
-        smtpOptions.UseStartTls);
-
-    return smtpConfigured
-        ? services.GetRequiredService<SmtpPasswordResetEmailSender>()
-        : services.GetRequiredService<NoOpPasswordResetEmailSender>();
+    return EmailSenderSelection.ShouldUseSmtp(smtpOptions)
+        ? services.GetRequiredService<SmtpEmailSender>()
+        : services.GetRequiredService<NoOpEmailSender>();
 });
-builder.Services.AddSingleton<NoOpPasswordResetEmailSender>();
-builder.Services.AddSingleton<SmtpPasswordResetEmailSender>();
+builder.Services.AddSingleton<NoOpEmailSender>();
+builder.Services.AddSingleton<SmtpEmailSender>();
+builder.Services.AddSingleton<IPasswordResetEmailSender, PasswordResetEmailSender>();
 builder.Services.AddScoped<IRequestUserResolver, RequestUserResolver>();
 builder.Services.AddScoped<ISubscriptionStatusService, SubscriptionStatusService>();
 builder.Services.AddScoped<ILessonAccessDecisionService, LessonAccessDecisionService>();
@@ -261,6 +251,9 @@ builder.Services.AddScoped<IAdminBillingCancellationService, AdminBillingCancell
 builder.Services.AddScoped<IAdminProductStatisticsService, AdminProductStatisticsService>();
 builder.Services.AddScoped<IAdminAuditLogService, AdminAuditLogService>();
 builder.Services.AddScoped<IAdminActivityService, AdminActivityService>();
+builder.Services.AddScoped<IAdminFeedbackReportReadService, AdminFeedbackReportReadService>();
+builder.Services.AddScoped<IAdminFeedbackReportStatusService, AdminFeedbackReportStatusService>();
+builder.Services.AddScoped<IAdminFeedbackReportReplyService, AdminFeedbackReportReplyService>();
 builder.Services.AddScoped<IAdminAuthAuditService, AdminAuthAuditService>();
 builder.Services.AddScoped<ICmsContentValidationService, CmsContentValidationService>();
 builder.Services.AddScoped<ICmsContentImportService, CmsContentImportService>();
@@ -426,6 +419,7 @@ app.MapBillingSubscriptionEndpoints();
 app.MapPaddleCheckoutLaunchEndpoints();
 app.MapPaddleWebhookEndpoints();
 app.MapAdminEndpoints();
+app.MapAdminFeedbackReportEndpoints();
 app.MapWebsiteAdminEndpoints();
 app.MapAiModelSettingsAdminEndpoints();
 app.MapCmsDiagnosticsEndpoints();

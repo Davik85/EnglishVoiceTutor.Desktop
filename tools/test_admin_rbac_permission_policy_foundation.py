@@ -16,6 +16,7 @@ FILES = {
     "program": ROOT / "backend/EnglishVoiceTutor.Api/Program.cs",
     "admin_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs",
     "ai_model_settings_admin_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AiModelSettingsAdminEndpoints.cs",
+    "feedback_report_admin_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminFeedbackReportEndpoints.cs",
     "admin_js": ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js",
     "admin_index": ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html",
 }
@@ -42,7 +43,37 @@ PRODUCTION_PERMISSION_POLICIES = {
     "SystemDiagnosticsPermissionPolicyName": ("SystemDiagnosticsRead", "system.diagnostics.read"),
     "SystemAiModelSettingsManagePermissionPolicyName": ("SystemAiModelSettingsManage", "system.ai_model_settings.manage"),
     "AdminRoleManagementPermissionPolicyName": ("AdminRolesManage", "admin.roles.manage"),
+    "FeedbackReportsReadPermissionPolicyName": ("FeedbackReportsRead", "feedback_reports.read"),
+    "FeedbackReportsStatusManagePermissionPolicyName": ("FeedbackReportsStatusManage", "feedback_reports.status.manage"),
+    "FeedbackReportsReplyPermissionPolicyName": ("FeedbackReportsReply", "feedback_reports.reply"),
 }
+
+FEEDBACK_REPORT_ENDPOINTS = [
+    {
+        "method": "GET",
+        "route_constant": "AdminFeedbackReportsRoute",
+        "permission_constant": "FeedbackReportsRead",
+        "policy_constant": "FeedbackReportsReadPermissionPolicyName",
+    },
+    {
+        "method": "GET",
+        "route_constant": "AdminFeedbackReportByIdRoute",
+        "permission_constant": "FeedbackReportsRead",
+        "policy_constant": "FeedbackReportsReadPermissionPolicyName",
+    },
+    {
+        "method": "PATCH",
+        "route_constant": "AdminFeedbackReportStatusRoute",
+        "permission_constant": "FeedbackReportsStatusManage",
+        "policy_constant": "FeedbackReportsStatusManagePermissionPolicyName",
+    },
+    {
+        "method": "POST",
+        "route_constant": "AdminFeedbackReportRepliesRoute",
+        "permission_constant": "FeedbackReportsReply",
+        "policy_constant": "FeedbackReportsReplyPermissionPolicyName",
+    },
+]
 
 MIGRATED_ENDPOINTS = [
     {
@@ -371,10 +402,21 @@ def extract_constant_values(text: str, suffix: str | None = None) -> dict[str, s
 
 def extract_admin_endpoint_authorizations(admin_endpoints: str) -> list[tuple[str, str, str]]:
     return re.findall(
-        r"app\.Map(Get|Post|Put|Delete)\(ApiConstants\.(Admin\w+Route),\s*[^)]*\)\s*\.RequireAuthorization\(AdminAuthorizationConstants\.(\w+)\)",
+        r"app\.Map(Get|Post|Put|Patch|Delete)\(ApiConstants\.(Admin\w+Route),\s*[^)]*\)\s*\.RequireAuthorization\(AdminAuthorizationConstants\.(\w+)\)",
         admin_endpoints,
         flags=re.MULTILINE,
     )
+
+
+def extract_role_permissions(catalog_service: str, role_constant: str) -> set[str]:
+    match = re.search(
+        rf"\[AdminRoleConstants\.{role_constant}\]\s*=\s*\[(.*?)\]",
+        catalog_service,
+        flags=re.DOTALL,
+    )
+    if not match:
+        raise AssertionError(f"Missing production role permission grant list for {role_constant}")
+    return set(re.findall(r"AdminPermissionConstants\.(\w+)", match.group(1)))
 
 
 def main() -> None:
@@ -384,7 +426,13 @@ def main() -> None:
     permission_handler = read("permission_handler")
     endpoint_catalog = read("endpoint_catalog")
     program = read("program")
-    admin_endpoints = read("admin_endpoints") + "\n" + read("ai_model_settings_admin_endpoints")
+    admin_endpoints = (
+        read("admin_endpoints")
+        + "\n"
+        + read("ai_model_settings_admin_endpoints")
+        + "\n"
+        + read("feedback_report_admin_endpoints")
+    )
     admin_ui = read("admin_js") + "\n" + read("admin_index")
 
     policy_values = extract_constant_values(authorization_constants, "PermissionPolicyName")
@@ -425,17 +473,24 @@ def main() -> None:
     active_route_mappings = [mapping for mapping in endpoint_mappings if mapping[2] != "null"]
     active_route_constants = {mapping[2].replace("ApiConstants.", "") for mapping in active_route_mappings}
     mapped_methods_and_routes = {(mapping[1], mapping[2].replace("ApiConstants.", "")) for mapping in active_route_mappings}
-    endpoint_methods_and_routes = set(re.findall(r"app\.Map(Get|Post|Put|Delete)\(ApiConstants\.(Admin\w+Route),", admin_endpoints))
+    feedback_report_methods_and_routes = {
+        (endpoint["method"], endpoint["route_constant"])
+        for endpoint in FEEDBACK_REPORT_ENDPOINTS
+    }
+    endpoint_methods_and_routes = set(re.findall(r"app\.Map(Get|Post|Put|Patch|Delete)\(ApiConstants\.(Admin\w+Route),", admin_endpoints))
     endpoint_methods_and_routes = {(method.upper(), route) for method, route in endpoint_methods_and_routes if route != "AdminSessionRoute"}
-    missing_route_mappings = endpoint_methods_and_routes - mapped_methods_and_routes
+    missing_route_mappings = endpoint_methods_and_routes - mapped_methods_and_routes - feedback_report_methods_and_routes
     if missing_route_mappings:
         raise AssertionError(f"Active Admin endpoints missing from endpoint permission catalog: {sorted(missing_route_mappings)}")
 
-    unknown_route_mappings = active_route_constants - set(re.findall(r"app\.Map(?:Get|Post|Put|Delete)\(ApiConstants\.(Admin\w+Route),", admin_endpoints))
+    unknown_route_mappings = active_route_constants - set(re.findall(r"app\.Map(?:Get|Post|Put|Patch|Delete)\(ApiConstants\.(Admin\w+Route),", admin_endpoints))
     if unknown_route_mappings:
         raise AssertionError(f"Endpoint catalog references unmapped active Admin routes: {sorted(unknown_route_mappings)}")
 
-    missing_permission_coverage = set(permission_values) - endpoint_permissions
+    explicitly_mapped_endpoint_permissions = endpoint_permissions | {
+        endpoint["permission_constant"] for endpoint in FEEDBACK_REPORT_ENDPOINTS
+    }
+    missing_permission_coverage = set(permission_values) - explicitly_mapped_endpoint_permissions
     if missing_permission_coverage:
         raise AssertionError(f"Production permissions missing endpoint/future mapping coverage: {sorted(missing_permission_coverage)}")
 
@@ -448,6 +503,8 @@ def main() -> None:
         require(authorization_constants, f'public const string {policy_constant} = "AdminPermission:{permission_name}"', f"policy constant for {permission_name}")
         require(catalog_service, f"AdminPermissionConstants.{permission_constant}", f"BootstrapAdmin catalog includes {permission_name}")
         require(program, f"AddAdminPermissionPolicy(options, AdminAuthorizationConstants.{policy_constant}, AdminPermissionConstants.{permission_constant})", f"registered permission policy mapping for {permission_name}")
+
+    require(program, "app.MapAdminFeedbackReportEndpoints();", "feedback report endpoint registration")
 
     require(permission_handler, "public sealed class AdminPermissionRequirement", "AdminPermissionRequirement class")
     require(permission_handler, "public string PermissionName", "AdminPermissionRequirement permission name")
@@ -509,10 +566,17 @@ def main() -> None:
             migrated_endpoint["policy_constant"],
         )
         for migrated_endpoint in MIGRATED_ENDPOINTS
+    ] + [
+        (
+            endpoint["method"],
+            endpoint["route_constant"],
+            endpoint["policy_constant"],
+        )
+        for endpoint in FEEDBACK_REPORT_ENDPOINTS
     ]
-    if len(migrated_authorizations) != 36 or set(migrated_authorizations) != set(expected_migrations):
+    if len(migrated_authorizations) != 40 or set(migrated_authorizations) != set(expected_migrations):
         raise AssertionError(
-            f"Exactly thirty-six Admin endpoints must use AdminPermission:* policies after intentionally adding read-only Admin Activity as the 36th AuditRead endpoint. Got: {migrated_authorizations}"
+            f"Exactly forty Admin endpoints must use AdminPermission:* policies, including the four feedback-report endpoints. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:
@@ -588,6 +652,44 @@ def main() -> None:
     require(catalog_service, "AdminPermissionConstants.UserLookupRead", "BootstrapAdmin catalog includes users.lookup.read")
     require(catalog_service, "AdminPermissionConstants.UserOverviewRead", "BootstrapAdmin catalog includes users.overview.read")
     require(catalog_service, "AdminPermissionConstants.AuditRead", "BootstrapAdmin catalog includes audit.read")
+
+    feedback_report_permissions = {
+        "FeedbackReportsRead",
+        "FeedbackReportsStatusManage",
+        "FeedbackReportsReply",
+    }
+    require(catalog_service, "[AdminRoleConstants.SuperAdmin] = BootstrapAdminPermissions", "super_admin uses the complete BootstrapAdmin permission catalog")
+    bootstrap_admin_permissions_match = re.search(
+        r"private static readonly string\[\] BootstrapAdminPermissions\s*=\s*\[(.*?)\];",
+        catalog_service,
+        flags=re.DOTALL,
+    )
+    if not bootstrap_admin_permissions_match:
+        raise AssertionError("Missing BootstrapAdmin permission catalog")
+    bootstrap_admin_permissions = set(re.findall(r"AdminPermissionConstants\.(\w+)", bootstrap_admin_permissions_match.group(1)))
+    if not feedback_report_permissions <= bootstrap_admin_permissions:
+        raise AssertionError("super_admin must have every feedback-report permission")
+
+    support_permissions = extract_role_permissions(catalog_service, "Support")
+    expected_support_permissions = {
+        "AdminSelfRead",
+        "AdminCapabilitiesRead",
+        "UsersRead",
+        "UserLookupRead",
+        "UserOverviewRead",
+        "UsersDiagnosticsRead",
+        "LessonHistoryDiagnosticsRead",
+        "AuditRead",
+        "FreeLessonAllowanceReset",
+        "SystemDiagnosticsRead",
+        *feedback_report_permissions,
+    }
+    if support_permissions != expected_support_permissions:
+        raise AssertionError(f"support permissions must remain exact and include only its approved feedback-report grants: {sorted(support_permissions)}")
+
+    for role_constant in ["ContentEditor", "BillingSupport", "ReadOnlyAuditor"]:
+        if extract_role_permissions(catalog_service, role_constant) & feedback_report_permissions:
+            raise AssertionError(f"{role_constant} must not have feedback-report permissions")
 
     dangerous_or_deferred_policies = set(DANGEROUS_POLICY_CONSTANTS) | {
         "LessonHistoryDiagnosticsPermissionPolicyName",

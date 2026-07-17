@@ -53,6 +53,9 @@ PERMISSIONS = {
     "ProductStatisticsRead": "product_statistics.read",
     "SystemDiagnosticsRead": "system.diagnostics.read",
     "AdminRolesManage": "admin.roles.manage",
+    "FeedbackReportsRead": "feedback_reports.read",
+    "FeedbackReportsStatusManage": "feedback_reports.status.manage",
+    "FeedbackReportsReply": "feedback_reports.reply",
 }
 
 EXPECTED_ROLE_PERMISSIONS = {
@@ -60,6 +63,7 @@ EXPECTED_ROLE_PERMISSIONS = {
     "Support": {
         "AdminSelfRead", "AdminCapabilitiesRead", "UsersRead", "UserLookupRead", "UserOverviewRead",
         "UsersDiagnosticsRead", "LessonHistoryDiagnosticsRead", "AuditRead", "FreeLessonAllowanceReset", "SystemDiagnosticsRead",
+        "FeedbackReportsRead", "FeedbackReportsStatusManage", "FeedbackReportsReply",
     },
     "ContentEditor": {"AdminSelfRead", "AdminCapabilitiesRead", "CmsContentRead", "CmsContentWriteDraft", "CmsRuntimeStatusRead"},
     "BillingSupport": {

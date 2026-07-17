@@ -23,8 +23,8 @@ public sealed class LessonCompletionAndSummaryServiceTests
         var generator = new RecordingGenerator();
         var service = CreateSessionService(db, userId, generator);
 
-        var first = await service.FinishLessonSessionAsync(session.Id, new FinishLessonSessionRequest(1), CancellationToken.None);
-        var second = await service.FinishLessonSessionAsync(session.Id, new FinishLessonSessionRequest(9), CancellationToken.None);
+        var first = await service.FinishLessonSessionAsync(session.Id, new FinishLessonSessionRequest(1), TestContext.Current.CancellationToken);
+        var second = await service.FinishLessonSessionAsync(session.Id, new FinishLessonSessionRequest(9), TestContext.Current.CancellationToken);
 
         Assert.Equal(LessonSessionConstants.FinishedStatus, first.Status);
         Assert.Equal(1, first.ValidTurnCount);
@@ -41,7 +41,7 @@ public sealed class LessonCompletionAndSummaryServiceTests
         var session = await SeedSessionAsync(db, Guid.NewGuid(), LessonSessionConstants.ActiveStatus);
         var service = CreateSessionService(db, Guid.NewGuid(), new RecordingGenerator());
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => service.FinishLessonSessionAsync(session.Id, new FinishLessonSessionRequest(1), CancellationToken.None));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => service.FinishLessonSessionAsync(session.Id, new FinishLessonSessionRequest(1), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -51,17 +51,17 @@ public sealed class LessonCompletionAndSummaryServiceTests
         var ownerId = Guid.NewGuid();
         var session = await SeedSessionAsync(db, ownerId, LessonSessionConstants.FinishedStatus);
         db.LessonSummaries.Add(new LessonSummaryEntity { Id = Guid.NewGuid(), SessionId = session.Id, Summary = "Good progress.", Strengths = "Clear greeting\nGood question", Improvements = "Use articles", Vocabulary = "appointment", Grammar = "a/an", NextSteps = "Practice another greeting", CreatedAt = DateTimeOffset.UtcNow, UpdatedAt = DateTimeOffset.UtcNow });
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var ownerService = new LessonSummaryService(db, new FakeRequestUserResolver(ownerId));
         var otherService = new LessonSummaryService(db, new FakeRequestUserResolver(Guid.NewGuid()));
-        var ready = await ownerService.GetAuthenticatedLessonSummaryAsync(session.Id, CancellationToken.None);
+        var ready = await ownerService.GetAuthenticatedLessonSummaryAsync(session.Id, TestContext.Current.CancellationToken);
 
         Assert.NotNull(ready);
         Assert.Equal(LessonSummaryConstants.ReadyStatus, ready!.Status);
         Assert.Equal("Good progress.", ready.Summary);
         Assert.Equal(["Clear greeting", "Good question"], ready.Strengths);
-        Assert.Null(await otherService.GetAuthenticatedLessonSummaryAsync(session.Id, CancellationToken.None));
+        Assert.Null(await otherService.GetAuthenticatedLessonSummaryAsync(session.Id, TestContext.Current.CancellationToken));
         Assert.DoesNotContain("provider", string.Join(' ', ready.GetType().GetProperties().Select(property => property.Name)), StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("prompt", string.Join(' ', ready.GetType().GetProperties().Select(property => property.Name)), StringComparison.OrdinalIgnoreCase);
     }
@@ -74,7 +74,7 @@ public sealed class LessonCompletionAndSummaryServiceTests
         var session = await SeedSessionAsync(db, userId, LessonSessionConstants.FinishedStatus);
         var service = new LessonSummaryService(db, new FakeRequestUserResolver(userId));
 
-        var result = await service.GetAuthenticatedLessonSummaryAsync(session.Id, CancellationToken.None);
+        var result = await service.GetAuthenticatedLessonSummaryAsync(session.Id, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(LessonSummaryConstants.UnavailableStatus, result!.Status);

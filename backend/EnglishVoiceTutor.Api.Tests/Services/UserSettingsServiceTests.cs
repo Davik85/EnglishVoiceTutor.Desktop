@@ -15,8 +15,8 @@ public sealed class UserSettingsServiceTests
         var service = CreateService(dbContext);
         var userId = Guid.NewGuid();
 
-        var settings = await service.GetOrCreateAsync(userId, CancellationToken.None);
-        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId);
+        var settings = await service.GetOrCreateAsync(userId, TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
 
         Assert.Equal("A1", settings.CurrentLevel);
         Assert.Equal("A1", profile.CurrentLevel);
@@ -32,12 +32,12 @@ public sealed class UserSettingsServiceTests
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
         var userId = Guid.NewGuid();
-        await service.GetOrCreateAsync(userId, CancellationToken.None);
-        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId);
+        await service.GetOrCreateAsync(userId, TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
         profile.CurrentLevel = currentLevel;
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var settings = await service.GetOrCreateAsync(userId, CancellationToken.None);
+        var settings = await service.GetOrCreateAsync(userId, TestContext.Current.CancellationToken);
 
         Assert.Equal(currentLevel, settings.CurrentLevel);
     }
@@ -53,15 +53,15 @@ public sealed class UserSettingsServiceTests
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
         var userId = Guid.NewGuid();
-        await service.GetOrCreateAsync(userId, CancellationToken.None);
-        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId);
+        await service.GetOrCreateAsync(userId, TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
         profile.CurrentLevel = savedCurrentLevel!;
         if (savedCurrentLevel is not null)
         {
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var settings = await service.GetOrCreateAsync(userId, CancellationToken.None);
+        var settings = await service.GetOrCreateAsync(userId, TestContext.Current.CancellationToken);
 
         Assert.Equal("A1", settings.CurrentLevel);
         Assert.Equal("A1", profile.CurrentLevel);
@@ -73,14 +73,14 @@ public sealed class UserSettingsServiceTests
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
         var userId = Guid.NewGuid();
-        await service.GetOrCreateAsync(userId, CancellationToken.None);
-        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId);
+        await service.GetOrCreateAsync(userId, TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
         var originalUpdatedAt = DateTimeOffset.UtcNow.AddDays(-1);
         profile.CurrentLevel = "C1";
         profile.UpdatedAt = originalUpdatedAt;
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var settings = await service.GetOrCreateAsync(userId, CancellationToken.None);
+        var settings = await service.GetOrCreateAsync(userId, TestContext.Current.CancellationToken);
 
         Assert.Equal("A1", settings.CurrentLevel);
         Assert.Equal("C1", profile.CurrentLevel);
@@ -98,8 +98,8 @@ public sealed class UserSettingsServiceTests
         var service = CreateService(dbContext);
         var userId = Guid.NewGuid();
 
-        var settings = await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: null, currentLevel), CancellationToken.None);
-        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId);
+        var settings = await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: null, currentLevel), TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
 
         Assert.Equal(currentLevel, settings.CurrentLevel);
         Assert.Equal(currentLevel, profile.CurrentLevel);
@@ -114,8 +114,8 @@ public sealed class UserSettingsServiceTests
         var service = CreateService(dbContext);
         var userId = Guid.NewGuid();
 
-        var settings = await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: null, suppliedLevel), CancellationToken.None);
-        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId);
+        var settings = await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: null, suppliedLevel), TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
 
         Assert.Equal(expectedLevel, settings.CurrentLevel);
         Assert.Equal(expectedLevel, profile.CurrentLevel);
@@ -131,7 +131,7 @@ public sealed class UserSettingsServiceTests
         var service = CreateService(dbContext);
 
         var exception = await Assert.ThrowsAsync<UserSettingsValidationException>(() =>
-            service.UpdateAsync(Guid.NewGuid(), CreateValidRequest(selectedTutorId: null, currentLevel), CancellationToken.None));
+            service.UpdateAsync(Guid.NewGuid(), CreateValidRequest(selectedTutorId: null, currentLevel), TestContext.Current.CancellationToken));
 
         Assert.Equal("Current level must be one of: A1, A2, B1, B2.", exception.Message);
     }
@@ -142,7 +142,7 @@ public sealed class UserSettingsServiceTests
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
         var userId = Guid.NewGuid();
-        await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: "david", currentLevel: "B2"), CancellationToken.None);
+        await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: "david", currentLevel: "B2"), TestContext.Current.CancellationToken);
 
         var settings = await service.UpdateAsync(userId, new UpdateUserSettingsRequest
         {
@@ -153,8 +153,8 @@ public sealed class UserSettingsServiceTests
             SpeechVoice = "verse",
             SpeechSpeed = 1.25m,
             ConversationModeEnabled = false
-        }, CancellationToken.None);
-        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId);
+        }, TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
 
         Assert.Equal("B2", settings.CurrentLevel);
         Assert.Equal("B2", profile.CurrentLevel);
@@ -184,10 +184,10 @@ public sealed class UserSettingsServiceTests
             SpeechSpeed = 1.25m,
             ConversationModeEnabled = false
         };
-        await service.UpdateAsync(userId, originalRequest, CancellationToken.None);
+        await service.UpdateAsync(userId, originalRequest, TestContext.Current.CancellationToken);
 
         originalRequest.CurrentLevel = "B1";
-        var settings = await service.UpdateAsync(userId, originalRequest, CancellationToken.None);
+        var settings = await service.UpdateAsync(userId, originalRequest, TestContext.Current.CancellationToken);
 
         Assert.Equal("B1", settings.CurrentLevel);
         Assert.Equal("es", settings.NativeLanguage);
@@ -205,7 +205,7 @@ public sealed class UserSettingsServiceTests
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
 
-        var settings = await service.GetOrCreateAsync(Guid.NewGuid(), CancellationToken.None);
+        var settings = await service.GetOrCreateAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         Assert.Equal("lana", settings.SelectedTutorId);
     }
@@ -217,13 +217,13 @@ public sealed class UserSettingsServiceTests
         var service = CreateService(dbContext);
         var userId = Guid.NewGuid();
 
-        var settings = await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: " NELLI "), CancellationToken.None);
-        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId);
+        var settings = await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: " NELLI "), TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
 
         Assert.Equal("nelli", settings.SelectedTutorId);
         Assert.Equal("nelli", profile.SelectedTutorId);
         Assert.Equal("alloy", settings.SpeechVoice);
-        Assert.Equal("alloy", (await dbContext.UserSettings.SingleAsync(userSettings => userSettings.UserId == userId)).SpeechVoice);
+        Assert.Equal("alloy", (await dbContext.UserSettings.SingleAsync(userSettings => userSettings.UserId == userId, TestContext.Current.CancellationToken)).SpeechVoice);
     }
 
     [Fact]
@@ -232,10 +232,10 @@ public sealed class UserSettingsServiceTests
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
         var userId = Guid.NewGuid();
-        await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: "david"), CancellationToken.None);
+        await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: "david"), TestContext.Current.CancellationToken);
 
-        var settings = await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: null, speechVoice: "verse"), CancellationToken.None);
-        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId);
+        var settings = await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: null, speechVoice: "verse"), TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
 
         Assert.Equal("david", settings.SelectedTutorId);
         Assert.Equal("david", profile.SelectedTutorId);
@@ -249,7 +249,7 @@ public sealed class UserSettingsServiceTests
         var service = CreateService(dbContext);
 
         var exception = await Assert.ThrowsAsync<UserSettingsValidationException>(() =>
-            service.UpdateAsync(Guid.NewGuid(), CreateValidRequest(selectedTutorId: "unsupported"), CancellationToken.None));
+            service.UpdateAsync(Guid.NewGuid(), CreateValidRequest(selectedTutorId: "unsupported"), TestContext.Current.CancellationToken));
 
         Assert.Equal("Selected tutor must be one of: lana, nelli, david.", exception.Message);
     }
@@ -269,7 +269,7 @@ public sealed class UserSettingsServiceTests
             SpeechVoice = "nova",
             SpeechSpeed = 1.25m,
             ConversationModeEnabled = false
-        }, CancellationToken.None);
+        }, TestContext.Current.CancellationToken);
 
         Assert.Equal("es", settings.NativeLanguage);
         Assert.Equal(StudyLanguageConstants.Spanish, settings.StudyLanguage);

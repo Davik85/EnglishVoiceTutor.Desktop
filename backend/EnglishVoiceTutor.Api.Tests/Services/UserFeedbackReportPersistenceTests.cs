@@ -12,8 +12,8 @@ public sealed class UserFeedbackReportPersistenceTests
         await using var db = CreateDbContext();
         var userId = Guid.NewGuid();
         db.UserFeedbackReports.Add(Create(userId, "suggestion", "A useful suggestion."));
-        await db.SaveChangesAsync();
-        var report = await db.UserFeedbackReports.SingleAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var report = await db.UserFeedbackReports.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(userId, report.UserId);
         Assert.Equal("suggestion", report.Category);
         Assert.Equal("new", report.Status);
@@ -24,8 +24,8 @@ public sealed class UserFeedbackReportPersistenceTests
     {
         await using var db = CreateDbContext();
         db.UserFeedbackReports.Add(Create(Guid.NewGuid(), "app_issue", "The screen stopped responding."));
-        await db.SaveChangesAsync();
-        Assert.Equal("app_issue", (await db.UserFeedbackReports.SingleAsync()).Category);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("app_issue", (await db.UserFeedbackReports.SingleAsync(TestContext.Current.CancellationToken)).Category);
     }
 
     [Fact]
@@ -33,8 +33,8 @@ public sealed class UserFeedbackReportPersistenceTests
     {
         await using var db = CreateDbContext();
         db.UserFeedbackReports.Add(Create(Guid.NewGuid(), "ai_response", "Incorrect reply.", "The AI text."));
-        await db.SaveChangesAsync();
-        Assert.Equal("The AI text.", (await db.UserFeedbackReports.SingleAsync()).ReportedAiText);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("The AI text.", (await db.UserFeedbackReports.SingleAsync(TestContext.Current.CancellationToken)).ReportedAiText);
     }
 
     private static UserFeedbackReportEntity Create(Guid userId, string category, string message, string? reportedAiText = null) => new()

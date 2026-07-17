@@ -24,6 +24,9 @@ public static class AdminAuthorizationConstants
     public const string SystemDiagnosticsPermissionPolicyName = "AdminPermission:system.diagnostics.read";
     public const string SystemAiModelSettingsManagePermissionPolicyName = "AdminPermission:system.ai_model_settings.manage";
     public const string AdminRoleManagementPermissionPolicyName = "AdminPermission:admin.roles.manage";
+    public const string FeedbackReportsReadPermissionPolicyName = "AdminPermission:feedback_reports.read";
+    public const string FeedbackReportsStatusManagePermissionPolicyName = "AdminPermission:feedback_reports.status.manage";
+    public const string FeedbackReportsReplyPermissionPolicyName = "AdminPermission:feedback_reports.reply";
     public const string AdminCookieAuthenticationScheme = "AdminShellCookie";
     public const string AdminCookieName = "evt_admin_session";
     public const string BootstrapAdminSource = "development_config_bootstrap";

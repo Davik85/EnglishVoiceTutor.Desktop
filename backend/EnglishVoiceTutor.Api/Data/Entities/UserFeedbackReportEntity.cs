@@ -13,4 +13,5 @@ public sealed class UserFeedbackReportEntity
     public DateTimeOffset CreatedAtUtc { get; set; }
     public DateTimeOffset? ReviewedAtUtc { get; set; }
     public UserEntity User { get; set; } = null!;
+    public ICollection<UserFeedbackReportReplyEntity> Replies { get; set; } = [];
 }

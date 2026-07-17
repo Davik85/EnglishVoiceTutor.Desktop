@@ -34,7 +34,10 @@ public sealed class AdminRolePermissionCatalogService : IAdminRolePermissionCata
         AdminPermissionConstants.ProductStatisticsRead,
         AdminPermissionConstants.SystemDiagnosticsRead,
         AdminPermissionConstants.SystemAiModelSettingsManage,
-        AdminPermissionConstants.AdminRolesManage
+        AdminPermissionConstants.AdminRolesManage,
+        AdminPermissionConstants.FeedbackReportsRead,
+          AdminPermissionConstants.FeedbackReportsStatusManage,
+          AdminPermissionConstants.FeedbackReportsReply
     ];
 
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> ProductionRolePermissions =
@@ -52,7 +55,10 @@ public sealed class AdminRolePermissionCatalogService : IAdminRolePermissionCata
                 AdminPermissionConstants.LessonHistoryDiagnosticsRead,
                 AdminPermissionConstants.AuditRead,
                 AdminPermissionConstants.FreeLessonAllowanceReset,
-                AdminPermissionConstants.SystemDiagnosticsRead
+                AdminPermissionConstants.SystemDiagnosticsRead,
+                AdminPermissionConstants.FeedbackReportsRead,
+                AdminPermissionConstants.FeedbackReportsStatusManage,
+                AdminPermissionConstants.FeedbackReportsReply
             ],
             [AdminRoleConstants.ContentEditor] =
             [

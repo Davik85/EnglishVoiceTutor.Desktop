@@ -33,11 +33,11 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         var logger = new RecordingLogger<LessonSummaryGenerationService>();
         var service = CreateGenerator(db, TopLevelEnvelope(ValidSummaryJson), usage, logger);
 
-        await service.TryGenerateForFinishedSessionAsync(session.Id, CancellationToken.None);
+        await service.TryGenerateForFinishedSessionAsync(session.Id, TestContext.Current.CancellationToken);
 
-        var summary = await db.LessonSummaries.SingleAsync(item => item.SessionId == session.Id);
+        var summary = await db.LessonSummaries.SingleAsync(item => item.SessionId == session.Id, TestContext.Current.CancellationToken);
         Assert.Equal("Good progress.", summary.Summary);
-        Assert.Equal(LessonSessionConstants.FinishedStatus, (await db.LessonSessions.FindAsync(session.Id))!.Status);
+        Assert.Equal(LessonSessionConstants.FinishedStatus, (await db.LessonSessions.FindAsync([session.Id], TestContext.Current.CancellationToken))!.Status);
         Assert.Contains(usage.Records, item => item.Status == UsageConstants.Statuses.Success);
     }
 
@@ -48,9 +48,9 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         var session = await SeedFinishedSessionWithMessageAsync(db);
         var service = CreateGenerator(db, NestedEnvelope(ValidSummaryJson), new RecordingUsageEventService(), new RecordingLogger<LessonSummaryGenerationService>());
 
-        await service.TryGenerateForFinishedSessionAsync(session.Id, CancellationToken.None);
+        await service.TryGenerateForFinishedSessionAsync(session.Id, TestContext.Current.CancellationToken);
 
-        var summary = await db.LessonSummaries.SingleOrDefaultAsync(item => item.SessionId == session.Id);
+        var summary = await db.LessonSummaries.SingleOrDefaultAsync(item => item.SessionId == session.Id, TestContext.Current.CancellationToken);
         Assert.NotNull(summary);
         Assert.Equal("Good progress.", summary!.Summary);
     }
@@ -63,9 +63,9 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         var envelope = "{\"id\":\"resp-whitespace-top-level\",\"output_text\":\"   \",\"output\":[{\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":" + System.Text.Json.JsonSerializer.Serialize(ValidSummaryJson) + "}]}]}";
         var service = CreateGenerator(db, envelope, new RecordingUsageEventService(), new RecordingLogger<LessonSummaryGenerationService>());
 
-        await service.TryGenerateForFinishedSessionAsync(session.Id, CancellationToken.None);
+        await service.TryGenerateForFinishedSessionAsync(session.Id, TestContext.Current.CancellationToken);
 
-        Assert.Equal("Good progress.", (await db.LessonSummaries.SingleAsync(item => item.SessionId == session.Id)).Summary);
+        Assert.Equal("Good progress.", (await db.LessonSummaries.SingleAsync(item => item.SessionId == session.Id, TestContext.Current.CancellationToken)).Summary);
     }
 
     [Fact]
@@ -77,11 +77,11 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         var logger = new RecordingLogger<LessonSummaryGenerationService>();
         var service = CreateGenerator(db, """{"id":"resp-empty","output":[]}""", usage, logger);
 
-        var exception = await Record.ExceptionAsync(() => service.TryGenerateForFinishedSessionAsync(session.Id, CancellationToken.None));
+        var exception = await Record.ExceptionAsync(() => service.TryGenerateForFinishedSessionAsync(session.Id, TestContext.Current.CancellationToken));
 
         Assert.Null(exception);
-        Assert.Equal(LessonSessionConstants.FinishedStatus, (await db.LessonSessions.FindAsync(session.Id))!.Status);
-        Assert.Empty(await db.LessonSummaries.Where(item => item.SessionId == session.Id).ToListAsync());
+        Assert.Equal(LessonSessionConstants.FinishedStatus, (await db.LessonSessions.FindAsync([session.Id], TestContext.Current.CancellationToken))!.Status);
+        Assert.Empty(await db.LessonSummaries.Where(item => item.SessionId == session.Id).ToListAsync(TestContext.Current.CancellationToken));
         Assert.Contains(usage.Records, item => item.Status == UsageConstants.Statuses.Failed);
         Assert.Contains(logger.Entries, entry => entry.Message.Contains("empty_provider_output", StringComparison.Ordinal));
         Assert.DoesNotContain(logger.Entries, entry => entry.Exception is System.Text.Json.JsonException);
@@ -95,11 +95,11 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         var logger = new RecordingLogger<LessonSummaryGenerationService>();
         var service = CreateGenerator(db, NestedEnvelope("not-json-provider-body"), new RecordingUsageEventService(), logger);
 
-        var exception = await Record.ExceptionAsync(() => service.TryGenerateForFinishedSessionAsync(session.Id, CancellationToken.None));
+        var exception = await Record.ExceptionAsync(() => service.TryGenerateForFinishedSessionAsync(session.Id, TestContext.Current.CancellationToken));
 
         Assert.Null(exception);
-        Assert.Equal(LessonSessionConstants.FinishedStatus, (await db.LessonSessions.FindAsync(session.Id))!.Status);
-        Assert.Empty(await db.LessonSummaries.Where(item => item.SessionId == session.Id).ToListAsync());
+        Assert.Equal(LessonSessionConstants.FinishedStatus, (await db.LessonSessions.FindAsync([session.Id], TestContext.Current.CancellationToken))!.Status);
+        Assert.Empty(await db.LessonSummaries.Where(item => item.SessionId == session.Id).ToListAsync(TestContext.Current.CancellationToken));
         Assert.DoesNotContain(logger.Entries.Select(entry => entry.Message), message => message.Contains("learner-private-message", StringComparison.Ordinal));
         Assert.DoesNotContain(logger.Entries.Select(entry => entry.Message), message => message.Contains("not-json-provider-body", StringComparison.Ordinal));
     }
@@ -111,16 +111,16 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         var userId = Guid.NewGuid();
         var session = await SeedSessionAsync(db, userId, LessonSessionConstants.ActiveStatus);
         db.LessonMessages.Add(new LessonMessageEntity { Id = Guid.NewGuid(), SessionId = session.Id, TurnNumber = 1, Role = "user", Text = "learner-private-message", CreatedAt = DateTimeOffset.UtcNow });
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var generator = CreateGenerator(db, """{"id":"resp-empty","output":[]}""", new RecordingUsageEventService(), new RecordingLogger<LessonSummaryGenerationService>());
         var finish = new LessonSessionService(db, new FakeRequestUserResolver(userId), new FakeAccessDecisionService(), generator, new RecordingLogger<LessonSessionService>());
 
-        var response = await finish.FinishLessonSessionAsync(session.Id, new FinishLessonSessionRequest(1), CancellationToken.None);
+        var response = await finish.FinishLessonSessionAsync(session.Id, new FinishLessonSessionRequest(1), TestContext.Current.CancellationToken);
 
         Assert.Equal(LessonSessionConstants.FinishedStatus, response.Status);
         Assert.Equal(1, response.ValidTurnCount);
         Assert.NotNull(response.FinishedAt);
-        Assert.Empty(await db.LessonSummaries.Where(item => item.SessionId == session.Id).ToListAsync());
+        Assert.Empty(await db.LessonSummaries.Where(item => item.SessionId == session.Id).ToListAsync(TestContext.Current.CancellationToken));
     }
 
     public void Dispose() => Environment.SetEnvironmentVariable(OpenAiConstants.ApiKeyEnvironmentVariableName, _originalApiKey);

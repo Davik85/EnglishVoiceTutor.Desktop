@@ -6,6 +6,7 @@ using EnglishVoiceTutor.Api.Contracts.Auth;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Options;
+using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Email;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -71,11 +72,11 @@ public sealed class PasswordResetService(
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "Password reset email delivery failed. UserId={UserId}; ResetUrlConfigured={ResetUrlConfigured}.", user.Id, !string.IsNullOrWhiteSpace(resetUrl));
+            SafeFailureLogger.LogPasswordResetDeliveryFailed(logger);
             throw new PasswordResetDeliveryUnavailableException();
         }
 
-        logger.LogInformation("Password reset code created and delivery attempted. UserId={UserId}; ExpiresAtUtc={ExpiresAtUtc}.", user.Id, resetToken.ExpiresAtUtc);
+        logger.LogInformation("Password reset code created and delivery attempted.");
     }
 
     public async Task<bool> ConfirmPasswordResetAsync(PasswordResetConfirmRequest request, CancellationToken cancellationToken)
@@ -115,7 +116,7 @@ public sealed class PasswordResetService(
             .ExecuteUpdateAsync(setters => setters.SetProperty(token => token.RevokedAtUtc, now), cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Password reset confirmed. UserId={UserId}; TokenId={TokenId}.", resetToken.UserId, resetToken.Id);
+        logger.LogInformation("Password reset confirmed.");
         return true;
     }
 

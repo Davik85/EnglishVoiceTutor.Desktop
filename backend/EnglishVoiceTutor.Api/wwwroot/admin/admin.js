@@ -9,6 +9,10 @@
         userLookupByIdTemplate: "/api/admin/users/{userId}",
         auditActionsTemplate: "/api/admin/users/{userId}/audit-actions",
         adminActivity: "/api/admin/activity",
+        feedbackReports: "/api/admin/feedback-reports",
+        feedbackReportTemplate: "/api/admin/feedback-reports/{reportId}",
+        feedbackReportStatusTemplate: "/api/admin/feedback-reports/{reportId}/status",
+        feedbackReportRepliesTemplate: "/api/admin/feedback-reports/{reportId}/replies",
         manualPremiumGrantTemplate: "/api/admin/users/{userId}/premium-grants",
         manualPremiumRevokeTemplate: "/api/admin/users/{userId}/premium-grants/{entitlementId}/revoke",
         freeLessonAllowanceResetTemplate: "/api/admin/users/{userId}/free-lesson-allowance/reset",
@@ -51,7 +55,7 @@
         aiModelSettingsResetDraft: "/api/admin/system/ai-models/reset-draft"
     };
 
-    const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
+    const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409, serviceUnavailable: 503 };
     const ErrorMessages = {
         emailRequired: "Email is required or invalid.",
         userNotFound: "User was not found.",
@@ -94,7 +98,7 @@
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
     const ActivityColumns = ["occurredAtUtc", "actorEmail", "actionType", "result", "targetType", "targetUserEmail", "targetAdminUserEmail", "source", { key: "adminNote", label: "Admin note", className: "admin-note-cell" }, "safeMetadataJson"];
     const ActivityTableOptions = Object.freeze({ wrapClassName: "table-wrap admin-activity-table-wrapper", topScroll: true });
-    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", adminActivity: "admin-activity", cmsContent: "cms-content", website: "website", roleManagement: "role-management", system: "system" });
+    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", adminActivity: "admin-activity", feedbackReports: "feedback-reports", cmsContent: "cms-content", website: "website", roleManagement: "role-management", system: "system" });
     const AdminPermissionIds = Object.freeze({
         usersRead: "users.read",
         userLookupRead: "users.lookup.read",
@@ -109,6 +113,9 @@
         freeLessonAllowanceReset: "free_lesson_allowance.reset",
         billingCancelRenewal: "billing.cancel_renewal",
         auditRead: "audit.read",
+        feedbackReportsRead: "feedback_reports.read",
+        feedbackReportsStatusManage: "feedback_reports.status.manage",
+        feedbackReportsReply: "feedback_reports.reply",
         cmsContentRead: "cms.content.read",
         cmsContentWriteDraft: "cms.content.write_draft",
         cmsContentPublish: "cms.content.publish",
@@ -148,6 +155,7 @@
         [Tabs.freeLesson]: { anyPermissions: [AdminPermissionIds.freeLessonAllowanceReset] },
         [Tabs.auditLog]: { anyPermissions: [AdminPermissionIds.auditRead] },
         [Tabs.adminActivity]: { anyPermissions: [AdminPermissionIds.auditRead] },
+        [Tabs.feedbackReports]: { anyPermissions: [AdminPermissionIds.feedbackReportsRead] },
         [Tabs.cmsContent]: { anyPermissions: [AdminPermissionIds.cmsContentRead] },
         [Tabs.website]: { bootstrapAdminOnly: true },
         [Tabs.roleManagement]: { anyPermissions: [AdminPermissionIds.adminRolesManage] },
@@ -296,6 +304,38 @@
     const activityLoadingElement = document.getElementById("activity-loading");
     const activityErrorElement = document.getElementById("activity-error");
     const activityResultElement = document.getElementById("activity-result-table");
+    const feedbackReportsStatusFilter = document.getElementById("feedback-reports-status-filter");
+    const feedbackReportsCategoryFilter = document.getElementById("feedback-reports-category-filter");
+    const feedbackReportsLoadingElement = document.getElementById("feedback-reports-loading");
+    const feedbackReportsErrorElement = document.getElementById("feedback-reports-error");
+    const feedbackReportsListElement = document.getElementById("feedback-reports-list");
+    const feedbackReportsPreviousButton = document.getElementById("feedback-reports-previous");
+    const feedbackReportsNextButton = document.getElementById("feedback-reports-next");
+    const feedbackReportsSummaryElement = document.getElementById("feedback-reports-summary");
+    const feedbackReportDetailsCard = document.getElementById("feedback-report-details-card");
+    const feedbackReportDetailsLoadingElement = document.getElementById("feedback-report-details-loading");
+    const feedbackReportDetailsErrorElement = document.getElementById("feedback-report-details-error");
+    const feedbackReportDetailsElement = document.getElementById("feedback-report-details");
+    const feedbackReportStatusActionsElement = document.getElementById("feedback-report-status-actions");
+    const feedbackReportCurrentStatusElement = document.getElementById("feedback-report-current-status");
+    const feedbackReportStatusButtonsElement = document.getElementById("feedback-report-status-buttons");
+    const feedbackReportStatusProgressElement = document.getElementById("feedback-report-status-progress");
+    const feedbackReportStatusErrorElement = document.getElementById("feedback-report-status-error");
+    const feedbackReportStatusSuccessElement = document.getElementById("feedback-report-status-success");
+    const feedbackReportReplyActionsElement = document.getElementById("feedback-report-reply-actions");
+    const feedbackReportReplyRecipientElement = document.getElementById("feedback-report-reply-recipient");
+    const feedbackReportReplyTextInput = document.getElementById("feedback-report-reply-text");
+    const feedbackReportReplyLengthElement = document.getElementById("feedback-report-reply-length");
+    const feedbackReportSendReplyButton = document.getElementById("feedback-report-send-reply");
+    const feedbackReportReplyProgressElement = document.getElementById("feedback-report-reply-progress");
+    const feedbackReportReplyErrorElement = document.getElementById("feedback-report-reply-error");
+    const feedbackReportReplySuccessElement = document.getElementById("feedback-report-reply-success");
+    const feedbackReportReplyHistoryElement = document.getElementById("feedback-report-reply-history");
+    const feedbackReportReplyHistoryContentElement = document.getElementById("feedback-report-reply-history-content");
+    const FeedbackReportPageSize = 50;
+    const FeedbackReportStatuses = Object.freeze(["new", "reviewed", "resolved"]);
+    const FeedbackReportCategories = Object.freeze(["suggestion", "app_issue", "ai_response"]);
+    let feedbackReportsState = { page: 1, totalCount: 0, items: [], selectedReportId: null, selectedReport: null, statusRequestPending: false, replyRequestPending: false, replyUnavailable: false, statusPermissionDenied: false, replyPermissionDenied: false };
 
     const freeLessonResetCard = document.getElementById("free-lesson-reset-card");
     const freeLessonResetForm = document.getElementById("free-lesson-reset-form");
@@ -616,6 +656,7 @@
             if (tabId === Tabs.website && !websiteHasLoadedOnce) { await loadWebsiteContent(); }
             if (tabId === Tabs.system && !aiModelsHaveLoadedOnce) { await loadAiModelSettings(); }
             if (tabId === Tabs.overview) { await loadProductStatistics(); }
+            if (tabId === Tabs.feedbackReports) { await loadFeedbackReports(); }
         }));
     }
 
@@ -1248,6 +1289,7 @@
         adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable"; systemBillingPaddleStatusElement.textContent = "not configured"; systemBillingPaddleStatusElement.className = "badge unavailable";
         setLookupError(""); setLookupLoading(false); setLookupSourceLoading(LookupSources.premium, false); setLookupSourceLoading(LookupSources.freeLesson, false); clearLookupErrors(); clearUserLookupResult(); lookupForm.reset(); premiumLookupForm.reset(); freeLessonLookupForm.reset(); clearSelectedUserState();
         setGrantVisible(false); setRevokeVisible(false); setBillingCancelRenewalVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearBillingCancelRenewalState(); clearFreeLessonResetState(); grantForm.reset(); revokeForm.reset(); billingCancelRenewalForm.reset(); freeLessonResetForm.reset(); clearAuditLog(); clearAllCmsDirtyState();
+        clearFeedbackReportsState();
     }
 
     function resetSession() {
@@ -2051,6 +2093,390 @@
         return [...new Set(details.map((detail) => String(detail || "").trim()).filter(Boolean))];
     }
 
+    function feedbackReportCategoryLabel(value) {
+        return ({ suggestion: "Suggestion", app_issue: "App problem", ai_response: "AI response" })[value] || "-";
+    }
+
+    function feedbackReportReplyDeliveryStatusLabel(value) {
+        return ({ pending: "Pending", sent: "Sent", failed: "Failed" })[value] || "Unknown";
+    }
+
+    function feedbackReportReplyFailureLabel(value) {
+        return ({ email_not_configured: "Email delivery is not configured.", email_delivery_failed: "Email delivery failed." })[value] || "Delivery failed.";
+    }
+
+    function feedbackReportStatusLabel(value) {
+        return ({ new: "New", reviewed: "Reviewed", resolved: "Resolved" })[value] || "-";
+    }
+
+    function formatFeedbackReportDate(value) {
+        if (!value) { return "-"; }
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString();
+    }
+
+    function formatFeedbackReportClient(platform, version) {
+        const safePlatform = String(platform || "").trim();
+        const safeVersion = String(version || "").trim();
+        return safePlatform && safeVersion ? `${safePlatform} ${safeVersion}` : (safePlatform || safeVersion || "-");
+    }
+
+    function clearFeedbackReportDetails() {
+        feedbackReportsState.selectedReportId = null;
+        feedbackReportsState.selectedReport = null;
+        feedbackReportsState.statusRequestPending = false;
+        feedbackReportsState.replyRequestPending = false;
+        feedbackReportsState.replyUnavailable = false;
+        feedbackReportsState.statusPermissionDenied = false;
+        feedbackReportsState.replyPermissionDenied = false;
+        feedbackReportDetailsCard.classList.add("hidden");
+        feedbackReportDetailsLoadingElement.classList.add("hidden");
+        feedbackReportDetailsErrorElement.textContent = "";
+        feedbackReportDetailsElement.textContent = "";
+        feedbackReportStatusActionsElement.classList.add("hidden");
+        feedbackReportReplyActionsElement.classList.add("hidden");
+        feedbackReportReplyHistoryElement.classList.add("hidden");
+        feedbackReportReplyHistoryContentElement.textContent = "";
+        feedbackReportStatusProgressElement.classList.add("hidden");
+        feedbackReportStatusErrorElement.textContent = "";
+        feedbackReportStatusSuccessElement.textContent = "";
+        feedbackReportReplyProgressElement.classList.add("hidden");
+        feedbackReportReplyErrorElement.textContent = "";
+        feedbackReportReplySuccessElement.textContent = "";
+        feedbackReportReplyTextInput.value = "";
+        updateFeedbackReportReplyLength();
+    }
+
+    function clearFeedbackReportsState() {
+        feedbackReportsState = { page: 1, totalCount: 0, items: [], selectedReportId: null, selectedReport: null, statusRequestPending: false, replyRequestPending: false, replyUnavailable: false, statusPermissionDenied: false, replyPermissionDenied: false };
+        feedbackReportsListElement.textContent = "";
+        feedbackReportsErrorElement.textContent = "";
+        feedbackReportsLoadingElement.classList.add("hidden");
+        feedbackReportsSummaryElement.textContent = "No reports loaded.";
+        feedbackReportsPreviousButton.disabled = true;
+        feedbackReportsNextButton.disabled = true;
+        clearFeedbackReportDetails();
+    }
+
+    function appendFeedbackReportText(container, text, className = "") {
+        const element = document.createElement("p");
+        if (className) { element.className = className; }
+        element.textContent = text;
+        container.appendChild(element);
+    }
+
+    function renderFeedbackReportsList() {
+        feedbackReportsListElement.textContent = "";
+        const items = Array.isArray(feedbackReportsState.items) ? feedbackReportsState.items : [];
+        if (items.length === 0) {
+            appendFeedbackReportText(feedbackReportsListElement, "No feedback reports match these filters.", "empty-state");
+        } else {
+            const wrap = document.createElement("div");
+            wrap.className = "feedback-reports-table-wrap";
+            const table = document.createElement("table");
+            table.className = "compact-table feedback-reports-table";
+            const head = document.createElement("thead");
+            const headerRow = document.createElement("tr");
+            ["Type", "Status", "Message preview", "User", "Created", "Client"].forEach((label) => { const cell = document.createElement("th"); cell.scope = "col"; cell.textContent = label; headerRow.appendChild(cell); });
+            head.appendChild(headerRow);
+            table.appendChild(head);
+            const body = document.createElement("tbody");
+            items.forEach((item) => {
+                const row = document.createElement("tr");
+                const reportId = String(item?.reportId || "");
+                row.className = "feedback-report-row";
+                row.tabIndex = 0;
+                row.setAttribute("role", "button");
+                row.setAttribute("aria-label", "Open feedback report details");
+                row.setAttribute("aria-selected", String(reportId === feedbackReportsState.selectedReportId));
+                row.classList.toggle("selected", reportId === feedbackReportsState.selectedReportId);
+                const values = [feedbackReportCategoryLabel(item?.category), feedbackReportStatusLabel(item?.status), item?.messagePreview || "-", "", formatFeedbackReportDate(item?.createdAtUtc), formatFeedbackReportClient(item?.clientPlatform, item?.clientVersion)];
+                values.forEach((value, index) => {
+                    const cell = document.createElement("td");
+                    if (index === 3) {
+                        const displayName = String(item?.userDisplayName || "").trim();
+                        if (displayName) { const name = document.createElement("div"); name.textContent = displayName; cell.appendChild(name); }
+                        const email = document.createElement("div"); email.textContent = String(item?.userEmail || "-"); cell.appendChild(email);
+                    } else { cell.textContent = String(value); }
+                    row.appendChild(cell);
+                });
+                const select = () => { if (reportId) { loadFeedbackReportDetails(reportId); } };
+                row.addEventListener("click", select);
+                row.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); } });
+                body.appendChild(row);
+            });
+            table.appendChild(body);
+            wrap.appendChild(table);
+            feedbackReportsListElement.appendChild(wrap);
+        }
+        const totalCount = Number.isFinite(Number(feedbackReportsState.totalCount)) ? Number(feedbackReportsState.totalCount) : 0;
+        const start = totalCount === 0 ? 0 : ((feedbackReportsState.page - 1) * FeedbackReportPageSize) + 1;
+        const end = Math.min(feedbackReportsState.page * FeedbackReportPageSize, totalCount);
+        feedbackReportsSummaryElement.textContent = totalCount === 0 ? "No reports found." : `${start}-${end} of ${totalCount} · Page ${feedbackReportsState.page}`;
+        feedbackReportsPreviousButton.disabled = feedbackReportsState.page <= 1;
+        feedbackReportsNextButton.disabled = items.length < FeedbackReportPageSize || feedbackReportsState.page * FeedbackReportPageSize >= totalCount;
+    }
+
+    async function loadFeedbackReports() {
+        if (!hasAdminPermission(AdminPermissionIds.feedbackReportsRead)) { clearFeedbackReportsState(); return; }
+        const status = FeedbackReportStatuses.includes(feedbackReportsStatusFilter.value) ? feedbackReportsStatusFilter.value : "";
+        const category = FeedbackReportCategories.includes(feedbackReportsCategoryFilter.value) ? feedbackReportsCategoryFilter.value : "";
+        const query = new URLSearchParams({ page: String(feedbackReportsState.page), pageSize: String(FeedbackReportPageSize) });
+        if (status) { query.set("status", status); }
+        if (category) { query.set("category", category); }
+        feedbackReportsErrorElement.textContent = "";
+        feedbackReportsLoadingElement.classList.remove("hidden");
+        feedbackReportsPreviousButton.disabled = true;
+        feedbackReportsNextButton.disabled = true;
+        try {
+            const payload = await adminFetch(`${ApiPaths.feedbackReports}?${query.toString()}`);
+            feedbackReportsState.items = Array.isArray(payload?.items) ? payload.items : [];
+            feedbackReportsState.totalCount = Number(payload?.totalCount) || 0;
+            feedbackReportsState.page = Number(payload?.page) || feedbackReportsState.page;
+            renderFeedbackReportsList();
+        } catch (error) {
+            feedbackReportsState.items = [];
+            feedbackReportsState.totalCount = 0;
+            if (error instanceof Error && error.message === NotAvailableForRoleMessage) { clearFeedbackReportDetails(); }
+            feedbackReportsListElement.textContent = "";
+            feedbackReportsSummaryElement.textContent = "No reports loaded.";
+            feedbackReportsErrorElement.textContent = error instanceof Error && error.message === NotAvailableForRoleMessage ? NotAvailableForRoleMessage : "Unable to load feedback reports. Please try again.";
+        } finally {
+            feedbackReportsLoadingElement.classList.add("hidden");
+        }
+    }
+
+    function appendFeedbackReportDetail(container, label, value, fullWidth = false) {
+        const section = document.createElement("section");
+        section.className = `${fullWidth ? "feedback-report-full-width " : ""}${label === "User ID" ? "feedback-report-secondary" : ""}`.trim();
+        const heading = document.createElement("h3");
+        heading.textContent = label;
+        const content = document.createElement("p");
+        content.textContent = value;
+        section.append(heading, content);
+        container.appendChild(section);
+    }
+
+    function appendFeedbackReportBody(container, label, value) {
+        const section = document.createElement("section");
+        section.className = "feedback-report-full-width";
+        const heading = document.createElement("h3");
+        heading.textContent = label;
+        const content = document.createElement("pre");
+        content.textContent = value;
+        section.append(heading, content);
+        container.appendChild(section);
+    }
+
+    function renderFeedbackReportReplyHistory(report) {
+        const canRead = hasAdminPermission(AdminPermissionIds.feedbackReportsRead);
+        feedbackReportReplyHistoryElement.classList.toggle("hidden", !canRead);
+        feedbackReportReplyHistoryContentElement.textContent = "";
+        if (!canRead) { return; }
+        const replies = Array.isArray(report?.replies) ? report.replies : [];
+        if (replies.length === 0) {
+            appendFeedbackReportText(feedbackReportReplyHistoryContentElement, "No replies have been sent yet", "empty-state");
+            return;
+        }
+        const list = document.createElement("div");
+        list.className = "feedback-report-reply-history-list";
+        replies.forEach((reply) => {
+            const item = document.createElement("article");
+            item.className = "feedback-report-reply-history-item";
+            const heading = document.createElement("h4");
+            heading.textContent = `Delivery status: ${feedbackReportReplyDeliveryStatusLabel(String(reply?.deliveryStatus || ""))}`;
+            const created = document.createElement("p");
+            created.className = "feedback-report-reply-history-meta";
+            created.textContent = `Created: ${formatFeedbackReportDate(reply?.createdAtUtc)}`;
+            const recipient = document.createElement("p");
+            recipient.className = "feedback-report-reply-history-meta";
+            recipient.textContent = `Recipient: ${String(reply?.recipientEmail || "-")}`;
+            const text = document.createElement("p");
+            text.className = "feedback-report-reply-history-text";
+            text.textContent = String(reply?.replyText || "");
+            item.append(heading, created, recipient);
+            if (reply?.sentAtUtc) {
+                const sent = document.createElement("p");
+                sent.className = "feedback-report-reply-history-meta";
+                sent.textContent = `Sent: ${formatFeedbackReportDate(reply.sentAtUtc)}`;
+                item.appendChild(sent);
+            }
+            if (reply?.failureCode) {
+                const failure = document.createElement("p");
+                failure.className = "feedback-report-reply-history-failure";
+                failure.textContent = feedbackReportReplyFailureLabel(String(reply.failureCode));
+                item.appendChild(failure);
+            }
+            item.appendChild(text);
+            list.appendChild(item);
+        });
+        feedbackReportReplyHistoryContentElement.appendChild(list);
+    }
+
+    function renderFeedbackReportDetails(report) {
+        feedbackReportsState.selectedReport = report;
+        feedbackReportDetailsElement.textContent = "";
+        feedbackReportDetailsElement.className = "feedback-report-details";
+        appendFeedbackReportDetail(feedbackReportDetailsElement, "Type", feedbackReportCategoryLabel(report?.category));
+        appendFeedbackReportDetail(feedbackReportDetailsElement, "Status", feedbackReportStatusLabel(report?.status));
+        appendFeedbackReportBody(feedbackReportDetailsElement, "Report message", String(report?.message || "-"));
+        if (String(report?.reportedAiText || "").trim()) { appendFeedbackReportBody(feedbackReportDetailsElement, "Reported AI text", String(report.reportedAiText)); }
+        appendFeedbackReportDetail(feedbackReportDetailsElement, "Created", formatFeedbackReportDate(report?.createdAtUtc));
+        if (report?.reviewedAtUtc) { appendFeedbackReportDetail(feedbackReportDetailsElement, "Reviewed", formatFeedbackReportDate(report.reviewedAtUtc)); }
+        appendFeedbackReportDetail(feedbackReportDetailsElement, "Platform", String(report?.clientPlatform || "-"));
+        appendFeedbackReportDetail(feedbackReportDetailsElement, "Client version", String(report?.clientVersion || "-"));
+        appendFeedbackReportDetail(feedbackReportDetailsElement, "User email", String(report?.user?.email || "-"));
+        if (String(report?.user?.displayName || "").trim()) { appendFeedbackReportDetail(feedbackReportDetailsElement, "User display name", String(report.user.displayName)); }
+        if (String(report?.user?.userId || "").trim()) { appendFeedbackReportDetail(feedbackReportDetailsElement, "User ID", String(report.user.userId)); }
+        renderFeedbackReportActions(report);
+        renderFeedbackReportReplyHistory(report);
+    }
+
+    function updateFeedbackReportReplyLength() {
+        feedbackReportReplyLengthElement.textContent = `${feedbackReportReplyTextInput.value.length} of 4000 characters`;
+    }
+
+    function renderFeedbackReportActions(report) {
+        const canManageStatus = hasAdminPermission(AdminPermissionIds.feedbackReportsStatusManage);
+        const canReply = hasAdminPermission(AdminPermissionIds.feedbackReportsReply);
+        const status = String(report?.status || "");
+        feedbackReportStatusActionsElement.classList.toggle("hidden", !canManageStatus || feedbackReportsState.statusPermissionDenied);
+        feedbackReportReplyActionsElement.classList.toggle("hidden", !canReply || feedbackReportsState.replyPermissionDenied);
+        if (canManageStatus) {
+            feedbackReportCurrentStatusElement.textContent = `Current status: ${feedbackReportStatusLabel(status)}`;
+            feedbackReportStatusButtonsElement.textContent = "";
+            const actions = status === "new" ? [["reviewed", "Mark reviewed"], ["resolved", "Resolve"]] : (status === "reviewed" ? [["resolved", "Resolve"]] : (status === "resolved" ? [["reviewed", "Reopen as reviewed"]] : []));
+            actions.forEach(([targetStatus, label]) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.textContent = label;
+                button.disabled = feedbackReportsState.statusRequestPending;
+                button.addEventListener("click", async () => { await changeFeedbackReportStatus(targetStatus); });
+                feedbackReportStatusButtonsElement.appendChild(button);
+            });
+        }
+        if (canReply) {
+            const recipientEmail = String(report?.user?.email || "").trim();
+            const unavailable = !recipientEmail || feedbackReportsState.replyUnavailable;
+            feedbackReportReplyRecipientElement.textContent = recipientEmail ? `Recipient: ${recipientEmail}` : "No recipient email is available for this report.";
+            feedbackReportReplyTextInput.disabled = unavailable || feedbackReportsState.replyRequestPending;
+            feedbackReportSendReplyButton.disabled = unavailable || feedbackReportsState.replyRequestPending;
+            updateFeedbackReportReplyLength();
+        }
+    }
+
+    function applyFeedbackReportMutation(response, isReply = false) {
+        const report = feedbackReportsState.selectedReport;
+        if (!report) { return; }
+        const nextStatus = String(isReply ? response?.reportStatus : response?.status || "");
+        if (FeedbackReportStatuses.includes(nextStatus)) { report.status = nextStatus; }
+        if (Object.prototype.hasOwnProperty.call(response || {}, "reviewedAtUtc")) { report.reviewedAtUtc = response.reviewedAtUtc; }
+        const selectedId = String(feedbackReportsState.selectedReportId || "");
+        feedbackReportsState.items = feedbackReportsState.items.map((item) => String(item?.reportId || "") === selectedId ? Object.assign({}, item, { status: report.status }) : item);
+        renderFeedbackReportsList();
+        renderFeedbackReportDetails(report);
+    }
+
+    async function refreshFeedbackReportsAfterMutation() {
+        const filter = feedbackReportsStatusFilter.value;
+        const selectedStatus = String(feedbackReportsState.selectedReport?.status || "");
+        if (filter && filter !== selectedStatus) { feedbackReportsState.page = 1; await loadFeedbackReports(); }
+    }
+
+    async function changeFeedbackReportStatus(targetStatus) {
+        const reportId = String(feedbackReportsState.selectedReportId || "");
+        if (!reportId || feedbackReportsState.statusRequestPending || !hasAdminPermission(AdminPermissionIds.feedbackReportsStatusManage) || !["reviewed", "resolved"].includes(targetStatus)) { return; }
+        feedbackReportsState.statusRequestPending = true;
+        feedbackReportStatusErrorElement.textContent = "";
+        feedbackReportStatusSuccessElement.textContent = "";
+        feedbackReportStatusProgressElement.textContent = "Updating status...";
+        feedbackReportStatusProgressElement.classList.remove("hidden");
+        renderFeedbackReportActions(feedbackReportsState.selectedReport);
+        try {
+            const response = await fetch(ApiPaths.feedbackReportStatusTemplate.replace("{reportId}", encodeURIComponent(reportId)), { method: "PATCH", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: targetStatus }) });
+            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+            if (response.status === HttpStatus.forbidden) { feedbackReportsState.statusPermissionDenied = true; feedbackReportDetailsErrorElement.textContent = "You no longer have permission to manage report status."; return; }
+            if (response.status === HttpStatus.notFound) { feedbackReportStatusErrorElement.textContent = "This report is no longer available."; return; }
+            if (response.status === HttpStatus.badRequest) { feedbackReportStatusErrorElement.textContent = "The requested status change is not valid."; return; }
+            if (!response.ok) { feedbackReportStatusErrorElement.textContent = "Unable to update report status. Please try again."; return; }
+            applyFeedbackReportMutation(await response.json());
+            feedbackReportStatusSuccessElement.textContent = "Report status updated.";
+            await refreshFeedbackReportsAfterMutation();
+        } finally {
+            feedbackReportsState.statusRequestPending = false;
+            feedbackReportStatusProgressElement.classList.add("hidden");
+            if (feedbackReportsState.selectedReport) { renderFeedbackReportActions(feedbackReportsState.selectedReport); }
+        }
+    }
+
+    async function sendFeedbackReportReply() {
+        const reportId = String(feedbackReportsState.selectedReportId || "");
+        const replyText = feedbackReportReplyTextInput.value.trim();
+        if (!reportId || feedbackReportsState.replyRequestPending || !hasAdminPermission(AdminPermissionIds.feedbackReportsReply)) { return; }
+        if (!replyText) { feedbackReportReplyErrorElement.textContent = "Reply text is required."; return; }
+        if (replyText.length > 4000) { feedbackReportReplyErrorElement.textContent = "Reply text must be 4000 characters or fewer."; return; }
+        feedbackReportsState.replyRequestPending = true;
+        feedbackReportReplyErrorElement.textContent = "";
+        feedbackReportReplySuccessElement.textContent = "";
+        feedbackReportReplyProgressElement.textContent = "Sending reply...";
+        feedbackReportReplyProgressElement.classList.remove("hidden");
+        renderFeedbackReportActions(feedbackReportsState.selectedReport);
+        try {
+            const response = await fetch(ApiPaths.feedbackReportRepliesTemplate.replace("{reportId}", encodeURIComponent(reportId)), { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ replyText }) });
+            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+            if (response.status === HttpStatus.forbidden) { feedbackReportsState.replyPermissionDenied = true; feedbackReportDetailsErrorElement.textContent = "You no longer have permission to send replies."; return; }
+            if (response.status === HttpStatus.notFound) { feedbackReportReplyErrorElement.textContent = "This report is no longer available."; return; }
+            if (response.status === HttpStatus.badRequest) { feedbackReportReplyErrorElement.textContent = "The reply is not valid. Please check the text and try again."; return; }
+            const payload = await response.json().catch(() => null);
+            if (response.status === HttpStatus.conflict && payload?.error === "recipient_email_unavailable") { feedbackReportsState.replyUnavailable = true; feedbackReportReplyErrorElement.textContent = "No recipient email is available for this report."; return; }
+            if (response.status === HttpStatus.serviceUnavailable) { if (payload?.reportStatus) { applyFeedbackReportMutation(payload, true); } await loadFeedbackReportDetails(reportId, true); await refreshFeedbackReportsAfterMutation(); feedbackReportReplyErrorElement.textContent = "Email delivery failed. Your reply text was kept."; return; }
+            if (!response.ok) { feedbackReportReplyErrorElement.textContent = "Unable to send the reply. Please try again."; return; }
+            applyFeedbackReportMutation(payload, true);
+            feedbackReportReplyTextInput.value = "";
+            updateFeedbackReportReplyLength();
+            feedbackReportReplySuccessElement.textContent = "Reply sent.";
+            await loadFeedbackReportDetails(reportId);
+            await refreshFeedbackReportsAfterMutation();
+        } finally {
+            feedbackReportsState.replyRequestPending = false;
+            feedbackReportReplyProgressElement.classList.add("hidden");
+            if (feedbackReportsState.selectedReport) { renderFeedbackReportActions(feedbackReportsState.selectedReport); }
+        }
+    }
+
+    async function loadFeedbackReportDetails(reportId, preserveReplyDraft = false) {
+        if (!hasAdminPermission(AdminPermissionIds.feedbackReportsRead)) { clearFeedbackReportDetails(); return; }
+        feedbackReportsState.selectedReportId = reportId;
+        feedbackReportsState.selectedReport = null;
+        feedbackReportsState.replyUnavailable = false;
+        feedbackReportsState.statusPermissionDenied = false;
+        feedbackReportsState.replyPermissionDenied = false;
+        if (!preserveReplyDraft) { feedbackReportReplyTextInput.value = ""; }
+        feedbackReportDetailsCard.classList.remove("hidden");
+        feedbackReportDetailsElement.textContent = "";
+        feedbackReportReplyHistoryElement.classList.add("hidden");
+        feedbackReportReplyHistoryContentElement.textContent = "";
+        feedbackReportDetailsErrorElement.textContent = "";
+        feedbackReportDetailsLoadingElement.classList.remove("hidden");
+        renderFeedbackReportsList();
+        try {
+            const path = ApiPaths.feedbackReportTemplate.replace("{reportId}", encodeURIComponent(reportId));
+            const report = await adminFetch(path);
+            if (feedbackReportsState.selectedReportId === reportId) { renderFeedbackReportDetails(report); }
+        } catch (error) {
+            if (feedbackReportsState.selectedReportId !== reportId) { return; }
+            if (error instanceof Error && error.message === NotAvailableForRoleMessage) {
+                feedbackReportsState.selectedReportId = null;
+                feedbackReportDetailsElement.textContent = "";
+                feedbackReportDetailsLoadingElement.classList.add("hidden");
+                renderFeedbackReportsList();
+            }
+            feedbackReportDetailsErrorElement.textContent = error instanceof Error && error.status === HttpStatus.notFound ? "This report is no longer available." : (error instanceof Error && error.message === NotAvailableForRoleMessage ? NotAvailableForRoleMessage : "Unable to load this report. Please try again.");
+        } finally {
+            if (feedbackReportsState.selectedReportId === reportId) { feedbackReportDetailsLoadingElement.classList.add("hidden"); }
+        }
+    }
+
     async function adminFetch(path, options = {}) {
         const headers = getAdminHeaders(options.headers || {});
         if (options.body && !headers["Content-Type"]) { headers["Content-Type"] = "application/json"; }
@@ -2701,6 +3127,7 @@
             button.disabled = !canUseTab;
             button.setAttribute("aria-hidden", canUseTab ? "false" : "true");
         });
+        if (!canAccessTab(Tabs.feedbackReports)) { clearFeedbackReportsState(); }
         if (!canAccessTab(getCurrentActiveTab())) { activateTab(Tabs.overview); }
     }
 
@@ -3036,6 +3463,7 @@
         if (selectedTabId === Tabs.website && adminAccessSnapshot.isBootstrapAdmin && !websiteHasLoadedOnce) { await loadWebsiteContent(); }
         if (selectedTabId === Tabs.roleManagement) { await loadRoleManagementData(); }
         if (selectedTabId === Tabs.overview) { await loadProductStatistics(); }
+        if (selectedTabId === Tabs.feedbackReports) { await loadFeedbackReports(); }
     }
 
     async function restoreAdminSessionFromCookie() {
@@ -3075,6 +3503,12 @@
     freeLessonResetForm.addEventListener("submit", async (event) => { event.preventDefault(); await resetFreeLessonAllowanceForSelectedUser(); });
     loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
     loadActivityButton.addEventListener("click", async () => { await loadAdminActivity(); });
+    feedbackReportsStatusFilter.addEventListener("change", async () => { feedbackReportsState.page = 1; clearFeedbackReportDetails(); await loadFeedbackReports(); });
+    feedbackReportsCategoryFilter.addEventListener("change", async () => { feedbackReportsState.page = 1; clearFeedbackReportDetails(); await loadFeedbackReports(); });
+    feedbackReportsPreviousButton.addEventListener("click", async () => { if (feedbackReportsState.page > 1) { feedbackReportsState.page -= 1; clearFeedbackReportDetails(); await loadFeedbackReports(); } });
+    feedbackReportsNextButton.addEventListener("click", async () => { feedbackReportsState.page += 1; clearFeedbackReportDetails(); await loadFeedbackReports(); });
+    feedbackReportReplyTextInput.addEventListener("input", updateFeedbackReportReplyLength);
+    feedbackReportSendReplyButton.addEventListener("click", async () => { await sendFeedbackReportReply(); });
     refreshStatisticsButton.addEventListener("click", async () => { await loadProductStatistics(); });
     roleManagementRefreshButton.addEventListener("click", async () => { await loadRoleManagementData(); });
     websiteSaveDraftButton.addEventListener("click", async () => { await saveWebsiteDraft(); });

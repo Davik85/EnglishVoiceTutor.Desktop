@@ -8,6 +8,9 @@ public static class AdminAuditConstants
         public const string ManualPremiumRevoke = "manual_premium_revoke";
         public const string FreeLessonAllowanceReset = "free_lesson_allowance_reset";
         public const string AdminBillingCancelRenewalCompleted = "admin_billing_cancel_renewal_completed";
+        public const string FeedbackReportStatusChanged = "feedback_report_status_changed";
+        public const string FeedbackReportReplySent = "feedback_report_reply_sent";
+        public const string FeedbackReportReplyFailed = "feedback_report_reply_failed";
     }
 
     public static class ValidationErrors

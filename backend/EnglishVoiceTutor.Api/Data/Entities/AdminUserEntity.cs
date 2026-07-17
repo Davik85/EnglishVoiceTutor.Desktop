@@ -19,4 +19,5 @@ public sealed class AdminUserEntity
     public ICollection<AdminUserRoleEntity> RoleAssignmentsRevoked { get; set; } = [];
     public ICollection<AdminRoleAssignmentEventEntity> ActorEvents { get; set; } = [];
     public ICollection<AdminRoleAssignmentEventEntity> TargetEvents { get; set; } = [];
+    public ICollection<UserFeedbackReportReplyEntity> FeedbackReportReplies { get; set; } = [];
 }

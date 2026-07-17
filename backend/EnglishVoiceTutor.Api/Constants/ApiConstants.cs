@@ -118,6 +118,10 @@ public static class ApiConstants
     public const string AdminUserPremiumGrantRevokeRoute = "/api/admin/users/{userId:guid}/premium-grants/{entitlementId:guid}/revoke";
     public const string AdminUserAuditActionsRoute = "/api/admin/users/{userId:guid}/audit-actions";
     public const string AdminActivityRoute = "/api/admin/activity";
+    public const string AdminFeedbackReportsRoute = "/api/admin/feedback-reports";
+    public const string AdminFeedbackReportByIdRoute = "/api/admin/feedback-reports/{reportId:guid}";
+    public const string AdminFeedbackReportStatusRoute = "/api/admin/feedback-reports/{reportId:guid}/status";
+    public const string AdminFeedbackReportRepliesRoute = "/api/admin/feedback-reports/{reportId:guid}/replies";
     public const string AdminUserFreeLessonAllowanceResetRoute = "/api/admin/users/{userId:guid}/free-lesson-allowance/reset";
     public const string AdminUserBillingCancelRenewalRoute = "/api/admin/users/{userId:guid}/billing/cancel-renewal";
     public const string AdminDevCmsStaticContentImportRoute = "/api/admin/dev/cms/static-content/import";
