@@ -1,12 +1,12 @@
 # Backend server deployment
 
-Review date: 2026-07-13.
+Review date: 2026-07-17.
 
 ## Current production backend
 
 Production backend is deployed and healthy.
 
-- Current release: `0.1.35-backend.116`
+- Current release: `0.1.35-backend.117`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -21,7 +21,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is release `0.1.35-backend.116` with previous release `0.1.35-backend.115`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live.
+Expected baseline for the current deployment is release `0.1.35-backend.117` with previous release `0.1.35-backend.116`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live.
 
 Previous backend rollback reference must be verified from `/opt/languagevoicetutor/backend/previous`. `0.1.35-backend.49` remains a documented older rollback reference, not a substitute for checking the live `previous` symlink.
 
@@ -30,7 +30,7 @@ Previous backend rollback reference must be verified from `/opt/languagevoicetut
 The production server does not need a git checkout, a `dotnet` SDK, or a `dotnet` runtime. Backend packaging uses the repository PowerShell helper and creates the linux-x64 backend archive under `artifacts/packages/backend/`:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.116
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.117
 ```
 
 The package command does not upload, restart, run EF migrations, publish website files, upload Windows installers, or enable Paddle live.
@@ -40,7 +40,7 @@ The package command does not upload, restart, run EF migrations, publish website
 Use `-PackageFirst -DryRun` to print the upload, generated deploy-helper, symlink, and restart/status commands without changing the server; the script does not run the sudo restart or sudo status commands in dry-run mode, and restart/status commands are printed but not executed:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.116 -PackageFirst -DryRun
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.117 -PackageFirst -DryRun
 ```
 
 The upload helper creates a temporary `deploy-backend-release.sh` helper and uses that helper for release extraction and symlink switching. It uses `ssh -tt` for sudo restart/status when restart is enabled. Do not document old fragile inline bash deployment paths as the current backend deployment flow.
@@ -50,7 +50,7 @@ The upload helper creates a temporary `deploy-backend-release.sh` helper and use
 After the pre-check and dry run are reviewed, run the backend upload helper without `-DryRun`:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.116 -PackageFirst
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.117 -PackageFirst
 ```
 
 By default, the helper uploads to `/opt/languagevoicetutor/backend`, switches `current`, updates `previous` when an older current release exists, restarts `languagevoicetutor-backend.service`, and prints service status. Use script parameters only for an intentionally reviewed non-default host, SSH port, user, or remote path.
@@ -73,6 +73,20 @@ ssh -t lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 
 ```
 
 Do not paste production environment values, database connection strings, API keys, or provider secrets into documentation, tickets, chat, commits, or pull requests. Do not echo `ConnectionStrings__DefaultConnection`, `PGPASSWORD`, or database URLs.
+
+## 2026-07-17 backend `0.1.35-backend.117` feedback reporting verification
+
+Backend `0.1.35-backend.117` is deployed and verified in production for the authenticated user-feedback reporting foundation. The previous backend release was `0.1.35-backend.116`, and the live `current` symlink was switched to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.117`. `languagevoicetutor-backend.service` restarted successfully; public `https://api.languagevoicetutor.com/health` returned HTTP 200; public `https://api.languagevoicetutor.com/api/health/database` returned HTTP 200; and the backend upload script did not run a migration.
+
+The completed endpoint is `POST /api/me/feedback-reports`. It is authenticated, derives the stored `UserId` only from JWT claims, and does not allow Mobile or another client to submit a different `UserId`. Supported categories are `suggestion`, `app_issue`, and `ai_response`. Validation requires a trimmed `Message` with maximum length 4000, allows optional `ReportedAiText` with maximum length 4000, limits `ClientPlatform` to 32 characters, and limits `ClientVersion` to 64 characters. Stored `Status` is always `new`, and `CreatedAtUtc` is generated by the backend. Persistence failures return a safe HTTP 503 response without database exceptions, connection strings, stack traces, or internal paths. Successful creation returns HTTP 201 with `{ "reportId": "...", "status": "received" }`.
+
+Database migration `20260717120148_AddUserFeedbackReports` added table `user_feedback_reports` with fields `Id`, `UserId`, `Category`, `Message`, `ReportedAiText`, `Status`, `ClientPlatform`, `ClientVersion`, `CreatedAtUtc`, and `ReviewedAtUtc`. The table uses a foreign key to `users` and restricts deletion of a referenced user where defined by the migration. Production advanced from previous migration `20260701000000_AddAdminAuthAuditEvents` to applied migration `20260717120148_AddUserFeedbackReports`. Migration SQL was generated explicitly from the previous migration to the new migration; the reviewed SQL contained only `CREATE TABLE user_feedback_reports`, expected indexes, the foreign key, and the migration-history insert; it did not contain `DROP TABLE`, `DROP COLUMN`, `DELETE`, or `TRUNCATE`. The SQL was applied manually with `ON_ERROR_STOP` enabled, and migration history was verified after application.
+
+Resolved production issue: because the migration SQL was applied using the `postgres` role, the newly created `user_feedback_reports` table was initially owned by `postgres`. The backend application role `lvt_app` could connect to the database but could not insert rows, so `POST /api/me/feedback-reports` returned HTTP 503 and backend logs showed PostgreSQL error `42501` (`permission denied for table user_feedback_reports`). The resolution changed the table owner to `lvt_app`, granted `SELECT`, `INSERT`, `UPDATE`, and `DELETE` to `lvt_app`, confirmed the owner is now `lvt_app`, and confirmed `lvt_analytics_reader` has `SELECT` access. A backend restart was not required after the ownership change. After the permission correction, suggestion submission, app problem submission, and AI response report submission succeeded; three production smoke-test records were stored with `Status` `new`, `ClientPlatform` `android`, and `ClientVersion` `0.1.0+1`.
+
+Operational lesson: when reviewed migration SQL is applied under the `postgres` role and creates new application tables, the deployment procedure must verify the owner and required grants of the new objects before considering the migration complete. For `user_feedback_reports`, the expected table owner is `lvt_app`. Do not introduce a blanket ownership change for unrelated existing tables.
+
+Product boundaries: no CMS feedback-management screen exists yet, no email delivery was added, no attachments or screenshot uploads were added, no automatic moderation was added, no OpenAI forwarding or API call was added, and no subscription, billing, lesson, TTS, transcription, or tutor-prompt behavior was changed. The existing backend database is used; no separate feedback database was created. A future CMS screen for reviewing `new`, `reviewed`, and `resolved` reports remains separate work.
 
 ## 2026-07-13 backend `0.1.35-backend.116` verification
 
@@ -150,6 +164,25 @@ ssh -t lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 
 
 If a reviewed database change is required, generate and review SQL separately. The current refresh-token migration reference is `20260611000000_AddUserRefreshTokens`; apply reviewed SQL with `psql` only through the approved database procedure, never from the backend upload helper.
 
+When reviewed SQL creates a new application table under the `postgres` role, verify object ownership and grants before closing the migration. For the feedback table, the expected owner is `lvt_app` and the check is intentionally scoped to `user_feedback_reports` rather than changing unrelated tables:
+
+```sql
+SELECT
+    schemaname,
+    tablename,
+    tableowner
+FROM pg_tables
+WHERE tablename = 'user_feedback_reports';
+
+SELECT
+    grantee,
+    privilege_type
+FROM information_schema.role_table_grants
+WHERE table_schema = 'public'
+  AND table_name = 'user_feedback_reports'
+ORDER BY grantee, privilege_type;
+```
+
 ## Scope boundaries
 
 Backend deploy is backend-only. It does not:
@@ -170,7 +203,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.116`, previous release `0.1.35-backend.115`.
+- Backend: production healthy, current release `0.1.35-backend.117`, previous release `0.1.35-backend.116`.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
