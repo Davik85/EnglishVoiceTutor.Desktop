@@ -59,6 +59,12 @@ The 2026-06-22 rehearsal completed this pattern successfully, and the later 2026
 
 Use placeholder accounts such as `<admin-email>` in notes. Do not paste real credentials, tokens, cookies, connection strings, certificates, or provider secrets into documents, chat, tickets, or logs.
 
+## Admin Feedback & reports RBAC production state
+
+As of backend `0.1.35-backend.119`, Admin Feedback & reports is part of the persistent-role AdminPermission surface. It uses `feedback_reports.read`, `feedback_reports.status.manage`, and `feedback_reports.reply`. Production approval grants those permissions only to `super_admin` and `support`; it does not grant them to `content_editor`, `billing_support`, or `read_only_auditor`.
+
+Cutover and least-privilege validation must continue to treat Support as a scoped support role, not a general administrator. Feedback & reports access does not imply Website CMS, legal content, billing/Premium, AI model settings, role management, secrets, or unrelated system-administration access. The deployed endpoint/action surface is `GET /api/admin/feedback-reports`, `GET /api/admin/feedback-reports/{reportId}`, `PATCH /api/admin/feedback-reports/{reportId}/status`, and `POST /api/admin/feedback-reports/{reportId}/replies`.
+
 ## Cutover validation steps
 
 1. Confirm owner approval for a controlled validation window.

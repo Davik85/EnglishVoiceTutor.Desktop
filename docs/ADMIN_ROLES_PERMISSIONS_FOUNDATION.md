@@ -1,6 +1,6 @@
 # Admin Roles/Permissions Foundation
 
-Review date: 2026-07-01.
+Review date: 2026-07-17.
 
 ## Current status
 
@@ -16,9 +16,32 @@ Stable production role constants now exist for:
 
 Legacy alias constants remain mapped to the new stable target role ids for compatibility with older foundation terminology.
 
-Stable permission constants now exist for admin self/capabilities, users, audit, CMS, runtime status, subscriptions diagnostics, premium grant/revoke, free lesson allowance reset, billing diagnostics, and product statistics.
+Stable permission constants now exist for admin self/capabilities, users, audit, CMS, runtime status, subscriptions diagnostics, premium grant/revoke, free lesson allowance reset, billing diagnostics, product statistics, and Admin Feedback & reports.
 
 A static production role-to-permission catalog exists for Owner/Super Admin, Support, Content Editor, Billing Support, and Read-only Auditor, and a static Admin endpoint/action-to-permission catalog documents the permission that protects each current Admin action plus future-only seams. Production role assignment persistence, database tables, and Admin UI role management now exist; no EF migration was added or run for the .95 RBAC completion stage. Migrated AdminPermission endpoints enforce persistent role permissions with fallback disabled; BootstrapAdmin-only endpoints remain intentionally separate.
+
+## 2026-07-17 Admin Feedback & reports role boundary
+
+Backend `0.1.35-backend.119` deployed the complete Admin Feedback & reports workflow. The workflow uses these permissions:
+
+- `feedback_reports.read`
+- `feedback_reports.status.manage`
+- `feedback_reports.reply`
+
+The approved production roles for those permissions are:
+
+- `super_admin`
+- `support`
+
+The feature does not grant Feedback & reports permissions to:
+
+- `content_editor`
+- `billing_support`
+- `read_only_auditor`
+
+Support remains a least-privilege support role, not a general administrator. These Feedback & reports permissions do not grant Support unrelated access to Website CMS, legal content, billing or Premium management, AI model settings, role management, secrets, or unrelated system administration.
+
+The deployed Admin endpoints protected by this permission set are `GET /api/admin/feedback-reports`, `GET /api/admin/feedback-reports/{reportId}`, `PATCH /api/admin/feedback-reports/{reportId}/status`, and `POST /api/admin/feedback-reports/{reportId}/replies`. Reply and status operations do not add attachments, ticketing, exports, bulk operations, reply editing/deletion, automatic retry, automatic report resolution, or OpenAI processing.
 
 ## Exposed admin metadata
 
