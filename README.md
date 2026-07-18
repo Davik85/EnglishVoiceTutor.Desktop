@@ -2,6 +2,16 @@
 
 Language Voice Tutor Desktop is a WPF desktop product for guided English speaking practice. The current product lesson flow is stabilized for local Windows testing: learners choose a level, topic, subtopic, and scenario, then practice in Lesson Chat by typing or recording speech.
 
+## Built with Codex and GPT-5.6
+
+Language Voice Tutor Desktop was developed with a human-led, AI-assisted engineering workflow. Codex was used as an engineering agent to inspect the existing repository, implement scoped changes, refactor code, add and update automated tests, update documentation, and run repository verification commands. GPT-5.6 was used for technical planning, architecture review, debugging guidance, product and UX reasoning, task decomposition, review of Codex results, and preparation of precise implementation instructions.
+
+Human developers remained responsible for product decisions, approving scope, reviewing changes, running or reviewing verification, testing the Windows application, handling production deployment, and deciding what was committed and released. AI tools did not autonomously publish production releases, handle secrets, approve payments, or make final product decisions.
+
+The application runtime remains separate from the development workflow: all OpenAI API calls made by the product go through the backend, and API keys are not stored in the Windows client. The project workflow combines AI-assisted implementation with automated tests, builds, policy checks, manual smoke testing, and human review.
+
+For a detailed description of the AI-assisted development workflow, see [docs/CODEX_AND_GPT_5_6_DEVELOPMENT.md](docs/CODEX_AND_GPT_5_6_DEVELOPMENT.md).
+
 ## Windows client functionality
 
 For the current Windows desktop client feature source of truth, customer-facing functional overview, and future mobile planning reference, see [`docs/WINDOWS_CLIENT_FUNCTIONALITY_OVERVIEW.md`](docs/WINDOWS_CLIENT_FUNCTIONALITY_OVERVIEW.md).
