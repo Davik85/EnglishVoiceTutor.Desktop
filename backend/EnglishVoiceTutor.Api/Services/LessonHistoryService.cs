@@ -9,7 +9,7 @@ namespace EnglishVoiceTutor.Api.Services;
 
 public sealed class LessonHistoryService(AppDbContext dbContext, IRequestUserResolver requestUserResolver) : ILessonHistoryService
 {
-    public async Task<LessonHistoryListResponse> GetRecentDevLessonHistoryAsync(CancellationToken cancellationToken)
+    public async Task<LessonHistoryListResponse> GetRecentLessonHistoryAsync(CancellationToken cancellationToken)
     {
         var userId = requestUserResolver.ResolveCurrentUser().UserId;
 
@@ -41,7 +41,7 @@ public sealed class LessonHistoryService(AppDbContext dbContext, IRequestUserRes
         return new LessonHistoryListResponse(items);
     }
 
-    public async Task<LessonHistoryDetailResponse?> GetDevLessonHistoryDetailAsync(Guid sessionId, CancellationToken cancellationToken)
+    public async Task<LessonHistoryDetailResponse?> GetLessonHistoryDetailAsync(Guid sessionId, CancellationToken cancellationToken)
     {
         var userId = requestUserResolver.ResolveCurrentUser().UserId;
 

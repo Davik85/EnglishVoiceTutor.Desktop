@@ -396,8 +396,10 @@ if (rateLimitingEnabled)
 app.MapPut(ApiConstants.DevLessonSessionSummaryRoute, HandleUpsertDevLessonSummaryAsync);
 app.MapGet(ApiConstants.DevLessonSessionSummaryRoute, HandleGetDevLessonSummaryAsync);
 app.MapGet(ApiConstants.DevLessonSummariesRoute, HandleGetDevLessonSummariesAsync);
-app.MapGet(ApiConstants.DevLessonHistoryRoute, HandleGetDevLessonHistoryAsync);
-app.MapGet(ApiConstants.DevLessonHistoryBySessionIdRoute, HandleGetDevLessonHistoryDetailAsync);
+app.MapGet(ApiConstants.DevLessonHistoryRoute, HandleGetLessonHistoryAsync);
+app.MapGet(ApiConstants.DevLessonHistoryBySessionIdRoute, HandleGetLessonHistoryDetailAsync);
+app.MapGet(ApiConstants.MeLessonHistoryRoute, HandleGetLessonHistoryAsync).RequireAuthorization();
+app.MapGet(ApiConstants.MeLessonHistoryBySessionIdRoute, HandleGetLessonHistoryDetailAsync).RequireAuthorization();
 app.MapGet(ApiConstants.DevUsageEventsRoute, HandleGetDevUsageEventsAsync);
 app.MapGet(ApiConstants.DevDailyUsageCountersRoute, HandleGetDevDailyUsageCountersAsync);
 app.MapGet(ApiConstants.DevFreeLimitStatusRoute, HandleGetDevFreeLimitStatusAsync);
@@ -810,43 +812,43 @@ static async Task<IResult> HandleGetLessonSessionByIdAsync(
 
 
 
-static async Task<IResult> HandleGetDevLessonHistoryAsync(
+static async Task<IResult> HandleGetLessonHistoryAsync(
     ILessonHistoryService lessonHistoryService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
-    var logger = loggerFactory.CreateLogger("DevLessonHistoryEndpoint");
+    var logger = loggerFactory.CreateLogger("LessonHistoryEndpoint");
 
     try
     {
-        var history = await lessonHistoryService.GetRecentDevLessonHistoryAsync(cancellationToken);
+        var history = await lessonHistoryService.GetRecentLessonHistoryAsync(cancellationToken);
         return Results.Ok(history);
     }
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
-        logger.LogWarning(exception, "Dev lesson history list GET failed because storage is unavailable.");
+        logger.LogWarning(exception, "Lesson history list GET failed because storage is unavailable.");
         return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }
 
-static async Task<IResult> HandleGetDevLessonHistoryDetailAsync(
+static async Task<IResult> HandleGetLessonHistoryDetailAsync(
     Guid sessionId,
     ILessonHistoryService lessonHistoryService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
-    var logger = loggerFactory.CreateLogger("DevLessonHistoryEndpoint");
+    var logger = loggerFactory.CreateLogger("LessonHistoryEndpoint");
 
     try
     {
-        var detail = await lessonHistoryService.GetDevLessonHistoryDetailAsync(sessionId, cancellationToken);
+        var detail = await lessonHistoryService.GetLessonHistoryDetailAsync(sessionId, cancellationToken);
         return detail is null
             ? Results.NotFound(new { error = "Lesson session was not found." })
             : Results.Ok(detail);
     }
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
-        logger.LogWarning(exception, "Dev lesson history detail GET failed because storage is unavailable.");
+        logger.LogWarning(exception, "Lesson history detail GET failed because storage is unavailable.");
         return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }
