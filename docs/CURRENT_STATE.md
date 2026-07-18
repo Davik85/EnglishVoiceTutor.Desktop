@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-07-13.
+Review date: 2026-07-18.
 
 ## Source of truth for current versions
 
@@ -39,7 +39,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.116`.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.122`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows direct public release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -69,13 +69,13 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release after the Admin Feedback & reports workflow deployment: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.119`. Previous backend release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.118`. Repository commit `d4ddd33` was deployed. Deployment completed successfully through the standard `scripts/upload-backend-linux-release.ps1 -PackageFirst` flow after a completed dry run: the `current` symlink was switched to `.119`, the `previous` symlink retained `.118`, `languagevoicetutor-backend.service` restarted and remained active/running, public `/health` returned HTTP 200, public `/api/health/database` returned HTTP 200, the deployed Admin CMS loaded the Feedback & reports workflow, and no rollback was required. The backend deployment script did not run EF migrations. Website/public static-site, Windows installer/release, Mobile, CMS data, production configuration except the operator-managed SMTP enablement flag, billing/Paddle, and AI Models data/config deployments were separate and were not part of this backend release. Current-state docs must not use the obsolete phrase “current backend release is `0.1.35-backend.99`” except when explicitly identifying it as outdated wording. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
+Current backend release after the Website CMS inline Home-title typography and CSS precedence fix deployment: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.122`. Previous backend release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.121`. Relevant commits are `1e3a85c8` (`Add inline Home title style controls`) and `54b9102e` (`Fix Home title font size precedence`). Deployment completed successfully through the standard backend release flow: `languagevoicetutor-backend.service` is active and running, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200. No EF migrations were run. No separate static-site upload was required for this backend deployment; public page content/style changes are applied later only through Website CMS Publish. Website/public static-site upload, Windows installer/release, Mobile, CMS content data, billing/Paddle, AI Models data/config, and database migrations remain separate operations. Current-state docs must not use the obsolete phrase “current backend release is `0.1.35-backend.99`” except when explicitly identifying it as outdated wording. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
 
 Backend deployment uses:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.119 -PackageFirst -DryRun
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.119 -PackageFirst
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.122 -PackageFirst -DryRun
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.122 -PackageFirst
 ```
 
 The backend upload flow uses the uploaded `deploy-backend-release.sh` helper and `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current flow.
@@ -88,6 +88,16 @@ Phase 3 rate limiting / abuse protection is completed and production-verified wi
 
 Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling is active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
 
+
+## 2026-07-18 Website CMS inline Home-title typography production verification
+
+Backend `0.1.35-backend.122` is production-deployed and healthy for the completed Website CMS inline Home-title typography feature and the Home-title font-size CSS precedence fix. The previous backend release is `0.1.35-backend.121`; `languagevoicetutor-backend.service` is active and running; public `/health` returned HTTP 200; public `/api/health/database` returned HTTP 200; no EF migrations were run; and no separate static-site upload was required for this backend release. Public page changes from title edits are applied later through Website CMS Publish.
+
+Website CMS now edits Home page application-card title typography inline, directly below `windowsCardTitle` and `mobileCardTitle`. Windows and Mobile title styles are independent. Each title supports controlled font family, mobile size in pixels, desktop size in pixels, font weight, and line height through companion fields: `windowsCardTitleFontFamily`, `windowsCardTitleMobileSizePx`, `windowsCardTitleDesktopSizePx`, `windowsCardTitleFontWeight`, `windowsCardTitleLineHeight`, `mobileCardTitleFontFamily`, `mobileCardTitleMobileSizePx`, `mobileCardTitleDesktopSizePx`, `mobileCardTitleFontWeight`, and `mobileCardTitleLineHeight`. Safe defaults are heading-font inheritance, `28px` mobile size, `52px` desktop size, `800` weight, and `1.08` line height, so existing Website CMS JSON remains compatible and no database migration is required. Existing text, Design values, Marketing/SEO, legal pages, pricing, support, download content, and mobile-page content remain preserved.
+
+The backend renderer generates responsive title size as `font-size: clamp(<mobileSize>px, 4vw, <desktopSize>px);`. CMS users do not edit raw CSS, `clamp()`, `vw`, selectors, or style attributes. The supported workflow is Home page title text plus inline **Text style** controls -> **Save draft** -> **Preview** -> **Publish / Make active**. There is no separate Typography tab, Typography page, global typography editor, raw CSS editor, or second Website CMS configuration system. Preview and Publish use the same backend renderer.
+
+The first deployed implementation exposed a Preview-only symptom because existing public stylesheet selectors `.landing-page .app-panel h1` and `.landing-page .app-panel h2` had greater specificity than the generated class-only selectors, so font weight changed while font size stayed overridden. The final renderer-owned selectors are `.landing-page .app-panel h1.app-panel__title--windows` and `.landing-page .app-panel h2.app-panel__title--mobile`, which have sufficient normal CSS specificity. The fix did not introduce `!important`, inline styles, or JavaScript style assignment.
 
 ## 2026-07-17 Admin Feedback & reports production workflow
 

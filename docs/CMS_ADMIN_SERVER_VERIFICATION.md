@@ -1,6 +1,6 @@
 # CMS/Admin Server Verification Runbook
 
-Review date: 2026-07-17.
+Review date: 2026-07-18.
 
 Public release is still not ready. This runbook prepares the production/server CMS/Admin connection foundation for Language Voice Tutor at `https://api.languagevoicetutor.com`. It does not change billing, Paddle, subscriptions, entitlements, password reset/change behavior, lesson JSON, or desktop runtime startup behavior.
 
@@ -129,9 +129,13 @@ Database validation for the deployed workflow is separate from backend deploymen
 
 ### Website CMS Home-page title styles
 
-Website CMS edits the two application-card title styles inline in **Website CMS → Home page**, directly below the corresponding Windows and Mobile title fields. The settings are independent and use controlled font-family, mobile/desktop pixel size, weight, and line-height values; raw CSS is not supported. Existing Website CMS JSON receives safe defaults when these companion fields are absent, so no database migration is required.
+Website CMS edits the two application-card title styles inline in **Website CMS → Home page**, directly below the `windowsCardTitle` and `mobileCardTitle` fields. The Windows and Mobile title styles are independent. Each title supports controlled font family, mobile size in pixels, desktop size in pixels, font weight, and line height; raw CSS is not supported.
 
-Save changes with **Draft → Preview → Publish**. Preview uses the unsaved Home-page values without changing Active content; Publish uses the saved values to generate the public page. This feature requires one backend deployment to make the editor and renderer available. After that deployment, later title-text or title-style edits use the normal Draft → Preview → Publish workflow and do not require another backend release.
+Stored companion fields are `windowsCardTitleFontFamily`, `windowsCardTitleMobileSizePx`, `windowsCardTitleDesktopSizePx`, `windowsCardTitleFontWeight`, `windowsCardTitleLineHeight`, `mobileCardTitleFontFamily`, `mobileCardTitleMobileSizePx`, `mobileCardTitleDesktopSizePx`, `mobileCardTitleFontWeight`, and `mobileCardTitleLineHeight`. Missing fields receive safe defaults: inherited website heading font, `28px` mobile size, `52px` desktop size, `800` font weight, and `1.08` line height. Existing Website CMS JSON remains compatible, existing content sections are preserved, and no database migration is required.
+
+The backend renderer owns the responsive CSS and emits `font-size: clamp(<mobileSize>px, 4vw, <desktopSize>px);`. CMS users do not edit CSS, `clamp()`, `vw`, selectors, or style attributes. The supported workflow is to edit the Home page title text and its inline **Text style** controls, click **Save draft**, use **Preview**, then **Publish / Make active**. Preview and Publish use the same backend renderer. There is no separate Typography tab, Typography page, global typography editor, raw CSS editor, or second Website CMS configuration system.
+
+Operational CSS precedence note: the first deployed implementation used class-only generated selectors, but the existing public `.landing-page .app-panel h1` and `.landing-page .app-panel h2` selectors were more specific and kept overriding font size in Preview. The final renderer-owned selectors are `.landing-page .app-panel h1.app-panel__title--windows` and `.landing-page .app-panel h2.app-panel__title--mobile`, which have sufficient normal CSS specificity without `!important`, inline styles, or JavaScript style assignment.
 
 Use `/admin/` with the configured bootstrap admin account.
 
