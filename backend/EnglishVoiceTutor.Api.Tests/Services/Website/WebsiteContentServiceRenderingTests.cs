@@ -602,15 +602,15 @@ Need help? Email support@languagevoicetutor.com.
         content.Pages["home"]["mobileCardTitleMobileSizePx"] = "30";
         content.Pages["home"]["mobileCardTitleDesktopSizePx"] = "50";
         var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "home"), TestContext.Current.CancellationToken);
-        Assert.Contains(".app-panel__title--windows { font-family: Georgia, serif; font-size: clamp(24px, 4vw, 44px);", preview.Html);
-        Assert.Contains(".app-panel__title--mobile { font-family: Arial, sans-serif; font-size: clamp(30px, 4vw, 50px);", preview.Html);
+        Assert.Contains(".landing-page .app-panel h1.app-panel__title--windows { font-family: Georgia, serif; font-size: clamp(24px, 4vw, 44px);", preview.Html);
+        Assert.Contains(".landing-page .app-panel h2.app-panel__title--mobile { font-family: Arial, sans-serif; font-size: clamp(30px, 4vw, 50px);", preview.Html);
         Assert.DoesNotContain("@media (max-width: 760px) {\n        .landing-page .app-panel__title--windows", preview.Html);
         Assert.DoesNotContain("clamp(2.1rem, 5vw, 4.7rem)", preview.Html);
         await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
         await service.PublishAsync(TestContext.Current.CancellationToken);
         var published = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"), TestContext.Current.CancellationToken);
-        Assert.Contains(".app-panel__title--windows { font-family: Georgia, serif; font-size: clamp(24px, 4vw, 44px);", published);
-        Assert.Contains(".app-panel__title--mobile { font-family: Arial, sans-serif; font-size: clamp(30px, 4vw, 50px);", published);
+        Assert.Contains(".landing-page .app-panel h1.app-panel__title--windows { font-family: Georgia, serif; font-size: clamp(24px, 4vw, 44px);", published);
+        Assert.Contains(".landing-page .app-panel h2.app-panel__title--mobile { font-family: Arial, sans-serif; font-size: clamp(30px, 4vw, 50px);", published);
     }
 
     [Fact]

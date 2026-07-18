@@ -517,8 +517,8 @@ Need help? Email support@languagevoicetutor.com.
 
     private static void AppendHomeTitleStyles(StringBuilder html, Dictionary<string, string> home, string headingFontFamily)
     {
-        AppendHomeTitleStyle(html, home, "windowsCardTitle", ".landing-page .app-panel__title--windows", headingFontFamily);
-        AppendHomeTitleStyle(html, home, "mobileCardTitle", ".landing-page .app-panel__title--mobile", headingFontFamily);
+        AppendHomeTitleStyle(html, home, "windowsCardTitle", ".landing-page .app-panel h1.app-panel__title--windows", headingFontFamily);
+        AppendHomeTitleStyle(html, home, "mobileCardTitle", ".landing-page .app-panel h2.app-panel__title--mobile", headingFontFamily);
     }
 
     private static void AppendHomeTitleStyle(StringBuilder html, Dictionary<string, string> home, string titleKey, string selector, string headingFontFamily)
