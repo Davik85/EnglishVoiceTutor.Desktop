@@ -585,6 +585,64 @@ Need help? Email support@languagevoicetutor.com.
     }
 
     [Fact]
+    public async Task HomeTitleTypographyDefaultsLegacyContentAndRendersSeparatelyInPreviewAndPublish()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        foreach (var key in content.Pages["home"].Keys.Where(key => key.StartsWith("windowsCardTitle", StringComparison.Ordinal) || key.StartsWith("mobileCardTitle", StringComparison.Ordinal)).Where(key => key != "windowsCardTitle" && key != "mobileCardTitle").ToList()) content.Pages["home"].Remove(key);
+        await fixture.WriteDocumentAsync(new WebsiteContentDocument(content, content));
+        content = (await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken)).Draft;
+        Assert.Equal("28", content.Pages["home"]["windowsCardTitleMobileSizePx"]);
+        Assert.Equal("52", content.Pages["home"]["mobileCardTitleDesktopSizePx"]);
+        content.Pages["home"]["windowsCardTitleFontFamily"] = "Georgia";
+        content.Pages["home"]["windowsCardTitleMobileSizePx"] = "24";
+        content.Pages["home"]["windowsCardTitleDesktopSizePx"] = "44";
+        content.Pages["home"]["mobileCardTitleFontFamily"] = "Arial";
+        content.Pages["home"]["mobileCardTitleMobileSizePx"] = "30";
+        content.Pages["home"]["mobileCardTitleDesktopSizePx"] = "50";
+        var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "home"), TestContext.Current.CancellationToken);
+        Assert.Contains(".app-panel__title--windows { font-family: Georgia, serif; font-size: clamp(24px, 4vw, 44px);", preview.Html);
+        Assert.Contains(".app-panel__title--mobile { font-family: Arial, sans-serif; font-size: clamp(30px, 4vw, 50px);", preview.Html);
+        Assert.DoesNotContain("@media (max-width: 760px) {\n        .landing-page .app-panel__title--windows", preview.Html);
+        Assert.DoesNotContain("clamp(2.1rem, 5vw, 4.7rem)", preview.Html);
+        await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
+        await service.PublishAsync(TestContext.Current.CancellationToken);
+        var published = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"), TestContext.Current.CancellationToken);
+        Assert.Contains(".app-panel__title--windows { font-family: Georgia, serif; font-size: clamp(24px, 4vw, 44px);", published);
+        Assert.Contains(".app-panel__title--mobile { font-family: Arial, sans-serif; font-size: clamp(30px, 4vw, 50px);", published);
+    }
+
+    [Fact]
+    public async Task HomeTitleTypographyRejectsUnsafeAndInvalidValuesWithoutPersistingThem()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        content.Pages["home"]["windowsCardTitleFontFamily"] = "Arial; color:red";
+        content.Pages["home"]["windowsCardTitleMobileSizePx"] = "73";
+        content.Pages["home"]["windowsCardTitleDesktopSizePx"] = "20";
+        content.Pages["home"]["windowsCardTitleFontWeight"] = "950";
+        content.Pages["home"]["windowsCardTitleLineHeight"] = "NaN";
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.SaveDraftAsync(content, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.PreviewAsync(new WebsitePreviewRequest(content, "home"), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task TextOnlyHomeUpdatePreservesSavedTitleTypography()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        content.Pages["home"]["windowsCardTitleDesktopSizePx"] = "46";
+        await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
+        var textOnly = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        textOnly.Pages["home"]["windowsCardTitle"] = "Updated Windows title";
+        await service.SaveDraftAsync(textOnly, TestContext.Current.CancellationToken);
+        Assert.Equal("46", (await service.GetAsync(TestContext.Current.CancellationToken)).Draft.Pages["home"]["windowsCardTitleDesktopSizePx"]);
+    }
+
+    [Fact]
     public async Task MarkdownLinksSafeUrlsEmailsAndBareDomainsAndRejectsUnsafeSchemes()
     {
         using var fixture = new WebsiteContentServiceFixture();

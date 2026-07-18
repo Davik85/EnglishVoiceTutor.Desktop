@@ -127,6 +127,12 @@ Database validation for the deployed workflow is separate from backend deploymen
 
 ## CMS workflow verification
 
+### Website CMS Home-page title styles
+
+Website CMS edits the two application-card title styles inline in **Website CMS → Home page**, directly below the corresponding Windows and Mobile title fields. The settings are independent and use controlled font-family, mobile/desktop pixel size, weight, and line-height values; raw CSS is not supported. Existing Website CMS JSON receives safe defaults when these companion fields are absent, so no database migration is required.
+
+Save changes with **Draft → Preview → Publish**. Preview uses the unsaved Home-page values without changing Active content; Publish uses the saved values to generate the public page. This feature requires one backend deployment to make the editor and renderer available. After that deployment, later title-text or title-style edits use the normal Draft → Preview → Publish workflow and do not require another backend release.
+
 Use `/admin/` with the configured bootstrap admin account.
 
 1. Open `https://api.languagevoicetutor.com/admin/`.

@@ -94,4 +94,15 @@ public sealed class AdminUiRbacStaticTests
     {
         Assert.Contains("linked persistent Admin User role", AdminIndex);
     }
+
+    [Fact]
+    public void HomeTitleTypographyControlsAreInlineAndNoTypographySectionExists()
+    {
+        Assert.Contains("createHomeTitleStyleEditor(key, values)", AdminJs);
+        Assert.Contains("Text style", AdminJs);
+        Assert.Contains("windowsCardTitle", AdminJs);
+        Assert.Contains("mobileCardTitle", AdminJs);
+        Assert.DoesNotContain("[\"typography\"", AdminJs, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Typography tab", AdminJs, StringComparison.OrdinalIgnoreCase);
+    }
 }

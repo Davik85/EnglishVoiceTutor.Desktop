@@ -394,6 +394,11 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
 .website-field { margin-bottom: 0; }
 .website-field-long { grid-column: 1 / -1; }
 .website-field-compact { max-width: 520px; }
+.home-title-style { margin: -4px 0 6px; padding: 14px; border: 1px solid #cbd5e1; border-radius: 10px; background: #f8fafc; }
+.home-title-style h4 { margin: 0 0 4px; }
+.home-title-style .muted { margin: 0 0 12px; }
+.home-title-style-grid { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.home-title-style-error { margin: 10px 0 0; }
 .website-editor-form textarea {
     box-sizing: border-box;
     line-height: 1.5;
@@ -412,6 +417,7 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
   .website-action-bar button { width: 100%; }
   .website-editor-fields { grid-template-columns: 1fr; }
   .website-field-compact { max-width: none; }
+  .home-title-style-grid { grid-template-columns: 1fr; }
 }
 .website-simple-editor-fields {
     display: block;

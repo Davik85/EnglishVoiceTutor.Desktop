@@ -10,8 +10,11 @@ public static class WebsiteAdminEndpoints
     {
         app.MapGet(ApiConstants.AdminWebsiteContentRoute, async (IWebsiteContentService service, CancellationToken cancellationToken) => Results.Ok(await service.GetAsync(cancellationToken)))
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
-        app.MapPost(ApiConstants.AdminWebsiteContentDraftRoute, async (WebsiteContentSet request, IWebsiteContentService service, CancellationToken cancellationToken) => Results.Ok(await service.SaveDraftAsync(request, cancellationToken)))
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+        app.MapPost(ApiConstants.AdminWebsiteContentDraftRoute, async (WebsiteContentSet request, IWebsiteContentService service, CancellationToken cancellationToken) =>
+        {
+            try { return Results.Ok(await service.SaveDraftAsync(request, cancellationToken)); }
+            catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+        }).RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
         app.MapPost(ApiConstants.AdminWebsiteContentPreviewRoute, async (WebsitePreviewRequest request, IWebsiteContentService service, CancellationToken cancellationToken) =>
         {
             try { return Results.Ok(await service.PreviewAsync(request, cancellationToken)); }

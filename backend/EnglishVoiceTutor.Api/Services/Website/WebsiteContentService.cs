@@ -1,4 +1,5 @@
 using System.Net;
+using System.Globalization;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -22,6 +23,12 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     private const string WindowsDirectReleaseBasePath = "/releases/windows/direct/";
     private const string DefaultWindowsInstallerFileName = "LanguageVoiceTutorSetup-1.0.exe";
     private const string DefaultWindowsInstallerUrl = WindowsDirectReleaseBasePath + DefaultWindowsInstallerFileName;
+    private const string TitleFontInherit = "inherit";
+    private const string TitleFontSystemUi = "system-ui";
+    private const string TitleFontArial = "Arial";
+    private const string TitleFontGeorgia = "Georgia";
+    private const string TitleFontTrebuchetMs = "Trebuchet MS";
+    private static readonly string[] HomeTitleKeys = ["windowsCardTitle", "mobileCardTitle"];
     private const string ReleaseReadyDownloadBodyMarkdown = """
 Download Language Voice Tutor for Windows. Practice real conversations by text or voice with an AI tutor, choose practical topics, start guided lessons, and improve step by step.
 
@@ -57,6 +64,7 @@ Need help? Email support@languagevoicetutor.com.
 
     public async Task<WebsiteContentResponse> SaveDraftAsync(WebsiteContentSet draft, CancellationToken cancellationToken)
     {
+        ValidateHomeTitleTypography(draft);
         var document = await ReadDocumentAsync(cancellationToken);
         document = document with { Draft = MergeDraft(document.Draft, draft) };
         await WriteDocumentAsync(document, cancellationToken);
@@ -65,6 +73,7 @@ Need help? Email support@languagevoicetutor.com.
 
     public Task<WebsitePreviewResponse> PreviewAsync(WebsitePreviewRequest request, CancellationToken cancellationToken)
     {
+        ValidateHomeTitleTypography(request.Content);
         var normalized = Normalize(request.Content);
         var pageKey = NormalizePageKey(request.PageKey);
         var html = RenderPage(normalized, pageKey, includePublicBaseHref: true);
@@ -174,6 +183,7 @@ Need help? Email support@languagevoicetutor.com.
         pages["home"]["supportedLanguageLine"] = RequiredLanguageLine;
         pages["home"]["mobileCardDescription"] = "Android and iOS apps are planned but are not currently available.";
         pages["home"]["mobileComingSoonButtonText"] = "Not currently available";
+        NormalizeHomeTitleTypography(pages["home"]);
         UpgradeLegacyDownloadContent(pages);
         EnsureDownloadFeatureCards(pages);
         var design = NormalizeDesign(input?.Design, defaults.Design);
@@ -302,7 +312,7 @@ Need help? Email support@languagevoicetutor.com.
         <span class="app-panel__shade"></span>
         <section class="app-panel__content">
             <p class="app-panel__eyebrow">{E(h["windowsCardBadge"])}</p>
-            <h1>{E(h["windowsCardTitle"])}</h1>
+            <h1 class="app-panel__title app-panel__title--windows">{E(h["windowsCardTitle"])}</h1>
             <p>{E(h["windowsCardDescription"])}</p>
             <span class="app-panel__cue">{E(h["windowsDownloadButtonText"])}</span>
         </section>
@@ -312,7 +322,7 @@ Need help? Email support@languagevoicetutor.com.
         <span class="app-panel__shade"></span>
         <div class="app-panel__content">
             <span class="app-panel__badge">{E(h["mobileCardBadge"])}</span>
-            <h2>{E(h["mobileCardTitle"])}</h2>
+            <h2 class="app-panel__title app-panel__title--mobile">{E(h["mobileCardTitle"])}</h2>
             <p>{E(h["mobileCardDescription"])}</p>
             <span class="app-panel__cue app-panel__cue--disabled">{E(h["mobileComingSoonButtonText"])}</span>
         </div>
@@ -446,6 +456,137 @@ Need help? Email support@languagevoicetutor.com.
     private static string ValueOrDefault(Dictionary<string, string> values, string key, string fallback) =>
         values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : fallback;
 
+    private static void ValidateHomeTitleTypography(WebsiteContentSet? content)
+    {
+        if (content?.Pages is null || !content.Pages.TryGetValue("home", out var home) || home is null)
+        {
+            return;
+        }
+
+        foreach (var titleKey in HomeTitleKeys)
+        {
+            var prefix = titleKey;
+            var keys = new[]
+            {
+                prefix + "FontFamily",
+                prefix + "MobileSizePx",
+                prefix + "DesktopSizePx",
+                prefix + "FontWeight",
+                prefix + "LineHeight"
+            };
+            if (!keys.Any(home.ContainsKey))
+            {
+                continue;
+            }
+
+            var fontFamily = RequireTitleFontFamily(home.GetValueOrDefault(prefix + "FontFamily"), titleKey);
+            var mobileSize = RequireTitleNumber(home.GetValueOrDefault(prefix + "MobileSizePx"), 22, 72, "mobile size", titleKey);
+            var desktopSize = RequireTitleNumber(home.GetValueOrDefault(prefix + "DesktopSizePx"), 22, 72, "desktop size", titleKey);
+            if (mobileSize > desktopSize)
+            {
+                throw new InvalidOperationException($"{titleKey} mobile size must not exceed desktop size.");
+            }
+
+            _ = RequireTitleWeight(home.GetValueOrDefault(prefix + "FontWeight"), titleKey);
+            _ = RequireTitleNumber(home.GetValueOrDefault(prefix + "LineHeight"), 0.9, 1.8, "line height", titleKey);
+            _ = fontFamily;
+        }
+    }
+
+    private static void NormalizeHomeTitleTypography(Dictionary<string, string> home)
+    {
+        foreach (var titleKey in HomeTitleKeys)
+        {
+            var fontKey = titleKey + "FontFamily";
+            var mobileKey = titleKey + "MobileSizePx";
+            var desktopKey = titleKey + "DesktopSizePx";
+            var weightKey = titleKey + "FontWeight";
+            var lineHeightKey = titleKey + "LineHeight";
+            home[fontKey] = NormalizeTitleFontFamily(home.GetValueOrDefault(fontKey));
+            home[mobileKey] = NormalizeTitleNumber(home.GetValueOrDefault(mobileKey), 22, 72, 28);
+            home[desktopKey] = NormalizeTitleNumber(home.GetValueOrDefault(desktopKey), 22, 72, 52);
+            if (ParseTitleNumber(home[mobileKey], 22, 72, out var mobile) && ParseTitleNumber(home[desktopKey], 22, 72, out var desktop) && mobile > desktop)
+            {
+                home[mobileKey] = "28";
+                home[desktopKey] = "52";
+            }
+            home[weightKey] = NormalizeTitleWeight(home.GetValueOrDefault(weightKey));
+            home[lineHeightKey] = NormalizeTitleNumber(home.GetValueOrDefault(lineHeightKey), 0.9, 1.8, 1.08);
+        }
+    }
+
+    private static void AppendHomeTitleStyles(StringBuilder html, Dictionary<string, string> home, string headingFontFamily)
+    {
+        AppendHomeTitleStyle(html, home, "windowsCardTitle", ".landing-page .app-panel__title--windows", headingFontFamily);
+        AppendHomeTitleStyle(html, home, "mobileCardTitle", ".landing-page .app-panel__title--mobile", headingFontFamily);
+    }
+
+    private static void AppendHomeTitleStyle(StringBuilder html, Dictionary<string, string> home, string titleKey, string selector, string headingFontFamily)
+    {
+        var font = TitleFontCss(home.GetValueOrDefault(titleKey + "FontFamily"), headingFontFamily);
+        var mobileSize = NormalizeTitleNumber(home.GetValueOrDefault(titleKey + "MobileSizePx"), 22, 72, 28);
+        var desktopSize = NormalizeTitleNumber(home.GetValueOrDefault(titleKey + "DesktopSizePx"), 22, 72, 52);
+        var weight = NormalizeTitleWeight(home.GetValueOrDefault(titleKey + "FontWeight"));
+        var lineHeight = NormalizeTitleNumber(home.GetValueOrDefault(titleKey + "LineHeight"), 0.9, 1.8, 1.08);
+        html.AppendLine($"        {selector} {{ font-family: {font}; font-size: clamp({mobileSize}px, 4vw, {desktopSize}px); font-weight: {weight}; line-height: {lineHeight}; }}");
+    }
+
+    private static string RequireTitleFontFamily(string? value, string titleKey)
+    {
+        if (!TitleFontFamilies().Contains(value?.Trim() ?? string.Empty, StringComparer.Ordinal))
+        {
+            throw new InvalidOperationException($"{titleKey} font family must be Inherit website heading font, System UI, Arial, Georgia, or Trebuchet MS.");
+        }
+        return value!.Trim();
+    }
+
+    private static double RequireTitleNumber(string? value, double minimum, double maximum, string label, string titleKey)
+    {
+        if (!ParseTitleNumber(value, minimum, maximum, out var number))
+        {
+            throw new InvalidOperationException($"{titleKey} {label} must be a finite number from {minimum.ToString(CultureInfo.InvariantCulture)} to {maximum.ToString(CultureInfo.InvariantCulture)}.");
+        }
+        return number;
+    }
+
+    private static string RequireTitleWeight(string? value, string titleKey)
+    {
+        if (!AllowedTitleFontWeights().Contains(value?.Trim() ?? string.Empty, StringComparer.Ordinal))
+        {
+            throw new InvalidOperationException($"{titleKey} font weight must be 400, 500, 600, 700, 800, or 900.");
+        }
+        return value!.Trim();
+    }
+
+    private static bool ParseTitleNumber(string? value, double minimum, double maximum, out double number) =>
+        double.TryParse(value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out number)
+        && double.IsFinite(number)
+        && number >= minimum
+        && number <= maximum;
+
+    private static string NormalizeTitleNumber(string? value, double minimum, double maximum, double fallback) =>
+        ParseTitleNumber(value, minimum, maximum, out var number)
+            ? number.ToString("0.##", CultureInfo.InvariantCulture)
+            : fallback.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static string NormalizeTitleFontFamily(string? value) =>
+        TitleFontFamilies().Contains(value?.Trim() ?? string.Empty, StringComparer.Ordinal) ? value!.Trim() : TitleFontInherit;
+
+    private static string NormalizeTitleWeight(string? value) =>
+        AllowedTitleFontWeights().Contains(value?.Trim() ?? string.Empty, StringComparer.Ordinal) ? value!.Trim() : "800";
+
+    private static string TitleFontCss(string? value, string headingFontFamily) => NormalizeTitleFontFamily(value) switch
+    {
+        TitleFontSystemUi => "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        TitleFontArial => "Arial, sans-serif",
+        TitleFontGeorgia => "Georgia, serif",
+        TitleFontTrebuchetMs => "\"Trebuchet MS\", sans-serif",
+        _ => headingFontFamily
+    };
+
+    private static string[] TitleFontFamilies() => [TitleFontInherit, TitleFontSystemUi, TitleFontArial, TitleFontGeorgia, TitleFontTrebuchetMs];
+    private static string[] AllowedTitleFontWeights() => ["400", "500", "600", "700", "800", "900"];
+
     private static string NormalizeDownloadImagePath(string? value, string fallback)
     {
         var path = NormalizeLogoPath(value, fallback);
@@ -535,6 +676,7 @@ Need help? Email support@languagevoicetutor.com.
         html.AppendLine($"        .download-button, .app-panel__cue {{ border-radius: {d.ButtonBorderRadiusPx}px; }}");
         html.AppendLine($"        .site-header {{ background: {d.HeaderBackgroundColor}; color: {d.HeaderTextColor}; font-weight: {d.HeaderFontWeight}; }}");
         html.AppendLine($"        .landing-page .app-panel__content {{ font-style: {cardFontStyle}; }}");
+        AppendHomeTitleStyles(html, h, d.MainFontFamily);
         html.AppendLine("    </style>");
         html.AppendLine("</head>");
         html.AppendLine($"<body class=\"{bodyClass}\">");
@@ -744,7 +886,7 @@ window.addEventListener("DOMContentLoaded", () => {
         .landing-page .app-panel__content { position: relative; z-index: 2; display: flex; width: min(560px, calc(100% - 40px)); min-height: clamp(280px, 30svh, 390px); max-height: calc(100% - clamp(32px, 8svh, 96px)); flex-direction: column; align-items: flex-start; margin: clamp(16px, 4svh, 48px) auto; padding: clamp(20px, 3vw, 34px); border: 1px solid rgba(255, 255, 255, 0.24); border-radius: 28px; background: rgba(5, 22, 38, 0.3); box-shadow: 0 22px 70px rgba(0, 0, 0, 0.22); backdrop-filter: blur(4px); overflow: auto; }
         .landing-page .app-panel__eyebrow, .landing-page .app-panel__badge { display: inline-flex; width: fit-content; margin: 0 0 16px; border-radius: 999px; font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
         .landing-page .app-panel__badge { padding: 8px 12px; background: rgba(255, 255, 255, 0.2); }
-        .landing-page .app-panel h1, .landing-page .app-panel h2 { margin: 0 0 18px; font-size: clamp(2.1rem, 5vw, 4.7rem); line-height: 0.98; text-wrap: balance; }
+        .landing-page .app-panel__title { margin: 0 0 18px; text-wrap: balance; }
         .landing-page .app-panel p { max-width: 32rem; margin: 0; color: rgba(255, 255, 255, 0.92); font-size: clamp(1rem, 1.6vw, 1.28rem); }
         .landing-page .app-panel__cue { display: inline-flex; align-items: center; margin-top: auto; padding: 13px 18px; background: #ffffff; color: #0d2b4c; font-weight: 850; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2); }
         .landing-page .app-panel__cue--disabled { cursor: not-allowed; background: rgba(255, 255, 255, 0.22); color: rgba(255, 255, 255, 0.76); box-shadow: none; }
@@ -1008,7 +1150,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     private static WebsiteContentSet DefaultSet() => new(new()
     {
-        ["home"] = new(){{"logoPath",""},{"logoAltText","Language Voice Tutor logo"},{"fallbackLogoText","Language Voice Tutor"},{"topHeaderText","Practice real conversations in:"},{"supportedLanguageLine",RequiredLanguageLine},{"windowsCardBadge","Available for testers"},{"windowsCardTitle","Application for Windows"},{"windowsCardDescription","Practice real-life language lessons by text or voice on your desktop."},{"windowsDownloadButtonText","Download desktop version"},{"mobileCardBadge","In development"},{"mobileCardTitle","Application for mobile devices"},{"mobileCardDescription","Android and iOS apps are planned but are not currently available."},{"mobileComingSoonButtonText","Not currently available"},{"footerCopyrightText","© Language Voice Tutor. All rights reserved."},{"footerPrivacyLabel","Privacy Policy"},{"footerTermsLabel","Terms of Use"},{"footerRefundsLabel","Refund Policy"},{"footerCancellationLabel","Cancellation"},{"footerSupportLabel","Support"},{"footerPricingLabel","Pricing"},{"seoTitle","Language Voice Tutor"},{"seoDescription","Language Voice Tutor helps you practice real-life language lessons by text or voice on desktop, with mobile apps planned."}},
+        ["home"] = new(){{"logoPath",""},{"logoAltText","Language Voice Tutor logo"},{"fallbackLogoText","Language Voice Tutor"},{"topHeaderText","Practice real conversations in:"},{"supportedLanguageLine",RequiredLanguageLine},{"windowsCardBadge","Available for testers"},{"windowsCardTitle","Application for Windows"},{"windowsCardTitleFontFamily",TitleFontInherit},{"windowsCardTitleMobileSizePx","28"},{"windowsCardTitleDesktopSizePx","52"},{"windowsCardTitleFontWeight","800"},{"windowsCardTitleLineHeight","1.08"},{"windowsCardDescription","Practice real-life language lessons by text or voice on your desktop."},{"windowsDownloadButtonText","Download desktop version"},{"mobileCardBadge","In development"},{"mobileCardTitle","Application for mobile devices"},{"mobileCardTitleFontFamily",TitleFontInherit},{"mobileCardTitleMobileSizePx","28"},{"mobileCardTitleDesktopSizePx","52"},{"mobileCardTitleFontWeight","800"},{"mobileCardTitleLineHeight","1.08"},{"mobileCardDescription","Android and iOS apps are planned but are not currently available."},{"mobileComingSoonButtonText","Not currently available"},{"footerCopyrightText","© Language Voice Tutor. All rights reserved."},{"footerPrivacyLabel","Privacy Policy"},{"footerTermsLabel","Terms of Use"},{"footerRefundsLabel","Refund Policy"},{"footerCancellationLabel","Cancellation"},{"footerSupportLabel","Support"},{"footerPricingLabel","Pricing"},{"seoTitle","Language Voice Tutor"},{"seoDescription","Language Voice Tutor helps you practice real-life language lessons by text or voice on desktop, with mobile apps planned."}},
         ["download"] = Page(ReleaseReadyDownloadPageTitle, ReleaseReadyDownloadSeoDescription, DownloadDefaults()),
         ["mobile"] = Page("Mobile app coming soon","Android and iOS versions are planned and not currently available.", new(){{"androidComingSoonText","Android app coming soon."},{"iosComingSoonText","iOS app coming soon."},{"emailSupportCtaText","Email support@languagevoicetutor.com for availability questions."}}),
         ["pricing"] = Page("Pricing","Language Voice Tutor is currently offered for Windows desktop tester access.", new(){{"freePlanText","Invited testers may be able to use free Windows desktop access during evaluation."},{"premiumPlanText","Premium subscription details are draft placeholders until paid billing is enabled by the owner."},{"trialText","Trial terms are not final and require owner/legal review."},{"paddleLiveCheckoutDisclaimerText","No live checkout button is provided and production Paddle billing is not enabled from this page."}}),
