@@ -1,6 +1,6 @@
 # Pre-Mobile Readiness
 
-Review date: 2026-07-11.
+Review date: 2026-07-19.
 
 This note is a concise planning input for future mobile work. It records the current shared product baseline only. It is not a mobile architecture plan, mobile UI plan, framework choice, App Store plan, Google Play plan, or implementation checklist. For the current Windows client functionality baseline that mobile should reuse or mirror, see [Windows Client Functionality Overview](WINDOWS_CLIENT_FUNCTIONALITY_OVERVIEW.md).
 
@@ -17,8 +17,8 @@ This note is a concise planning input for future mobile work. It records the cur
 
 ## Current backend baseline
 
-- Production backend is `0.1.35-backend.112` and healthy at `https://api.languagevoicetutor.com`.
-- Backend health and database health are expected to be verified with `/health` and `/api/health/database` before treating the backend as current; the rollback release for the 2026-07-11 state is `0.1.35-backend.111`.
+- Production backend is `0.1.35-backend.123` and healthy at `https://api.languagevoicetutor.com`.
+- Backend health and database health are expected to be verified with `/health` and `/api/health/database` before treating the backend as current; the previous release for the 2026-07-19 state is `0.1.35-backend.122`.
 - OpenAI calls are backend-only. Desktop clients call backend APIs; future mobile clients must do the same.
 - Website analytics is working, including the fixed `pay.html` analytics/consent coverage.
 - Public website pages no longer show tester wording.
@@ -86,6 +86,12 @@ Cross-client Premium recognition must remain account/backend based:
 
 Authenticated mobile Finish lesson + ready Summary is production-verified as of 2026-07-11 without a new backend endpoint by using `PUT /api/me/lesson-sessions/{sessionId}/finish` and `GET /api/me/lesson-sessions/{sessionId}/summary`. The mobile client must not generate summaries locally or upload summary fields; the backend generates and persists summaries from persisted lesson messages and safe metadata. Finish triggers backend-owned generation. GET only reads the stored learner-safe result, can return `ready` learner-safe fields or `unavailable`, and does not regenerate a missing summary. Development `/api/dev/.../summary` routes remain diagnostic-only and are not production mobile contracts.
 
+## Authenticated Lesson History client boundary
+
+Backend `0.1.35-backend.123` completes and production-deploys authenticated recent Lesson History. Mobile can use `GET /api/me/lesson-history` for the newest-first recent list (currently at most 50) and `GET /api/me/lesson-history/{sessionId:guid}` for owned metadata, summary, transcript messages, and feedback. Both routes require authentication; ownership is derived from the authenticated identity, never a client-supplied user ID. Unknown and non-owned detail requests safely return `404`. The canonical response contract is [Lesson History Endpoints](LESSON_HISTORY_ENDPOINTS.md).
+
+Mobile UI consumption remains separate client work. Mobile must not use Desktop-local JSON or `/api/dev/...` history endpoints. The recent History list is not all-time Progress and must not be used to calculate official totals, streaks, aggregates, or long-term statistics. A future official Progress feature needs a separate backend-owned aggregate contract; clients must not invent it locally.
+
 ## Explicit constraints
 
 Mobile planning must not introduce or assume:
@@ -125,4 +131,4 @@ Do not archive or delete documents as part of this note. Future cleanup may iden
 
 Production backend `0.1.35-backend.112` fixes the authenticated lesson-summary provider-output extraction issue found in `0.1.35-backend.111`: top-level Responses API `output_text` remains supported, nested `output[].content[].text` is supported, blank provider output is rejected before JSON deserialization, and summary failure remains isolated from successful lesson completion. No client/local summary generation was added.
 
-The 2026-07-11 production verification used a real authenticated Flutter mobile lesson and confirmed session start, message persistence, Finish completion, and a ready backend-owned Summary displayed by mobile. This verifies only authenticated mobile Finish + ready Summary. It does not complete mobile history/progress, voice, translation, hints, feedback, TTS, Conversation mode, billing, store publication, or broad public production readiness. Authenticated desktop Finish uses the shared completion path, but desktop currently displays its existing local desktop summary flow and `.112` does not change desktop UI or Finish response contracts.
+The 2026-07-11 production verification used a real authenticated Flutter mobile lesson and confirmed session start, message persistence, Finish completion, and a ready backend-owned Summary displayed by mobile. This verifies only authenticated mobile Finish + ready Summary. It does not complete Mobile History UI, aggregate Progress, voice, translation, hints, feedback, TTS, Conversation mode, billing, store publication, or broad public production readiness. Authenticated recent History was completed separately in backend `0.1.35-backend.123`. Authenticated desktop Finish uses the shared completion path, but desktop currently displays its existing local desktop summary flow and `.112` does not change desktop UI or Finish response contracts.

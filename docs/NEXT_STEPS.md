@@ -1,6 +1,6 @@
 # Next Steps
 
-Review date: 2026-07-13.
+Review date: 2026-07-19.
 
 ## Mobile v1 planning next step
 
@@ -9,7 +9,7 @@ Before any mobile implementation project is created, review and approve the Mobi
 Required review decisions:
 
 - Approve that Mobile v1 is the same Language Voice Tutor product and uses the same backend account, subscription, entitlement, lesson history, progress, limits, and AI tutor behavior.
-- Review backend/API gaps for auth/session, `/api/me`, settings sync, subscription status, lesson access, lesson history/progress, voice/TTS, app-version metadata, stable DTOs/errors, and mobile usage/rate limits. The selected tutor settings gap is closed in backend `0.1.35-backend.109`: mobile can later replace the read-only selected tutor note with a real picker that reads `GET /api/tutor-options` and persists `selectedTutorId` through `/api/me/settings`.
+- Review remaining backend/API gaps for auth/session, `/api/me`, settings sync, subscription status, lesson access, a separate aggregate Progress contract, voice/TTS, app-version metadata, stable DTOs/errors, and mobile usage/rate limits. Authenticated recent Lesson History is complete in backend `0.1.35-backend.123`; pagination is future work only if product requirements need more than the current recent maximum of 50. The selected tutor settings gap is closed in backend `0.1.35-backend.109`: mobile can later replace the read-only selected tutor note with a real picker that reads `GET /api/tutor-options` and persists `selectedTutorId` through `/api/me/settings`.
 - Review the billing provider plan: Paddle remains valid for website/desktop, Google Play Billing is required for Android mobile billing when implemented, and every provider maps into the same backend entitlement model.
 - Choose Flutter, React Native, Kotlin Multiplatform / Android native first, .NET MAUI, or another mobile technology only after scope approval.
 
@@ -43,7 +43,13 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 ## Authenticated mobile lesson completion status
 
-Authenticated mobile Finish + ready Summary is production-verified as of 2026-07-11 against backend `0.1.35-backend.112` using the existing authenticated production routes: `PUT /api/me/lesson-sessions/{sessionId}/finish` and `GET /api/me/lesson-sessions/{sessionId}/summary`. Mobile must send only completion facts such as `validTurnCount`, must not generate summaries locally or upload summary fields, and must handle both `ready` and `unavailable` summary status. Finish triggers backend-owned generation; GET only reads the already persisted learner-safe result and does not regenerate a missing summary. No new backend endpoint is required for this step; desktop and mobile must keep using the same backend session, completion, history, progress, and summary source of truth. Development `/api/dev/.../summary` routes remain diagnostics only and are not mobile contracts. This verification does not complete mobile history/progress, voice, translation, hints, feedback, TTS, Conversation mode, billing, store publication, or broad public production readiness.
+Authenticated mobile Finish + ready Summary is production-verified as of 2026-07-11 against backend `0.1.35-backend.112` using the existing authenticated production routes: `PUT /api/me/lesson-sessions/{sessionId}/finish` and `GET /api/me/lesson-sessions/{sessionId}/summary`. Mobile must send only completion facts such as `validTurnCount`, must not generate summaries locally or upload summary fields, and must handle both `ready` and `unavailable` summary status. Finish triggers backend-owned generation; GET only reads the already persisted learner-safe result and does not regenerate a missing summary. No new backend endpoint is required for this step; desktop and mobile must keep using the same backend session, completion, history, progress, and summary source of truth. Development `/api/dev/.../summary` routes remain diagnostics only and are not mobile contracts. Authenticated recent History is separately complete in backend `0.1.35-backend.123`; Mobile History UI and a future aggregate Progress contract remain separate concerns. This verification does not complete mobile UI, aggregate Progress, voice, translation, hints, feedback, TTS, Conversation mode, billing, store publication, or broad public production readiness.
+
+## Lesson History and future Progress
+
+The authenticated backend History prerequisite is complete and production-deployed in `0.1.35-backend.123`; it is no longer a pending backend route gap. Mobile client work should use `GET /api/me/lesson-history` and `GET /api/me/lesson-history/{sessionId:guid}` and must not use Desktop-local JSON or `/api/dev/...` history routes. See [Lesson History Endpoints](LESSON_HISTORY_ENDPOINTS.md).
+
+Future backend work is limited to separately approved needs: a backend-owned aggregate Progress contract for official totals, streaks, and long-term statistics; pagination only if product requirements later need more than recent maximum-50 History; and account deletion for future store requirements where that planning item remains approved. Clients must not treat recent History as all-time Progress or invent official Progress locally.
 
 ## Voice scenario follow-up
 
@@ -55,7 +61,7 @@ Backend `0.1.35-backend.116` completes the backend prerequisite for learner leve
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.116`, previous release `0.1.35-backend.115`; Production Admin RBAC / persistent role management is completed.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.123`, previous release `0.1.35-backend.122`; Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
