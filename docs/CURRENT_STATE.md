@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-07-18.
+Review date: 2026-07-19.
 
 ## Source of truth for current versions
 
@@ -39,7 +39,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.122`.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.123`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows direct public release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -69,13 +69,13 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release after the Website CMS inline Home-title typography and CSS precedence fix deployment: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.122`. Previous backend release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.121`. Relevant commits are `1e3a85c8` (`Add inline Home title style controls`) and `54b9102e` (`Fix Home title font size precedence`). Deployment completed successfully through the standard backend release flow: `languagevoicetutor-backend.service` is active and running, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200. No EF migrations were run. No separate static-site upload was required for this backend deployment; public page content/style changes are applied later only through Website CMS Publish. Website/public static-site upload, Windows installer/release, Mobile, CMS content data, billing/Paddle, AI Models data/config, and database migrations remain separate operations. Current-state docs must not use the obsolete phrase “current backend release is `0.1.35-backend.99`” except when explicitly identifying it as outdated wording. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
+Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.123`; previous release: `0.1.35-backend.122`. Release `.123` deploys the authenticated Lesson History implementation from commit `37d8c4d8` (`Add authenticated lesson history endpoints`). Deployment completed successfully through the standard backend release flow: `languagevoicetutor-backend.service` is active and running, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200. No EF migration was required or run and no database schema changed. No static website deployment, Website CMS publish, Windows installer/Desktop release, or Mobile release was part of this backend change; those remain separate operations. Previous backend rollback reference must still be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
 
 Backend deployment uses:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.122 -PackageFirst -DryRun
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.122 -PackageFirst
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.123 -PackageFirst -DryRun
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.123 -PackageFirst
 ```
 
 The backend upload flow uses the uploaded `deploy-backend-release.sh` helper and `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current flow.
@@ -88,6 +88,12 @@ Phase 3 rate limiting / abuse protection is completed and production-verified wi
 
 Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling is active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
 
+
+## 2026-07-19 authenticated Lesson History production state
+
+Authenticated `GET /api/me/lesson-history` and `GET /api/me/lesson-history/{sessionId:guid}` are implemented, verified, deployed, and available in backend `0.1.35-backend.123`. Both require authentication and derive ownership exclusively from the authenticated request identity. The list returns only the learner's recent sessions, newest first, with a current maximum of 50 and summary, message-count, and valid-turn indicators. Detail returns owned session metadata plus available summary, transcript messages, and feedback; an unknown or non-owned session safely returns `404`, while unauthenticated requests return `401`. The canonical contract is [Lesson History Endpoints](LESSON_HISTORY_ENDPOINTS.md).
+
+This completes the backend API, not Mobile History UI. Mobile must consume `/api/me/...`, never Desktop-local JSON or `/api/dev/...`. No Desktop behavior changed. The recent maximum-50 list is not an all-time Progress API: clients must not derive official totals, streaks, aggregates, or long-term progress from it. Future official Progress requires a separate backend-owned aggregate contract. No database migration or schema change was required.
 
 ## 2026-07-18 Website CMS inline Home-title typography production verification
 

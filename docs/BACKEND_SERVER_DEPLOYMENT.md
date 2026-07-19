@@ -1,12 +1,12 @@
 # Backend server deployment
 
-Review date: 2026-07-18.
+Review date: 2026-07-19.
 
 ## Current production backend
 
 Production backend is deployed and healthy.
 
-- Current release: `0.1.35-backend.122`
+- Current release: `0.1.35-backend.123`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -21,7 +21,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is release `0.1.35-backend.122` with previous release `0.1.35-backend.121`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live.
+Expected baseline for the current deployment is release `0.1.35-backend.123` with previous release `0.1.35-backend.122`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live.
 
 Previous backend rollback reference must be verified from `/opt/languagevoicetutor/backend/previous`. `0.1.35-backend.49` remains a documented older rollback reference, not a substitute for checking the live `previous` symlink.
 
@@ -30,7 +30,7 @@ Previous backend rollback reference must be verified from `/opt/languagevoicetut
 The production server does not need a git checkout, a `dotnet` SDK, or a `dotnet` runtime. Backend packaging uses the repository PowerShell helper and creates the linux-x64 backend archive under `artifacts/packages/backend/`:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.122
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.123
 ```
 
 The package command does not upload, restart, run EF migrations, publish website files, upload Windows installers, or enable Paddle live.
@@ -40,7 +40,7 @@ The package command does not upload, restart, run EF migrations, publish website
 Use `-PackageFirst -DryRun` to print the upload, generated deploy-helper, symlink, and restart/status commands without changing the server; the script does not run the sudo restart or sudo status commands in dry-run mode, and restart/status commands are printed but not executed:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.122 -PackageFirst -DryRun
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.123 -PackageFirst -DryRun
 ```
 
 The upload helper creates a temporary `deploy-backend-release.sh` helper and uses that helper for release extraction and symlink switching. It uses `ssh -tt` for sudo restart/status when restart is enabled. Do not document old fragile inline bash deployment paths as the current backend deployment flow.
@@ -50,7 +50,7 @@ The upload helper creates a temporary `deploy-backend-release.sh` helper and use
 After the pre-check and dry run are reviewed, run the backend upload helper without `-DryRun`:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.122 -PackageFirst
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.123 -PackageFirst
 ```
 
 By default, the helper uploads to `/opt/languagevoicetutor/backend`, switches `current`, updates `previous` when an older current release exists, restarts `languagevoicetutor-backend.service`, and prints service status. Use script parameters only for an intentionally reviewed non-default host, SSH port, user, or remote path.
@@ -91,6 +91,12 @@ Production smoke validation recorded the SMTP boundary without exposing secrets.
 Mobile boundary: the existing authenticated `POST /api/me/feedback-reports` endpoint remains the submission path, supported categories remain `suggestion`, `app_issue`, and `ai_response`, `UserId` remains backend-derived from authentication, and backend `.119` required no Mobile API contract change.
 
 Final checks recorded before/after deployment: backend build passed; focused Admin read tests passed; focused Admin CMS tests passed; focused email sender and safe logging tests passed; password-reset logging tests passed; Admin RBAC permission policy checks passed; Admin roles/permissions policy checks passed; full desktop release gate with `IncludeEfChecks` passed; EF reported no pending model changes; the repository was pushed with a clean working tree before deployment; and production health, database health, email delivery, status changes, reply history, and report resolution were manually validated.
+
+## 2026-07-19 backend `0.1.35-backend.123` Lesson History verification
+
+Backend `0.1.35-backend.123` is deployed and verified in production for authenticated Lesson History, implemented by commit `37d8c4d8` (`Add authenticated lesson history endpoints`). The previous release is `0.1.35-backend.122`; `languagevoicetutor-backend.service` is active and running; public `/health` returned HTTP 200; and public `/api/health/database` returned HTTP 200. Authenticated route verification confirmed `GET /api/me/lesson-history` and `GET /api/me/lesson-history/{sessionId:guid}` are available, unauthenticated requests return `401`, and ownership filtering prevents access to another user's history.
+
+This deployment reused the existing lesson persistence schema. No EF migration was added or run and no database schema changed. It was a backend deployment only: no static website upload or Website CMS publish, Windows installer/Desktop release, or Mobile release was performed. The routes add no Desktop behavior change; Mobile History UI remains separate client work. See [Lesson History Endpoints](LESSON_HISTORY_ENDPOINTS.md) for the client contract and Progress boundary.
 
 ## 2026-07-18 backend `0.1.35-backend.122` verification
 
@@ -213,7 +219,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.122`, previous release `0.1.35-backend.121`.
+- Backend: production healthy, current release `0.1.35-backend.123`, previous release `0.1.35-backend.122`.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
