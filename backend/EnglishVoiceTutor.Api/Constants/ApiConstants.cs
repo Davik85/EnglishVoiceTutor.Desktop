@@ -57,6 +57,7 @@ public static class ApiConstants
     public const string MeLessonSessionsRoute = "/api/me/lesson-sessions";
     public const string MeLessonHistoryRoute = "/api/me/lesson-history";
     public const string MeLessonHistoryBySessionIdRoute = "/api/me/lesson-history/{sessionId:guid}";
+    public const string MeProgressRoute = "/api/me/progress";
     public const string MeLessonContentScenarioRoute = "/api/me/lesson-content/scenarios/{scenarioKey}";
     public const string MeLessonSessionByIdRoute = "/api/me/lesson-sessions/{sessionId:guid}";
     public const string MeLessonSessionFinishRoute = "/api/me/lesson-sessions/{sessionId:guid}/finish";

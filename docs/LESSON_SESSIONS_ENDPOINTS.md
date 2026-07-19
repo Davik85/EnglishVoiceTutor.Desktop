@@ -22,6 +22,8 @@ Review date: 2026-07-13.
 
 `PUT /api/me/lesson-sessions/{sessionId}/finish` marks the owned session complete first, then makes a best-effort backend-owned summary-generation attempt using persisted lesson messages and safe runtime metadata. It is idempotent. `GET /api/me/lesson-sessions/{sessionId}/summary` is read-only: it returns the learner-safe persisted result when ready, or a stable safe unavailable status when generation is not ready or unavailable; it does not regenerate a missing summary. Authenticated production clients do not upload or author `summary`, `strengths`, `improvements`, `vocabulary`, `grammar`, or `nextSteps`; those fields are generated and owned by the backend.
 
+Progress V1 treats a lesson as completed only when its status is `Finished` and `finishedAt` is non-null; see [Progress Endpoints](PROGRESS_ENDPOINTS.md).
+
 ### Development / diagnostic routes
 
 - `POST /api/dev/lesson-sessions`

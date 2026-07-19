@@ -2,6 +2,10 @@
 
 Review date: 2026-07-19.
 
+## Progress V1
+
+Authenticated backend-owned Progress V1 is available at `GET /api/me/progress`. It aggregates only owned finished sessions with non-null `finishedAt`, uses UTC calendar rules, and is separate from the maximum-50 Lesson History response. No schema, migration, index, stored aggregate, cache, job, or backfill was added. See [Progress Endpoints](PROGRESS_ENDPOINTS.md).
+
 ## Source of truth for current versions
 
 These docs record the release-ready handoff state, but live systems can change. Always verify the live/public state before telling a tester that a version is current.

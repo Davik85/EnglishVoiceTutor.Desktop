@@ -52,4 +52,4 @@ The authenticated routes reuse the existing lesson-session, message, summary, an
 
 ## History is not Progress
 
-The recent maximum-50 History list is not an all-time Progress API. Clients must not derive official totals, streaks, aggregate learning statistics, or long-term progress from it, and must not invent official Progress locally. A future Progress feature requires a separate backend-owned aggregate endpoint or contract. Pagination is future work only if later product requirements require more than recent history.
+The recent maximum-50 History list is not an all-time Progress API. Clients must not derive official totals, streaks, aggregate learning statistics, or long-term progress from it, and must not invent official Progress locally. Authenticated Progress V1 is separately available at `GET /api/me/progress`; see [Progress Endpoints](PROGRESS_ENDPOINTS.md). Pagination is future work only if later product requirements require more than recent history.

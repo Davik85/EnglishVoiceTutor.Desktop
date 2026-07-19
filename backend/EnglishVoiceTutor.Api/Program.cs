@@ -190,6 +190,8 @@ builder.Services.AddScoped<ILessonSessionReplyService, LessonSessionReplyService
 builder.Services.AddScoped<ILessonMessageService, LessonMessageService>();
 builder.Services.AddScoped<ILessonSummaryService, LessonSummaryService>();
 builder.Services.AddScoped<ILessonHistoryService, LessonHistoryService>();
+builder.Services.AddScoped<IProgressService, ProgressService>();
+builder.Services.AddSingleton<IUtcClock, UtcClock>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 builder.Services.AddScoped<UsageStudyLanguageNormalizer>();
 builder.Services.AddScoped<IUsageEventService, UsageEventService>();
@@ -400,6 +402,7 @@ app.MapGet(ApiConstants.DevLessonHistoryRoute, HandleGetLessonHistoryAsync);
 app.MapGet(ApiConstants.DevLessonHistoryBySessionIdRoute, HandleGetLessonHistoryDetailAsync);
 app.MapGet(ApiConstants.MeLessonHistoryRoute, HandleGetLessonHistoryAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonHistoryBySessionIdRoute, HandleGetLessonHistoryDetailAsync).RequireAuthorization();
+app.MapGet(ApiConstants.MeProgressRoute, HandleGetProgressAsync).RequireAuthorization();
 app.MapGet(ApiConstants.DevUsageEventsRoute, HandleGetDevUsageEventsAsync);
 app.MapGet(ApiConstants.DevDailyUsageCountersRoute, HandleGetDevDailyUsageCountersAsync);
 app.MapGet(ApiConstants.DevFreeLimitStatusRoute, HandleGetDevFreeLimitStatusAsync);
@@ -849,6 +852,24 @@ static async Task<IResult> HandleGetLessonHistoryDetailAsync(
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
         logger.LogWarning(exception, "Lesson history detail GET failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleGetProgressAsync(
+    IProgressService progressService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("ProgressEndpoint");
+
+    try
+    {
+        return Results.Ok(await progressService.GetProgressAsync(cancellationToken));
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Authenticated Progress GET failed because lesson storage is unavailable.");
         return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }

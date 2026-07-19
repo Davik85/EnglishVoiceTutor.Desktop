@@ -2,6 +2,10 @@
 
 Review date: 2026-07-05.
 
+## Progress contract
+
+Authenticated Progress V1 is available at `GET /api/me/progress`. Mobile consumes this backend-owned aggregate contract and must not calculate official totals or streaks from the maximum-50 History list. See [Progress Endpoints](PROGRESS_ENDPOINTS.md).
+
 This document prepares safe Mobile v1 planning for Language Voice Tutor. It is analysis-only and documentation-only. It does not create a mobile app project, select a final technology, change runtime behavior, change billing behavior, add database migrations, or change production deployment artifacts.
 
 ## Product principle

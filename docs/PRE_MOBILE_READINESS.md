@@ -2,6 +2,10 @@
 
 Review date: 2026-07-19.
 
+## Progress contract
+
+Authenticated Progress V1 is available at `GET /api/me/progress`. It is backend-owned, separate from recent History, and must not be recreated by Mobile from the maximum-50 History list. See [Progress Endpoints](PROGRESS_ENDPOINTS.md).
+
 This note is a concise planning input for future mobile work. It records the current shared product baseline only. It is not a mobile architecture plan, mobile UI plan, framework choice, App Store plan, Google Play plan, or implementation checklist. For the current Windows client functionality baseline that mobile should reuse or mirror, see [Windows Client Functionality Overview](WINDOWS_CLIENT_FUNCTIONALITY_OVERVIEW.md).
 
 ## Current release baseline
