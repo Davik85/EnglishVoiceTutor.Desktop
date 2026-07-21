@@ -10,8 +10,6 @@ public sealed class AdminFeedbackReportStatusService(
     AppDbContext dbContext,
     IAdminAuditService adminAuditService) : IAdminFeedbackReportStatusService
 {
-    private const string ReviewedStatus = "reviewed";
-    private const string ResolvedStatus = "resolved";
     private const string AuditReason = "Feedback report status changed.";
 
     public async Task<AdminFeedbackReportStatusChangeResult> ChangeStatusAsync(
@@ -21,7 +19,8 @@ public sealed class AdminFeedbackReportStatusService(
         CancellationToken cancellationToken)
     {
         var status = NormalizeStatus(requestedStatus);
-        if (status is not ReviewedStatus and not ResolvedStatus)
+        if (status is null || !UserFeedbackReportConstants.Statuses.Contains(status)
+            || status == UserFeedbackReportConstants.NewStatus)
         {
             return AdminFeedbackReportStatusChangeResult.Invalid();
         }

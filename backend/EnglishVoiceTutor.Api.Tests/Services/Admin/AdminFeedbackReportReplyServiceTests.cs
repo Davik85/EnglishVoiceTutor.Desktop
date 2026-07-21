@@ -56,6 +56,22 @@ public sealed class AdminFeedbackReportReplyServiceTests
         });
     }
 
+    [Fact]
+    public async Task AccountDeletionRequestUsesTheExistingReplyDeliveryFlow()
+    {
+        await using var db = CreateDbContext();
+        var fixture = await AddFixtureAsync(db, "new", null, null, UserFeedbackReportConstants.AccountDeletionCategory);
+        var sender = new FakeEmailSender();
+
+        var result = await new AdminFeedbackReportReplyService(db, sender, new AdminAuditService(db)).SendAsync(
+            fixture.AdminUser.Id, fixture.Report.Id, "We need more information.", TestContext.Current.CancellationToken);
+
+        Assert.Equal(UserFeedbackReportReplyConstants.DeliveryStatuses.Sent, result.Response?.DeliveryStatus);
+        Assert.Equal(UserFeedbackReportConstants.ReviewedStatus, result.Response?.ReportStatus);
+        Assert.Equal("learner@example.test", sender.Message?.RecipientEmail);
+        Assert.Single(await db.UserFeedbackReportReplies.ToListAsync(TestContext.Current.CancellationToken));
+    }
+
     [Theory]
     [InlineData("reviewed")]
     [InlineData("resolved")]
@@ -130,12 +146,12 @@ public sealed class AdminFeedbackReportReplyServiceTests
         .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
         .Options);
 
-    private static async Task<Fixture> AddFixtureAsync(AppDbContext db, string status, DateTimeOffset? reviewedAtUtc, string? displayName)
+    private static async Task<Fixture> AddFixtureAsync(AppDbContext db, string status, DateTimeOffset? reviewedAtUtc, string? displayName, string category = "app_issue")
     {
         var user = new UserEntity { Id = Guid.NewGuid(), Email = "learner@example.test", PasswordHash = "hash", Status = "active", CreatedAt = DateTimeOffset.UtcNow };
         var adminAppUser = new UserEntity { Id = Guid.NewGuid(), Email = "admin@example.test", PasswordHash = "hash", Status = "active", CreatedAt = DateTimeOffset.UtcNow };
         var adminUser = new AdminUserEntity { Id = Guid.NewGuid(), UserId = adminAppUser.Id, NormalizedEmail = "admin@example.test", Status = "active", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow };
-        var report = new UserFeedbackReportEntity { Id = Guid.NewGuid(), UserId = user.Id, Category = "app_issue", Message = "Original report", ReportedAiText = "Original AI text", Status = status, ReviewedAtUtc = reviewedAtUtc, ClientPlatform = "windows", ClientVersion = "1.0.0", CreatedAtUtc = DateTimeOffset.UtcNow };
+        var report = new UserFeedbackReportEntity { Id = Guid.NewGuid(), UserId = user.Id, Category = category, Message = "Original report", ReportedAiText = "Original AI text", Status = status, ReviewedAtUtc = reviewedAtUtc, ClientPlatform = "windows", ClientVersion = "1.0.0", CreatedAtUtc = DateTimeOffset.UtcNow };
         db.AddRange(user, adminAppUser, adminUser, report);
         if (displayName is not null)
         {

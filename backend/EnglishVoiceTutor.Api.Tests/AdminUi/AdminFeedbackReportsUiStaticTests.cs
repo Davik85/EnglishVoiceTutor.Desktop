@@ -34,8 +34,8 @@ public sealed class AdminFeedbackReportsUiStaticTests
     [Fact]
     public void FiltersUseOnlySupportedBackendValues()
     {
-        Assert.Contains("FeedbackReportStatuses = Object.freeze([\"new\", \"reviewed\", \"resolved\"])", AdminJs);
-        Assert.Contains("FeedbackReportCategories = Object.freeze([\"suggestion\", \"app_issue\", \"ai_response\"])", AdminJs);
+        Assert.Contains("FeedbackReportStatuses = Object.freeze([\"new\", \"reviewed\", \"needs_information\", \"processing\", \"resolved\", \"rejected\"])", AdminJs);
+        Assert.Contains("FeedbackReportCategories = Object.freeze([\"suggestion\", \"app_issue\", \"ai_response\", \"account_deletion\"])", AdminJs);
         Assert.Contains("FeedbackReportStatuses.includes(feedbackReportsStatusFilter.value)", AdminJs);
         Assert.Contains("FeedbackReportCategories.includes(feedbackReportsCategoryFilter.value)", AdminJs);
         Assert.Contains("pageSize: String(FeedbackReportPageSize)", AdminJs);
@@ -55,7 +55,7 @@ public sealed class AdminFeedbackReportsUiStaticTests
     [Fact]
     public void FeedbackReportMutationControlsCoverSafeStates()
     {
-        Assert.Contains("[\"reviewed\", \"resolved\"].includes(targetStatus)", AdminJs);
+        Assert.Contains("[\"reviewed\", \"needs_information\", \"processing\", \"resolved\", \"rejected\"].includes(targetStatus)", AdminJs);
         Assert.Contains("button.disabled = feedbackReportsState.statusRequestPending", AdminJs);
         Assert.Contains("feedbackReportReplyTextInput.disabled = unavailable || feedbackReportsState.replyRequestPending", AdminJs);
         Assert.Contains("response.status === HttpStatus.forbidden", AdminJs);
@@ -68,6 +68,15 @@ public sealed class AdminFeedbackReportsUiStaticTests
         var detailsLoad = AdminJs.Substring(AdminJs.IndexOf("async function loadFeedbackReportDetails"), AdminJs.IndexOf("async function adminFetch") - AdminJs.IndexOf("async function loadFeedbackReportDetails"));
         Assert.DoesNotContain("method: \"PATCH\"", detailsLoad);
         Assert.DoesNotContain("method: \"POST\"", detailsLoad);
+    }
+
+    [Fact]
+    public void AccountDeletionRequestsAreFilterableAndShowTheirReasonAsPlainText()
+    {
+        Assert.Contains("<option value=\"account_deletion\">Account deletion request</option>", AdminIndex);
+        Assert.Contains("account_deletion: \"Account deletion request\"", AdminJs);
+        Assert.Contains("report?.category === \"account_deletion\" ? \"Deletion reason\" : \"Report message\"", AdminJs);
+        Assert.Contains("String(report?.message || \"No reason provided.\")", AdminJs);
     }
 
     [Fact]

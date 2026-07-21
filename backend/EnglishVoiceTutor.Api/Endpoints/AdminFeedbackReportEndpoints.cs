@@ -12,8 +12,6 @@ public static class AdminFeedbackReportEndpoints
     private const int DefaultPage = 1;
     private const int DefaultPageSize = 50;
     private const int MaxPageSize = 100;
-    private static readonly HashSet<string> AllowedStatuses = ["new", "reviewed", "resolved"];
-    private static readonly HashSet<string> AllowedCategories = ["suggestion", "app_issue", "ai_response"];
 
     public static void MapAdminFeedbackReportEndpoints(this WebApplication app)
     {
@@ -36,8 +34,8 @@ public static class AdminFeedbackReportEndpoints
         var category = NormalizeFilter(query.Category);
         var page = query.Page ?? DefaultPage;
         var pageSize = query.PageSize ?? DefaultPageSize;
-        if ((status is not null && !AllowedStatuses.Contains(status))
-            || (category is not null && !AllowedCategories.Contains(category))
+        if ((status is not null && !UserFeedbackReportConstants.Statuses.Contains(status))
+            || (category is not null && !UserFeedbackReportConstants.Categories.Contains(category))
             || page < 1
             || pageSize < 1
             || pageSize > MaxPageSize)

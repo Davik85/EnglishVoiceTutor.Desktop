@@ -333,8 +333,8 @@
     const feedbackReportReplyHistoryElement = document.getElementById("feedback-report-reply-history");
     const feedbackReportReplyHistoryContentElement = document.getElementById("feedback-report-reply-history-content");
     const FeedbackReportPageSize = 50;
-    const FeedbackReportStatuses = Object.freeze(["new", "reviewed", "resolved"]);
-    const FeedbackReportCategories = Object.freeze(["suggestion", "app_issue", "ai_response"]);
+    const FeedbackReportStatuses = Object.freeze(["new", "reviewed", "needs_information", "processing", "resolved", "rejected"]);
+    const FeedbackReportCategories = Object.freeze(["suggestion", "app_issue", "ai_response", "account_deletion"]);
     let feedbackReportsState = { page: 1, totalCount: 0, items: [], selectedReportId: null, selectedReport: null, statusRequestPending: false, replyRequestPending: false, replyUnavailable: false, statusPermissionDenied: false, replyPermissionDenied: false };
 
     const freeLessonResetCard = document.getElementById("free-lesson-reset-card");
@@ -2138,7 +2138,7 @@
     }
 
     function feedbackReportCategoryLabel(value) {
-        return ({ suggestion: "Suggestion", app_issue: "App problem", ai_response: "AI response" })[value] || "-";
+        return ({ suggestion: "Suggestion", app_issue: "App problem", ai_response: "AI response", account_deletion: "Account deletion request" })[value] || "-";
     }
 
     function feedbackReportReplyDeliveryStatusLabel(value) {
@@ -2150,7 +2150,7 @@
     }
 
     function feedbackReportStatusLabel(value) {
-        return ({ new: "New", reviewed: "Reviewed", resolved: "Resolved" })[value] || "-";
+        return ({ new: "New", reviewed: "Reviewed", needs_information: "Needs information", processing: "Processing", resolved: "Resolved", rejected: "Rejected" })[value] || "-";
     }
 
     function formatFeedbackReportDate(value) {
@@ -2363,7 +2363,7 @@
         feedbackReportDetailsElement.className = "feedback-report-details";
         appendFeedbackReportDetail(feedbackReportDetailsElement, "Type", feedbackReportCategoryLabel(report?.category));
         appendFeedbackReportDetail(feedbackReportDetailsElement, "Status", feedbackReportStatusLabel(report?.status));
-        appendFeedbackReportBody(feedbackReportDetailsElement, "Report message", String(report?.message || "-"));
+        appendFeedbackReportBody(feedbackReportDetailsElement, report?.category === "account_deletion" ? "Deletion reason" : "Report message", String(report?.message || "No reason provided."));
         if (String(report?.reportedAiText || "").trim()) { appendFeedbackReportBody(feedbackReportDetailsElement, "Reported AI text", String(report.reportedAiText)); }
         appendFeedbackReportDetail(feedbackReportDetailsElement, "Created", formatFeedbackReportDate(report?.createdAtUtc));
         if (report?.reviewedAtUtc) { appendFeedbackReportDetail(feedbackReportDetailsElement, "Reviewed", formatFeedbackReportDate(report.reviewedAtUtc)); }
@@ -2389,7 +2389,7 @@
         if (canManageStatus) {
             feedbackReportCurrentStatusElement.textContent = `Current status: ${feedbackReportStatusLabel(status)}`;
             feedbackReportStatusButtonsElement.textContent = "";
-            const actions = status === "new" ? [["reviewed", "Mark reviewed"], ["resolved", "Resolve"]] : (status === "reviewed" ? [["resolved", "Resolve"]] : (status === "resolved" ? [["reviewed", "Reopen as reviewed"]] : []));
+            const actions = status === "new" ? [["reviewed", "Mark reviewed"], ["needs_information", "Needs information"], ["processing", "Mark processing"], ["resolved", "Resolve"], ["rejected", "Reject"]] : (status === "reviewed" || status === "needs_information" ? [["processing", "Mark processing"], ["resolved", "Resolve"], ["rejected", "Reject"]] : (status === "processing" ? [["resolved", "Resolve"], ["rejected", "Reject"]] : ((status === "resolved" || status === "rejected") ? [["reviewed", "Reopen as reviewed"]] : []));
             actions.forEach(([targetStatus, label]) => {
                 const button = document.createElement("button");
                 button.type = "button";
@@ -2429,7 +2429,7 @@
 
     async function changeFeedbackReportStatus(targetStatus) {
         const reportId = String(feedbackReportsState.selectedReportId || "");
-        if (!reportId || feedbackReportsState.statusRequestPending || !hasAdminPermission(AdminPermissionIds.feedbackReportsStatusManage) || !["reviewed", "resolved"].includes(targetStatus)) { return; }
+        if (!reportId || feedbackReportsState.statusRequestPending || !hasAdminPermission(AdminPermissionIds.feedbackReportsStatusManage) || !["reviewed", "needs_information", "processing", "resolved", "rejected"].includes(targetStatus)) { return; }
         feedbackReportsState.statusRequestPending = true;
         feedbackReportStatusErrorElement.textContent = "";
         feedbackReportStatusSuccessElement.textContent = "";

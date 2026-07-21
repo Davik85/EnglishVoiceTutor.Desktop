@@ -232,7 +232,7 @@ public static class RateLimitingServiceCollectionExtensions
         ApiConstants.AuthRegisterRoute => RateLimitingConstants.AuthRegisterPolicyName,
         ApiConstants.AuthPasswordResetRequestRoute => RateLimitingConstants.AuthPasswordResetRequestPolicyName,
         ApiConstants.AuthPasswordResetConfirmRoute => RateLimitingConstants.AuthPasswordResetConfirmPolicyName,
-        ApiConstants.AuthRefreshRoute or ApiConstants.AuthRevokeRoute or ApiConstants.AuthMeRoute or ApiConstants.AuthChangePasswordRoute => RateLimitingConstants.AuthSessionPolicyName,
+        ApiConstants.AuthRefreshRoute or ApiConstants.AuthRevokeRoute or ApiConstants.AuthMeRoute or ApiConstants.AuthChangePasswordRoute or ApiConstants.MeAccountDeletionRequestsRoute => RateLimitingConstants.AuthSessionPolicyName,
         ApiConstants.LessonChatReplyRoute => RateLimitingConstants.LessonChatReplyPolicyName,
         ApiConstants.LessonChatHintRoute => RateLimitingConstants.LessonHintPolicyName,
         ApiConstants.LessonChatFeedbackRoute => RateLimitingConstants.LessonFeedbackPolicyName,

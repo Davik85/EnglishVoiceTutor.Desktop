@@ -23,7 +23,10 @@ public sealed class AdminFeedbackReportStatusServiceTests
 
     [Theory]
     [InlineData("reviewed")]
+    [InlineData("needs_information")]
+    [InlineData("processing")]
     [InlineData("resolved")]
+    [InlineData("rejected")]
     public async Task NewReportTransitionsSetFirstReviewedTimestampAndWriteSafeAudit(string requestedStatus)
     {
         await using var db = CreateDbContext();
