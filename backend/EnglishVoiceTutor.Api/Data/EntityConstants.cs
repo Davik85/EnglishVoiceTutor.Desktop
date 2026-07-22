@@ -32,6 +32,8 @@ public static class EntityConstants
         public const string AdminAuthAuditEvents = "admin_auth_audit_events";
         public const string PasswordResetTokens = "password_reset_tokens";
         public const string UserRefreshTokens = "user_refresh_tokens";
+        public const string AccountAnonymizationOperations = "account_anonymization_operations";
+        public const string AccountAnonymizationPolicySnapshots = "account_anonymization_policy_snapshots";
         public const string ContentPacks = "cms_content_packs";
         public const string CmsLessonTopics = "cms_lesson_topics";
         public const string CmsLessonScenarios = "cms_lesson_scenarios";
@@ -108,6 +110,10 @@ public static class EntityConstants
         public const int CmsTemplateKeyMaxLength = 80;
         public const int CmsReasonMaxLength = 2000;
         public const int CmsStableKeyMaxLength = 160;
+        public const int AccountAnonymizationPolicyVersionMaxLength = 80;
+        public const int AccountAnonymizationFingerprintMaxLength = 128;
+        public const int AccountAnonymizationStateMaxLength = 64;
+        public const int AccountAnonymizationJsonMaxLength = 12000;
     }
 
     public static class Precision

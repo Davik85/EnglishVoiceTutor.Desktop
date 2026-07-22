@@ -4,7 +4,13 @@ Companion to [Account anonymization procedure and data inventory](ACCOUNT_ANONYM
 
 ## 1. Status and implementation boundary
 
-**Status: approved technical design for review, not implemented behavior.** No anonymization mutation endpoint, permission, entity, migration, Admin UI, or production action exists. Exact legally required retention periods remain an owner/legal decision; any unresolved retention category blocks destructive execution. The required first implementation slice is read-only: it may create durable operation/preflight records but must not anonymize, delete, revoke, cancel, notify, call a provider, or alter learner data.
+**Status: approved technical design with the read-only Slice 1 foundation implemented in the repository, not deployed behavior.** No anonymization mutation endpoint, Admin UI, or production action exists. Exact legally required retention periods remain an owner/legal decision; any unresolved retention category blocks destructive execution. The required first implementation slice is read-only: it may create durable operation/preflight records but must not anonymize, delete, revoke, cancel, notify, call a provider, or alter learner data.
+
+### Slice 1 repository implementation (not deployed)
+
+Slice 1 is implemented in the repository and remains undeployed: migration `AddAccountAnonymizationPreflightFoundation` creates only `account_anonymization_operations` and `account_anonymization_policy_snapshots`; `POST /api/admin/feedback-reports/{reportId:guid}/account-anonymization/preflight` creates or refreshes a read-only preflight; and `GET /api/admin/feedback-reports/{reportId:guid}/account-anonymization` reads its status without recomputation. Both routes require `account_anonymization.preflight.read`; the foundation-only `account_anonymization.execute` permission has no route. Both permissions are initially assigned only to `super_admin`.
+
+The code-owned initial policy is `account_anonymization_policy_v1`, with a deterministic SHA-256 hash over its safe category decisions. Preflights have a 15-minute lifetime: an unexpired `refresh=false` request returns the stored operation, while forced or expired refresh increments its preflight version. The implementation reads only local normalized state and writes only its new operation/policy records; it does not modify learner/support/billing/authentication/entitlement/Admin/CMS/provider records or call an external provider. Backup and unresolved-retention decisions intentionally yield safe blockers, so no execution readiness is claimed.
 
 ## 2. Recommended backend architecture
 

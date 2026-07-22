@@ -127,6 +127,8 @@ public static class ApiConstants
     public const string AdminFeedbackReportByIdRoute = "/api/admin/feedback-reports/{reportId:guid}";
     public const string AdminFeedbackReportStatusRoute = "/api/admin/feedback-reports/{reportId:guid}/status";
     public const string AdminFeedbackReportRepliesRoute = "/api/admin/feedback-reports/{reportId:guid}/replies";
+    public const string AdminFeedbackReportAccountAnonymizationPreflightRoute = "/api/admin/feedback-reports/{reportId:guid}/account-anonymization/preflight";
+    public const string AdminFeedbackReportAccountAnonymizationRoute = "/api/admin/feedback-reports/{reportId:guid}/account-anonymization";
     public const string AdminUserFreeLessonAllowanceResetRoute = "/api/admin/users/{userId:guid}/free-lesson-allowance/reset";
     public const string AdminUserBillingCancelRenewalRoute = "/api/admin/users/{userId:guid}/billing/cancel-renewal";
     public const string AdminDevCmsStaticContentImportRoute = "/api/admin/dev/cms/static-content/import";

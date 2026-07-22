@@ -29,4 +29,6 @@ public static class AdminPermissionConstants
     public const string FeedbackReportsRead = "feedback_reports.read";
     public const string FeedbackReportsStatusManage = "feedback_reports.status.manage";
     public const string FeedbackReportsReply = "feedback_reports.reply";
+    public const string AccountAnonymizationPreflightRead = "account_anonymization.preflight.read";
+    public const string AccountAnonymizationExecute = "account_anonymization.execute";
 }

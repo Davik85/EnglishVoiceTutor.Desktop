@@ -37,7 +37,9 @@ public sealed class AdminRolePermissionCatalogService : IAdminRolePermissionCata
         AdminPermissionConstants.AdminRolesManage,
         AdminPermissionConstants.FeedbackReportsRead,
           AdminPermissionConstants.FeedbackReportsStatusManage,
-          AdminPermissionConstants.FeedbackReportsReply
+          AdminPermissionConstants.FeedbackReportsReply,
+        AdminPermissionConstants.AccountAnonymizationPreflightRead,
+        AdminPermissionConstants.AccountAnonymizationExecute
     ];
 
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> ProductionRolePermissions =

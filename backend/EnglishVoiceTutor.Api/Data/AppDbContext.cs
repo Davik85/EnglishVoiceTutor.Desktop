@@ -34,6 +34,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<AdminAuthAuditEventEntity> AdminAuthAuditEvents => Set<AdminAuthAuditEventEntity>();
     public DbSet<PasswordResetTokenEntity> PasswordResetTokens => Set<PasswordResetTokenEntity>();
     public DbSet<UserRefreshTokenEntity> UserRefreshTokens => Set<UserRefreshTokenEntity>();
+    public DbSet<AccountAnonymizationOperationEntity> AccountAnonymizationOperations => Set<AccountAnonymizationOperationEntity>();
+    public DbSet<AccountAnonymizationPolicySnapshotEntity> AccountAnonymizationPolicySnapshots => Set<AccountAnonymizationPolicySnapshotEntity>();
     public DbSet<ContentPackEntity> ContentPacks => Set<ContentPackEntity>();
     public DbSet<CmsLessonTopicEntity> CmsLessonTopics => Set<CmsLessonTopicEntity>();
     public DbSet<CmsLessonScenarioEntity> CmsLessonScenarios => Set<CmsLessonScenarioEntity>();
@@ -74,6 +76,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureAdminAuthAuditEvents(modelBuilder);
         ConfigurePasswordResetTokens(modelBuilder);
         ConfigureUserRefreshTokens(modelBuilder);
+        ConfigureAccountAnonymizationPreflightFoundation(modelBuilder);
         ConfigureCmsContent(modelBuilder);
     }
 
@@ -671,6 +674,39 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .WithMany(user => user.RefreshTokens)
             .HasForeignKey(token => token.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureAccountAnonymizationPreflightFoundation(ModelBuilder modelBuilder)
+    {
+        var policy = modelBuilder.Entity<AccountAnonymizationPolicySnapshotEntity>();
+        policy.ToTable(EntityConstants.TableNames.AccountAnonymizationPolicySnapshots);
+        policy.HasKey(snapshot => snapshot.Id);
+        policy.Property(snapshot => snapshot.PolicyVersion).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationPolicyVersionMaxLength);
+        policy.Property(snapshot => snapshot.VersionHash).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationFingerprintMaxLength);
+        policy.Property(snapshot => snapshot.CategoryDecisionsJson).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationJsonMaxLength);
+        policy.Property(snapshot => snapshot.CreatedAtUtc).IsRequired();
+        policy.HasIndex(snapshot => snapshot.PolicyVersion).IsUnique();
+        policy.HasIndex(snapshot => snapshot.VersionHash).IsUnique();
+
+        var operation = modelBuilder.Entity<AccountAnonymizationOperationEntity>();
+        operation.ToTable(EntityConstants.TableNames.AccountAnonymizationOperations);
+        operation.HasKey(item => item.Id);
+        operation.Property(item => item.State).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationStateMaxLength);
+        operation.Property(item => item.PreflightFingerprint).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationFingerprintMaxLength);
+        operation.Property(item => item.ProcedureVersion).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationPolicyVersionMaxLength);
+        operation.Property(item => item.CategoryCountsJson).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationJsonMaxLength);
+        operation.Property(item => item.BlockingCodesJson).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationJsonMaxLength);
+        operation.Property(item => item.RetentionSummaryJson).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationJsonMaxLength);
+        operation.Property(item => item.ProviderStatesJson).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationJsonMaxLength);
+        operation.Property(item => item.BackupReconciliationState).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationStateMaxLength);
+        operation.Property(item => item.ConcurrencyRevision).IsConcurrencyToken();
+        operation.HasIndex(item => item.ReportId).IsUnique();
+        operation.HasIndex(item => item.TargetUserId);
+        operation.HasIndex(item => new { item.State, item.UpdatedAtUtc });
+        operation.HasOne(item => item.Report).WithMany().HasForeignKey(item => item.ReportId).OnDelete(DeleteBehavior.Restrict);
+        operation.HasOne(item => item.TargetUser).WithMany().HasForeignKey(item => item.TargetUserId).OnDelete(DeleteBehavior.Restrict);
+        operation.HasOne(item => item.PolicySnapshot).WithMany().HasForeignKey(item => item.PolicySnapshotId).OnDelete(DeleteBehavior.Restrict);
+        operation.HasOne(item => item.ActorAdminUser).WithMany().HasForeignKey(item => item.ActorAdminUserId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureCmsContent(ModelBuilder modelBuilder)

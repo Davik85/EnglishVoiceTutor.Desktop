@@ -8,7 +8,7 @@ Mobile Settings account-deletion request integration is complete. The repository
 
 ### A. Backend/Admin anonymization implementation
 
-The next proposed backend slice is the **read-only operation and preflight foundation**, pending review of [Account anonymization backend technical design](ACCOUNT_ANONYMIZATION_BACKEND_DESIGN.md): dedicated Admin permission/policy mappings, durable operation/policy-preflight schema foundation and migration, read-only preflight and operation-status endpoints, and focused tests. It must not anonymize/delete learner data, revoke tokens, cancel subscriptions, call providers, notify learners, or resolve support requests. The later destructive, browser-confirmation, external-provider, verification, notification, and backup/restore slices remain separately approved work.
+The read-only operation and preflight foundation is implemented in the repository but not deployed. The next action is review and controlled deployment planning for that foundation, including migration review and safe operational validation; it must not anonymize/delete learner data, revoke tokens, cancel subscriptions, call providers, notify learners, or resolve support requests. The later destructive, browser-confirmation, external-provider, verification, notification, and backup/restore slices remain separately approved work. See [Account anonymization backend technical design](ACCOUNT_ANONYMIZATION_BACKEND_DESIGN.md).
 
 ### B. Mobile account-deletion UX adjustment
 

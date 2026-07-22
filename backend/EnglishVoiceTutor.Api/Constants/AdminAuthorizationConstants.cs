@@ -27,6 +27,8 @@ public static class AdminAuthorizationConstants
     public const string FeedbackReportsReadPermissionPolicyName = "AdminPermission:feedback_reports.read";
     public const string FeedbackReportsStatusManagePermissionPolicyName = "AdminPermission:feedback_reports.status.manage";
     public const string FeedbackReportsReplyPermissionPolicyName = "AdminPermission:feedback_reports.reply";
+    public const string AccountAnonymizationPreflightReadPermissionPolicyName = "AdminPermission:account_anonymization.preflight.read";
+    public const string AccountAnonymizationExecutePermissionPolicyName = "AdminPermission:account_anonymization.execute";
     public const string AdminCookieAuthenticationScheme = "AdminShellCookie";
     public const string AdminCookieName = "evt_admin_session";
     public const string BootstrapAdminSource = "development_config_bootstrap";

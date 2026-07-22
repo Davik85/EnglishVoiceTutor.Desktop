@@ -17,6 +17,7 @@ FILES = {
     "admin_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs",
     "ai_model_settings_admin_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AiModelSettingsAdminEndpoints.cs",
     "feedback_report_admin_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminFeedbackReportEndpoints.cs",
+    "account_anonymization_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AccountAnonymizationEndpoints.cs",
     "admin_js": ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js",
     "admin_index": ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html",
 }
@@ -46,6 +47,8 @@ PRODUCTION_PERMISSION_POLICIES = {
     "FeedbackReportsReadPermissionPolicyName": ("FeedbackReportsRead", "feedback_reports.read"),
     "FeedbackReportsStatusManagePermissionPolicyName": ("FeedbackReportsStatusManage", "feedback_reports.status.manage"),
     "FeedbackReportsReplyPermissionPolicyName": ("FeedbackReportsReply", "feedback_reports.reply"),
+    "AccountAnonymizationPreflightReadPermissionPolicyName": ("AccountAnonymizationPreflightRead", "account_anonymization.preflight.read"),
+    "AccountAnonymizationExecutePermissionPolicyName": ("AccountAnonymizationExecute", "account_anonymization.execute"),
 }
 
 FEEDBACK_REPORT_ENDPOINTS = [
@@ -72,6 +75,18 @@ FEEDBACK_REPORT_ENDPOINTS = [
         "route_constant": "AdminFeedbackReportRepliesRoute",
         "permission_constant": "FeedbackReportsReply",
         "policy_constant": "FeedbackReportsReplyPermissionPolicyName",
+    },
+    {
+        "method": "POST",
+        "route_constant": "AdminFeedbackReportAccountAnonymizationPreflightRoute",
+        "permission_constant": "AccountAnonymizationPreflightRead",
+        "policy_constant": "AccountAnonymizationPreflightReadPermissionPolicyName",
+    },
+    {
+        "method": "GET",
+        "route_constant": "AdminFeedbackReportAccountAnonymizationRoute",
+        "permission_constant": "AccountAnonymizationPreflightRead",
+        "policy_constant": "AccountAnonymizationPreflightReadPermissionPolicyName",
     },
 ]
 
@@ -353,6 +368,7 @@ FUTURE_ONLY_ENDPOINT_PERMISSIONS = {
     "BillingDiagnosticsRead",
     "SystemDiagnosticsRead",
     "AdminRolesManage",
+    "AccountAnonymizationExecute",
 }
 
 DANGEROUS_POLICY_CONSTANTS = [
@@ -432,6 +448,8 @@ def main() -> None:
         + read("ai_model_settings_admin_endpoints")
         + "\n"
         + read("feedback_report_admin_endpoints")
+        + "\n"
+        + read("account_anonymization_endpoints")
     )
     admin_ui = read("admin_js") + "\n" + read("admin_index")
 
@@ -505,6 +523,7 @@ def main() -> None:
         require(program, f"AddAdminPermissionPolicy(options, AdminAuthorizationConstants.{policy_constant}, AdminPermissionConstants.{permission_constant})", f"registered permission policy mapping for {permission_name}")
 
     require(program, "app.MapAdminFeedbackReportEndpoints();", "feedback report endpoint registration")
+    require(program, "app.MapAccountAnonymizationEndpoints();", "account anonymization endpoint registration")
 
     require(permission_handler, "public sealed class AdminPermissionRequirement", "AdminPermissionRequirement class")
     require(permission_handler, "public string PermissionName", "AdminPermissionRequirement permission name")
@@ -574,9 +593,9 @@ def main() -> None:
         )
         for endpoint in FEEDBACK_REPORT_ENDPOINTS
     ]
-    if len(migrated_authorizations) != 40 or set(migrated_authorizations) != set(expected_migrations):
+    if len(migrated_authorizations) != 42 or set(migrated_authorizations) != set(expected_migrations):
         raise AssertionError(
-            f"Exactly forty Admin endpoints must use AdminPermission:* policies, including the four feedback-report endpoints. Got: {migrated_authorizations}"
+            f"Exactly forty-two Admin endpoints must use AdminPermission:* policies, including the six feedback-report/account-anonymization endpoints. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:

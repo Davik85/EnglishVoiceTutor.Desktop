@@ -160,6 +160,8 @@ builder.Services.AddAuthorization(options =>
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.FeedbackReportsReadPermissionPolicyName, AdminPermissionConstants.FeedbackReportsRead);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.FeedbackReportsStatusManagePermissionPolicyName, AdminPermissionConstants.FeedbackReportsStatusManage);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.FeedbackReportsReplyPermissionPolicyName, AdminPermissionConstants.FeedbackReportsReply);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.AccountAnonymizationPreflightReadPermissionPolicyName, AdminPermissionConstants.AccountAnonymizationPreflightRead);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.AccountAnonymizationExecutePermissionPolicyName, AdminPermissionConstants.AccountAnonymizationExecute);
 });
 builder.Services.AddHttpContextAccessor();
 
@@ -202,6 +204,7 @@ builder.Services.AddScoped<IPasswordHasher<EnglishVoiceTutor.Api.Data.Entities.U
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAccountDeletionRequestService, AccountDeletionRequestService>();
+builder.Services.AddScoped<IAccountAnonymizationPreflightService, AccountAnonymizationPreflightService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IDeviceRegistrationService, DeviceRegistrationService>();
 builder.Services.AddSingleton<IEmailSender>(services =>
@@ -428,6 +431,7 @@ app.MapPaddleCheckoutLaunchEndpoints();
 app.MapPaddleWebhookEndpoints();
 app.MapAdminEndpoints();
 app.MapAdminFeedbackReportEndpoints();
+app.MapAccountAnonymizationEndpoints();
 app.MapWebsiteAdminEndpoints();
 app.MapAiModelSettingsAdminEndpoints();
 app.MapCmsDiagnosticsEndpoints();

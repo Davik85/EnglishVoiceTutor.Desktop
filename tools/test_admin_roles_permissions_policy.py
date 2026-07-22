@@ -56,6 +56,8 @@ PERMISSIONS = {
     "FeedbackReportsRead": "feedback_reports.read",
     "FeedbackReportsStatusManage": "feedback_reports.status.manage",
     "FeedbackReportsReply": "feedback_reports.reply",
+    "AccountAnonymizationPreflightRead": "account_anonymization.preflight.read",
+    "AccountAnonymizationExecute": "account_anonymization.execute",
 }
 
 EXPECTED_ROLE_PERMISSIONS = {
