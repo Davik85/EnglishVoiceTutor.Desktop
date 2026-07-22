@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace EnglishVoiceTutor.Api.Tests.AdminUi;
 
 public sealed class AdminFeedbackReportsUiStaticTests
@@ -68,6 +70,24 @@ public sealed class AdminFeedbackReportsUiStaticTests
         var detailsLoad = AdminJs.Substring(AdminJs.IndexOf("async function loadFeedbackReportDetails"), AdminJs.IndexOf("async function adminFetch") - AdminJs.IndexOf("async function loadFeedbackReportDetails"));
         Assert.DoesNotContain("method: \"PATCH\"", detailsLoad);
         Assert.DoesNotContain("method: \"POST\"", detailsLoad);
+    }
+
+    [Fact]
+    public void AdminScriptParsesSoLoginAndFeedbackHandlersCanInitialize()
+    {
+        using var process = Process.Start(new ProcessStartInfo
+        {
+            FileName = "node",
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            ArgumentList = { "--check", Path.Combine(AppContext.BaseDirectory, "../../../../EnglishVoiceTutor.Api/wwwroot/admin/admin.js") }
+        });
+
+        Assert.NotNull(process);
+        process!.WaitForExit();
+        var standardError = process.StandardError.ReadToEnd();
+        Assert.True(process.ExitCode == 0, standardError);
     }
 
     [Fact]

@@ -2389,7 +2389,7 @@
         if (canManageStatus) {
             feedbackReportCurrentStatusElement.textContent = `Current status: ${feedbackReportStatusLabel(status)}`;
             feedbackReportStatusButtonsElement.textContent = "";
-            const actions = status === "new" ? [["reviewed", "Mark reviewed"], ["needs_information", "Needs information"], ["processing", "Mark processing"], ["resolved", "Resolve"], ["rejected", "Reject"]] : (status === "reviewed" || status === "needs_information" ? [["processing", "Mark processing"], ["resolved", "Resolve"], ["rejected", "Reject"]] : (status === "processing" ? [["resolved", "Resolve"], ["rejected", "Reject"]] : ((status === "resolved" || status === "rejected") ? [["reviewed", "Reopen as reviewed"]] : []));
+            const actions = status === "new" ? [["reviewed", "Mark reviewed"], ["needs_information", "Needs information"], ["processing", "Mark processing"], ["resolved", "Resolve"], ["rejected", "Reject"]] : (status === "reviewed" || status === "needs_information" ? [["processing", "Mark processing"], ["resolved", "Resolve"], ["rejected", "Reject"]] : (status === "processing" ? [["resolved", "Resolve"], ["rejected", "Reject"]] : ((status === "resolved" || status === "rejected") ? [["reviewed", "Reopen as reviewed"]] : [])));
             actions.forEach(([targetStatus, label]) => {
                 const button = document.createElement("button");
                 button.type = "button";
