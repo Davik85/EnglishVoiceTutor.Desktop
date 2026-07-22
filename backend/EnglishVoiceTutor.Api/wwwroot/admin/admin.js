@@ -1,4 +1,20 @@
 (() => {
+    function removeLegacySensitiveLoginParameters() {
+        const currentUrl = new URL(window.location.href);
+        let removedSensitiveParameter = false;
+        for (const parameterName of Array.from(currentUrl.searchParams.keys())) {
+            if (parameterName.toLowerCase() === "email" || parameterName.toLowerCase() === "password") {
+                currentUrl.searchParams.delete(parameterName);
+                removedSensitiveParameter = true;
+            }
+        }
+        if (removedSensitiveParameter) {
+            window.history.replaceState(window.history.state, "", `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+        }
+    }
+
+    removeLegacySensitiveLoginParameters();
+
     const ApiPaths = {
         login: "/api/auth/login",
         adminSession: "/api/admin/session",
@@ -197,6 +213,8 @@
     const loginCard = document.getElementById("login-card");
     const dashboard = document.getElementById("dashboard");
     const loginForm = document.getElementById("login-form");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
     const loginError = document.getElementById("login-error");
     const signInButton = document.getElementById("sign-in-button");
     const logoutButton = document.getElementById("logout-button");
@@ -3525,8 +3543,9 @@
     loginForm.addEventListener("submit", async (event) => {
         event.preventDefault(); setError(""); signInButton.disabled = true;
         try {
-            const formData = new FormData(loginForm);
-            const loginResponse = await fetch(ApiPaths.login, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: String(formData.get("email") || "").trim(), password: String(formData.get("password") || "") }) });
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            const loginResponse = await fetch(ApiPaths.login, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
             if (!loginResponse.ok) { throw new Error("Login failed. Check your email and password."); }
             const loginBody = await loginResponse.json(); if (!loginBody?.accessToken) { throw new Error("Login failed. Access token is missing."); }
             accessToken = loginBody.accessToken;
