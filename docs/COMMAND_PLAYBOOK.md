@@ -1,6 +1,6 @@
 # Command Playbook
 
-Review date: 2026-06-18.
+Review date: 2026-07-22.
 
 ## Source of truth for current versions
 
@@ -157,6 +157,8 @@ Upload Windows direct release files only to `/var/www/languagevoicetutor/release
 
 ## Backend-only deployment commands
 
+This file is the repository command-playbook source required by the backend deployment-policy check. Use `scripts/upload-backend-linux-release.ps1` for backend package/upload (normally with `-PackageFirst`); do not replace it with an invented manual deployment path. Migrations are applied separately through reviewed operator SQL. Never pass passwords in command arguments, and never commit generated files under `artifacts/`.
+
 
 ```powershell
 $BackendVersion = "<next-backend-version>"
@@ -181,7 +183,7 @@ Expected output path:
 ```
 
 
-When a manual SQL migration creates a new table, include runtime DB role owner and grant checks after the reviewed SQL is applied. For the current production setup, the runtime app DB role is `lvt_app`. If reviewed SQL is applied under the `postgres` role and creates a new application table, verify the new object's owner and required grants before considering the migration complete. Do not introduce a blanket ownership change for unrelated existing tables.
+When a manual SQL migration creates a new table, include a runtime DB role grant check and owner check after the reviewed SQL is applied. For the current production setup, the runtime app DB role is `lvt_app`. If reviewed SQL is applied under the `postgres` role and creates a new application table, verify the new object's owner and required grants before considering the migration complete. Do not introduce a blanket ownership change for unrelated existing tables. In the interactive `psql` verification session, inspect the bounded object with `\dp public.<table_name>`; do not place a password in the command arguments.
 
 For the feedback-report table, the documented expected owner is `lvt_app`. Inspect ownership and privileges without pasting database passwords or connection strings into docs or commands:
 
@@ -228,6 +230,10 @@ Remove-Item "$env:LOCALAPPDATA\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetu
 Release/tester installed builds are server-only and use `https://api.languagevoicetutor.com`; Local backend URLs are DEBUG/developer-only.
 
 ## Admin CMS browser verification checks
+
+When Admin CMS JavaScript changes, parsing must be verified before backend packaging or deployment. Existing backend regression test `AdminFeedbackReportsUiStaticTests.AdminScriptParsesSoLoginAndFeedbackHandlersCanInitialize` validates the real `backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js` with Node syntax checking; use that repository coverage rather than inventing a separate command.
+
+For changes to `wwwroot/admin/admin.js`, `wwwroot/admin/index.html`, Admin authentication/endpoints, middleware order, Admin rate limiting, or Admin feedback services, health checks alone are insufficient. The release is successful only after a private-window manual smoke: authorized login; dashboard load; feedback/support queue open; ordinary reports load; account-deletion filter works; one report opens; reply controls render; logout; and login again. Also verify the active server symlink, backend and database health, service status, recent logs, and any other relevant product smoke. `/health` and database health cannot prove browser JavaScript parsing or login-handler registration.
 
 Use these checks after a backend deploy that changes `/admin` static assets. They do not replace manual browser verification, but they confirm the deployed shell references the expected cache-busted assets and readable Validation & Preview renderers.
 
@@ -283,7 +289,7 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Current state: backend `0.1.35-backend.24` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`.
+Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; current production is `.127`.
 
 Current milestone: CMS published-snapshot runtime is active for published Windows direct lessons. These checks must confirm the active CMS source and clean fallback state without changing release scope.
 

@@ -1,12 +1,12 @@
 # Backend server deployment
 
-Review date: 2026-07-19.
+Review date: 2026-07-22.
 
 ## Current production backend
 
 Production backend is deployed and healthy.
 
-- Current release: `0.1.35-backend.123`
+- Current release: `0.1.35-backend.127`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -21,7 +21,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is release `0.1.35-backend.123` with previous release `0.1.35-backend.122`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.127`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 Previous backend rollback reference must be verified from `/opt/languagevoicetutor/backend/previous`. `0.1.35-backend.49` remains a documented older rollback reference, not a substitute for checking the live `previous` symlink.
 
@@ -73,6 +73,28 @@ ssh -t lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 
 ```
 
 Do not paste production environment values, database connection strings, API keys, or provider secrets into documentation, tickets, chat, commits, or pull requests. Do not echo `ConnectionStrings__DefaultConnection`, `PGPASSWORD`, or database URLs.
+
+## Mandatory Admin CMS release boundary
+
+Backend `/health` and database health are necessary checks, but they do not prove that Admin CMS JavaScript parses or that Admin login works. Before packaging or deployment, any Admin CMS JavaScript change must pass the existing backend regression coverage in `AdminFeedbackReportsUiStaticTests.AdminScriptParsesSoLoginAndFeedbackHandlersCanInitialize`, which runs Node syntax validation against the real `backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js` file.
+
+A backend release is not successful until manual Admin CMS smoke passes when it changes `wwwroot/admin/admin.js`, `wwwroot/admin/index.html`, Admin authentication, Admin endpoints, middleware order, Admin rate limiting, or Admin feedback services. In a private browser window:
+
+1. Open Admin CMS and log in with an authorized administrator account.
+2. Load the Admin dashboard.
+3. Open the feedback/support queue.
+4. Verify ordinary reports still load.
+5. Verify the account-deletion request filter.
+6. Open one report and verify the reply controls render.
+7. Log out, then log in again.
+
+Record all of these results with the symlink, service, logs, backend health, database health, and other relevant product smoke evidence.
+
+## 2026-07-21 to 2026-07-22 Admin CMS incident and correction
+
+Historical incident: backend `.126` was deployed; both health endpoints returned HTTP 200, and the new endpoint existed and correctly returned `401` without authentication. Admin CMS login nevertheless failed, so production was rolled back to `.125`, where login immediately worked again. The cause was not authentication, roles, cookies, routes, rate limiting, nginx, or the database.
+
+The root cause was a JavaScript syntax error in `backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js`: two closing parentheses were missing from the expanded feedback-status action expression. The browser could not parse the script, so the entire Admin CMS script stopped loading and the login submit handler was never registered. Backend regression coverage was added using Node syntax validation of the real `admin.js`. The correction was released as `.127`; Admin CMS login and the feedback queue were then manually verified successfully. This is historical incident context; the current active release is `.127`, not `.125` or `.126`.
 
 ## 2026-07-17 backend `0.1.35-backend.119` Admin Feedback & reports verification
 
@@ -219,7 +241,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.123`, previous release `0.1.35-backend.122`.
+- Backend: production healthy, current release `0.1.35-backend.127`; verify the rollback target from the live `previous` symlink.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.

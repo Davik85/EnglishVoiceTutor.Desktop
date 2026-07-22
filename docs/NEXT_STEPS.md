@@ -1,6 +1,12 @@
 # Next Steps
 
-Review date: 2026-07-19.
+Review date: 2026-07-22.
+
+## Next narrow task: Mobile Settings account-deletion request
+
+The next narrow product task is Mobile Settings integration for the deployed account-deletion request endpoint. The expected flow is: **Settings → Request account deletion → current password → optional reason → submit → safe result showing request ID/status or the existing active request**. The UI must consistently describe a request and must not imply immediate deletion.
+
+This Mobile task must not add automatic deletion, anonymization, subscription cancellation, token-family revocation, notification reminders, localization, or billing work. After Mobile integration, the next separate account-deletion phase is to define and implement the real administrator-side deletion/anonymization procedure, including the rule that support cannot mark a request completed until the real data operation is complete.
 
 ## Mobile v1 planning next step
 
@@ -61,7 +67,7 @@ Backend `0.1.35-backend.116` completes the backend prerequisite for learner leve
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.123`, previous release `0.1.35-backend.122`; Production Admin RBAC / persistent role management is completed.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.127`; Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
