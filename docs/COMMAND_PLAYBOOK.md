@@ -231,9 +231,9 @@ Release/tester installed builds are server-only and use `https://api.languagevoi
 
 ## Admin CMS browser verification checks
 
-When Admin CMS JavaScript changes, parsing must be verified before backend packaging or deployment. Existing backend regression test `AdminFeedbackReportsUiStaticTests.AdminScriptParsesSoLoginAndFeedbackHandlersCanInitialize` validates the real `backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js` with Node syntax checking; use that repository coverage rather than inventing a separate command.
+When the Admin login form, Admin authentication JavaScript, or Admin URL/session initialization changes, validate the real script before backend packaging or deployment with `node --check backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js` and the existing backend regression test `AdminFeedbackReportsUiStaticTests.AdminScriptParsesSoLoginAndFeedbackHandlersCanInitialize`.
 
-For changes to `wwwroot/admin/admin.js`, `wwwroot/admin/index.html`, Admin authentication/endpoints, middleware order, Admin rate limiting, or Admin feedback services, health checks alone are insufficient. The release is successful only after a private-window manual smoke: authorized login; dashboard load; feedback/support queue open; ordinary reports load; account-deletion filter works; one report opens; reply controls render; logout; and login again. Also verify the active server symlink, backend and database health, service status, recent logs, and any other relevant product smoke. `/health` and database health cannot prove browser JavaScript parsing or login-handler registration.
+For changes to `wwwroot/admin/admin.js`, `wwwroot/admin/index.html`, Admin authentication/endpoints, middleware order, Admin rate limiting, or Admin feedback services, health checks alone are insufficient. The release is successful only after a private-window manual smoke: authorized login by both the Sign in button and Enter; dashboard load; feedback/support queue open; ordinary reports load; account-deletion filter works; one report opens; reply controls render; logout; and repeat login. Verify legacy URL cleanup with a clearly fake URL such as `/admin/?Email=example.invalid&PASSWORD=not-a-real-password&view=feedback#feedback-reports`: only case-insensitive credential parameters may be removed, while unrelated query state and hash are preserved. Also verify fail-closed fallback with JavaScript unavailable: browser-native submission cannot serialize credentials into either the URL or native POST body. Verify the active server symlink, backend and database health, service status, recent logs, and any other relevant product smoke. `/health` and database health cannot prove browser JavaScript parsing or login-handler registration.
 
 Use these checks after a backend deploy that changes `/admin` static assets. They do not replace manual browser verification, but they confirm the deployed shell references the expected cache-busted assets and readable Validation & Preview renderers.
 
@@ -289,7 +289,7 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; current production is `.127`.
+Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; current production is `.128` with `.127` as the verified rollback target.
 
 Current milestone: CMS published-snapshot runtime is active for published Windows direct lessons. These checks must confirm the active CMS source and clean fallback state without changing release scope.
 

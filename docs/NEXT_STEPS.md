@@ -2,11 +2,11 @@
 
 Review date: 2026-07-22.
 
-## Next narrow task: Mobile Settings account-deletion request
+## Next account-deletion phase: bounded deletion/anonymization planning
 
-The next narrow product task is Mobile Settings integration for the deployed account-deletion request endpoint. The expected flow is: **Settings → Request account deletion → current password → optional reason → submit → safe result showing request ID/status or the existing active request**. The UI must consistently describe a request and must not imply immediate deletion.
+Mobile Settings account-deletion request integration is complete. The next separate phase is planning only: define the approved administrator/support deletion or anonymization procedure; inventory affected account data and retention obligations; define subscription handling; define session/token revocation; and define audit evidence plus rollback/non-recoverability boundaries. Only after that bounded, high-risk planning work is approved should the real operation be implemented and separately reviewed.
 
-This Mobile task must not add automatic deletion, anonymization, subscription cancellation, token-family revocation, notification reminders, localization, or billing work. After Mobile integration, the next separate account-deletion phase is to define and implement the real administrator-side deletion/anonymization procedure, including the rule that support cannot mark a request completed until the real data operation is complete.
+Do not treat support-ticket submission or resolution as deletion. This planning phase does not implement or fully design the procedure, and it must not add automatic deletion, anonymization, subscription cancellation, token-family revocation, notification reminders, localization, or billing work.
 
 ## Mobile v1 planning next step
 
@@ -67,7 +67,9 @@ Backend `0.1.35-backend.116` completes the backend prerequisite for learner leve
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.127`; Production Admin RBAC / persistent role management is completed.
+Public release boundary: the current product remains a public Windows direct release, not a full broad production-readiness claim.
+
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.128` with `.127` as the verified rollback target; CMS/Admin login security is production-verified, and Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.

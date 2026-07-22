@@ -2,13 +2,15 @@
 
 Review date: 2026-07-22.
 
-## 2026-07-22 production account-deletion release state
+## 2026-07-22 production account-deletion and Admin login-security release state
 
-The active production backend is `0.1.35-backend.127` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.127`. Public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. Admin CMS login and the Admin feedback/support queue were manually verified successfully after the `.127` deployment.
+The active production backend is `0.1.35-backend.128` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.128`; verified rollback target is `0.1.35-backend.127`. Security commit `8dd301b3` (`Harden Admin login credential handling`) is deployed. `languagevoicetutor-backend.service` is active and running; public `/health` returned HTTP 200 `Healthy`; and public `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`. CMS/Admin production smoke passed in a private window: Admin login, dashboard and Feedback & reports loading, account-deletion report opening, logout/repeat login, Sign in/Enter submission, legacy sensitive URL cleanup, and fail-closed native fallback verification.
+
+The `.128` Admin login form explicitly posts to `/admin/` and its email/password inputs have no `name` attributes, so a missing or unparsable `admin.js` cannot serialize or transmit credentials through native form submission. Working JavaScript still prevents native submission and sends the trimmed email plus unchanged password as JSON to `POST /api/auth/login`. At startup, `admin.js` removes legacy `email` and `password` query parameters case-insensitively without reloading, while preserving the Admin path, unrelated query parameters, and hash. Removed values are not copied into fields, storage, logs, errors, or diagnostics. No migration, static website deployment, Website CMS publish, installer upload, billing/Paddle, role, or production configuration change was part of `.128`.
 
 Authenticated `POST /api/me/account-deletion-requests` is deployed. It requires current-password confirmation, accepts an optional reason, derives identity from the authenticated learner, never persists or exposes the password, and permits only one unresolved request per user. Migration `20260721120000_AddActiveAccountDeletionRequestConstraint` is applied and adds only partial unique index `IX_user_feedback_reports_ActiveAccountDeletionRequest_UserId`; it created no table or sequence, so no additional grants or ownership changes were required.
 
-The request uses the existing support queue and Admin email reply workflow. It does not automatically delete, deactivate, anonymize, revoke all token families, cancel subscriptions, or alter user data. Actual deletion/anonymization remains support-managed, and a request must not be resolved or completed until that real operation has occurred. Mobile Settings integration is not yet implemented. See [Account-deletion requests](ACCOUNT_DELETION_REQUESTS.md).
+The request uses the existing support queue and Admin email reply workflow. It does not automatically delete, deactivate, anonymize, revoke all token families, cancel subscriptions, or alter user data. Actual deletion/anonymization remains pending, and a request must not be resolved or completed until that real operation has occurred. Mobile Settings integration is implemented and manually verified: it requires the current password, safely rejects an incorrect password without creating a request or logging the learner out, and shows the returned request ID and status. See [Account-deletion requests](ACCOUNT_DELETION_REQUESTS.md).
 
 ## Progress V1
 
@@ -51,7 +53,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.127`.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.128`, with `.127` as the verified rollback target.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows direct public release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -81,7 +83,7 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.127`. Public backend health returned HTTP 200, public database health returned HTTP 200 with `canConnect=true`, and Admin CMS login plus the feedback/support queue were manually verified after deployment. The account-deletion endpoint and migration state are recorded above. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
+Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.128`; verified rollback target: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.127`. Public backend health returned HTTP 200, public database health returned HTTP 200 with `canConnect=true`, and the Admin CMS private-window smoke passed after deployment. The account-deletion endpoint and migration state are recorded above. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
 
 Backend deployment uses:
 
@@ -149,7 +151,7 @@ The saved `CurrentLevel` is only the user's selected level and does not replace 
 
 ## 2026-07-13 authenticated voice scenario resolution production verification
 
-Backend `0.1.35-backend.115` was deployed and verified for this dated voice scenario structured-output fix; `0.1.35-backend.114` was the previous backend release for that deployment. This is historical context; the current production backend has since advanced to `0.1.35-backend.116`. Backend `0.1.35-backend.114` was already active before the `.115` deployment, so it must not be described as containing the `.115` structured-output fix. The `.115` deployment completed successfully through the existing `scripts/upload-backend-linux-release.ps1` flow, `languagevoicetutor-backend.service` was active, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or database schema change was required or run. Website and Windows installer files were not deployed.
+Backend `0.1.35-backend.115` was deployed and verified for this dated voice scenario structured-output fix; `0.1.35-backend.114` was the previous backend release for that deployment. This is historical context; the current production backend has since advanced to `0.1.35-backend.128`. Backend `0.1.35-backend.114` was already active before the `.115` deployment, so it must not be described as containing the `.115` structured-output fix. The `.115` deployment completed successfully through the existing `scripts/upload-backend-linux-release.ps1` flow, `languagevoicetutor-backend.service` was active, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or database schema change was required or run. Website and Windows installer files were not deployed.
 
 Backend `0.1.35-backend.115` fixes `POST /api/me/lesson-sessions/{sessionId}/voice-scenario-resolution` returning HTTP 502 when the provider returned a structured-output shape that was permitted by the old provider schema but rejected by backend validation. The provider schema now has one explicit result shape for each decision: `published_context`, `free_context`, `clarify`, and `unsafe`. The backend converts the nested provider result back into the existing flat public endpoint response, so the public route and Mobile request/response contract did not change. `free_context` remains a first-class result, runtime candidate IDs are still validated against the current CMS candidates for the lesson, production credential validation remains unchanged, and the automated tests did not use a live OpenAI call. No scenario titles, transcript phrases, CMS scenario IDs, or language-specific production examples were added.
 
@@ -310,7 +312,7 @@ Publication verification completed:
 - Public download page showed Current version `1.0`, release details for channel `direct-public`, size `180.0 MB`, and SHA-256 `d6be93fbcd75536a0cd149bd8872c8327fc3131ede247b1db2b2d33d673680e1`.
 - Manual website check confirmed the Download button downloads the `1.0` installer.
 
-Historical scope boundary: the public release upload affected only Windows direct release files. It did not deploy backend code, run migrations, modify database state, change billing/Paddle/refund logic, upload website files, rebuild the installer, change secrets, or change installer binaries. That historical Windows release upload did not change the backend; the backend has since advanced and the current production backend is `0.1.35-backend.116`. Code signing remains deferred and accepted as a known release risk for this release; Windows SmartScreen warnings remain expected until a future signed installer is published. The next public direct version after `1.1` should be `1.2`; future public direct versions should continue as `1.2`, `1.3`, and so on.
+Historical scope boundary: the public release upload affected only Windows direct release files. It did not deploy backend code, run migrations, modify database state, change billing/Paddle/refund logic, upload website files, rebuild the installer, change secrets, or change installer binaries. That historical Windows release upload did not change the backend; the backend has since advanced and the current production backend is `0.1.35-backend.128`. Code signing remains deferred and accepted as a known release risk for this release; Windows SmartScreen warnings remain expected until a future signed installer is published. The next public direct version after `1.1` should be `1.2`; future public direct versions should continue as `1.2`, `1.3`, and so on.
 
 ## Windows direct release
 
@@ -326,7 +328,7 @@ Current public direct release values:
 - `updateMode`: `manual-confirmation`
 - `minimumSupportedVersion`: `1.1`
 
-The `1.1` Windows direct release has been built, uploaded, verified, and confirmed installed; the desktop displays version `1.1`. Backend deployment was not part of the desktop `1.1` release or the later static website upload; that desktop release did not change backend deployment; the current production backend is now healthy at `0.1.35-backend.116`, and no database migrations were added or run for either the `.112` summary extraction fix or the `.115` voice scenario structured-output validation fix. `minimumSupportedVersion` is intentionally `1.1` because `1.1` contains the desktop auth/session stability fix described below.
+The `1.1` Windows direct release has been built, uploaded, verified, and confirmed installed; the desktop displays version `1.1`. Backend deployment was not part of the desktop `1.1` release or the later static website upload; that desktop release did not change backend deployment; the current production backend is now healthy at `0.1.35-backend.128`, and no database migrations were added or run for either the `.112` summary extraction fix or the `.115` voice scenario structured-output validation fix. `minimumSupportedVersion` is intentionally `1.1` because `1.1` contains the desktop auth/session stability fix described below.
 
 
 ### Desktop auth/session fix in Windows Direct Release 1.1
@@ -414,14 +416,14 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 ### Current release point
 
 - Windows direct release: `1.1`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.1.exe`, production backend URL, `minimumSupportedVersion=1.1`, and manual-confirmation update mode. The tracked repository `site/public/releases/windows/direct/latest.json` was not changed by this docs update.
-- Backend release in tracked release docs: current production is `0.1.35-backend.116`, previous is `0.1.35-backend.115`, and the live `/opt/languagevoicetutor/backend/current` symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.116`; `/health` and `/api/health/database` are verified healthy. Backend .99/.108/.112 references are historical and not current production unless a section is explicitly documenting those older releases.
+- Backend release in tracked release docs: current production is `0.1.35-backend.128`, verified rollback target is `.127`, and the live `/opt/languagevoicetutor/backend/current` symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.128`; `/health` and `/api/health/database` are verified healthy. Backend .99/.108/.112 references are historical and not current production unless a section is explicitly documenting those older releases.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it survived backend service restart, matched the current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`, and contains lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2`. For `gpt-5.5`, backend requests must omit `temperature`.
 
 ### What is ready, partial, and blocked
 
 Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, verified persistent AI Models production storage, Website CMS draft/publish mechanics, and documented secret boundaries.
 
-Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.116`, with deploys, health checks, database health checks, and migrations kept as separate operations.
+Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.128`, with deploys, health checks, database health checks, and migrations kept as separate operations.
 
 Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, final website/legal/support/pricing approval, monitoring/privacy/release-readiness review, and explicit release decision after controlled tester feedback. Controlled Paddle live payment/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed, but they are not a broad launch decision; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 

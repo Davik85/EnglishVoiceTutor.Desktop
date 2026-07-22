@@ -6,10 +6,12 @@ Review date: 2026-07-22.
 
 Production backend is deployed and healthy.
 
-- Current release: `0.1.35-backend.127`
+- Current release: `0.1.35-backend.128`
+- Previous rollback release: `0.1.35-backend.127`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
+- `languagevoicetutor-backend.service` is active and running; public backend and database health are HTTP 200 `Healthy` (`canConnect=true`).
 
 ## Current backend pre-check
 
@@ -21,7 +23,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.127`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.128`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.127`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 Previous backend rollback reference must be verified from `/opt/languagevoicetutor/backend/previous`. `0.1.35-backend.49` remains a documented older rollback reference, not a substitute for checking the live `previous` symlink.
 
@@ -94,7 +96,15 @@ Record all of these results with the symlink, service, logs, backend health, dat
 
 Historical incident: backend `.126` was deployed; both health endpoints returned HTTP 200, and the new endpoint existed and correctly returned `401` without authentication. Admin CMS login nevertheless failed, so production was rolled back to `.125`, where login immediately worked again. The cause was not authentication, roles, cookies, routes, rate limiting, nginx, or the database.
 
-The root cause was a JavaScript syntax error in `backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js`: two closing parentheses were missing from the expanded feedback-status action expression. The browser could not parse the script, so the entire Admin CMS script stopped loading and the login submit handler was never registered. Backend regression coverage was added using Node syntax validation of the real `admin.js`. The correction was released as `.127`; Admin CMS login and the feedback queue were then manually verified successfully. This is historical incident context; the current active release is `.127`, not `.125` or `.126`.
+The root cause was a JavaScript syntax error in `backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js`: two closing parentheses were missing from the expanded feedback-status action expression. The browser could not parse the script, so the entire Admin CMS script stopped loading and the login submit handler was never registered. Backend regression coverage was added using Node syntax validation of the real `admin.js`. The correction was released as `.127`; Admin CMS login and the feedback queue were then manually verified successfully. This is historical incident context; the current active release is `.128`, not `.125`, `.126`, or `.127`.
+
+## 2026-07-22 backend `0.1.35-backend.128` Admin login fail-closed verification
+
+Security commit `8dd301b3` (`Harden Admin login credential handling`) is deployed in `.128`, with `.127` retained as the verified rollback release. `languagevoicetutor-backend.service` is active and running; public `/health` and `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`.
+
+`method="post"` alone was not sufficient because a native submission could still serialize named credential controls into a POST body when `admin.js` was missing or failed to parse. The deployed login form therefore has explicit `action="/admin/"` and `method="post"`, while the email and password inputs have no `name` attributes. Native fallback cannot serialize or transmit either credential. When JavaScript works, its submit handler still prevents native submission, reads the trimmed email and unchanged password directly from their inputs, and sends JSON to `POST /api/auth/login`.
+
+At the beginning of initialization, `admin.js` removes case-insensitive legacy `email` and `password` query parameters with `history.replaceState`, preserving the Admin path, unrelated query parameters, and hash without reloading. Removed values are not copied into fields, storage, logs, errors, or diagnostics. Node syntax validation of the real script and targeted Admin UI tests passed; private-window smoke verified Sign in and Enter login, dashboard and feedback/report loading, logout/repeat login, legacy mixed-case query cleanup, preserved unrelated query/hash state, and native fail-closed fallback behavior. No migration, static website deployment, Website CMS publish, installer upload, billing/Paddle, role, or production configuration change was involved.
 
 ## 2026-07-17 backend `0.1.35-backend.119` Admin Feedback & reports verification
 
@@ -241,7 +251,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.127`; verify the rollback target from the live `previous` symlink.
+- Backend: production healthy, current release `0.1.35-backend.128`; verified rollback target `.127` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -297,7 +307,7 @@ Admin RBAC note: Production Admin RBAC / persistent role management is completed
 
 ## 2026-07-13 backend voice scenario semantic resolution release
 
-This section is historical for the `.113`/`.115` voice scenario releases; the current production backend has since advanced to `0.1.35-backend.116`. Backend `0.1.35-backend.113` was deployed successfully from source commit `c850f4b` (`feat: add voice scenario semantic resolution`), with rollback release `0.1.35-backend.112`. That historical note describes the original additive endpoint deployment only. The latest voice scenario structured-output validation fix is in backend `0.1.35-backend.115`, not `.113` or `.114`.
+This section is historical for the `.113`/`.115` voice scenario releases; the current production backend has since advanced to `0.1.35-backend.128`. Backend `0.1.35-backend.113` was deployed successfully from source commit `c850f4b` (`feat: add voice scenario semantic resolution`), with rollback release `0.1.35-backend.112`. That historical note describes the original additive endpoint deployment only. The latest voice scenario structured-output validation fix is in backend `0.1.35-backend.115`, not `.113` or `.114`.
 
 Backend `0.1.35-backend.115` was deployed and verified in production with previous release `0.1.35-backend.114` for the dated voice scenario structured-output validation fix. The live `current` symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.115`, and the live `previous` symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.114`; these symlink values were the source of truth for that dated `.115` verification. Backend `0.1.35-backend.114` was already active before the `.115` deployment and must not be described as containing the `.115` fix. `languagevoicetutor-backend.service` is active and running, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or database schema change was required or run, and no website or Windows installer deployment was performed.
 

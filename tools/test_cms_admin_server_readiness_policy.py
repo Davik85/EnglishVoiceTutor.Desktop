@@ -122,14 +122,6 @@ def main() -> int:
     ]:
         assert_contains(runbook, needle, f"runbook required detail {needle}")
 
-    for needle in [
-        "same installed version: ask the user to confirm reinstall",
-        "older installed version: allow the guided update flow",
-        "newer installed version: warn and block",
-        "never auto-update during an active lesson",
-    ]:
-        assert_contains(next_steps, needle, f"update version rule {needle}")
-
     assert_contains(helper, "[switch]$MutatingChecks", "helper safe explicit mutating switch")
     assert_contains(helper, "Skipping authenticated admin API checks", "helper token-optional behavior")
     assert_not_contains(helper, "AdminPassword", "helper must not accept or store admin password")

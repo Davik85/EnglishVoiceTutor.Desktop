@@ -21,10 +21,10 @@ ALL_MARKDOWN = [ROOT / "README.md", *sorted((ROOT / "docs").glob("*.md"))]
 LATEST_JSON_COMMAND = "Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json"
 BACKEND_SYMLINK_COMMAND = 'ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"'
 PROD_BACKEND_URL = "https://api.languagevoicetutor.com"
-CURRENT_DIRECT_RELEASE = "1.0"
-CURRENT_DIRECT_INSTALLER = "LanguageVoiceTutorSetup-1.0.exe"
-CURRENT_BACKEND_RELEASE = "0.1.35-backend.99"
-PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.49"
+CURRENT_DIRECT_RELEASE = "1.1"
+CURRENT_DIRECT_INSTALLER = "LanguageVoiceTutorSetup-1.1.exe"
+CURRENT_BACKEND_RELEASE = "0.1.35-backend.128"
+PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.127"
 STALE_BACKEND_RELEASES = ["0.1.35-backend.27", "0.1.35-backend.33", "0.1.35-backend.34"]
 STALE_TESTER_RELEASES = ["0.1.35-tester.1", "0.1.36-tester.2", "0.1.36-tester.3", "0.1.36-tester.17"]
 DEFERRED_ITEMS = [
@@ -173,7 +173,7 @@ def main() -> int:
         ("Controlled Paddle live payment validation completed", "controlled Paddle live payment completed wording"),
         ("desktop cancel-renewal validation", "cancel-renewal validation completed wording"),
         ("failed payment attempts did not grant Premium", "failed payments do not grant Premium wording"),
-        ("current backend release is `0.1.35-backend.99`", "current production backend .99 wording"),
+        (f"current backend release is `{CURRENT_BACKEND_RELEASE}`", "current production backend wording"),
         ("Full-refund Premium revocation is production-verified", "full refund production verified wording"),
         ("chargeback remains implemented/test-covered but not live-chargeback-tested", "chargeback not overclaimed wording"),
         ("expanded customer portal/subscription management is deferred", "customer portal deferred wording"),

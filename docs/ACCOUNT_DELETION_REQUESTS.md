@@ -2,9 +2,9 @@
 
 ## Current deployed contract
 
-Backend `0.1.35-backend.127` deploys `POST /api/me/account-deletion-requests`. The endpoint requires an authenticated learner, derives the account identity only from that authenticated user, requires confirmation with the current password, and accepts an optional deletion reason. The password is used only for confirmation: it is never stored, returned, emailed, or displayed in Admin CMS.
+Backend `0.1.35-backend.127` introduced `POST /api/me/account-deletion-requests`; it remains available in current production backend `0.1.35-backend.128`. The endpoint requires an authenticated learner, derives the account identity only from that authenticated user, requires confirmation with the current password, and accepts an optional deletion reason. The password is used only for confirmation: it is never stored, returned, emailed, or displayed in Admin CMS.
 
-Only one unresolved request is allowed per user. The partial unique index `IX_user_feedback_reports_ActiveAccountDeletionRequest_UserId`, applied by migration `20260721120000_AddActiveAccountDeletionRequestConstraint`, enforces that boundary. A duplicate submission safely returns the existing active request identifier and status instead of creating another unresolved request.
+Only one unresolved request is allowed per user. The partial unique index `IX_user_feedback_reports_ActiveAccountDeletionRequest_UserId`, applied by migration `20260721120000_AddActiveAccountDeletionRequestConstraint`, enforces that boundary. A duplicate submission safely returns the existing active request identifier and status instead of creating another unresolved request. Once a prior request reaches a terminal status, a later request may create a new support ticket by design.
 
 ## Support workflow
 
@@ -22,4 +22,4 @@ Actual deletion or anonymization remains a manual support process. A request mus
 
 ## Client status
 
-Mobile Settings integration is not implemented yet. Until the separate Mobile task is completed, the deployed backend endpoint and Admin support workflow exist without a learner-facing Mobile Settings entry. Future Mobile wording must describe a **request**, not immediate deletion.
+Mobile Settings integration is implemented and manually verified. **Settings → Request account deletion** requires the current password and displays the returned request ID and status for both a newly created request and an existing active request. An incorrect password neither creates a request nor logs the learner out. Mobile wording describes a **request**, not immediate deletion; submitting or resolving the support ticket still does not perform real deletion or anonymization.
