@@ -20,6 +20,10 @@ This release provides request intake and support-managed tracking only. Submitti
 
 Actual deletion or anonymization remains a manual support process. A request must not be marked `resolved` or otherwise completed merely to close the ticket: that status must reflect that the real approved deletion or anonymization work has been performed. The password must never be copied into support correspondence or Admin CMS.
 
+The repository-grounded design and complete data inventory are in [Account anonymization procedure and data inventory](ACCOUNT_ANONYMIZATION_PROCEDURE.md). That document is a design/runbook draft only: it does not implement deletion/anonymization, authorize a production operation, or change the request-intake behavior described here.
+
 ## Client status
 
 Mobile Settings integration is implemented and manually verified. **Settings → Request account deletion** requires the current password and displays the returned request ID and status for both a newly created request and an existing active request. An incorrect password neither creates a request nor logs the learner out. Mobile wording describes a **request**, not immediate deletion; submitting or resolving the support ticket still does not perform real deletion or anonymization.
+
+Future client design only: the entry is intended to move to **Settings → App → Contact & Support → Request account deletion**, subject to the actual Mobile Settings structure. Before password entry and submission it must show a neutral warning that saved learner information will no longer be available after irreversible deletion/anonymization, the reason remains optional, and submitting creates a support-managed request rather than immediate deletion. This future placement and warning are not implemented by the current Mobile flow.

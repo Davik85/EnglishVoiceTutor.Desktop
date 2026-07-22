@@ -2,11 +2,19 @@
 
 Review date: 2026-07-22.
 
-## Next account-deletion phase: bounded deletion/anonymization planning
+## Next account-deletion phase: approved deletion/anonymization implementation planning
 
-Mobile Settings account-deletion request integration is complete. The next separate phase is planning only: define the approved administrator/support deletion or anonymization procedure; inventory affected account data and retention obligations; define subscription handling; define session/token revocation; and define audit evidence plus rollback/non-recoverability boundaries. Only after that bounded, high-risk planning work is approved should the real operation be implemented and separately reviewed.
+Mobile Settings account-deletion request integration is complete. The repository-grounded inventory and design/runbook draft now exist in [Account anonymization procedure and data inventory](ACCOUNT_ANONYMIZATION_PROCEDURE.md) for review. Neither of the following bounded implementation tasks is completed by that documentation update.
 
-Do not treat support-ticket submission or resolution as deletion. This planning phase does not implement or fully design the procedure, and it must not add automatic deletion, anonymization, subscription cancellation, token-family revocation, notification reminders, localization, or billing work.
+### A. Backend/Admin anonymization implementation
+
+Only after the listed approvals, separately implement the approved data-treatment matrix and legally-required-only retention rules; safe audit model; transaction/idempotency and failure-recovery design; strongest Admin permission; non-mutating preflight; mandatory browser modal, acknowledgement, and typed confirmation; backup reconciliation; and external-provider actions.
+
+### B. Mobile account-deletion UX adjustment
+
+Separately move the entry to **Settings → App → Contact & Support → Request account deletion** (using the actual Mobile Settings section name when implemented), add the neutral irreversible-loss explanation before password entry/submission, and preserve current-password confirmation, optional reason, and support-request—not-immediate-deletion—semantics.
+
+Do not treat support-ticket submission or resolution as deletion. This design work does not implement the procedure and must not add automatic deletion, anonymization, subscription cancellation, token-family revocation, notification reminders, localization, or billing work.
 
 ## Mobile v1 planning next step
 
