@@ -4,6 +4,8 @@
 
 **Status: approved design/runbook draft; implementation remains subject to owner, legal, security, and operational approvals. It is not implemented behavior.** The current product has request intake only: `POST /api/me/account-deletion-requests` creates an `account_deletion` support item. No Admin action, automated account operation, database mutation path, or schema support for anonymization exists.
 
+For the future backend implementation companion and its explicitly read-only first slice, see [Account anonymization backend technical design](ACCOUNT_ANONYMIZATION_BACKEND_DESIGN.md).
+
 This procedure is intended to make anonymization irreversible. It does not approve a retention period, claim legal compliance, or authorize an operator to run mutations. Support must not mark a request `resolved` until an approved complete operation and its verification have succeeded. Exact statutory retention periods, the controller/legal entity, and applicable jurisdictions require owner/legal approval and are deliberately not invented here.
 
 The scope is the repository-controlled live application, its documented providers, logs, and backup/restore path. It excludes production-data inspection and does not make a claim about storage not represented by the reviewed repository or runbooks.
