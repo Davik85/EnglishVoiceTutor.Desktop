@@ -1,6 +1,14 @@
 # Current State
 
-Review date: 2026-07-19.
+Review date: 2026-07-22.
+
+## 2026-07-22 production account-deletion release state
+
+The active production backend is `0.1.35-backend.127` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.127`. Public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. Admin CMS login and the Admin feedback/support queue were manually verified successfully after the `.127` deployment.
+
+Authenticated `POST /api/me/account-deletion-requests` is deployed. It requires current-password confirmation, accepts an optional reason, derives identity from the authenticated learner, never persists or exposes the password, and permits only one unresolved request per user. Migration `20260721120000_AddActiveAccountDeletionRequestConstraint` is applied and adds only partial unique index `IX_user_feedback_reports_ActiveAccountDeletionRequest_UserId`; it created no table or sequence, so no additional grants or ownership changes were required.
+
+The request uses the existing support queue and Admin email reply workflow. It does not automatically delete, deactivate, anonymize, revoke all token families, cancel subscriptions, or alter user data. Actual deletion/anonymization remains support-managed, and a request must not be resolved or completed until that real operation has occurred. Mobile Settings integration is not yet implemented. See [Account-deletion requests](ACCOUNT_DELETION_REQUESTS.md).
 
 ## Progress V1
 
@@ -43,7 +51,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.123`.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.127`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows direct public release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -73,7 +81,7 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.123`; previous release: `0.1.35-backend.122`. Release `.123` deploys the authenticated Lesson History implementation from commit `37d8c4d8` (`Add authenticated lesson history endpoints`). Deployment completed successfully through the standard backend release flow: `languagevoicetutor-backend.service` is active and running, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200. No EF migration was required or run and no database schema changed. No static website deployment, Website CMS publish, Windows installer/Desktop release, or Mobile release was part of this backend change; those remain separate operations. Previous backend rollback reference must still be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
+Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.127`. Public backend health returned HTTP 200, public database health returned HTTP 200 with `canConnect=true`, and Admin CMS login plus the feedback/support queue were manually verified after deployment. The account-deletion endpoint and migration state are recorded above. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
 
 Backend deployment uses:
 

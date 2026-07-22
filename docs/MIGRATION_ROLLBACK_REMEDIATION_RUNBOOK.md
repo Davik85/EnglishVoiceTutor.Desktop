@@ -141,6 +141,23 @@ Verified production evidence:
 
 This rehearsal confirms operator readiness evidence only. It does not claim broad public production readiness, and production/live Paddle readiness remains deferred. Phase 4D later confirmed permission-fidelity restore behavior for the current release-readiness level.
 
+## 2026-07-21 account-deletion migration process
+
+Database migration and backend deployment are separate operations. Generated SQL under `artifacts/` is temporary operator output and must not be committed. For a known production starting point, use this bounded process:
+
+1. Query `__EFMigrationsHistory` and confirm the exact latest production migration.
+2. Generate a short SQL script from the known previous migration to the intended new migration, rather than a broad historical script.
+3. Inspect the generated SQL before upload.
+4. Apply only the reviewed SQL with `psql` and `ON_ERROR_STOP=1`; do not put a database password in command arguments.
+5. Verify the new `__EFMigrationsHistory` entry and the intended database object.
+6. Remove the temporary SQL file locally and remotely.
+7. Check public `/api/health/database`.
+8. Deploy and verify the backend separately through the normal backend release flow.
+
+For the account-deletion constraint, the confirmed bounded range was from `20260717151432_AddUserFeedbackReportReplies` to `20260721120000_AddActiveAccountDeletionRequestConstraint`. The result adds only partial unique index `IX_user_feedback_reports_ActiveAccountDeletionRequest_UserId`. Because it creates no table or sequence, no additional table grants or ownership changes were required.
+
+Do not use the failed broad idempotent script for this known range. That first attempt included historical migrations and failed because an older historical raw SQL migration produced invalid generated PostgreSQL control-flow syntax. Preserve the historical migrations; do not rewrite them to work around a broad script when the exact safe from/to range is known.
+
 ## Deferred work
 
 - Optional off-server encrypted PostgreSQL backup strategy as future infrastructure hardening, not an immediate release blocker.
