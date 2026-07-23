@@ -1,10 +1,12 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Admin;
+using EnglishVoiceTutor.Api.Contracts.FeedbackReports;
 using EnglishVoiceTutor.Api.Contracts.Cms;
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Cms;
+using EnglishVoiceTutor.Api.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -97,6 +99,11 @@ public static class AdminEndpoints
         ApplyAdminWriteRateLimiting(
             app.MapPost(ApiConstants.AdminUserPremiumGrantsRoute, GrantManualPremiumAsync)
             .RequireAuthorization(AdminAuthorizationConstants.ManualPremiumGrantPermissionPolicyName),
+            rateLimitingEnabled);
+
+        ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminUserAccountDeletionRequestsRoute, CreateAdminAccountDeletionRequestAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AccountAnonymizationExecutePermissionPolicyName),
             rateLimitingEnabled);
 
         ApplyAdminWriteRateLimiting(
@@ -259,6 +266,21 @@ public static class AdminEndpoints
             rateLimitingEnabled);
     }
 
+
+    private static async Task<IResult> CreateAdminAccountDeletionRequestAsync(
+        Guid userId,
+        AdminAccountDeletionRequest request,
+        IAccountDeletionRequestService deletionRequestService,
+        CancellationToken cancellationToken)
+    {
+        var result = await deletionRequestService.SubmitAdminAsync(userId, request?.Comment, cancellationToken);
+        if (result.IsInvalid) return Results.BadRequest(new { error = "account_deletion_request_comment_invalid" });
+        if (result.IsUserUnavailable) return Results.NotFound(new { error = "account_deletion_request_user_not_found" });
+        if (result.IsUnavailable) return Results.Json(new { error = "account_deletion_request_unavailable" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+        return result.IsAlreadyRequested
+            ? Results.Ok(result.Response)
+            : Results.Created(ApiConstants.AdminUserAccountDeletionRequestsRoute.Replace("{userId:guid}", userId.ToString()), result.Response);
+    }
 
     private static void ApplyAdminReadRateLimiting(RouteHandlerBuilder builder, bool rateLimitingEnabled)
     {

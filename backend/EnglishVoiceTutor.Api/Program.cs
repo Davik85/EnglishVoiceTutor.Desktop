@@ -205,6 +205,7 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAccountDeletionRequestService, AccountDeletionRequestService>();
 builder.Services.AddScoped<IAccountAnonymizationPreflightService, AccountAnonymizationPreflightService>();
+builder.Services.AddScoped<IAccountAnonymizationExecutionService, AccountAnonymizationExecutionService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IDeviceRegistrationService, DeviceRegistrationService>();
 builder.Services.AddSingleton<IEmailSender>(services =>

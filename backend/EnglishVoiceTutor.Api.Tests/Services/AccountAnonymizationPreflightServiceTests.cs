@@ -10,7 +10,7 @@ namespace EnglishVoiceTutor.Api.Tests.Services;
 public sealed class AccountAnonymizationPreflightServiceTests
 {
     [Fact]
-    public async Task ValidDeletionRequestCreatesOnlyFoundationRecordsAndSafeBlockers()
+    public async Task ValidDeletionRequestCreatesOnlyFoundationRecordsAndNoPermanentPolicyBlockers()
     {
         await using var db = CreateDbContext();
         var fixture = await SeedAsync(db);
@@ -20,9 +20,8 @@ public sealed class AccountAnonymizationPreflightServiceTests
         var result = await new AccountAnonymizationPreflightService(db).CreateOrRefreshAsync(fixture.Admin.Id, fixture.Report.Id, false, TestContext.Current.CancellationToken);
 
         var response = Assert.IsType<EnglishVoiceTutor.Api.Contracts.Admin.AccountAnonymizationPreflightResponse>(result.Response);
-        Assert.Equal(AccountAnonymizationPreflightService.BlockedState, response.State);
-        Assert.Contains(AccountAnonymizationPreflightService.BackupPolicyUnverified, response.BlockingReasonCodes);
-        Assert.Contains(AccountAnonymizationPreflightService.RetentionUnresolved, response.BlockingReasonCodes);
+        Assert.Equal(AccountAnonymizationPreflightService.PreflightState, response.State);
+        Assert.Empty(response.BlockingReasonCodes);
         Assert.Equal(1, await db.AccountAnonymizationOperations.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(1, await db.AccountAnonymizationPolicySnapshots.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(beforeUsers, await db.Users.CountAsync(TestContext.Current.CancellationToken));
@@ -67,8 +66,6 @@ public sealed class AccountAnonymizationPreflightServiceTests
         var response = (await new AccountAnonymizationPreflightService(db).CreateOrRefreshAsync(fixture.Admin.Id, fixture.Report.Id, true, TestContext.Current.CancellationToken)).Response!;
 
         Assert.Contains(AccountAnonymizationPreflightService.ActiveAdminTarget, response.BlockingReasonCodes);
-        Assert.Contains(AccountAnonymizationPreflightService.UnknownProvider, response.BlockingReasonCodes);
-        Assert.Contains(AccountAnonymizationPreflightService.BillingLifecycleUnresolved, response.BlockingReasonCodes);
         Assert.Contains(response.ProviderStates, item => item.ProviderKey == "paddle" && item.StateCodes.Contains("active"));
         Assert.Contains(response.ProviderStates, item => item.ProviderKey == "unsupported" && item.StateCodes.Contains("unknown"));
         var responseJson = System.Text.Json.JsonSerializer.Serialize(response);

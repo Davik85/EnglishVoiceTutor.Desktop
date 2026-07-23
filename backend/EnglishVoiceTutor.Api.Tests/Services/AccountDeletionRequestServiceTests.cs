@@ -4,6 +4,7 @@ using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace EnglishVoiceTutor.Api.Tests.Services;
 
@@ -122,6 +123,86 @@ public sealed class AccountDeletionRequestServiceTests
         Assert.Equal(2, await db.UserFeedbackReports.Select(report => report.UserId).Distinct().CountAsync(TestContext.Current.CancellationToken));
     }
 
+    [Fact]
+    public async Task AdminSubmissionCreatesNormalRequestWithoutLearnerPassword()
+    {
+        await using var db = CreateDbContext();
+        var user = AddUser(db, "correct password");
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await CreateService(db).SubmitAdminAsync(user.Id, "  Request received by email.  ", TestContext.Current.CancellationToken);
+
+        var report = await db.UserFeedbackReports.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.False(result.IsInvalid);
+        Assert.False(result.IsPasswordRejected);
+        Assert.Equal("Request received by email.", report.Message);
+        Assert.Equal("admin_account_deletion_request", report.ClientPlatform);
+        Assert.Equal(UserFeedbackReportConstants.AccountDeletionCategory, report.Category);
+        Assert.Equal(UserFeedbackReportConstants.NewStatus, report.Status);
+    }
+
+    [Fact]
+    public async Task AdminSubmissionRejectsBlankOrOversizedComment()
+    {
+        await using var db = CreateDbContext();
+        var user = AddUser(db, "correct password");
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var blank = await CreateService(db).SubmitAdminAsync(user.Id, "  ", TestContext.Current.CancellationToken);
+        var oversized = await CreateService(db).SubmitAdminAsync(user.Id, new string('a', EntityConstants.Lengths.FeedbackReportMessageMaxLength + 1), TestContext.Current.CancellationToken);
+
+        Assert.True(blank.IsInvalid);
+        Assert.True(oversized.IsInvalid);
+        Assert.Equal(0, await db.UserFeedbackReports.CountAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task AdminSubmissionReturnsSafeNotFoundForMissingUser()
+    {
+        await using var db = CreateDbContext();
+
+        var result = await CreateService(db).SubmitAdminAsync(Guid.NewGuid(), "Request received by email.", TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsUserUnavailable);
+    }
+
+    [Fact]
+    public async Task LearnerAndAdminSubmissionsShareActiveRequestDuplicateProtection()
+    {
+        await using var db = CreateDbContext();
+        var user = AddUser(db, "correct password");
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var service = CreateService(db);
+
+        var learner = await service.SubmitAsync(user.Id, "correct password", "learner request", TestContext.Current.CancellationToken);
+        var admin = await service.SubmitAdminAsync(user.Id, "Request received by email.", TestContext.Current.CancellationToken);
+
+        Assert.False(learner.IsAlreadyRequested);
+        Assert.True(admin.IsAlreadyRequested);
+        Assert.Equal(learner.Response?.ReportId, admin.Response?.ReportId);
+        Assert.Equal(1, await db.UserFeedbackReports.CountAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task AdminSubmissionReturnsTheConcurrentActiveRequest()
+    {
+        var databaseName = Guid.NewGuid().ToString();
+        Guid userId;
+        await using (var seedDb = CreateDbContext(databaseName))
+        {
+            var user = AddUser(seedDb, "correct password");
+            userId = user.Id;
+            await seedDb.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        await using var db = CreateDbContext(databaseName, new ConcurrentRequestInterceptor(databaseName, userId));
+
+        var result = await CreateService(db).SubmitAdminAsync(userId, "Request received by email.", TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsAlreadyRequested);
+        Assert.True(result.Response?.AlreadyRequested);
+        Assert.Equal(1, await db.UserFeedbackReports.CountAsync(TestContext.Current.CancellationToken));
+    }
+
     private static AccountDeletionRequestService CreateService(AppDbContext db) => new(db, new PasswordHasher<UserEntity>());
 
     private static UserEntity AddUser(AppDbContext db, string password)
@@ -138,6 +219,28 @@ public sealed class AccountDeletionRequestServiceTests
         Message = string.Empty, Status = status, ClientPlatform = "account_deletion_request", ClientVersion = "v1", CreatedAtUtc = DateTimeOffset.UtcNow
     };
 
-    private static AppDbContext CreateDbContext() => new(new DbContextOptionsBuilder<AppDbContext>()
-        .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+    private static AppDbContext CreateDbContext(string? databaseName = null, IInterceptor? interceptor = null)
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(databaseName ?? Guid.NewGuid().ToString());
+        if (interceptor is not null) options.AddInterceptors(interceptor);
+        return new AppDbContext(options.Options);
+    }
+
+    private sealed class ConcurrentRequestInterceptor(string databaseName, Guid userId) : SaveChangesInterceptor
+    {
+        private bool hasCreatedConcurrentRequest;
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (!hasCreatedConcurrentRequest)
+            {
+                hasCreatedConcurrentRequest = true;
+                using var concurrentDb = CreateDbContext(databaseName);
+                concurrentDb.UserFeedbackReports.Add(CreateReport(userId, UserFeedbackReportConstants.NewStatus));
+                concurrentDb.SaveChanges();
+                throw new DbUpdateException("Simulated duplicate constraint race.");
+            }
+            return ValueTask.FromResult(result);
+        }
+    }
 }

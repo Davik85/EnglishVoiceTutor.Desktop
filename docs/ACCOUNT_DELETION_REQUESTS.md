@@ -1,5 +1,7 @@
 # Account-deletion requests
 
+> **Local implementation update (2026-07-23).** The complete Super-Admin Admin Shell confirmation UI and backend execution flow are implemented locally for a fresh `processing` request. Execution removes learner access/data, redacts support content, retains local financial/provider history unchanged, and resolves the request only after verification. It does not call Paddle or another provider, send email, cancel renewal, refund, or otherwise alter financial records. Active effective Premium/current paid access blocks deletion until expiry; customers should be reminded to cancel renewal, while disputes/refunds/chargebacks remain manual. The combined migration and backend deployment remain pending; production is `0.1.35-backend.129`.
+
 ## Current deployed contract
 
 Backend `0.1.35-backend.127` introduced `POST /api/me/account-deletion-requests`; it remains available in current production backend `0.1.35-backend.128`. The endpoint requires an authenticated learner, derives the account identity only from that authenticated user, requires confirmation with the current password, and accepts an optional deletion reason. The password is used only for confirmation: it is never stored, returned, emailed, or displayed in Admin CMS.

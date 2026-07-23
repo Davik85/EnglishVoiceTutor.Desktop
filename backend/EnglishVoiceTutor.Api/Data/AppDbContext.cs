@@ -699,6 +699,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         operation.Property(item => item.RetentionSummaryJson).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationJsonMaxLength);
         operation.Property(item => item.ProviderStatesJson).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationJsonMaxLength);
         operation.Property(item => item.BackupReconciliationState).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationStateMaxLength);
+        operation.Property(item => item.FailureCode).HasMaxLength(EntityConstants.Lengths.AccountAnonymizationStateMaxLength);
+        operation.Property(item => item.VerificationState).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationStateMaxLength);
+        operation.Property(item => item.ResultCountsJson).IsRequired().HasMaxLength(EntityConstants.Lengths.AccountAnonymizationJsonMaxLength);
         operation.Property(item => item.ConcurrencyRevision).IsConcurrencyToken();
         operation.HasIndex(item => item.ReportId).IsUnique();
         operation.HasIndex(item => item.TargetUserId);

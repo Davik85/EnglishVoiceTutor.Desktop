@@ -17,11 +17,32 @@ public static class AccountAnonymizationEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.AccountAnonymizationPreflightReadPermissionPolicyName);
         var statusEndpoint = app.MapGet(ApiConstants.AdminFeedbackReportAccountAnonymizationRoute, GetStatusAsync)
             .RequireAuthorization(AdminAuthorizationConstants.AccountAnonymizationPreflightReadPermissionPolicyName);
+        var executeEndpoint = app.MapPost(ApiConstants.AdminFeedbackReportAccountAnonymizationExecuteRoute, ExecuteAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AccountAnonymizationExecutePermissionPolicyName);
         if (rateLimitingEnabled)
         {
             createPreflightEndpoint.RequireRateLimiting(RateLimitingConstants.AdminWritePolicyName);
             statusEndpoint.RequireRateLimiting(RateLimitingConstants.AdminReadPolicyName);
+            executeEndpoint.RequireRateLimiting(RateLimitingConstants.AdminWritePolicyName);
         }
+    }
+
+    private static async Task<IResult> ExecuteAsync(
+        Guid reportId,
+        AccountAnonymizationExecuteRequest? request,
+        ClaimsPrincipal principal,
+        IAdminRoleAssignmentActorResolver actorResolver,
+        IAccountAnonymizationExecutionService executionService,
+        CancellationToken cancellationToken)
+    {
+        if (request is null) return Results.BadRequest(new { error = "account_anonymization_execute_request_invalid" });
+        var actor = await actorResolver.ResolveActorAsync(principal, cancellationToken);
+        if (!actor.IsActorMappingFound || !actor.ActorAdminUserId.HasValue) return Results.Conflict(new { error = AdminRoleAssignmentActorResolver.ActorMappingUnavailableErrorCode });
+        var result = await executionService.ExecuteAsync(actor.ActorAdminUserId.Value, reportId, request, cancellationToken);
+        if (result.IsCompleted) return Results.Ok(result.Response);
+        if (result.IsNotFound) return Results.NotFound(new { error = result.Error });
+        if (result.Error == "account_anonymization_execution_unavailable") return Results.Json(new { error = result.Error }, statusCode: StatusCodes.Status503ServiceUnavailable);
+        return Results.Conflict(new { error = result.Error });
     }
 
     private static async Task<IResult> CreatePreflightAsync(

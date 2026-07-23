@@ -29,6 +29,10 @@
         feedbackReportTemplate: "/api/admin/feedback-reports/{reportId}",
         feedbackReportStatusTemplate: "/api/admin/feedback-reports/{reportId}/status",
         feedbackReportRepliesTemplate: "/api/admin/feedback-reports/{reportId}/replies",
+        adminUserAccountDeletionRequestsTemplate: "/api/admin/users/{userId}/account-deletion-requests",
+        accountAnonymizationStatusTemplate: "/api/admin/feedback-reports/{reportId}/account-anonymization",
+        accountAnonymizationPreflightTemplate: "/api/admin/feedback-reports/{reportId}/account-anonymization/preflight",
+        accountAnonymizationExecuteTemplate: "/api/admin/feedback-reports/{reportId}/account-anonymization/execute",
         manualPremiumGrantTemplate: "/api/admin/users/{userId}/premium-grants",
         manualPremiumRevokeTemplate: "/api/admin/users/{userId}/premium-grants/{entitlementId}/revoke",
         freeLessonAllowanceResetTemplate: "/api/admin/users/{userId}/free-lesson-allowance/reset",
@@ -132,6 +136,8 @@
         feedbackReportsRead: "feedback_reports.read",
         feedbackReportsStatusManage: "feedback_reports.status.manage",
         feedbackReportsReply: "feedback_reports.reply",
+        accountAnonymizationPreflightRead: "account_anonymization.preflight.read",
+        accountAnonymizationExecute: "account_anonymization.execute",
         cmsContentRead: "cms.content.read",
         cmsContentWriteDraft: "cms.content.write_draft",
         cmsContentPublish: "cms.content.publish",
@@ -185,6 +191,7 @@
     let selectedUserId = null;
     let selectedUserEmail = null;
     let selectedUserLookupPayload = null;
+    let accountDeletionRequestPending = false;
     let cmsHasLoadedOnce = false;
     let websiteHasLoadedOnce = false;
     let aiModelsHaveLoadedOnce = false;
@@ -261,6 +268,13 @@
     const lookupLoadingElement = document.getElementById("lookup-loading");
     const lookupErrorElement = document.getElementById("lookup-error");
     const lookupResultElement = document.getElementById("lookup-result");
+    const accountDeletionRequestCard = document.getElementById("account-deletion-request-card");
+    const accountDeletionRequestForm = document.getElementById("account-deletion-request-form");
+    const accountDeletionRequestCommentInput = document.getElementById("account-deletion-request-comment");
+    const accountDeletionRequestButton = document.getElementById("account-deletion-request-button");
+    const accountDeletionRequestLoadingElement = document.getElementById("account-deletion-request-loading");
+    const accountDeletionRequestErrorElement = document.getElementById("account-deletion-request-error");
+    const accountDeletionRequestSuccessElement = document.getElementById("account-deletion-request-success");
     const premiumLookupForm = document.getElementById("premium-lookup-form");
     const premiumLookupEmailInput = document.getElementById("premium-lookup-email");
     const premiumSearchUserButton = document.getElementById("premium-search-user-button");
@@ -353,7 +367,7 @@
     const FeedbackReportPageSize = 50;
     const FeedbackReportStatuses = Object.freeze(["new", "reviewed", "needs_information", "processing", "resolved", "rejected"]);
     const FeedbackReportCategories = Object.freeze(["suggestion", "app_issue", "ai_response", "account_deletion"]);
-    let feedbackReportsState = { page: 1, totalCount: 0, items: [], selectedReportId: null, selectedReport: null, statusRequestPending: false, replyRequestPending: false, replyUnavailable: false, statusPermissionDenied: false, replyPermissionDenied: false };
+    let feedbackReportsState = { page: 1, totalCount: 0, items: [], selectedReportId: null, selectedReport: null, statusRequestPending: false, replyRequestPending: false, replyUnavailable: false, statusPermissionDenied: false, replyPermissionDenied: false, preflight: null, preflightRequestPending: false, preflightNotRun: false, preflightPermissionDenied: false, preflightMessage: "", preflightError: "", executionRequestPending: false };
 
     const freeLessonResetCard = document.getElementById("free-lesson-reset-card");
     const freeLessonResetForm = document.getElementById("free-lesson-reset-form");
@@ -1447,6 +1461,7 @@
         updateSelectedUserHeader();
         updateUserRequiredEmptyStates();
         setGrantVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.premiumGrant));
+        setAccountDeletionRequestVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.accountAnonymizationExecute));
         setRevokeVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.premiumRevoke));
         setBillingCancelRenewalVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.billingCancelRenewal));
         setFreeLessonResetVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.freeLessonAllowanceReset));
@@ -1476,6 +1491,7 @@
         updateSelectedUserHeader();
         updateUserRequiredEmptyStates();
         setGrantVisible(false);
+        setAccountDeletionRequestVisible(false);
         setRevokeVisible(false);
         setBillingCancelRenewalVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.billingCancelRenewal));
         setFreeLessonResetVisible(false);
@@ -1516,6 +1532,36 @@
         if (!selectedUserId) { return; }
         const payload = await fetchUserById(selectedUserId);
         await applySelectedUserPayload(payload);
+    }
+
+    async function createAccountDeletionRequestForSelectedUser() {
+        const userId = String(selectedUserId || "");
+        const comment = String(accountDeletionRequestCommentInput.value || "").trim();
+        if (!userId || accountDeletionRequestPending || !hasAdminPermission(AdminPermissionIds.accountAnonymizationExecute)) { return; }
+        clearAccountDeletionRequestMessages();
+        if (!comment) { accountDeletionRequestErrorElement.textContent = "A comment is required."; return; }
+        setAccountDeletionRequestLoading(true);
+        try {
+            const endpoint = ApiPaths.adminUserAccountDeletionRequestsTemplate.replace("{userId}", encodeURIComponent(userId));
+            const response = await fetch(endpoint, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ comment }) });
+            const payload = await response.json().catch(() => null);
+            if (selectedUserId !== userId) { return; }
+            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); return; }
+            if (response.status === HttpStatus.forbidden) { setAccountDeletionRequestVisible(false); return; }
+            if (response.status === HttpStatus.badRequest) { accountDeletionRequestErrorElement.textContent = "A non-empty comment of 4000 characters or fewer is required."; return; }
+            if (response.status === HttpStatus.notFound) { accountDeletionRequestErrorElement.textContent = "The selected user is no longer available."; return; }
+            if (response.status === HttpStatus.serviceUnavailable) { accountDeletionRequestErrorElement.textContent = "Account deletion request intake is temporarily unavailable. Please try again."; return; }
+            if (!response.ok) { accountDeletionRequestErrorElement.textContent = "Unable to create the account deletion request. Please try again."; return; }
+            if (payload?.alreadyRequested === true) {
+                accountDeletionRequestSuccessElement.textContent = "An active account deletion request already exists; no duplicate was created.";
+            } else {
+                accountDeletionRequestSuccessElement.textContent = "Account deletion request created. It will appear in Feedback & reports.";
+            }
+        } catch (_) {
+            if (selectedUserId === userId) { accountDeletionRequestErrorElement.textContent = "Unable to reach the server for account deletion request intake."; }
+        } finally {
+            if (selectedUserId === userId) { setAccountDeletionRequestLoading(false); }
+        }
     }
 
     async function grantPremiumForSelectedUser() {
@@ -2191,6 +2237,7 @@
         feedbackReportsState.replyUnavailable = false;
         feedbackReportsState.statusPermissionDenied = false;
         feedbackReportsState.replyPermissionDenied = false;
+        clearAccountAnonymizationPreflight();
         feedbackReportDetailsCard.classList.add("hidden");
         feedbackReportDetailsLoadingElement.classList.add("hidden");
         feedbackReportDetailsErrorElement.textContent = "";
@@ -2210,7 +2257,7 @@
     }
 
     function clearFeedbackReportsState() {
-        feedbackReportsState = { page: 1, totalCount: 0, items: [], selectedReportId: null, selectedReport: null, statusRequestPending: false, replyRequestPending: false, replyUnavailable: false, statusPermissionDenied: false, replyPermissionDenied: false };
+        feedbackReportsState = { page: 1, totalCount: 0, items: [], selectedReportId: null, selectedReport: null, statusRequestPending: false, replyRequestPending: false, replyUnavailable: false, statusPermissionDenied: false, replyPermissionDenied: false, preflight: null, preflightRequestPending: false, preflightNotRun: false, preflightPermissionDenied: false, preflightMessage: "", preflightError: "", executionRequestPending: false };
         feedbackReportsListElement.textContent = "";
         feedbackReportsErrorElement.textContent = "";
         feedbackReportsLoadingElement.classList.add("hidden");
@@ -2392,6 +2439,296 @@
         if (String(report?.user?.userId || "").trim()) { appendFeedbackReportDetail(feedbackReportDetailsElement, "User ID", String(report.user.userId)); }
         renderFeedbackReportActions(report);
         renderFeedbackReportReplyHistory(report);
+        renderAccountAnonymizationPreflight(report);
+    }
+
+    function clearAccountDeletionRequestMessages() { accountDeletionRequestErrorElement.textContent = ""; accountDeletionRequestSuccessElement.textContent = ""; }
+    function updateAccountDeletionRequestControlsState() {
+        const disabled = accountDeletionRequestPending || !selectedUserId;
+        accountDeletionRequestCommentInput.disabled = disabled;
+        accountDeletionRequestButton.disabled = disabled;
+    }
+    function setAccountDeletionRequestVisible(isVisible) {
+        accountDeletionRequestCard.classList.toggle("hidden", !isVisible);
+        if (!isVisible) {
+            accountDeletionRequestPending = false;
+            accountDeletionRequestCommentInput.value = "Request received by email.";
+            clearAccountDeletionRequestMessages();
+        }
+        updateAccountDeletionRequestControlsState();
+    }
+    function setAccountDeletionRequestLoading(isLoading) {
+        accountDeletionRequestPending = isLoading;
+        accountDeletionRequestLoadingElement.classList.toggle("hidden", !isLoading);
+        updateAccountDeletionRequestControlsState();
+    }
+
+    function isAccountAnonymizationPreflightAvailable(report) {
+        return report?.category === "account_deletion" && hasAdminPermission(AdminPermissionIds.accountAnonymizationPreflightRead) && !feedbackReportsState.preflightPermissionDenied;
+    }
+
+    function appendAccountAnonymizationPreflightDetail(container, label, value) {
+        const item = document.createElement("p");
+        item.textContent = `${label}: ${value}`;
+        container.appendChild(item);
+    }
+
+    function appendAccountAnonymizationPreflightList(container, label, values) {
+        const heading = document.createElement("h4");
+        heading.textContent = label;
+        const list = document.createElement("ul");
+        const safeValues = Array.isArray(values) ? values : [];
+        if (safeValues.length === 0) {
+            const item = document.createElement("li");
+            item.textContent = "None";
+            list.appendChild(item);
+        } else {
+            safeValues.forEach((value) => {
+                const item = document.createElement("li");
+                item.textContent = String(value);
+                list.appendChild(item);
+            });
+        }
+        container.append(heading, list);
+    }
+
+    function renderAccountAnonymizationPreflight(report) {
+        const existing = feedbackReportDetailsElement.querySelector("#account-anonymization-preflight");
+        existing?.remove();
+        if (!isAccountAnonymizationPreflightAvailable(report)) { return; }
+        const panel = document.createElement("section");
+        panel.id = "account-anonymization-preflight";
+        panel.className = "feedback-report-full-width feedback-report-action-area";
+        const heading = document.createElement("h3");
+        heading.textContent = "Account anonymization preflight";
+        const description = document.createElement("p");
+        description.className = "muted";
+        description.textContent = "Inspection only. Running a preflight does not delete, anonymize, or change learner data.";
+        panel.append(heading, description);
+        const status = String(report?.status || "");
+        const terminal = status === "resolved" || status === "rejected";
+        if (terminal) {
+            const terminalMessage = document.createElement("p");
+            terminalMessage.className = "error";
+            terminalMessage.textContent = "Preflight cannot run while this support request is resolved or rejected. Reopen it to a non-terminal status first.";
+            panel.appendChild(terminalMessage);
+        }
+        if (feedbackReportsState.preflightMessage) { appendAccountAnonymizationPreflightDetail(panel, "Status", feedbackReportsState.preflightMessage); }
+        if (feedbackReportsState.preflightError) {
+            const error = document.createElement("p");
+            error.className = "error";
+            error.textContent = feedbackReportsState.preflightError;
+            panel.appendChild(error);
+        }
+        const preflight = feedbackReportsState.preflight;
+        if (preflight) {
+            appendAccountAnonymizationPreflightDetail(panel, "State", String(preflight.state || "-"));
+            appendAccountAnonymizationPreflightDetail(panel, "Preflight version", String(preflight.preflightVersion ?? "-"));
+            appendAccountAnonymizationPreflightDetail(panel, "Created", formatFeedbackReportDate(preflight.createdAtUtc));
+            appendAccountAnonymizationPreflightDetail(panel, "Updated", formatFeedbackReportDate(preflight.updatedAtUtc));
+            appendAccountAnonymizationPreflightDetail(panel, "Expires", formatFeedbackReportDate(preflight.expiresAtUtc));
+            appendAccountAnonymizationPreflightDetail(panel, "Backup reconciliation", String(preflight.backupReconciliationState || "-"));
+            appendAccountAnonymizationPreflightList(panel, "Blocking reason codes", preflight.blockingReasonCodes);
+            const retention = preflight.retentionSummary || {};
+            appendAccountAnonymizationPreflightDetail(panel, "Immediate delete or anonymize categories", String(retention.immediateDeleteOrAnonymizeCount ?? 0));
+            appendAccountAnonymizationPreflightDetail(panel, "Unresolved retention categories", String(retention.unresolvedDecisionCount ?? 0));
+            const categoryHeading = document.createElement("h4");
+            categoryHeading.textContent = "Category counts";
+            const categoryList = document.createElement("ul");
+            Object.entries(preflight.categoryCounts || {}).sort(([left], [right]) => left.localeCompare(right)).forEach(([key, count]) => { const item = document.createElement("li"); item.textContent = `${key}: ${count}`; categoryList.appendChild(item); });
+            panel.append(categoryHeading, categoryList);
+            const providersHeading = document.createElement("h4");
+            providersHeading.textContent = "Provider states";
+            const providersList = document.createElement("ul");
+            (Array.isArray(preflight.providerStates) ? preflight.providerStates : []).forEach((provider) => { const item = document.createElement("li"); item.textContent = `${String(provider?.providerKey || "unknown")}: ${String(provider?.recordCount ?? 0)} (${(Array.isArray(provider?.stateCodes) ? provider.stateCodes : []).map((value) => String(value)).join(", ") || "none"})`; providersList.appendChild(item); });
+            panel.append(providersHeading, providersList);
+        } else if (feedbackReportsState.preflightNotRun) {
+            const empty = document.createElement("p");
+            empty.textContent = "Preflight has not been run.";
+            panel.appendChild(empty);
+        }
+        const operationState = String(preflight?.state || "");
+        const blockingCodes = Array.isArray(preflight?.blockingReasonCodes) ? preflight.blockingReasonCodes.map((code) => String(code)) : [];
+        const isExpired = !preflight?.expiresAtUtc || Date.parse(preflight.expiresAtUtc) <= Date.now();
+        const isProcessing = status === "processing";
+        const activePremiumBlocked = blockingCodes.includes("account_anonymization_active_premium") || blockingCodes.includes("account_anonymization_active_paid_subscription");
+        if (!isProcessing && preflight && operationState !== "completed") {
+            const message = document.createElement("p");
+            message.className = "error";
+            message.textContent = "Move this report to Processing using the existing status controls before deleting the account.";
+            panel.appendChild(message);
+        }
+        if (activePremiumBlocked) {
+            const message = document.createElement("p");
+            message.className = "error";
+            message.textContent = "The account can be deleted after the paid Premium period ends. Remind the customer to cancel renewal to prevent another charge.";
+            panel.appendChild(message);
+        } else if (blockingCodes.length > 0) {
+            const message = document.createElement("p");
+            message.className = "error";
+            message.textContent = "Deletion is blocked until the listed preflight conditions are resolved.";
+            panel.appendChild(message);
+        }
+        if (preflight && isExpired && operationState !== "completed") {
+            const message = document.createElement("p");
+            message.className = "error";
+            message.textContent = "This preflight has expired. Refresh the preflight before deleting the account.";
+            panel.appendChild(message);
+        }
+        if (operationState === "completed") {
+            const message = document.createElement("p");
+            message.className = "success";
+            message.textContent = "Account deletion completed. This operation cannot be run again.";
+            panel.appendChild(message);
+        }
+        const action = document.createElement("button");
+        action.type = "button";
+        action.textContent = preflight ? "Refresh preflight" : "Run preflight";
+        action.disabled = terminal || operationState === "executing" || operationState === "completed" || feedbackReportsState.preflightRequestPending || feedbackReportsState.executionRequestPending;
+        action.addEventListener("click", async () => { await runAccountAnonymizationPreflight(preflight ? true : false); });
+        panel.appendChild(action);
+        if (preflight && hasAdminPermission(AdminPermissionIds.accountAnonymizationExecute)) {
+            const execute = document.createElement("button");
+            execute.type = "button";
+            execute.className = "danger-button";
+            execute.textContent = "Delete account permanently";
+            const executeUnavailable = !isProcessing || isExpired || blockingCodes.length > 0 || operationState === "executing" || operationState === "completed" || feedbackReportsState.preflightRequestPending || feedbackReportsState.executionRequestPending;
+            execute.disabled = executeUnavailable;
+            execute.addEventListener("click", () => { showAccountAnonymizationConfirmation(report, preflight); });
+            panel.appendChild(execute);
+        }
+        feedbackReportDetailsElement.appendChild(panel);
+    }
+
+    function showAccountAnonymizationConfirmation(report, preflight) {
+        if (!report || !preflight || feedbackReportsState.executionRequestPending || feedbackReportsState.selectedReportId !== report.id) { return; }
+        const dialog = document.createElement("dialog");
+        dialog.className = "admin-confirmation-dialog";
+        const heading = document.createElement("h3");
+        heading.textContent = "Delete account permanently?";
+        const message = document.createElement("p");
+        message.textContent = "This permanently removes learner access, lesson history, settings, and normal learner data. It cannot be undone through the application.";
+        const details = document.createElement("p");
+        details.className = "muted";
+        details.textContent = `Preflight version ${String(preflight.preflightVersion ?? "-")}; expires ${formatFeedbackReportDate(preflight.expiresAtUtc)}.`;
+        const actions = document.createElement("div");
+        actions.className = "feedback-report-action-buttons";
+        const cancel = document.createElement("button");
+        cancel.type = "button";
+        cancel.textContent = "Cancel";
+        const confirm = document.createElement("button");
+        confirm.type = "button";
+        confirm.className = "danger-button";
+        confirm.textContent = "Delete account permanently";
+        cancel.addEventListener("click", () => dialog.close());
+        confirm.addEventListener("click", async () => { await executeAccountAnonymization(report.id, preflight, dialog, cancel, confirm); });
+        dialog.addEventListener("close", () => dialog.remove());
+        actions.append(cancel, confirm);
+        dialog.append(heading, message, details, actions);
+        document.body.appendChild(dialog);
+        dialog.showModal();
+    }
+
+    async function executeAccountAnonymization(reportId, preflight, dialog, cancel, confirm) {
+        if (feedbackReportsState.executionRequestPending || feedbackReportsState.selectedReportId !== reportId) { return; }
+        feedbackReportsState.executionRequestPending = true;
+        cancel.disabled = true;
+        confirm.disabled = true;
+        renderAccountAnonymizationPreflight(feedbackReportsState.selectedReport);
+        try {
+            const path = ApiPaths.accountAnonymizationExecuteTemplate.replace("{reportId}", encodeURIComponent(reportId));
+            const response = await fetch(path, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ operationId: preflight.operationId, preflightFingerprint: preflight.preflightFingerprint }) });
+            const payload = await response.json().catch(() => null);
+            if (feedbackReportsState.selectedReportId !== reportId) { return; }
+            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); return; }
+            if (response.status === HttpStatus.forbidden) { feedbackReportsState.preflightError = "Account deletion permission is unavailable."; return; }
+            if (response.ok && payload?.state === "completed") {
+                feedbackReportsState.preflight = { ...preflight, state: "completed" };
+                feedbackReportsState.preflightMessage = "Account deletion completed.";
+                dialog.close();
+                await loadFeedbackReports();
+                if (feedbackReportsState.selectedReportId === reportId) { await loadFeedbackReportDetails(reportId); }
+                return;
+            }
+            const error = String(payload?.error || "");
+            const messages = {
+                account_anonymization_report_not_processing: "Move the report to Processing before deleting the account.",
+                account_anonymization_preflight_not_found: "Preflight is missing. Run a preflight first.",
+                account_anonymization_preflight_stale: "Preflight has expired or is stale. Refresh it before deleting the account.",
+                account_anonymization_operation_mismatch: "Preflight changed. Refresh it before deleting the account.",
+                account_anonymization_active_premium: "The account can be deleted after the paid Premium period ends. Remind the customer to cancel renewal to prevent another charge.",
+                account_anonymization_admin_target_blocked: "Deletion is blocked because this account has an Admin dependency.",
+                account_anonymization_self_target_blocked: "You cannot delete your own Admin account.",
+                account_anonymization_dependency_blocked: "Deletion is blocked by an unsupported local dependency.",
+                account_anonymization_operation_executing: "An account deletion operation is already executing.",
+                account_anonymization_execution_unavailable: "Local account deletion is temporarily unavailable. Please try again."
+            };
+            feedbackReportsState.preflightError = messages[error] || "Unable to delete the account. Please try again.";
+            if (["account_anonymization_preflight_not_found", "account_anonymization_preflight_stale", "account_anonymization_operation_mismatch"].includes(error)) { dialog.close(); await loadFeedbackReportDetails(reportId); }
+        } catch (_) {
+            if (feedbackReportsState.selectedReportId === reportId) { feedbackReportsState.preflightError = "Unable to reach the server for account deletion."; }
+        } finally {
+            if (feedbackReportsState.selectedReportId === reportId) {
+                feedbackReportsState.executionRequestPending = false;
+                renderAccountAnonymizationPreflight(feedbackReportsState.selectedReport);
+                if (dialog.isConnected && dialog.open) { cancel.disabled = false; confirm.disabled = false; }
+            }
+        }
+    }
+
+    function clearAccountAnonymizationPreflight() {
+        feedbackReportsState.preflight = null;
+        feedbackReportsState.preflightRequestPending = false;
+        feedbackReportsState.preflightNotRun = false;
+        feedbackReportsState.preflightPermissionDenied = false;
+        feedbackReportsState.preflightMessage = "";
+        feedbackReportsState.preflightError = "";
+    }
+
+    async function loadAccountAnonymizationPreflight(reportId, report) {
+        if (!isAccountAnonymizationPreflightAvailable(report)) { return; }
+        const response = await fetch(ApiPaths.accountAnonymizationStatusTemplate.replace("{reportId}", encodeURIComponent(reportId)), { method: "GET", headers: getAdminHeaders() });
+        const payload = await response.json().catch(() => null);
+        if (feedbackReportsState.selectedReportId !== reportId) { return; }
+        if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); return; }
+        if (response.status === HttpStatus.forbidden) { feedbackReportsState.preflightPermissionDenied = true; return; }
+        if (response.status === HttpStatus.notFound && payload?.error === "account_anonymization_preflight_not_found") { feedbackReportsState.preflightNotRun = true; feedbackReportsState.preflightMessage = ""; return; }
+        if (response.status === HttpStatus.notFound && payload?.error === "account_anonymization_report_not_found") { feedbackReportsState.preflightError = "This report is no longer available."; return; }
+        if (response.status === HttpStatus.conflict && payload?.error === "account_anonymization_not_deletion_request") { feedbackReportsState.preflightError = "This report is not an account-deletion request."; return; }
+        if (response.status === HttpStatus.serviceUnavailable && payload?.error === "account_anonymization_preflight_unavailable") { feedbackReportsState.preflightError = "Preflight is temporarily unavailable. Please try again."; return; }
+        if (!response.ok) { feedbackReportsState.preflightError = "Unable to load preflight. Please try again."; return; }
+        feedbackReportsState.preflight = payload;
+        feedbackReportsState.preflightNotRun = false;
+        feedbackReportsState.preflightMessage = "Existing preflight loaded.";
+    }
+
+    async function runAccountAnonymizationPreflight(refresh) {
+        const reportId = String(feedbackReportsState.selectedReportId || "");
+        const report = feedbackReportsState.selectedReport;
+        if (!reportId || feedbackReportsState.preflightRequestPending || !isAccountAnonymizationPreflightAvailable(report) || report?.status === "resolved" || report?.status === "rejected") { return; }
+        feedbackReportsState.preflightRequestPending = true;
+        feedbackReportsState.preflightError = "";
+        feedbackReportsState.preflightMessage = refresh ? "Refreshing preflight..." : "Running preflight...";
+        renderAccountAnonymizationPreflight(report);
+        try {
+            const response = await fetch(ApiPaths.accountAnonymizationPreflightTemplate.replace("{reportId}", encodeURIComponent(reportId)), { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ refresh }) });
+            const payload = await response.json().catch(() => null);
+            if (feedbackReportsState.selectedReportId !== reportId) { return; }
+            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); return; }
+            if (response.status === HttpStatus.forbidden) { feedbackReportsState.preflightPermissionDenied = true; return; }
+            if (response.status === HttpStatus.notFound && payload?.error === "account_anonymization_report_not_found") { feedbackReportsState.preflightError = "This report is no longer available."; return; }
+            if (response.status === HttpStatus.conflict && payload?.error === "account_anonymization_not_deletion_request") { feedbackReportsState.preflightError = "This report is not an account-deletion request."; return; }
+            if (response.status === HttpStatus.conflict && payload?.error === "account_anonymization_request_state_blocked") { feedbackReportsState.preflightError = "Preflight cannot run while this support request is in a terminal state."; return; }
+            if (response.status === HttpStatus.serviceUnavailable && payload?.error === "account_anonymization_preflight_unavailable") { feedbackReportsState.preflightError = "Preflight is temporarily unavailable. Please try again."; return; }
+            if (!response.ok) { feedbackReportsState.preflightError = "Unable to run preflight. Please try again."; return; }
+            feedbackReportsState.preflight = payload;
+            feedbackReportsState.preflightNotRun = false;
+            feedbackReportsState.preflightMessage = refresh ? "Preflight refreshed." : "Preflight completed.";
+        } catch (_) {
+            if (feedbackReportsState.selectedReportId === reportId) { feedbackReportsState.preflightError = "Unable to reach the server for preflight."; }
+        } finally {
+            if (feedbackReportsState.selectedReportId === reportId) { feedbackReportsState.preflightRequestPending = false; renderAccountAnonymizationPreflight(feedbackReportsState.selectedReport); }
+        }
     }
 
     function updateFeedbackReportReplyLength() {
@@ -2513,6 +2850,7 @@
         feedbackReportsState.replyUnavailable = false;
         feedbackReportsState.statusPermissionDenied = false;
         feedbackReportsState.replyPermissionDenied = false;
+        clearAccountAnonymizationPreflight();
         if (!preserveReplyDraft) { feedbackReportReplyTextInput.value = ""; }
         feedbackReportDetailsCard.classList.remove("hidden");
         feedbackReportDetailsElement.textContent = "";
@@ -2524,7 +2862,15 @@
         try {
             const path = ApiPaths.feedbackReportTemplate.replace("{reportId}", encodeURIComponent(reportId));
             const report = await adminFetch(path);
-            if (feedbackReportsState.selectedReportId === reportId) { renderFeedbackReportDetails(report); }
+            if (feedbackReportsState.selectedReportId === reportId) {
+                renderFeedbackReportDetails(report);
+                try {
+                    await loadAccountAnonymizationPreflight(reportId, report);
+                } catch (_) {
+                    if (feedbackReportsState.selectedReportId === reportId) { feedbackReportsState.preflightError = "Unable to reach the server for preflight."; }
+                }
+                if (feedbackReportsState.selectedReportId === reportId) { renderAccountAnonymizationPreflight(report); }
+            }
         } catch (error) {
             if (feedbackReportsState.selectedReportId !== reportId) { return; }
             if (error instanceof Error && error.message === NotAvailableForRoleMessage) {
@@ -3556,6 +3902,7 @@
     });
 
     lookupForm.addEventListener("submit", async (event) => { event.preventDefault(); await handleLookupSubmit(LookupSources.userLookup); });
+    accountDeletionRequestForm.addEventListener("submit", async (event) => { event.preventDefault(); await createAccountDeletionRequestForSelectedUser(); });
     premiumLookupForm.addEventListener("submit", async (event) => { event.preventDefault(); await handleLookupSubmit(LookupSources.premium); });
     freeLessonLookupForm.addEventListener("submit", async (event) => { event.preventDefault(); await handleLookupSubmit(LookupSources.freeLesson); });
 

@@ -131,6 +131,17 @@
                             <p id="lookup-error" class="error" role="alert"></p>
                             <div id="lookup-result" class="lookup-result"></div>
                         </article>
+                        <article id="account-deletion-request-card" class="card lookup-card compact-lookup-card hidden" aria-labelledby="account-deletion-request-heading">
+                            <h2 id="account-deletion-request-heading">Account deletion request</h2>
+                            <p class="muted">Create a normal support request received by email. This does not delete or change the account.</p>
+                            <form id="account-deletion-request-form" novalidate>
+                                <div class="field"><label for="account-deletion-request-comment">Comment</label><textarea id="account-deletion-request-comment" rows="3" maxlength="4000" required>Request received by email.</textarea></div>
+                                <button id="account-deletion-request-button" type="submit">Start account deletion request</button>
+                            </form>
+                            <p id="account-deletion-request-loading" class="lookup-loading hidden" role="status">Creating account deletion request...</p>
+                            <p id="account-deletion-request-error" class="error" role="alert"></p>
+                            <p id="account-deletion-request-success" class="success" role="status"></p>
+                        </article>
                     </div>
 
                     <div id="tab-panel-premium" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-premium">

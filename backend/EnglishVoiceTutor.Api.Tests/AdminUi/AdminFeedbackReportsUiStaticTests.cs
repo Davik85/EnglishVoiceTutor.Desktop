@@ -137,4 +137,65 @@ public sealed class AdminFeedbackReportsUiStaticTests
         Assert.Contains("[Tabs.website]: { bootstrapAdminOnly: true }", AdminJs);
         Assert.Contains("[Tabs.roleManagement]: { anyPermissions: [AdminPermissionIds.adminRolesManage] }", AdminJs);
     }
+
+    [Fact]
+    public void AccountAnonymizationPreflightPanelIsPermissionGatedAndUsesOnlyApprovedRoutes()
+    {
+        Assert.Contains("accountAnonymizationPreflightRead: \"account_anonymization.preflight.read\"", AdminJs);
+        Assert.Contains("accountAnonymizationStatusTemplate: \"/api/admin/feedback-reports/{reportId}/account-anonymization\"", AdminJs);
+        Assert.Contains("accountAnonymizationPreflightTemplate: \"/api/admin/feedback-reports/{reportId}/account-anonymization/preflight\"", AdminJs);
+        Assert.Contains("report?.category === \"account_deletion\" && hasAdminPermission(AdminPermissionIds.accountAnonymizationPreflightRead)", AdminJs);
+        Assert.Contains("async function loadAccountAnonymizationPreflight", AdminJs);
+        Assert.Contains("method: \"GET\"", AdminJs);
+        Assert.Contains("account_anonymization_preflight_not_found", AdminJs);
+        Assert.Contains("Preflight has not been run.", AdminJs);
+    }
+
+    [Fact]
+    public void PreflightActionsAndExecutionControlsArePlainTextAndPermissionGated()
+    {
+        var selectionLoad = AdminJs.Substring(AdminJs.IndexOf("async function loadFeedbackReportDetails"), AdminJs.IndexOf("async function adminFetch") - AdminJs.IndexOf("async function loadFeedbackReportDetails"));
+        var preflightRenderer = AdminJs.Substring(AdminJs.IndexOf("function renderAccountAnonymizationPreflight"), AdminJs.IndexOf("function updateFeedbackReportReplyLength") - AdminJs.IndexOf("function renderAccountAnonymizationPreflight"));
+        var preflightRequest = AdminJs.Substring(AdminJs.IndexOf("async function runAccountAnonymizationPreflight"), AdminJs.IndexOf("async function loadFeedbackReportDetails") - AdminJs.IndexOf("async function runAccountAnonymizationPreflight"));
+
+        Assert.DoesNotContain("method: \"POST\"", selectionLoad);
+        Assert.Contains("JSON.stringify({ refresh })", preflightRequest);
+        Assert.Contains("runAccountAnonymizationPreflight(preflight ? true : false)", preflightRenderer);
+        Assert.Contains("status === \"resolved\" || status === \"rejected\"", preflightRenderer);
+        Assert.Contains("action.disabled = terminal || operationState === \"executing\" || operationState === \"completed\"", preflightRenderer);
+        Assert.Contains("textContent", preflightRenderer);
+        Assert.DoesNotContain("innerHTML", preflightRenderer);
+        Assert.Contains("hasAdminPermission(AdminPermissionIds.accountAnonymizationExecute)", preflightRenderer);
+        Assert.Contains("status === \"processing\"", preflightRenderer);
+        Assert.Contains("account_anonymization_active_premium", preflightRenderer);
+        Assert.Contains("Refresh the preflight before deleting the account", preflightRenderer);
+        Assert.Contains("execute.disabled = executeUnavailable", preflightRenderer);
+    }
+
+    [Fact]
+    public void AccountAnonymizationExecutionUsesOneExplicitConfirmationAndExactContract()
+    {
+        var execution = AdminJs.Substring(AdminJs.IndexOf("function showAccountAnonymizationConfirmation"), AdminJs.IndexOf("function clearAccountAnonymizationPreflight") - AdminJs.IndexOf("function showAccountAnonymizationConfirmation"));
+
+        Assert.Contains("accountAnonymizationExecute: \"account_anonymization.execute\"", AdminJs);
+        Assert.Contains("accountAnonymizationExecuteTemplate: \"/api/admin/feedback-reports/{reportId}/account-anonymization/execute\"", AdminJs);
+        Assert.Contains("dialog.showModal()", execution);
+        Assert.Contains("Cancel", execution);
+        Assert.Contains("Delete account permanently", execution);
+        Assert.Contains("operationId: preflight.operationId, preflightFingerprint: preflight.preflightFingerprint", execution);
+        Assert.Contains("feedbackReportsState.executionRequestPending", execution);
+        Assert.Contains("feedbackReportsState.selectedReportId !== reportId", execution);
+        Assert.Contains("await loadFeedbackReports()", execution);
+        Assert.Contains("await loadFeedbackReportDetails(reportId)", execution);
+        Assert.Contains("textContent", execution);
+        Assert.DoesNotContain("innerHTML", execution);
+        Assert.DoesNotContain("password", execution, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("typed", execution, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("checkbox", execution, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("second", execution, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("paddle", execution, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("billing", execution, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("refund", execution, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("cancellation", execution, StringComparison.OrdinalIgnoreCase);
+    }
 }

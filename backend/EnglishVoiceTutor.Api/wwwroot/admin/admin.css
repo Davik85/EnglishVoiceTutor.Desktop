@@ -63,6 +63,11 @@ button:disabled { background: #93a7d7; cursor: not-allowed; }
 .feedback-report-action-area .field { max-width: 760px; }
 .feedback-report-action-area textarea { box-sizing: border-box; max-width: 100%; width: 100%; }
 .feedback-report-action-area .muted { margin: 6px 0 12px; }
+.danger-button { background: #b91c1c; }
+.danger-button:hover { background: #991b1b; }
+.admin-confirmation-dialog { border: 1px solid #d8dee7; border-radius: 12px; box-shadow: 0 16px 40px rgba(15,23,42,.25); color: #1f2937; max-width: 560px; padding: 22px; }
+.admin-confirmation-dialog::backdrop { background: rgba(15,23,42,.45); }
+.admin-confirmation-dialog h3 { margin-top: 0; }
 .feedback-report-action-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
 .feedback-report-reply-history-list { display: grid; gap: 12px; }
 .feedback-report-reply-history-item { background: #f8fafc; border: 1px solid #dbeafe; border-radius: 8px; padding: 12px; }

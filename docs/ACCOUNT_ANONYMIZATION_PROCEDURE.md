@@ -1,8 +1,12 @@
 # Account anonymization procedure and data inventory
 
+> **Current approved local procedure (2026-07-23).** This section supersedes earlier draft workflow, retention, external-provider, confirmation, notification, and restore-reconciliation proposals below. A Super Admin may use the locally implemented Admin Shell confirmation dialog to execute a fresh, matching preflight for a `processing` account-deletion report. No second Admin, password re-entry, typed phrase, provider call, queue, email automation, or custom backup workflow is required. Active effective Premium or a current paid subscription period blocks execution until expiry; the operator reminds the customer to cancel renewal. Refunds, disputes, and chargebacks remain manual support work. The transaction deletes normal learner data and access, retains unchanged local subscription/payment/billing/Paddle records, redacts support content, and leaves a non-login `deleted+<operationId>@deleted.invalid` user shell. Standard backup retention applies. The combined migration and backend deployment remain pending; production remains `0.1.35-backend.129`.
+
 ## 1. Status and scope
 
-**Status: approved design/runbook draft; implementation remains subject to owner, legal, security, and operational approvals. It is not implemented behavior.** The current product has request intake only: `POST /api/me/account-deletion-requests` creates an `account_deletion` support item. No Admin action, automated account operation, database mutation path, or schema support for anonymization exists.
+**Status: complete local implementation; deployment remains subject to separately authorized operational review.** Production backend `0.1.35-backend.129` has learner request intake and the non-destructive Slice 1 preflight foundation. The repository also implements, but has not deployed, Super-Admin email-request intake and the complete Admin Shell confirmation/execution flow. The combined migration and backend deployment remain pending.
+
+Admin email intake requires only a short operator comment and creates the normal support request; it has no second-Admin approval or two-person workflow. It does not call or modify Paddle or another provider. An active Premium period will block future actual deletion until the paid period ends, so the operator should remind the customer to cancel renewal; refunds, disputes, and chargebacks remain manual support matters.
 
 For the future backend implementation companion and its explicitly read-only first slice, see [Account anonymization backend technical design](ACCOUNT_ANONYMIZATION_BACKEND_DESIGN.md).
 
@@ -108,7 +112,7 @@ Current support statuses are `new`, `reviewed`, `needs_information`, `processing
 
 ## 6. Access and authorization design
 
-Initially restrict execution to a `super_admin` with a new dedicated future permission, not the current broad feedback-status permission. Require recent re-authentication and recommend two-person approval (executor plus distinct approver) for the first production implementation. The existing RBAC model and `admin_actions`/Admin-auth audit pattern support accountable actor records, but their current target-user FKs and free-text fields require a safe-audit implementation decision.
+Initially restrict any future destructive execution to `super_admin` with a dedicated permission, not the broad feedback-status permission. Recent re-authentication remains an approval decision; no second-Admin approval or two-person workflow is planned. The existing RBAC model and `admin_actions`/Admin-auth audit pattern support accountable actor records, but their current target-user FKs and free-text fields require a safe-audit implementation decision.
 
 The design must reject self-targeting, active Admin identities, sole/last-admin cases, and duplicate operation IDs. An Admin user must first be transferred or disabled under a separately approved role/audit process; never silently remove a live privileged identity.
 

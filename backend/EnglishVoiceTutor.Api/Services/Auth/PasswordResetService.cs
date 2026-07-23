@@ -43,7 +43,7 @@ public sealed class PasswordResetService(
         }
 
         var user = await dbContext.Users.SingleOrDefaultAsync(candidate => candidate.Email == normalizedEmail, cancellationToken);
-        if (user is null)
+        if (user is null || !string.Equals(user.Status, AuthConstants.ActiveUserStatus, StringComparison.OrdinalIgnoreCase))
         {
             logger.LogInformation("Password reset request accepted for non-existing account.");
             return;
@@ -103,7 +103,7 @@ public sealed class PasswordResetService(
             .Include(token => token.User)
             .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
 
-        if (resetToken is null || resetToken.UsedAtUtc is not null || resetToken.RevokedAtUtc is not null || resetToken.ExpiresAtUtc <= now)
+        if (resetToken is null || !string.Equals(resetToken.User.Status, AuthConstants.ActiveUserStatus, StringComparison.OrdinalIgnoreCase) || resetToken.UsedAtUtc is not null || resetToken.RevokedAtUtc is not null || resetToken.ExpiresAtUtc <= now)
         {
             return false;
         }

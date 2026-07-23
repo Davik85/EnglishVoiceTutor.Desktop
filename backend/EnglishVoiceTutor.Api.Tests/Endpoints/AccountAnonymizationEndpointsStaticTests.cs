@@ -3,7 +3,7 @@ namespace EnglishVoiceTutor.Api.Tests.Endpoints;
 public sealed class AccountAnonymizationEndpointsStaticTests
 {
     [Fact]
-    public void RoutesRetainPreflightPermissionAndAdminRateLimitingWithoutAnExecuteRoute()
+    public void RoutesApplyExecutePermissionAndAdminWriteRateLimiting()
     {
         var source = ReadRepositoryFile("backend/EnglishVoiceTutor.Api/Endpoints/AccountAnonymizationEndpoints.cs");
 
@@ -12,8 +12,9 @@ public sealed class AccountAnonymizationEndpointsStaticTests
         Assert.Equal(2, CountOccurrences(source, "AccountAnonymizationPreflightReadPermissionPolicyName"));
         Assert.Contains("createPreflightEndpoint.RequireRateLimiting(RateLimitingConstants.AdminWritePolicyName)", source, StringComparison.Ordinal);
         Assert.Contains("statusEndpoint.RequireRateLimiting(RateLimitingConstants.AdminReadPolicyName)", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("AccountAnonymizationExecutePermissionPolicyName", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("/execute", source, StringComparison.Ordinal);
+        Assert.Contains("AccountAnonymizationExecutePermissionPolicyName", source, StringComparison.Ordinal);
+        Assert.Contains("AdminFeedbackReportAccountAnonymizationExecuteRoute", source, StringComparison.Ordinal);
+        Assert.Contains("executeEndpoint.RequireRateLimiting(RateLimitingConstants.AdminWritePolicyName)", source, StringComparison.Ordinal);
     }
 
     private static int CountOccurrences(string source, string value) => source.Split(value, StringSplitOptions.None).Length - 1;

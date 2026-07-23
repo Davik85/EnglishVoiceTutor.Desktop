@@ -1,16 +1,18 @@
 # Account anonymization backend technical design
 
+> **Implementation status (2026-07-23).** The local backend and Admin Shell now implement synchronous Super-Admin execution through `POST /api/admin/feedback-reports/{reportId}/account-anonymization/execute`, guarded by the execute permission and Admin write limit, with one simple irreversible-action confirmation dialog. The required request contains only `operationId` and `preflightFingerprint`. It performs no Paddle or provider mutation, preserves financial/provider rows, and uses one local transaction plus post-mutation verification. Earlier draft requirements for two-person approval, typed confirmation, provider action tracking, external notification, and backup restore replay are superseded by the approved simple process. The combined migration and backend deployment remain pending; production is `0.1.35-backend.129`.
+
 Companion to [Account anonymization procedure and data inventory](ACCOUNT_ANONYMIZATION_PROCEDURE.md). That procedure remains the canonical data-treatment and legal/operational runbook; this document specifies a future backend implementation shape without implementing it.
 
 ## 1. Status and implementation boundary
 
-**Status: approved technical design with the read-only Slice 1 foundation implemented in the repository, not deployed behavior.** No anonymization mutation endpoint, Admin UI, or production action exists. Exact legally required retention periods remain an owner/legal decision; any unresolved retention category blocks destructive execution. The required first implementation slice is read-only: it may create durable operation/preflight records but must not anonymize, delete, revoke, cancel, notify, call a provider, or alter learner data.
+**Status: complete local technical implementation with the Slice 1 foundation production-deployed in `0.1.35-backend.129`.** The repository implements the Admin preflight panel, one confirmation dialog, execution endpoint, and local migration, but none of those accumulated changes are deployed. The combined migration and backend deployment remain pending. The local execution performs no provider action, notification, or financial mutation.
 
-### Slice 1 repository implementation (not deployed)
+### Slice 1 deployed foundation and repository Admin UI
 
-Slice 1 is implemented in the repository and remains undeployed: migration `AddAccountAnonymizationPreflightFoundation` creates only `account_anonymization_operations` and `account_anonymization_policy_snapshots`; `POST /api/admin/feedback-reports/{reportId:guid}/account-anonymization/preflight` creates or refreshes a read-only preflight; and `GET /api/admin/feedback-reports/{reportId:guid}/account-anonymization` reads its status without recomputation. Both routes require `account_anonymization.preflight.read`; the foundation-only `account_anonymization.execute` permission has no route. Both permissions are initially assigned only to `super_admin`.
+Slice 1 and migration `20260722132656_AddAccountAnonymizationPreflightFoundation` are production-deployed in `0.1.35-backend.129`. The repository-only accumulated release adds the complete Super-Admin preflight, confirmation, execution, and email-intake flow, plus migration `20260723045852_AddAccountAnonymizationExecution`; it is pending the combined `.130` deployment. `POST /api/admin/feedback-reports/{reportId:guid}/account-anonymization/preflight` creates or refreshes a read-only preflight, `GET /api/admin/feedback-reports/{reportId:guid}/account-anonymization` reads it, and `POST /api/admin/feedback-reports/{reportId:guid}/account-anonymization/execute` executes a fresh matching preflight. Both permissions are assigned only to `super_admin`.
 
-The code-owned initial policy is `account_anonymization_policy_v1`, with a deterministic SHA-256 hash over its safe category decisions. Preflights have a 15-minute lifetime: an unexpired `refresh=false` request returns the stored operation, while forced or expired refresh increments its preflight version. The implementation reads only local normalized state and writes only its new operation/policy records; it does not modify learner/support/billing/authentication/entitlement/Admin/CMS/provider records or call an external provider. Backup and unresolved-retention decisions intentionally yield safe blockers, so no execution readiness is claimed.
+The code-owned policy is `account_anonymization_policy_v2`, with a deterministic SHA-256 hash over safe category decisions. Preflights have a 15-minute lifetime: an unexpired `refresh=false` request returns the stored operation, while forced or expired refresh increments its preflight version. Preflight and email intake do not mutate learner, billing, authentication, entitlement, Admin, CMS, or provider records or call an external provider. Execution is the separate local transaction that removes approved learner data, retains financial/provider rows, and verifies completion. Active Premium blocks deletion until the paid period ends; operators should remind customers to cancel renewal, while refunds, disputes, and chargebacks remain manual support matters. No second-Admin approval is planned.
 
 ## 2. Recommended backend architecture
 
@@ -37,14 +39,14 @@ Use the existing Admin feedback-report route family. Proposed constants and endp
 | --- | --- | --- | --- | --- |
 | `POST /api/admin/feedback-reports/{reportId:guid}/account-anonymization/preflight` | `AdminPermission:account_anonymization.preflight.read`; existing `AdminRead` (or a future dedicated low-volume Admin preflight policy) | `{ refresh: boolean }` | `200` `AccountAnonymizationPreflightResponse` | Read-only inspection. Existing current fingerprint is returned when valid unless `refresh`; a newly persisted preflight foundation record is allowed. |
 | `GET /api/admin/feedback-reports/{reportId:guid}/account-anonymization` | `AdminPermission:account_anonymization.preflight.read`; `AdminRead` | none | `200` `AccountAnonymizationOperationStatusResponse` | Returns latest operation/preflight safe state; no target identity/content. |
-| `POST /api/admin/feedback-reports/{reportId:guid}/account-anonymization/execute` | `AdminPermission:account_anonymization.execute`; `AdminWrite`/future stricter policy | `operationId`, `preflightFingerprint`, `typedConfirmation`, `acknowledged`, optional `idempotencyKey` | `202` operation status | **Later slice only.** It is the sole destructive command route. |
+| `POST /api/admin/feedback-reports/{reportId:guid}/account-anonymization/execute` | `AdminPermission:account_anonymization.execute`; `AdminWrite` | `operationId`, `preflightFingerprint` | `200` completed safe operation status | Implemented locally; one browser confirmation is an operator safeguard, while backend validation remains authoritative. |
 | `GET /api/admin/account-anonymization/operations/{operationId:guid}/verification` | `AdminPermission:account_anonymization.preflight.read`; `AdminRead` | none | `200` `AccountAnonymizationVerificationResponse` | **Later slice.** Safe result only. |
 
 `AccountAnonymizationPreflightResponse` contains `operationId`, `reportId`, `state`, `preflightFingerprint`, `expiresAtUtc`, `categoryCounts: { key, count }`, `blockingReasons: [safeCode]`, `retentionStates: { immediateDeleteCount, restrictedRetentionCount, unresolvedCount }`, `externalActionState`, and `backupReconciliationState`. It must not return a target user ID, email, display name, reason, text, token, raw payload, or provider ID.
 
 `AccountAnonymizationOperationStatusResponse` adds safe timestamps, state, category counts, blockers, external state, backup state, and verification state. `AccountAnonymizationVerificationResponse` adds only verification status, category-result counts, safe failure codes, provider/backup state, and completed timestamp.
 
-The server resolves target user identity only from the report row during preflight/execution; clients never submit it. `typedConfirmation` must exactly equal a server-provided canonical confirmation value such as `DELETE <reportId>` or `DELETE <operationId>` selected by the future UI contract; it is compared server-side and not retained verbatim after validation.
+The server resolves target user identity only from the report row during preflight/execution; clients never submit it. The execute contract contains only the current operation ID and preflight fingerprint; it has no typed confirmation, password, or acknowledgement field.
 
 | Condition | Status / safe error code |
 | --- | --- |
@@ -66,7 +68,7 @@ Execution must fresh-check permission, persistent actor mapping, report state, t
 
 ## 4. Permissions and Admin security
 
-Recommend separate permissions: `account_anonymization.preflight.read` and `account_anonymization.execute`, with policies `AdminPermission:account_anonymization.preflight.read` and `AdminPermission:account_anonymization.execute`. Separation permits a review role to inspect safe preflights while limiting execution to `super_admin`, the currently strongest persistent role. Add both constants, policies, `AdminRolePermissionCatalogService` mappings, and endpoint catalog entries only in the future implementation; do not change existing Bootstrap Admin, feedback, billing, CMS, or role-management permissions.
+The implemented permissions are `account_anonymization.preflight.read` and `account_anonymization.execute`, with policies `AdminPermission:account_anonymization.preflight.read` and `AdminPermission:account_anonymization.execute`. Execution is limited to `super_admin`; the constants, policies, role mapping, and endpoint catalog are part of the local accumulated release.
 
 Every route uses the Admin cookie scheme and existing persistent-role `AdminPermissionAuthorizationHandler`; endpoint code then uses `IAdminRoleAssignmentActorResolver` for a trusted Admin-user ID. It rejects missing mapping, self-target, active target Admin, and sole/last-admin cases. Recent re-authentication has no existing verified mechanism in the reviewed design and is therefore an execution blocker/design decision. Two-person approval remains an explicit decision; if adopted, the executor and approver must be distinct resolved Admin IDs.
 
@@ -170,7 +172,7 @@ Future focused tests: route authorization and catalog mapping; no mutation durin
 
 **Slice 1 — read-only operation foundation:** add the two dedicated permission/policy/catalog mappings; operation and policy/preflight schema foundation plus migration; read-only preflight service/endpoint; operation-status read endpoint; and focused authorization/preflight/safe-response/staleness tests. An Admin UI may display preflight only under separate approval, with no destructive button. This slice must not alter learner data, revoke tokens, cancel subscriptions, call providers, notify, or resolve support.
 
-Later slices, separately approved: (2) browser confirmation UI and recent-auth/two-person enforcement; (3) local transaction and safe evidence; (4) external-provider reconciliation; (5) verification/notification; (6) backup/restore reconciliation; (7) controlled production rollout.
+The locally implemented browser confirmation, transaction, and verification flow are complete. A separately authorized combined migration/backend `.130` deployment remains pending; provider reconciliation, notification automation, and custom backup reconciliation are not part of this product process.
 
 ## 14. Open decisions and approval gate
 

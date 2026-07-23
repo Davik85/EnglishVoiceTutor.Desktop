@@ -17,6 +17,11 @@ public sealed class AccountAnonymizationOperationEntity
     public string RetentionSummaryJson { get; set; } = string.Empty;
     public string ProviderStatesJson { get; set; } = string.Empty;
     public string BackupReconciliationState { get; set; } = string.Empty;
+    public DateTimeOffset? StartedAtUtc { get; set; }
+    public DateTimeOffset? CompletedAtUtc { get; set; }
+    public string? FailureCode { get; set; }
+    public string VerificationState { get; set; } = string.Empty;
+    public string ResultCountsJson { get; set; } = string.Empty;
     public DateTimeOffset CreatedAtUtc { get; set; }
     public DateTimeOffset UpdatedAtUtc { get; set; }
     public int ConcurrencyRevision { get; set; }

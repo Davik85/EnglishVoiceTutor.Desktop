@@ -18,12 +18,12 @@ public interface IAccountAnonymizationPreflightService
 
 public sealed class AccountAnonymizationPreflightService(AppDbContext dbContext) : IAccountAnonymizationPreflightService
 {
-    public const string InitialPolicyVersion = "account_anonymization_policy_v1";
-    public const string ProcedureVersion = "account_anonymization_procedure_v1";
+    public const string InitialPolicyVersion = "account_anonymization_policy_v2";
+    public const string ProcedureVersion = "account_anonymization_procedure_v2";
     public const string BlockedState = "blocked";
     public const string PreflightState = "preflight";
-    public const string BackupPolicyUnverified = "account_anonymization_backup_policy_unverified";
-    public const string RetentionUnresolved = "account_anonymization_retention_unresolved";
+    public const string ActivePremium = "account_anonymization_active_premium";
+    public const string ActivePaidSubscription = "account_anonymization_active_paid_subscription";
     public const string ActiveAdminTarget = "account_anonymization_admin_target_blocked";
     public const string SelfTarget = "account_anonymization_self_target_blocked";
     public const string UnknownProvider = "account_anonymization_provider_unknown";
@@ -74,7 +74,9 @@ public sealed class AccountAnonymizationPreflightService(AppDbContext dbContext)
         operation.BlockingCodesJson = JsonSerializer.Serialize(data.BlockingCodes);
         operation.RetentionSummaryJson = JsonSerializer.Serialize(data.RetentionSummary);
         operation.ProviderStatesJson = JsonSerializer.Serialize(data.ProviderStates);
-        operation.BackupReconciliationState = "unverified";
+        operation.BackupReconciliationState = "standard_retention";
+        operation.VerificationState = "not_started";
+        operation.ResultCountsJson = "{}";
         operation.UpdatedAtUtc = now;
         operation.ConcurrencyRevision++;
 
@@ -126,6 +128,7 @@ public sealed class AccountAnonymizationPreflightService(AppDbContext dbContext)
     private async Task<PreflightData> BuildPreflightDataAsync(UserFeedbackReportEntity report, Guid actorAdminUserId, AccountAnonymizationPolicySnapshotEntity snapshot, CancellationToken cancellationToken)
     {
         var userId = report.UserId;
+        var now = DateTimeOffset.UtcNow;
         var counts = new SortedDictionary<string, int>(StringComparer.Ordinal)
         {
             ["profile"] = await dbContext.UserProfiles.AsNoTracking().CountAsync(item => item.UserId == userId, cancellationToken),
@@ -160,7 +163,7 @@ public sealed class AccountAnonymizationPreflightService(AppDbContext dbContext)
         counts["admin_role_assignment_events"] = await dbContext.AdminRoleAssignmentEvents.AsNoTracking().CountAsync(item => targetAdminIds.Contains(item.TargetAdminUserId) || (item.ActorAdminUserId.HasValue && targetAdminIds.Contains(item.ActorAdminUserId.Value)), cancellationToken);
         counts["admin_auth_audit"] = await dbContext.AdminAuthAuditEvents.AsNoTracking().CountAsync(item => item.ActorUserId == userId || (item.ActorAdminUserId.HasValue && targetAdminIds.Contains(item.ActorAdminUserId.Value)), cancellationToken);
 
-        var blockers = new SortedSet<string>(StringComparer.Ordinal) { BackupPolicyUnverified, RetentionUnresolved };
+        var blockers = new SortedSet<string>(StringComparer.Ordinal);
         var targetAdmin = await dbContext.AdminUsers.AsNoTracking().AnyAsync(item => item.UserId == userId && item.Status == "active", cancellationToken);
         if (targetAdmin) blockers.Add(ActiveAdminTarget);
         if (counts["admin_user_mappings"] + counts["admin_user_roles"] + counts["admin_role_assignment_events"] + counts["admin_auth_audit"] + counts["cms_content_pack_authorship"] + counts["cms_prompt_template_authorship"] + counts["cms_content_version_authorship"] + counts["cms_audit_logs"] > 0) blockers.Add(AdminCmsDependencyUnclassified);
@@ -168,37 +171,37 @@ public sealed class AccountAnonymizationPreflightService(AppDbContext dbContext)
         if (actorUserId == userId) blockers.Add(SelfTarget);
 
         var providerRecords = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-        await AddSubscriptionProvidersAsync(userId, providerRecords, blockers, cancellationToken);
-        await AddPaymentProvidersAsync(userId, providerRecords, blockers, cancellationToken);
-        if (await dbContext.BillingEvents.AsNoTracking().AnyAsync(cancellationToken)) blockers.Add("account_anonymization_billing_events_unlinked");
+        await AddSubscriptionProvidersAsync(userId, providerRecords, cancellationToken);
+        await AddPaymentProvidersAsync(userId, providerRecords, cancellationToken);
+        var premiumActive = await dbContext.Entitlements.AsNoTracking().AnyAsync(item => item.UserId == userId && item.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType && item.Status == SubscriptionConstants.Entitlements.StatusActive && item.StartsAtUtc <= now && (!item.ExpiresAtUtc.HasValue || item.ExpiresAtUtc > now), cancellationToken);
+        if (premiumActive) blockers.Add(ActivePremium);
+        var paidPeriodActive = await dbContext.Subscriptions.AsNoTracking().AnyAsync(item => item.UserId == userId && item.CurrentPeriodEndUtc > now && item.Status == "active", cancellationToken);
+        if (paidPeriodActive) blockers.Add(ActivePaidSubscription);
         if (counts["paddle_webhook_records"] > 0) AddProviderState(providerRecords, "paddle", "local_webhook_records_present");
         var providers = providerRecords.OrderBy(item => item.Key, StringComparer.Ordinal).Select(item => new AccountAnonymizationProviderStateResponse { ProviderKey = item.Key, RecordCount = item.Value.Count, StateCodes = item.Value.Distinct(StringComparer.Ordinal).OrderBy(value => value, StringComparer.Ordinal).ToArray() }).ToArray();
-        var retention = new AccountAnonymizationRetentionSummaryResponse { ImmediateDeleteOrAnonymizeCount = InitialPolicyDecisions.Values.Count(value => value == "immediate_delete_or_anonymize"), UnresolvedDecisionCount = InitialPolicyDecisions.Values.Count(value => value == "unresolved_legal_decision") };
+        var retention = new AccountAnonymizationRetentionSummaryResponse { ImmediateDeleteOrAnonymizeCount = InitialPolicyDecisions.Values.Count(value => value == "immediate_delete_or_anonymize"), UnresolvedDecisionCount = 0 };
         return new PreflightData(counts, blockers.ToArray(), retention, providers);
     }
 
-    private async Task AddSubscriptionProvidersAsync(Guid userId, Dictionary<string, List<string>> providers, SortedSet<string> blockers, CancellationToken cancellationToken)
+    private async Task AddSubscriptionProvidersAsync(Guid userId, Dictionary<string, List<string>> providers, CancellationToken cancellationToken)
     {
         var subscriptions = await dbContext.Subscriptions.AsNoTracking().Where(item => item.UserId == userId).Select(item => new { item.Provider, item.Status, item.CancelAtPeriodEnd }).ToListAsync(cancellationToken);
         foreach (var item in subscriptions)
         {
-            var key = NormalizeProvider(item.Provider, blockers);
+            var key = NormalizeProvider(item.Provider);
             var state = NormalizeSubscriptionState(item.Status, item.CancelAtPeriodEnd);
             AddProviderState(providers, key, state);
-            if (state == "active") blockers.Add("account_anonymization_active_renewal");
-            if (IsUncertainLifecycle(state)) blockers.Add(BillingLifecycleUnresolved);
         }
     }
 
-    private async Task AddPaymentProvidersAsync(Guid userId, Dictionary<string, List<string>> providers, SortedSet<string> blockers, CancellationToken cancellationToken)
+    private async Task AddPaymentProvidersAsync(Guid userId, Dictionary<string, List<string>> providers, CancellationToken cancellationToken)
     {
         var payments = await dbContext.Payments.AsNoTracking().Where(item => item.UserId == userId).Select(item => new { item.Provider, item.Status }).ToListAsync(cancellationToken);
         foreach (var item in payments)
         {
-            var key = NormalizeProvider(item.Provider, blockers);
+            var key = NormalizeProvider(item.Provider);
             var state = NormalizePaymentState(item.Status);
             AddProviderState(providers, key, state);
-            if (IsUncertainLifecycle(state)) blockers.Add(BillingLifecycleUnresolved);
         }
     }
 
@@ -223,12 +226,11 @@ public sealed class AccountAnonymizationPreflightService(AppDbContext dbContext)
     private static bool IsOperationUniqueConstraint(DbUpdateException exception) => IsUniqueConstraint(exception, "IX_account_anonymization_operations_ReportId");
     private static bool IsPolicySnapshotUniqueConstraint(DbUpdateException exception) => IsUniqueConstraint(exception, "IX_account_anonymization_policy_snapshots_PolicyVersion") || IsUniqueConstraint(exception, "IX_account_anonymization_policy_snapshots_VersionHash");
     private static bool IsUniqueConstraint(DbUpdateException exception, string constraintName) => exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: var name } && string.Equals(name, constraintName, StringComparison.Ordinal);
-    private static string NormalizeProvider(string? value, SortedSet<string> blockers)
+    private static string NormalizeProvider(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value)) { blockers.Add(UnknownProvider); return "unknown"; }
+        if (string.IsNullOrWhiteSpace(value)) return "unknown";
         var normalized = value.Trim().ToLowerInvariant();
         if (KnownProviderKeys.Contains(normalized, StringComparer.Ordinal)) return normalized;
-        blockers.Add(UnknownProvider);
         return "unsupported";
     }
     private static string NormalizeSubscriptionState(string? value, bool cancelAtPeriodEnd)
@@ -249,7 +251,7 @@ public sealed class AccountAnonymizationPreflightService(AppDbContext dbContext)
     private static readonly IReadOnlyDictionary<string, string> InitialPolicyDecisions = new SortedDictionary<string, string>(StringComparer.Ordinal)
     {
         ["devices"] = "immediate_delete_or_anonymize", ["lesson_content"] = "immediate_delete_or_anonymize", ["profile_settings"] = "immediate_delete_or_anonymize", ["tokens"] = "immediate_delete_or_anonymize",
-        ["admin_audit"] = "unresolved_legal_decision", ["backup_restore"] = "unresolved_legal_decision", ["billing_financial"] = "unresolved_legal_decision", ["external_provider"] = "unresolved_legal_decision", ["support_content"] = "unresolved_legal_decision"
+        ["billing_financial"] = "retain_financial_support_record", ["backup_restore"] = "standard_backup_retention", ["support_content"] = "immediate_delete_or_anonymize"
     };
     private sealed record PreflightData(SortedDictionary<string, int> CategoryCounts, IReadOnlyList<string> BlockingCodes, AccountAnonymizationRetentionSummaryResponse RetentionSummary, IReadOnlyList<AccountAnonymizationProviderStateResponse> ProviderStates);
 }

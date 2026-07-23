@@ -2,9 +2,13 @@
 
 Review date: 2026-07-22.
 
+## 2026-07-23 local account-anonymization execution update
+
+The repository locally implements the complete Super-Admin account-anonymization Admin Shell confirmation UI, backend execution flow, and migration `AddAccountAnonymizationExecution`; nothing is deployed, packaged, or applied to production. Production remains backend `0.1.35-backend.129`. Execution is synchronous/local-only, uses a fresh preflight, does not call or mutate Paddle/providers, preserves financial history, removes normal learner data/access, and leaves a non-login anonymized user shell. No second Admin, password re-entry, typed phrase, queue, notification automation, or custom backup reconciliation workflow is present. One combined migration and backend deployment remain pending.
+
 ## 2026-07-22 production account-deletion and Admin login-security release state
 
-The active production backend is `0.1.35-backend.128` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.128`; verified rollback target is `0.1.35-backend.127`. Security commit `8dd301b3` (`Harden Admin login credential handling`) is deployed. `languagevoicetutor-backend.service` is active and running; public `/health` returned HTTP 200 `Healthy`; and public `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`. CMS/Admin production smoke passed in a private window: Admin login, dashboard and Feedback & reports loading, account-deletion report opening, logout/repeat login, Sign in/Enter submission, legacy sensitive URL cleanup, and fail-closed native fallback verification.
+The active production backend is `0.1.35-backend.129`. Account-anonymization Slice 1 and migration `20260722132656_AddAccountAnonymizationPreflightFoundation` are deployed and healthy; the complete local Admin preflight, confirmation, execution, and email-intake flow is repository-only and not deployed. Email intake creates the same normal `account_deletion` support request with existing duplicate protection; it has no second-Admin approval and does not call Paddle or another provider. Active Premium blocks deletion until the paid period ends, with renewal cancellation communicated by the operator; refunds, disputes, and chargebacks remain manual support matters. One combined migration and backend `.130` deployment remain pending. Security commit `8dd301b3` (`Harden Admin login credential handling`) remains deployed. `languagevoicetutor-backend.service` is active and running; public `/health` returned HTTP 200 `Healthy`; and public `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`. CMS/Admin production smoke passed in a private window: Admin login, dashboard and Feedback & reports loading, account-deletion report opening, logout/repeat login, Sign in/Enter submission, legacy sensitive URL cleanup, and fail-closed native fallback verification.
 
 The `.128` Admin login form explicitly posts to `/admin/` and its email/password inputs have no `name` attributes, so a missing or unparsable `admin.js` cannot serialize or transmit credentials through native form submission. Working JavaScript still prevents native submission and sends the trimmed email plus unchanged password as JSON to `POST /api/auth/login`. At startup, `admin.js` removes legacy `email` and `password` query parameters case-insensitively without reloading, while preserving the Admin path, unrelated query parameters, and hash. Removed values are not copied into fields, storage, logs, errors, or diagnostics. No migration, static website deployment, Website CMS publish, installer upload, billing/Paddle, role, or production configuration change was part of `.128`.
 
@@ -53,7 +57,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.128`, with `.127` as the verified rollback target.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; account-anonymization Slice 1 and migration `20260722132656_AddAccountAnonymizationPreflightFoundation` are deployed in `0.1.35-backend.129`; the complete local Admin confirmation/execution flow and `AddAccountAnonymizationExecution` migration remain repository-only pending the combined `.130` deployment.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows direct public release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -83,7 +87,7 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.128`; verified rollback target: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.127`. Public backend health returned HTTP 200, public database health returned HTTP 200 with `canConnect=true`, and the Admin CMS private-window smoke passed after deployment. The account-deletion endpoint and migration state are recorded above. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
+Current backend release for the deployed account-anonymization Slice 1 is `0.1.35-backend.129`; its migration is `20260722132656_AddAccountAnonymizationPreflightFoundation`. Public backend health returned HTTP 200, public database health returned HTTP 200 with `canConnect=true`, and the Admin CMS private-window smoke passed after deployment. The complete Admin confirmation/execution flow and its local migration remain repository-only pending the combined `.130` deployment. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
 
 Backend deployment uses:
 

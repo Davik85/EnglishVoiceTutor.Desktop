@@ -25,6 +25,19 @@ public sealed class AccountDeletionRequestEndpointStaticTests
         Assert.DoesNotContain("Email", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void AdminEmailIntakeUsesExecuteAuthorizationAndAdminWriteRateLimiting()
+    {
+        var source = ReadRepositoryFile("backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs");
+        var constants = ReadRepositoryFile("backend/EnglishVoiceTutor.Api/Constants/ApiConstants.cs");
+
+        Assert.Contains("AdminUserAccountDeletionRequestsRoute", constants, StringComparison.Ordinal);
+        Assert.Contains("app.MapPost(ApiConstants.AdminUserAccountDeletionRequestsRoute, CreateAdminAccountDeletionRequestAsync)", source, StringComparison.Ordinal);
+        Assert.Contains(".RequireAuthorization(AdminAuthorizationConstants.AccountAnonymizationExecutePermissionPolicyName)", source, StringComparison.Ordinal);
+        Assert.Contains("ApplyAdminWriteRateLimiting(", source, StringComparison.Ordinal);
+        Assert.Contains("SubmitAdminAsync(userId, request?.Comment", source, StringComparison.Ordinal);
+    }
+
     private static string ReadRepositoryFile(string relativePath)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

@@ -107,6 +107,7 @@ public sealed class AuthService(
             return null;
         }
 
+        if (!string.Equals(user.Status, AuthConstants.ActiveUserStatus, StringComparison.OrdinalIgnoreCase)) return null;
         var verifyResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
         if (verifyResult == PasswordVerificationResult.Failed)
         {
