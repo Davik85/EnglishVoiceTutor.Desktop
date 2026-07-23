@@ -17,9 +17,13 @@ public sealed class AccountAnonymizationExecutionServiceTests
         var actorUser = new UserEntity { Id = Guid.NewGuid(), Email = "admin@example.test", PasswordHash = "hash", Status = "active", CreatedAt = DateTimeOffset.UtcNow };
         var actor = new AdminUserEntity { Id = Guid.NewGuid(), UserId = actorUser.Id, Status = "active", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow };
         var report = new UserFeedbackReportEntity { Id = Guid.NewGuid(), UserId = target.Id, Category = UserFeedbackReportConstants.AccountDeletionCategory, Message = "private reason", Status = UserFeedbackReportConstants.ProcessingStatus, ClientPlatform = "test", ClientVersion = "v1", CreatedAtUtc = DateTimeOffset.UtcNow };
+        var retainedAuditActions = Enumerable.Range(0, 4).Select(index => new AdminActionEntity { Id = Guid.NewGuid(), AdminUserId = actorUser.Id, TargetUserId = target.Id, ActionType = "test_action", Reason = "retained audit", CreatedAtUtc = DateTimeOffset.UtcNow.AddMinutes(index) }).ToArray();
         db.AddRange(target, actorUser, actor, report);
+        db.AdminActions.AddRange(retainedAuditActions);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var preflight = (await new AccountAnonymizationPreflightService(db).CreateOrRefreshAsync(actor.Id, report.Id, true, TestContext.Current.CancellationToken)).Response!;
+        Assert.Empty(preflight.BlockingReasonCodes);
+        Assert.Equal(retainedAuditActions.Length, preflight.CategoryCounts["admin_actions"]);
 
         var result = await new AccountAnonymizationExecutionService(db).ExecuteAsync(actor.Id, report.Id, new AccountAnonymizationExecuteRequest { OperationId = preflight.OperationId, PreflightFingerprint = preflight.PreflightFingerprint }, TestContext.Current.CancellationToken);
         var retry = await new AccountAnonymizationExecutionService(db).ExecuteAsync(actor.Id, report.Id, new AccountAnonymizationExecuteRequest { OperationId = preflight.OperationId, PreflightFingerprint = preflight.PreflightFingerprint }, TestContext.Current.CancellationToken);
@@ -30,5 +34,28 @@ public sealed class AccountAnonymizationExecutionServiceTests
         Assert.Equal("deleted", deleted.Status);
         Assert.Equal($"deleted+{preflight.OperationId:N}@deleted.invalid", deleted.Email);
         Assert.Equal(UserFeedbackReportConstants.ResolvedStatus, (await db.UserFeedbackReports.SingleAsync(TestContext.Current.CancellationToken)).Status);
+        var persistedAuditActions = await db.AdminActions.OrderBy(item => item.CreatedAtUtc).ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(retainedAuditActions.Length, persistedAuditActions.Count);
+        Assert.All(persistedAuditActions, action => Assert.Equal(target.Id, action.TargetUserId));
+    }
+
+    [Fact]
+    public async Task AdminUserMappingRemainsABlockingDependency()
+    {
+        await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString("N")).Options);
+        var target = new UserEntity { Id = Guid.NewGuid(), Email = "learner@example.test", PasswordHash = "hash", Status = "active", CreatedAt = DateTimeOffset.UtcNow };
+        var actorUser = new UserEntity { Id = Guid.NewGuid(), Email = "admin@example.test", PasswordHash = "hash", Status = "active", CreatedAt = DateTimeOffset.UtcNow };
+        var actor = new AdminUserEntity { Id = Guid.NewGuid(), UserId = actorUser.Id, Status = "active", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow };
+        var targetAdmin = new AdminUserEntity { Id = Guid.NewGuid(), UserId = target.Id, Status = "inactive", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow };
+        var report = new UserFeedbackReportEntity { Id = Guid.NewGuid(), UserId = target.Id, Category = UserFeedbackReportConstants.AccountDeletionCategory, Message = "private reason", Status = UserFeedbackReportConstants.ProcessingStatus, ClientPlatform = "test", ClientVersion = "v1", CreatedAtUtc = DateTimeOffset.UtcNow };
+        db.AddRange(target, actorUser, actor, targetAdmin, report);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var preflight = (await new AccountAnonymizationPreflightService(db).CreateOrRefreshAsync(actor.Id, report.Id, true, TestContext.Current.CancellationToken)).Response!;
+
+        var result = await new AccountAnonymizationExecutionService(db).ExecuteAsync(actor.Id, report.Id, new AccountAnonymizationExecuteRequest { OperationId = preflight.OperationId, PreflightFingerprint = preflight.PreflightFingerprint }, TestContext.Current.CancellationToken);
+
+        Assert.Contains(AccountAnonymizationPreflightService.AdminCmsDependencyUnclassified, preflight.BlockingReasonCodes);
+        Assert.Equal("account_anonymization_dependency_blocked", result.Error);
+        Assert.Equal("learner@example.test", (await db.Users.SingleAsync(item => item.Id == target.Id, TestContext.Current.CancellationToken)).Email);
     }
 }

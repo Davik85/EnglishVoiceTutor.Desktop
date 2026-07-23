@@ -124,7 +124,6 @@ public sealed class AccountAnonymizationExecutionService(AppDbContext dbContext)
     }
     private async Task<bool> HasAdminOrCmsDependencyAsync(Guid userId, CancellationToken cancellationToken)
         => await dbContext.AdminUsers.AnyAsync(item => item.UserId == userId, cancellationToken)
-            || await dbContext.AdminActions.AnyAsync(item => item.TargetUserId == userId, cancellationToken)
             || await dbContext.ContentPacks.AnyAsync(item => item.CreatedByUserId == userId || item.UpdatedByUserId == userId, cancellationToken)
             || await dbContext.PromptTemplates.AnyAsync(item => item.UpdatedByUserId == userId, cancellationToken)
             || await dbContext.ContentVersions.AnyAsync(item => item.PublishedByUserId == userId, cancellationToken)

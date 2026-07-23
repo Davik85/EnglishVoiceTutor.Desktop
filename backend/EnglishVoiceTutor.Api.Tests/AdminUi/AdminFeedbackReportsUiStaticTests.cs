@@ -222,5 +222,9 @@ public sealed class AdminFeedbackReportsUiStaticTests
         Assert.Contains("feedbackReportsState.selectedReportId !== reportId", execution);
         Assert.Contains("executeAccountAnonymization(reportId, preflight", execution);
         Assert.Contains("No report is selected for account deletion", execution);
+        Assert.Contains("closeAccountAnonymizationFailure(dialog", execution);
+        Assert.Contains("dialog.close();", execution);
+        Assert.Contains("scrollIntoView({ behavior: \"smooth\", block: \"start\" })", execution);
+        Assert.Contains("Unable to reach the server for account deletion", execution);
     }
 }

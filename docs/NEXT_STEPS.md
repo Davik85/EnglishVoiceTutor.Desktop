@@ -1,32 +1,10 @@
 # Next Steps
 
-Review date: 2026-07-22.
+Review date: 2026-07-23.
 
-## Account-deletion `.131` Admin confirmation correction
+## Account-deletion current next step
 
-Deploy the separately reviewed repository-only UI fix for the `.131` report-ID mismatch that prevented the account-deletion confirmation dialog and execute request. It passes the selected report ID explicitly and requires no migration or backend execution-contract change.
-
-## Account-deletion `.130` workflow correction
-
-Deploy the separately reviewed repository fix that prevents manual resolution of an account-deletion request before completed anonymization, and adds paid-period/Admin-CMS guidance. Production `0.1.35-backend.130` exposed this bounded issue; the correction needs no migration or Paddle/provider action and is not yet deployed.
-
-## Account-deletion implementation boundary update
-
-The complete local Super-Admin Admin Shell confirmation UI, backend execution flow, and its single migration are implemented but not deployed. Before any future deployment, perform the separately authorized combined migration/backend deployment process; do not add a second approval, provider mutation, or email automation as part of that review. Operators must continue to wait for active Premium/current paid access to expire, remind customers to cancel renewal, and handle refunds, disputes, and chargebacks manually. Production remains `0.1.35-backend.129`.
-
-## Next account-deletion phase: approved deletion/anonymization implementation planning
-
-Mobile Settings account-deletion request integration is complete. The repository-grounded inventory and design/runbook draft now exist in [Account anonymization procedure and data inventory](ACCOUNT_ANONYMIZATION_PROCEDURE.md) for review. Neither of the following bounded implementation tasks is completed by that documentation update.
-
-### A. Backend/Admin anonymization implementation
-
-The preflight foundation, including migration `20260722132656_AddAccountAnonymizationPreflightFoundation`, is production-deployed in backend `0.1.35-backend.129`. The repository now contains the complete local Admin Shell confirmation UI, Super-Admin email intake, execution endpoint, and migration, but none are deployed. Email intake creates the same normal `account_deletion` support request and uses existing duplicate protection; no second-Admin approval is planned. The execution flow does not call Paddle or another provider. Active Premium blocks deletion until the paid period ends, so operators should remind customers to cancel renewal; refunds, disputes, and chargebacks remain manual support matters. The next action is the separately authorized combined migration/backend deployment process. See [Account anonymization backend technical design](ACCOUNT_ANONYMIZATION_BACKEND_DESIGN.md).
-
-### B. Mobile account-deletion UX adjustment
-
-Separately move the entry to **Settings → App → Contact & Support → Request account deletion** (using the actual Mobile Settings section name when implemented), add the neutral irreversible-loss explanation before password entry/submission, and preserve current-password confirmation, optional reason, and support-request—not-immediate-deletion—semantics.
-
-Do not treat support-ticket submission or resolution as deletion. This design work does not implement the procedure and must not add automatic deletion, anonymization, subscription cancellation, token-family revocation, notification reminders, localization, or billing work.
+Deploy the reviewed retained-`AdminAction`/failed-execution-dialog correction as code-only `0.1.35-backend.133`, then repeat the controlled deletion test. Production is currently `.132`, with `.131` as rollback; the execution migration and complete account-deletion workflow, including the `.130` manual-resolution and `.131` report-ID corrections, are already deployed. No migration, Paddle/provider action, or financial-record change is required.
 
 ## Mobile v1 planning next step
 
@@ -89,7 +67,7 @@ Backend `0.1.35-backend.116` completes the backend prerequisite for learner leve
 
 Public release boundary: the current product remains a public Windows direct release, not a full broad production-readiness claim.
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, with account-anonymization Slice 1 and migration production-deployed in `0.1.35-backend.129`; CMS/Admin login security and persistent role management are production-verified.
+- Backend: production healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.132`, with `.131` as rollback; the execution migration and complete account-deletion workflow are production-deployed, while only the retained-`AdminAction`/failed-dialog correction remains pending code-only `.133`; CMS/Admin login security and persistent role management are production-verified.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.

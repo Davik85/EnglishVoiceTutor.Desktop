@@ -2659,9 +2659,9 @@
             const path = ApiPaths.accountAnonymizationExecuteTemplate.replace("{reportId}", encodeURIComponent(reportId));
             const response = await fetch(path, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ operationId: preflight.operationId, preflightFingerprint: preflight.preflightFingerprint }) });
             const payload = await response.json().catch(() => null);
-            if (feedbackReportsState.selectedReportId !== reportId) { return; }
-            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); return; }
-            if (response.status === HttpStatus.forbidden) { feedbackReportsState.preflightError = "Account deletion permission is unavailable."; return; }
+            if (feedbackReportsState.selectedReportId !== reportId) { dialog.close(); return; }
+            if (response.status === HttpStatus.unauthorized) { dialog.close(); handleAuthInvalidResponse(); return; }
+            if (response.status === HttpStatus.forbidden) { closeAccountAnonymizationFailure(dialog, "Account deletion permission is unavailable."); return; }
             if (response.ok && payload?.state === "completed") {
                 feedbackReportsState.preflight = { ...preflight, state: "completed" };
                 feedbackReportsState.preflightMessage = "Account deletion completed.";
@@ -2683,10 +2683,9 @@
                 account_anonymization_operation_executing: "An account deletion operation is already executing.",
                 account_anonymization_execution_unavailable: "Local account deletion is temporarily unavailable. Please try again."
             };
-            feedbackReportsState.preflightError = messages[error] || "Unable to delete the account. Please try again.";
-            if (["account_anonymization_preflight_not_found", "account_anonymization_preflight_stale", "account_anonymization_operation_mismatch"].includes(error)) { dialog.close(); await loadFeedbackReportDetails(reportId); }
+            closeAccountAnonymizationFailure(dialog, messages[error] || "Unable to delete the account. Please try again.");
         } catch (_) {
-            if (feedbackReportsState.selectedReportId === reportId) { feedbackReportsState.preflightError = "Unable to reach the server for account deletion."; }
+            if (feedbackReportsState.selectedReportId === reportId) { closeAccountAnonymizationFailure(dialog, "Unable to reach the server for account deletion."); }
         } finally {
             if (feedbackReportsState.selectedReportId === reportId) {
                 feedbackReportsState.executionRequestPending = false;
@@ -2694,6 +2693,13 @@
                 if (dialog.isConnected && dialog.open) { cancel.disabled = false; confirm.disabled = false; }
             }
         }
+    }
+
+    function closeAccountAnonymizationFailure(dialog, message) {
+        dialog.close();
+        feedbackReportsState.preflightError = message;
+        renderAccountAnonymizationPreflight(feedbackReportsState.selectedReport);
+        feedbackReportDetailsElement.querySelector("#account-anonymization-preflight")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function clearAccountAnonymizationPreflight() {
