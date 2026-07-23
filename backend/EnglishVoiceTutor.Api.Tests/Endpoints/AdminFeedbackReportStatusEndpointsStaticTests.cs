@@ -11,6 +11,7 @@ public sealed class AdminFeedbackReportStatusEndpointsStaticTests
 
         Assert.Contains(nameof(ApiConstants.AdminFeedbackReportStatusRoute), source, StringComparison.Ordinal);
         Assert.Contains(".RequireAuthorization(AdminAuthorizationConstants.FeedbackReportsStatusManagePermissionPolicyName)", source, StringComparison.Ordinal);
+        Assert.Contains("account_deletion_anonymization_not_completed", source, StringComparison.Ordinal);
         Assert.DoesNotContain("MapPatch(ApiConstants.AdminFeedbackReportStatusRoute, ChangeStatusAsync)\n            .RequireAuthorization(AdminAuthorizationConstants.FeedbackReportsReadPermissionPolicyName)", source, StringComparison.Ordinal);
     }
 

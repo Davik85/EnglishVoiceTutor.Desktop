@@ -2,6 +2,10 @@
 
 Review date: 2026-07-22.
 
+## Account-deletion `.130` workflow correction
+
+Deploy the separately reviewed repository fix that prevents manual resolution of an account-deletion request before completed anonymization, and adds paid-period/Admin-CMS guidance. Production `0.1.35-backend.130` exposed this bounded issue; the correction needs no migration or Paddle/provider action and is not yet deployed.
+
 ## Account-deletion implementation boundary update
 
 The complete local Super-Admin Admin Shell confirmation UI, backend execution flow, and its single migration are implemented but not deployed. Before any future deployment, perform the separately authorized combined migration/backend deployment process; do not add a second approval, provider mutation, or email automation as part of that review. Operators must continue to wait for active Premium/current paid access to expire, remind customers to cancel renewal, and handle refunds, disputes, and chargebacks manually. Production remains `0.1.35-backend.129`.

@@ -982,7 +982,7 @@
     function renderUserLookupResult(payload) {
         clearUserLookupResult();
         const userSection = createSection("User Summary"); const userContainer = document.createElement("div"); renderKeyValueList(userContainer, pickFields(payload.user, SummaryFields), "No user data."); userSection.appendChild(userContainer); lookupResultElement.appendChild(userSection);
-        const subscriptionSection = createSection("Subscription Status"); const subscriptionContainer = document.createElement("div"); const subscription = Object.assign({}, pickFields(payload.subscriptionStatus, SubscriptionFields), { checkedAtUtc: payload.checkedAtUtc || payload.subscriptionStatus?.checkedAtUtc || null }); renderKeyValueList(subscriptionContainer, subscription, "No subscription status data."); subscriptionSection.appendChild(subscriptionContainer); lookupResultElement.appendChild(subscriptionSection);
+        const subscriptionSection = createSection("Subscription Status"); const subscriptionContainer = document.createElement("div"); const subscription = Object.assign({}, pickFields(payload.subscriptionStatus, SubscriptionFields), { checkedAtUtc: payload.checkedAtUtc || payload.subscriptionStatus?.checkedAtUtc || null }); renderKeyValueList(subscriptionContainer, subscription, "No subscription status data."); appendPaidPeriodGuidance(subscriptionContainer, subscription); subscriptionSection.appendChild(subscriptionContainer); lookupResultElement.appendChild(subscriptionSection);
         const profileSection = createSection("Profile"); const profileContainer = document.createElement("div"); renderKeyValueList(profileContainer, payload.profile, "No profile data."); profileSection.appendChild(profileContainer); lookupResultElement.appendChild(profileSection);
         const settingsSection = createSection("Settings"); const settingsContainer = document.createElement("div"); renderKeyValueList(settingsContainer, payload.settings, "No settings data."); settingsSection.appendChild(settingsContainer); lookupResultElement.appendChild(settingsSection);
         renderTable(premiumScheduleResultElement, payload.premiumEntitlementSchedule, EntitlementColumns, "No current or scheduled Premium entitlements.");
@@ -990,6 +990,15 @@
         const lessonsSection = createSection("Recent Lesson Sessions"); const lessonsContainer = document.createElement("div"); renderTable(lessonsContainer, payload.recentLessonSessions, LessonSessionColumns, "No recent lesson sessions."); lessonsSection.appendChild(lessonsContainer); lookupResultElement.appendChild(lessonsSection);
         const countersSection = createSection("Daily Usage Counters"); const countersContainer = document.createElement("div"); renderTable(countersContainer, payload.dailyUsageCounters, DailyUsageColumns, "No daily usage counters."); countersSection.appendChild(countersContainer); lookupResultElement.appendChild(countersSection);
         const eventsSection = createSection("Recent Usage Events"); const eventsContainer = document.createElement("div"); renderTable(eventsContainer, payload.recentUsageEvents, UsageEventColumns, "No recent usage events."); eventsSection.appendChild(eventsContainer); lookupResultElement.appendChild(eventsSection);
+    }
+
+    function appendPaidPeriodGuidance(container, subscription) {
+        if (subscription?.hasActivePaidProviderSubscription !== true) { return; }
+        const guidance = document.createElement("p");
+        guidance.className = "error";
+        const paidUntil = subscription?.paidAccessUntilUtc ? formatValue(subscription.paidAccessUntilUtc) : "the current paid period end";
+        guidance.textContent = `A paid provider period remains active until ${paidUntil}. Cancellation may already be scheduled, but account deletion remains blocked until that paid period ends.`;
+        container.appendChild(guidance);
     }
 
     const renderAuditLog = (payload) => renderTable(auditResultElement, payload && Array.isArray(payload.items) ? payload.items : [], AuditColumns, "No audit actions.");
@@ -2563,6 +2572,11 @@
             message.className = "error";
             message.textContent = "The account can be deleted after the paid Premium period ends. Remind the customer to cancel renewal to prevent another charge.";
             panel.appendChild(message);
+        } else if (blockingCodes.includes("account_anonymization_admin_cms_dependency_unclassified")) {
+            const message = document.createElement("p");
+            message.className = "error";
+            message.textContent = "This user is linked to Admin CMS and cannot be deleted while that Admin relationship exists.";
+            panel.appendChild(message);
         } else if (blockingCodes.length > 0) {
             const message = document.createElement("p");
             message.className = "error";
@@ -2744,7 +2758,16 @@
         if (canManageStatus) {
             feedbackReportCurrentStatusElement.textContent = `Current status: ${feedbackReportStatusLabel(status)}`;
             feedbackReportStatusButtonsElement.textContent = "";
-            const actions = status === "new" ? [["reviewed", "Mark reviewed"], ["needs_information", "Needs information"], ["processing", "Mark processing"], ["resolved", "Resolve"], ["rejected", "Reject"]] : (status === "reviewed" || status === "needs_information" ? [["processing", "Mark processing"], ["resolved", "Resolve"], ["rejected", "Reject"]] : (status === "processing" ? [["resolved", "Resolve"], ["rejected", "Reject"]] : ((status === "resolved" || status === "rejected") ? [["reviewed", "Reopen as reviewed"]] : [])));
+            const accountDeletion = report?.category === "account_deletion";
+            const anonymizationCompleted = feedbackReportsState.preflight?.state === "completed";
+            let actions = status === "new" ? [["reviewed", "Mark reviewed"], ["needs_information", "Needs information"], ["processing", "Mark processing"], ["resolved", "Resolve"], ["rejected", "Reject"]] : (status === "reviewed" || status === "needs_information" ? [["processing", "Mark processing"], ["resolved", "Resolve"], ["rejected", "Reject"]] : (status === "processing" ? [["resolved", "Resolve"], ["rejected", "Reject"]] : ((status === "resolved" || status === "rejected") ? [["reviewed", "Reopen as reviewed"]] : [])));
+            if (accountDeletion && !anonymizationCompleted) {
+                actions = actions.filter(([targetStatus]) => targetStatus !== "resolved");
+                const guidance = document.createElement("p");
+                guidance.className = "muted";
+                guidance.textContent = "Account-deletion requests become Resolved automatically after successful deletion.";
+                feedbackReportStatusButtonsElement.appendChild(guidance);
+            }
             actions.forEach(([targetStatus, label]) => {
                 const button = document.createElement("button");
                 button.type = "button";
@@ -2793,12 +2816,14 @@
         renderFeedbackReportActions(feedbackReportsState.selectedReport);
         try {
             const response = await fetch(ApiPaths.feedbackReportStatusTemplate.replace("{reportId}", encodeURIComponent(reportId)), { method: "PATCH", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: targetStatus }) });
+            const payload = await response.json().catch(() => null);
             if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
             if (response.status === HttpStatus.forbidden) { feedbackReportsState.statusPermissionDenied = true; feedbackReportDetailsErrorElement.textContent = "You no longer have permission to manage report status."; return; }
             if (response.status === HttpStatus.notFound) { feedbackReportStatusErrorElement.textContent = "This report is no longer available."; return; }
             if (response.status === HttpStatus.badRequest) { feedbackReportStatusErrorElement.textContent = "The requested status change is not valid."; return; }
+            if (response.status === HttpStatus.conflict && payload?.error === "account_deletion_anonymization_not_completed") { feedbackReportStatusErrorElement.textContent = "This account-deletion request becomes Resolved automatically after successful deletion."; return; }
             if (!response.ok) { feedbackReportStatusErrorElement.textContent = "Unable to update report status. Please try again."; return; }
-            applyFeedbackReportMutation(await response.json());
+            applyFeedbackReportMutation(payload);
             feedbackReportStatusSuccessElement.textContent = "Report status updated.";
             await refreshFeedbackReportsAfterMutation();
         } finally {

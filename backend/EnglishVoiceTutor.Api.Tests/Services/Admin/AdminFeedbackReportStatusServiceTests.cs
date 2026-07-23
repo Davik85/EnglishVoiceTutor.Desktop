@@ -1,6 +1,7 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Admin;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -109,6 +110,43 @@ public sealed class AdminFeedbackReportStatusServiceTests
         Assert.True(missing.IsNotFound);
     }
 
+    [Fact]
+    public async Task AccountDeletionCannotBeManuallyResolvedBeforeAnonymizationCompletes()
+    {
+        await using var db = CreateDbContext();
+        var adminUserId = await AddUserAsync(db, "admin@example.test");
+        var targetUserId = await AddUserAsync(db, "target@example.test");
+        var report = AddReport(targetUserId, UserFeedbackReportConstants.ProcessingStatus, UserFeedbackReportConstants.AccountDeletionCategory);
+        db.UserFeedbackReports.Add(report);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await new AdminFeedbackReportStatusService(db, new AdminAuditService(db)).ChangeStatusAsync(adminUserId, report.Id, UserFeedbackReportConstants.ResolvedStatus, TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsAnonymizationNotCompleted);
+        Assert.Equal(UserFeedbackReportConstants.ProcessingStatus, (await db.UserFeedbackReports.SingleAsync(TestContext.Current.CancellationToken)).Status);
+        Assert.Empty(await db.AdminActions.ToListAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task CompletedAnonymizationAllowsIdempotentResolvedStatusAndRejectionRemainsManual()
+    {
+        await using var db = CreateDbContext();
+        var adminUserId = await AddUserAsync(db, "admin@example.test");
+        var targetUserId = await AddUserAsync(db, "target@example.test");
+        var completedReport = AddReport(targetUserId, UserFeedbackReportConstants.ProcessingStatus, UserFeedbackReportConstants.AccountDeletionCategory);
+        var rejectedReport = AddReport(targetUserId, UserFeedbackReportConstants.NewStatus, UserFeedbackReportConstants.AccountDeletionCategory);
+        db.AddRange(completedReport, rejectedReport);
+        db.AccountAnonymizationOperations.Add(new AccountAnonymizationOperationEntity { Id = Guid.NewGuid(), ReportId = completedReport.Id, TargetUserId = targetUserId, ActorAdminUserId = adminUserId, PolicySnapshotId = Guid.NewGuid(), State = AccountAnonymizationExecutionService.CompletedState, PreflightFingerprint = "fingerprint", ProcedureVersion = "policy", ExpiresAtUtc = DateTimeOffset.UtcNow, CategoryCountsJson = "{}", BlockingCodesJson = "[]", RetentionSummaryJson = "{}", ProviderStatesJson = "[]", BackupReconciliationState = "standard_retention", VerificationState = "verified", ResultCountsJson = "{}", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var service = new AdminFeedbackReportStatusService(db, new AdminAuditService(db));
+
+        var resolved = await service.ChangeStatusAsync(adminUserId, completedReport.Id, UserFeedbackReportConstants.ResolvedStatus, TestContext.Current.CancellationToken);
+        var rejected = await service.ChangeStatusAsync(adminUserId, rejectedReport.Id, UserFeedbackReportConstants.RejectedStatus, TestContext.Current.CancellationToken);
+
+        Assert.Equal(UserFeedbackReportConstants.ResolvedStatus, resolved.Response?.Status);
+        Assert.Equal(UserFeedbackReportConstants.RejectedStatus, rejected.Response?.Status);
+    }
+
     private static AppDbContext CreateDbContext() => new(new DbContextOptionsBuilder<AppDbContext>()
         .UseInMemoryDatabase(Guid.NewGuid().ToString())
         .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
@@ -122,9 +160,9 @@ public sealed class AdminFeedbackReportStatusServiceTests
         return userId;
     }
 
-    private static UserFeedbackReportEntity AddReport(Guid userId, string status) => new()
+    private static UserFeedbackReportEntity AddReport(Guid userId, string status, string category = "app_issue") => new()
     {
-        Id = Guid.NewGuid(), UserId = userId, Category = "app_issue", Message = "Report", Status = status,
+        Id = Guid.NewGuid(), UserId = userId, Category = category, Message = "Report", Status = status,
         ClientPlatform = "windows", ClientVersion = "1.0.0", CreatedAtUtc = DateTimeOffset.UtcNow
     };
 }

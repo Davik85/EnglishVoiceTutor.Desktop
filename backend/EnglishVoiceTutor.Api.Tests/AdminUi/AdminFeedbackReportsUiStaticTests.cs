@@ -170,6 +170,24 @@ public sealed class AdminFeedbackReportsUiStaticTests
         Assert.Contains("account_anonymization_active_premium", preflightRenderer);
         Assert.Contains("Refresh the preflight before deleting the account", preflightRenderer);
         Assert.Contains("execute.disabled = executeUnavailable", preflightRenderer);
+        Assert.Contains("account_anonymization_admin_cms_dependency_unclassified", preflightRenderer);
+        Assert.Contains("linked to Admin CMS", preflightRenderer);
+    }
+
+    [Fact]
+    public void AccountDeletionStatusAndPaidPeriodGuidanceAvoidFalseResolveOrPremiumSignals()
+    {
+        var statusRenderer = AdminJs.Substring(AdminJs.IndexOf("function renderFeedbackReportActions"), AdminJs.IndexOf("function applyFeedbackReportMutation") - AdminJs.IndexOf("function renderFeedbackReportActions"));
+        var paidGuidance = AdminJs.Substring(AdminJs.IndexOf("function appendPaidPeriodGuidance"), AdminJs.IndexOf("const renderAuditLog") - AdminJs.IndexOf("function appendPaidPeriodGuidance"));
+
+        Assert.Contains("accountDeletion && !anonymizationCompleted", statusRenderer);
+        Assert.Contains("targetStatus !== \"resolved\"", statusRenderer);
+        Assert.Contains("Resolved automatically after successful deletion", statusRenderer);
+        Assert.Contains("Reopen as reviewed", statusRenderer);
+        Assert.Contains("hasActivePaidProviderSubscription !== true", paidGuidance);
+        Assert.Contains("paidAccessUntilUtc", paidGuidance);
+        Assert.Contains("Cancellation may already be scheduled", paidGuidance);
+        Assert.DoesNotContain("paddle", paidGuidance, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

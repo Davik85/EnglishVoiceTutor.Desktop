@@ -1,5 +1,7 @@
 # Account-deletion requests
 
+> **Production workflow correction (2026-07-23).** Production `0.1.35-backend.130` exposed that support could manually mark an account-deletion request `resolved` before anonymization completed. The repository now rejects that transition unless the related anonymization operation is completed; successful anonymization continues to resolve the request itself. This bounded fix is not yet deployed and requires no migration or Paddle/provider change.
+
 > **Local implementation update (2026-07-23).** The complete Super-Admin Admin Shell confirmation UI and backend execution flow are implemented locally for a fresh `processing` request. Execution removes learner access/data, redacts support content, retains local financial/provider history unchanged, and resolves the request only after verification. It does not call Paddle or another provider, send email, cancel renewal, refund, or otherwise alter financial records. Active effective Premium/current paid access blocks deletion until expiry; customers should be reminded to cancel renewal, while disputes/refunds/chargebacks remain manual. The combined migration and backend deployment remain pending; production is `0.1.35-backend.129`.
 
 ## Current deployed contract

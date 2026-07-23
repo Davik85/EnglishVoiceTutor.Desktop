@@ -83,6 +83,11 @@ public static class AdminFeedbackReportEndpoints
             return Results.NotFound();
         }
 
+        if (result.IsAnonymizationNotCompleted)
+        {
+            return Results.Conflict(new { error = "account_deletion_anonymization_not_completed" });
+        }
+
         return Results.Ok(result.Response);
     }
 

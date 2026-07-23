@@ -37,6 +37,15 @@ public sealed class AdminFeedbackReportStatusService(
             return AdminFeedbackReportStatusChangeResult.Success(ToResponse(report));
         }
 
+        if (report.Category == UserFeedbackReportConstants.AccountDeletionCategory
+            && status == UserFeedbackReportConstants.ResolvedStatus
+            && !await dbContext.AccountAnonymizationOperations.AnyAsync(
+                operation => operation.ReportId == report.Id && operation.State == AccountAnonymizationExecutionService.CompletedState,
+                cancellationToken))
+        {
+            return AdminFeedbackReportStatusChangeResult.AnonymizationNotCompleted();
+        }
+
         var previousStatus = report.Status;
         var now = DateTimeOffset.UtcNow;
         report.Status = status;
@@ -82,9 +91,11 @@ public sealed class AdminFeedbackReportStatusChangeResult
 {
     public bool IsInvalid { get; private init; }
     public bool IsNotFound { get; private init; }
+    public bool IsAnonymizationNotCompleted { get; private init; }
     public AdminFeedbackReportStatusChangeResponse? Response { get; private init; }
 
     public static AdminFeedbackReportStatusChangeResult Invalid() => new() { IsInvalid = true };
     public static AdminFeedbackReportStatusChangeResult NotFound() => new() { IsNotFound = true };
+    public static AdminFeedbackReportStatusChangeResult AnonymizationNotCompleted() => new() { IsAnonymizationNotCompleted = true };
     public static AdminFeedbackReportStatusChangeResult Success(AdminFeedbackReportStatusChangeResponse response) => new() { Response = response };
 }

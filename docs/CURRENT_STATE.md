@@ -2,6 +2,10 @@
 
 Review date: 2026-07-22.
 
+## 2026-07-23 production `.130` account-deletion workflow correction
+
+Production `0.1.35-backend.130` exposed a bounded workflow issue: support could manually mark an account-deletion request `resolved` while the preflight was blocked and anonymization had not run. The repository fix rejects that manual transition until the related operation is completed, improves paid-period/Admin-CMS blocker guidance, and is not yet deployed. No migration or Paddle/provider change is required.
+
 ## 2026-07-23 local account-anonymization execution update
 
 The repository locally implements the complete Super-Admin account-anonymization Admin Shell confirmation UI, backend execution flow, and migration `AddAccountAnonymizationExecution`; nothing is deployed, packaged, or applied to production. Production remains backend `0.1.35-backend.129`. Execution is synchronous/local-only, uses a fresh preflight, does not call or mutate Paddle/providers, preserves financial history, removes normal learner data/access, and leaves a non-login anonymized user shell. No second Admin, password re-entry, typed phrase, queue, notification automation, or custom backup reconciliation workflow is present. One combined migration and backend deployment remain pending.
