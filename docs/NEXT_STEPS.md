@@ -2,6 +2,10 @@
 
 Review date: 2026-07-22.
 
+## Account-deletion `.131` Admin confirmation correction
+
+Deploy the separately reviewed repository-only UI fix for the `.131` report-ID mismatch that prevented the account-deletion confirmation dialog and execute request. It passes the selected report ID explicitly and requires no migration or backend execution-contract change.
+
 ## Account-deletion `.130` workflow correction
 
 Deploy the separately reviewed repository fix that prevents manual resolution of an account-deletion request before completed anonymization, and adds paid-period/Admin-CMS guidance. Production `0.1.35-backend.130` exposed this bounded issue; the correction needs no migration or Paddle/provider action and is not yet deployed.

@@ -2,6 +2,10 @@
 
 Review date: 2026-07-22.
 
+## 2026-07-23 production `.131` Admin confirmation report-ID correction
+
+Production `0.1.35-backend.131` exposed a UI-only report-ID mismatch: the enabled deletion button passed a details response object whose identifier is `reportId`, while the confirmation guard read nonexistent `report.id`. The dialog therefore did not open and no execute request was sent. The repository now passes the selected report ID explicitly through confirmation/execution; this correction is not yet deployed and changes no migration or backend execution contract.
+
 ## 2026-07-23 production `.130` account-deletion workflow correction
 
 Production `0.1.35-backend.130` exposed a bounded workflow issue: support could manually mark an account-deletion request `resolved` while the preflight was blocked and anonymization had not run. The repository fix rejects that manual transition until the related operation is completed, improves paid-period/Admin-CMS blocker guidance, and is not yet deployed. No migration or Paddle/provider change is required.

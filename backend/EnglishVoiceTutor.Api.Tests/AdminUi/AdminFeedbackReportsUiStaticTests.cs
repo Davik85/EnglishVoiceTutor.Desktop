@@ -170,6 +170,9 @@ public sealed class AdminFeedbackReportsUiStaticTests
         Assert.Contains("account_anonymization_active_premium", preflightRenderer);
         Assert.Contains("Refresh the preflight before deleting the account", preflightRenderer);
         Assert.Contains("execute.disabled = executeUnavailable", preflightRenderer);
+        Assert.Contains("const reportId = String(feedbackReportsState.selectedReportId || \"\")", preflightRenderer);
+        Assert.Contains("showAccountAnonymizationConfirmation(reportId, preflight)", preflightRenderer);
+        Assert.DoesNotContain("report.id", preflightRenderer, StringComparison.Ordinal);
         Assert.Contains("account_anonymization_admin_cms_dependency_unclassified", preflightRenderer);
         Assert.Contains("linked to Admin CMS", preflightRenderer);
     }
@@ -215,5 +218,9 @@ public sealed class AdminFeedbackReportsUiStaticTests
         Assert.DoesNotContain("billing", execution, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("refund", execution, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("cancellation", execution, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("report.id", execution, StringComparison.Ordinal);
+        Assert.Contains("feedbackReportsState.selectedReportId !== reportId", execution);
+        Assert.Contains("executeAccountAnonymization(reportId, preflight", execution);
+        Assert.Contains("No report is selected for account deletion", execution);
     }
 }

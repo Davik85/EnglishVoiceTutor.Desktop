@@ -2606,16 +2606,22 @@
             execute.type = "button";
             execute.className = "danger-button";
             execute.textContent = "Delete account permanently";
-            const executeUnavailable = !isProcessing || isExpired || blockingCodes.length > 0 || operationState === "executing" || operationState === "completed" || feedbackReportsState.preflightRequestPending || feedbackReportsState.executionRequestPending;
+            const reportId = String(feedbackReportsState.selectedReportId || "");
+            const executeUnavailable = !reportId || !isProcessing || isExpired || blockingCodes.length > 0 || operationState === "executing" || operationState === "completed" || feedbackReportsState.preflightRequestPending || feedbackReportsState.executionRequestPending;
             execute.disabled = executeUnavailable;
-            execute.addEventListener("click", () => { showAccountAnonymizationConfirmation(report, preflight); });
+            execute.addEventListener("click", () => { showAccountAnonymizationConfirmation(reportId, preflight); });
             panel.appendChild(execute);
         }
         feedbackReportDetailsElement.appendChild(panel);
     }
 
-    function showAccountAnonymizationConfirmation(report, preflight) {
-        if (!report || !preflight || feedbackReportsState.executionRequestPending || feedbackReportsState.selectedReportId !== report.id) { return; }
+    function showAccountAnonymizationConfirmation(reportId, preflight) {
+        if (!reportId) {
+            feedbackReportsState.preflightError = "No report is selected for account deletion.";
+            renderAccountAnonymizationPreflight(feedbackReportsState.selectedReport);
+            return;
+        }
+        if (!preflight || feedbackReportsState.executionRequestPending || feedbackReportsState.selectedReportId !== reportId) { return; }
         const dialog = document.createElement("dialog");
         dialog.className = "admin-confirmation-dialog";
         const heading = document.createElement("h3");
@@ -2635,7 +2641,7 @@
         confirm.className = "danger-button";
         confirm.textContent = "Delete account permanently";
         cancel.addEventListener("click", () => dialog.close());
-        confirm.addEventListener("click", async () => { await executeAccountAnonymization(report.id, preflight, dialog, cancel, confirm); });
+        confirm.addEventListener("click", async () => { await executeAccountAnonymization(reportId, preflight, dialog, cancel, confirm); });
         dialog.addEventListener("close", () => dialog.remove());
         actions.append(cancel, confirm);
         dialog.append(heading, message, details, actions);
