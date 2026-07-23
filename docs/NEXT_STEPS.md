@@ -2,20 +2,15 @@
 
 Review date: 2026-07-23.
 
-## Account-deletion current next step
-
-Deploy the reviewed retained-`AdminAction`/failed-execution-dialog correction as code-only `0.1.35-backend.133`, then repeat the controlled deletion test. Production is currently `.132`, with `.131` as rollback; the execution migration and complete account-deletion workflow, including the `.130` manual-resolution and `.131` report-ID corrections, are already deployed. No migration, Paddle/provider action, or financial-record change is required.
-
 ## Mobile v1 planning next step
 
-Before any mobile implementation project is created, review and approve the Mobile v1 planning scope in `docs/MOBILE_V1_PLANNING.md`. The review should explicitly cover the shared-product boundaries, backend/API gaps, billing provider plan, and the provisional technology comparison. Choose a mobile technology only after the Mobile v1 scope is approved.
+The completed account-deletion rollout is not a current deployment or retest step. The next planning work is Mobile-only and must begin by inspecting the current Mobile UI, dependencies, Android configuration, shared backend contracts, and existing Settings placeholders. Then select small isolated slices; do not combine the following tracks in one code task:
 
-Required review decisions:
+1. **Notifications:** planned, not implemented. The first review must decide whether V1 needs local scheduled reminders, remote push notifications, or both. It must not assume Firebase Cloud Messaging, scheduling, content, cadence, or permission timing, and must not request unnecessary permissions or use background microphone access.
+2. **Premium purchase entry points and purchase flow:** separately decide whether the first slice is CTA/navigation only or a complete Google Play Billing flow. Premium remains backend-owned and backend-verified; a local button press or unverified store result must never unlock it. Plan purchase restoration and backend verification before claiming billing completion. No Paddle change is part of Mobile Google Play work.
+3. **Eight-language interface localization:** separately decide the exact eight interface languages before implementation. It is distinct from the six study languages; planned Flutter localization resources such as ARB and `flutter_localizations` are not yet implemented. Interface localization does not translate backend-generated tutor replies, CMS canonical IDs, lesson runtime metadata, or user content. Once approved, new Notifications and Premium UI must use localization-ready strings.
 
-- Approve that Mobile v1 is the same Language Voice Tutor product and uses the same backend account, subscription, entitlement, lesson history, progress, limits, and AI tutor behavior.
-- Review remaining backend/API gaps for auth/session, `/api/me`, settings sync, subscription status, lesson access, a separate aggregate Progress contract, voice/TTS, app-version metadata, stable DTOs/errors, and mobile usage/rate limits. Authenticated recent Lesson History is complete in backend `0.1.35-backend.123`; pagination is future work only if product requirements need more than the current recent maximum of 50. The selected tutor settings gap is closed in backend `0.1.35-backend.109`: mobile can later replace the read-only selected tutor note with a real picker that reads `GET /api/tutor-options` and persists `selectedTutorId` through `/api/me/settings`.
-- Review the billing provider plan: Paddle remains valid for website/desktop, Google Play Billing is required for Android mobile billing when implemented, and every provider maps into the same backend entitlement model.
-- Choose Flutter, React Native, Kotlin Multiplatform / Android native first, .NET MAUI, or another mobile technology only after scope approval.
+Consider whether a minimal localization foundation should precede new Notifications and Premium UI so those screens do not need to be rebuilt. Mobile remains the same backend account/product, with backend-owned Premium, no client-side OpenAI, no Mobile secrets or database, no unapproved endpoint, and no provider or production action during planning.
 
 ## Source of truth for current versions
 
@@ -67,7 +62,7 @@ Backend `0.1.35-backend.116` completes the backend prerequisite for learner leve
 
 Public release boundary: the current product remains a public Windows direct release, not a full broad production-readiness claim.
 
-- Backend: production healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.132`, with `.131` as rollback; the execution migration and complete account-deletion workflow are production-deployed, while only the retained-`AdminAction`/failed-dialog correction remains pending code-only `.133`; CMS/Admin login security and persistent role management are production-verified.
+- Backend: production healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.133`, with `.132` as rollback; the execution migration and complete account-deletion workflow are production-deployed and production-verified; CMS/Admin login security and persistent role management are production-verified.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
