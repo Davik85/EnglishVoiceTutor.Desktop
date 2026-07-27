@@ -6,11 +6,16 @@ namespace EnglishVoiceTutor.Api.Services.Billing;
 public sealed class GooglePlayPurchaseVerificationService : IGooglePlayPurchaseVerificationService
 {
     private readonly IGooglePlayPurchaseVerifier verifier;
+    private readonly IGooglePlayPurchaseClaimService claimService;
     private readonly ILogger<GooglePlayPurchaseVerificationService> logger;
 
-    public GooglePlayPurchaseVerificationService(IGooglePlayPurchaseVerifier verifier, ILogger<GooglePlayPurchaseVerificationService> logger)
+    public GooglePlayPurchaseVerificationService(
+        IGooglePlayPurchaseVerifier verifier,
+        IGooglePlayPurchaseClaimService claimService,
+        ILogger<GooglePlayPurchaseVerificationService> logger)
     {
         this.verifier = verifier;
+        this.claimService = claimService;
         this.logger = logger;
     }
 
@@ -31,8 +36,13 @@ public sealed class GooglePlayPurchaseVerificationService : IGooglePlayPurchaseV
         try
         {
             result = await verifier.VerifyAsync(userId, request.PurchaseToken, cancellationToken);
+            var mapped = result.Code == GooglePlayPurchaseVerificationResultCode.Verified
+                ? await MapVerifiedAsync(userId, request.PurchaseToken, result.VerifiedPurchase, cancellationToken)
+                : MapProviderResult(result.Code);
+            logger.LogInformation("Google Play purchase verification completed with safe result {ResultCode}. AuthenticatedUserResolved={AuthenticatedUserResolved}.", mapped.Response.Result, true);
+            return mapped;
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             throw;
         }
@@ -42,21 +52,32 @@ public sealed class GooglePlayPurchaseVerificationService : IGooglePlayPurchaseV
             return Unavailable("temporarily_unavailable", SubscriptionConstants.Billing.GooglePlayPurchaseVerificationTemporarilyUnavailableMessage);
         }
 
-        var mapped = Map(result.Code);
-        logger.LogInformation("Google Play purchase verification completed with safe result {ResultCode}. AuthenticatedUserResolved={AuthenticatedUserResolved}.", mapped.Response.Result, true);
-        return mapped;
     }
 
-    private static GooglePlayPurchaseVerificationServiceResult Map(GooglePlayPurchaseVerificationResultCode code) => code switch
+    private async Task<GooglePlayPurchaseVerificationServiceResult> MapVerifiedAsync(Guid userId, string purchaseToken, GooglePlayVerifiedPurchase? verifiedPurchase, CancellationToken cancellationToken)
+    {
+        if (verifiedPurchase is null || string.IsNullOrWhiteSpace(verifiedPurchase.ProductId))
+        {
+            return Unavailable("temporarily_unavailable", SubscriptionConstants.Billing.GooglePlayPurchaseVerificationTemporarilyUnavailableMessage);
+        }
+
+        var claim = await claimService.ClaimAsync(userId, purchaseToken, verifiedPurchase.ProductId, cancellationToken);
+        return claim.Code switch
+        {
+            GooglePlayPurchaseClaimResultCode.Claimed => Ok("verified", "Purchase verified.", true),
+            GooglePlayPurchaseClaimResultCode.AlreadyOwned => Ok("already_processed", "Purchase was already processed.", true),
+            GooglePlayPurchaseClaimResultCode.OwnershipConflict => Ok("ownership_conflict", "Purchase cannot be applied to this account.", false),
+            _ => Unavailable("temporarily_unavailable", SubscriptionConstants.Billing.GooglePlayPurchaseVerificationTemporarilyUnavailableMessage)
+        };
+    }
+
+    private static GooglePlayPurchaseVerificationServiceResult MapProviderResult(GooglePlayPurchaseVerificationResultCode code) => code switch
     {
         GooglePlayPurchaseVerificationResultCode.NotConfigured => Unavailable("not_configured", SubscriptionConstants.Billing.GooglePlayPurchaseVerificationUnavailableMessage),
         GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable => Unavailable("temporarily_unavailable", SubscriptionConstants.Billing.GooglePlayPurchaseVerificationTemporarilyUnavailableMessage),
-        GooglePlayPurchaseVerificationResultCode.Verified => Ok("verified", "Purchase verified.", true),
         GooglePlayPurchaseVerificationResultCode.Pending => Ok("pending", "Purchase is pending.", true),
-        GooglePlayPurchaseVerificationResultCode.AlreadyProcessed => Ok("already_processed", "Purchase was already processed.", true),
         GooglePlayPurchaseVerificationResultCode.InvalidPurchase => Ok("invalid_purchase", "Purchase could not be verified.", false),
         GooglePlayPurchaseVerificationResultCode.UnsupportedProduct => Ok("unsupported_product", "This purchase is not supported.", false),
-        GooglePlayPurchaseVerificationResultCode.OwnershipConflict => Ok("ownership_conflict", "Purchase cannot be applied to this account.", false),
         _ => Unavailable("temporarily_unavailable", SubscriptionConstants.Billing.GooglePlayPurchaseVerificationTemporarilyUnavailableMessage)
     };
 

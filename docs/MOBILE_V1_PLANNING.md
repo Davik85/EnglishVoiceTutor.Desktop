@@ -160,6 +160,8 @@ Mobile voice and lesson usage need cross-client limits that remain backend-owned
 
 A Google Play purchase-claim table now stores only an irreversible SHA-256 token fingerprint, allowing one verified purchase to be bound to one LVT account without storing the raw token. It prevents cross-account attachment while the production verifier remains disabled. There is still no Google API, Premium activation, acknowledgement, Mobile connection, RTDN, or deployment.
 
+A future provider-verified purchase must pass ownership claiming before it can return `verified`: same-account retries return `already_processed`, while cross-account reuse returns `ownership_conflict`. Production verification remains disabled; no Google API, Premium activation, acknowledgement, Mobile connection, RTDN, migration application, or deployment exists.
+
 Paddle remains valid for website and desktop checkout. Mobile billing may need a different provider because app stores have their own payment rules, but all providers must map into one backend entitlement source of truth.
 
 Required billing direction:
