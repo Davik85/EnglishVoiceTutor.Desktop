@@ -72,6 +72,8 @@ public sealed class GooglePlayPurchaseVerificationServiceTests
         Assert.Equal(token, claimCall.Token);
         Assert.Equal("server-verified-product", claimCall.ProductId);
         Assert.Equal("verified", result.Response.Result);
+        var publicResponse = JsonSerializer.Serialize(result.Response);
+        foreach (var privateMetadata in new[] { "StartedAtUtc", "ExpiresAtUtc", "AcknowledgementState", "IsTestPurchase" }) Assert.DoesNotContain(privateMetadata, publicResponse, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -97,7 +99,7 @@ public sealed class GooglePlayPurchaseVerificationServiceTests
     public async Task MissingOrBlankVerifiedProductFailsClosedWithoutClaim(string? productId)
     {
         var claims = new RecordingClaimService();
-        var result = await CreateService(new RecordingVerifier(new GooglePlayPurchaseVerificationResult(GooglePlayPurchaseVerificationResultCode.Verified, productId is null ? null : new GooglePlayVerifiedPurchase(productId))), claims).VerifyAsync(Guid.NewGuid(), new GooglePlayPurchaseVerificationRequest { PurchaseToken = "fake-token" }, TestContext.Current.CancellationToken);
+        var result = await CreateService(new RecordingVerifier(new GooglePlayPurchaseVerificationResult(GooglePlayPurchaseVerificationResultCode.Verified, productId is null ? null : VerifiedPurchase(productId))), claims).VerifyAsync(Guid.NewGuid(), new GooglePlayPurchaseVerificationRequest { PurchaseToken = "fake-token" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, result.StatusCode);
         Assert.Equal("temporarily_unavailable", result.Response.Result);
@@ -137,7 +139,8 @@ public sealed class GooglePlayPurchaseVerificationServiceTests
     }
 
     private static GooglePlayPurchaseVerificationResult Pending() => new(GooglePlayPurchaseVerificationResultCode.Pending);
-    private static GooglePlayPurchaseVerificationResult Verified(string productId) => new(GooglePlayPurchaseVerificationResultCode.Verified, new GooglePlayVerifiedPurchase(productId));
+    private static GooglePlayPurchaseVerificationResult Verified(string productId) => new(GooglePlayPurchaseVerificationResultCode.Verified, VerifiedPurchase(productId));
+    private static GooglePlayVerifiedPurchase VerifiedPurchase(string productId) => new(productId, new DateTimeOffset(2026, 7, 27, 10, 0, 0, TimeSpan.Zero), new DateTimeOffset(2026, 8, 27, 10, 0, 0, TimeSpan.Zero), GooglePlayPurchaseAcknowledgementState.Pending, false);
     private static GooglePlayPurchaseVerificationService CreateService(IGooglePlayPurchaseVerifier verifier, IGooglePlayPurchaseClaimService claims, RecordingLogger<GooglePlayPurchaseVerificationService>? logger = null) => new(verifier, claims, logger ?? new RecordingLogger<GooglePlayPurchaseVerificationService>());
 
     private sealed class RecordingVerifier(GooglePlayPurchaseVerificationResult result) : IGooglePlayPurchaseVerifier

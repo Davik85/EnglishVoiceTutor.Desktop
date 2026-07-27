@@ -166,6 +166,8 @@ A dormant subscriptions-v2 verifier implementation now validates disabled-by-def
 
 Configuration-controlled live-verifier wiring now exists, but the default remains disabled. When enabled later, credentials are expected only through Application Default Credentials outside the repository, with lazy service creation and no credential values or paths in appsettings. Activation remains blocked pending Google Cloud and Play Console access, real package/product configuration, migration application, sandbox validation, entitlement work, acknowledgement, and deployment.
 
+The dormant verifier now carries sanitized provider-verified start, expiry, acknowledgement, and test-purchase metadata internally; it is not returned by the public endpoint. There is still no subscription or entitlement persistence and no acknowledgement call. Default production configuration remains disabled; credentials, real identifiers, migration application, sandbox validation, Mobile connection, RTDN, entitlement activation, acknowledgement, and deployment remain pending.
+
 Paddle remains valid for website and desktop checkout. Mobile billing may need a different provider because app stores have their own payment rules, but all providers must map into one backend entitlement source of truth.
 
 Required billing direction:

@@ -10,7 +10,18 @@ public enum GooglePlayPurchaseVerificationResultCode
     NotConfigured
 }
 
-public sealed record GooglePlayVerifiedPurchase(string ProductId);
+public enum GooglePlayPurchaseAcknowledgementState
+{
+    Pending,
+    Acknowledged
+}
+
+public sealed record GooglePlayVerifiedPurchase(
+    string ProductId,
+    DateTimeOffset StartedAtUtc,
+    DateTimeOffset ExpiresAtUtc,
+    GooglePlayPurchaseAcknowledgementState AcknowledgementState,
+    bool IsTestPurchase);
 
 public sealed record GooglePlayPurchaseVerificationResult(
     GooglePlayPurchaseVerificationResultCode Code,

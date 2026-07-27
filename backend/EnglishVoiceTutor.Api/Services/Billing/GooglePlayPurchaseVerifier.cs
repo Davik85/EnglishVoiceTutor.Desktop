@@ -49,10 +49,38 @@ public sealed class GooglePlayPurchaseVerifier(
         if (string.Equals(snapshot.SubscriptionState, "SUBSCRIPTION_STATE_PENDING", StringComparison.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.Pending);
         if (!string.Equals(snapshot.SubscriptionState, "SUBSCRIPTION_STATE_ACTIVE", StringComparison.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.InvalidPurchase);
 
-        var productIds = snapshot.ProductIds.Where(productId => !string.IsNullOrWhiteSpace(productId)).Distinct(StringComparer.Ordinal).ToArray();
-        if (productIds.Length == 0) return Result(GooglePlayPurchaseVerificationResultCode.InvalidPurchase);
+        if (snapshot.StartTimeUtc is null || snapshot.AcknowledgementState is not GooglePlayPurchaseAcknowledgementState.Pending and not GooglePlayPurchaseAcknowledgementState.Acknowledged)
+        {
+            return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+        }
+
+        var lineItems = snapshot.LineItems
+            .Where(item => !string.IsNullOrWhiteSpace(item.ProductId))
+            .ToArray();
+        if (lineItems.Length == 0 || lineItems.Any(item => item.ExpiryTimeUtc is null)) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+
+        var productIds = lineItems.Select(item => item.ProductId!).Distinct(StringComparer.Ordinal).ToArray();
         if (productIds.Length != 1 || !allowedProductIds.Contains(productIds[0], StringComparer.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
-        return new GooglePlayPurchaseVerificationResult(GooglePlayPurchaseVerificationResultCode.Verified, new GooglePlayVerifiedPurchase(productIds[0]));
+
+        var expiryTimes = lineItems
+            .Where(item => string.Equals(item.ProductId, productIds[0], StringComparison.Ordinal))
+            .Select(item => item.ExpiryTimeUtc!.Value)
+            .Distinct()
+            .ToArray();
+        if (expiryTimes.Length != 1) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+
+        var startedAtUtc = snapshot.StartTimeUtc.Value.ToUniversalTime();
+        var expiresAtUtc = expiryTimes[0].ToUniversalTime();
+        if (expiresAtUtc <= startedAtUtc) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+
+        return new GooglePlayPurchaseVerificationResult(
+            GooglePlayPurchaseVerificationResultCode.Verified,
+            new GooglePlayVerifiedPurchase(
+                productIds[0],
+                startedAtUtc,
+                expiresAtUtc,
+                snapshot.AcknowledgementState.Value,
+                snapshot.IsTestPurchase));
     }
 
     private static GooglePlayPurchaseVerificationResult Result(GooglePlayPurchaseVerificationResultCode code) => new(code);

@@ -7,9 +7,15 @@ public interface IGooglePlaySubscriptionsV2Client
 
 public sealed record GooglePlaySubscriptionV2Snapshot(
     string? SubscriptionState,
-    IReadOnlyList<string> ProductIds,
-    string? AcknowledgementState,
+    DateTimeOffset? StartTimeUtc,
+    IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot> LineItems,
+    GooglePlayPurchaseAcknowledgementState? AcknowledgementState,
+    bool IsTestPurchase,
     bool HasLinkedPurchaseToken);
+
+public sealed record GooglePlaySubscriptionLineItemSnapshot(
+    string? ProductId,
+    DateTimeOffset? ExpiryTimeUtc);
 
 public enum GooglePlaySubscriptionsV2ClientFailure
 {

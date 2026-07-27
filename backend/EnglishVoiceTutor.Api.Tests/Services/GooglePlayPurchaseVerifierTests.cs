@@ -38,18 +38,34 @@ public sealed class GooglePlayPurchaseVerifierTests
     }
 
     [Fact]
-    public async Task ActiveSingleAllowedProductReturnsVerifiedProviderMetadata()
+    public async Task ActiveAllowedProductWithPendingAcknowledgementReturnsCompleteVerifiedMetadata()
     {
-        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", ["server-product"])), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", startTime: Timestamp("2026-07-27T10:00:00+02:00"), lineItems: [LineItem("server-product", Timestamp("2026-08-27T11:00:00+02:00"))])), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
 
         Assert.Equal(GooglePlayPurchaseVerificationResultCode.Verified, result.Code);
         Assert.Equal("server-product", result.VerifiedPurchase!.ProductId);
+        Assert.Equal(Timestamp("2026-07-27T08:00:00Z"), result.VerifiedPurchase.StartedAtUtc);
+        Assert.Equal(Timestamp("2026-08-27T09:00:00Z"), result.VerifiedPurchase.ExpiresAtUtc);
+        Assert.Equal(GooglePlayPurchaseAcknowledgementState.Pending, result.VerifiedPurchase.AcknowledgementState);
+        Assert.False(result.VerifiedPurchase.IsTestPurchase);
+        Assert.Equal(TimeSpan.Zero, result.VerifiedPurchase.StartedAtUtc.Offset);
+        Assert.Equal(TimeSpan.Zero, result.VerifiedPurchase.ExpiresAtUtc.Offset);
+    }
+
+    [Fact]
+    public async Task ActiveAllowedProductWithAcknowledgedTestPurchasePreservesMetadata()
+    {
+        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), [LineItem("server-product", Timestamp("2026-08-27T10:00:00Z"))], GooglePlayPurchaseAcknowledgementState.Acknowledged, isTestPurchase: true)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.Verified, result.Code);
+        Assert.Equal(GooglePlayPurchaseAcknowledgementState.Acknowledged, result.VerifiedPurchase!.AcknowledgementState);
+        Assert.True(result.VerifiedPurchase.IsTestPurchase);
     }
 
     [Fact]
     public async Task PendingReturnsNoVerifiedMetadata()
     {
-        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_PENDING", ["server-product"])), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_PENDING")), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
 
         Assert.Equal(GooglePlayPurchaseVerificationResultCode.Pending, result.Code);
         Assert.Null(result.VerifiedPurchase);
@@ -64,7 +80,7 @@ public sealed class GooglePlayPurchaseVerifierTests
     [InlineData("")]
     public async Task UnsupportedLifecycleStatesFailClosed(string state)
     {
-        var result = await CreateVerifier(new RecordingClient(Snapshot(state, ["server-product"])), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+        var result = await CreateVerifier(new RecordingClient(Snapshot(state)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
 
         Assert.Equal(GooglePlayPurchaseVerificationResultCode.InvalidPurchase, result.Code);
         Assert.Null(result.VerifiedPurchase);
@@ -73,26 +89,94 @@ public sealed class GooglePlayPurchaseVerifierTests
     [Fact]
     public async Task MissingUnsupportedOrMultipleProductsFailClosed()
     {
-        foreach (var productIds in new[] { Array.Empty<string>(), new[] { "   " }, new[] { "unsupported-product" }, new[] { "server-product", "other-product" } })
+        foreach (var lineItems in new[] { Array.Empty<GooglePlaySubscriptionLineItemSnapshot>(), new[] { LineItem("   ", Timestamp("2026-08-27T10:00:00Z")) }, new[] { LineItem("unsupported-product", Timestamp("2026-08-27T10:00:00Z")) }, new[] { LineItem("server-product", Timestamp("2026-08-27T10:00:00Z")), LineItem("other-product", Timestamp("2026-08-27T10:00:00Z")) } })
         {
-            var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", productIds)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
-            Assert.Equal(productIds.Length == 0 || productIds.All(string.IsNullOrWhiteSpace) ? GooglePlayPurchaseVerificationResultCode.InvalidPurchase : GooglePlayPurchaseVerificationResultCode.UnsupportedProduct, result.Code);
+            var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), lineItems)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+            Assert.Equal(lineItems.Length == 0 || string.IsNullOrWhiteSpace(lineItems[0].ProductId) ? GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable : GooglePlayPurchaseVerificationResultCode.UnsupportedProduct, result.Code);
         }
     }
 
     [Fact]
-    public async Task DuplicateIdenticalProductIsOneAllowedProduct()
+    public async Task DuplicateIdenticalProductAndExpiryIsOneAllowedProduct()
     {
-        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", ["server-product", "server-product"])), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), [LineItem("server-product", Timestamp("2026-08-27T10:00:00Z")), LineItem("server-product", Timestamp("2026-08-27T10:00:00Z"))])), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
         Assert.Equal(GooglePlayPurchaseVerificationResultCode.Verified, result.Code);
+    }
+
+    [Theory]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(false, false, true)]
+    public async Task MissingOrMalformedActivePeriodMetadataFailsClosed(bool missingStart, bool missingExpiry, bool ambiguousExpiry)
+    {
+        DateTimeOffset? start = missingStart ? null : Timestamp("2026-07-27T10:00:00Z");
+        DateTimeOffset? expiry = missingExpiry ? null : Timestamp("2026-08-27T10:00:00Z");
+        var lineItems = ambiguousExpiry
+            ? new[] { LineItem("server-product", expiry), LineItem("server-product", Timestamp("2026-09-27T10:00:00Z")) }
+            : new[] { LineItem("server-product", expiry) };
+
+        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", start, lineItems)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable, result.Code);
+        Assert.Null(result.VerifiedPurchase);
+    }
+
+    [Theory]
+    [InlineData("2026-07-27T10:00:00Z")]
+    [InlineData("2026-07-27T09:59:59Z")]
+    public async Task ExpiryEqualToOrEarlierThanStartFailsClosed(string expiryTimestamp)
+    {
+        var result = await CreateVerifier(new RecordingClient(Snapshot(
+            "SUBSCRIPTION_STATE_ACTIVE",
+            Timestamp("2026-07-27T10:00:00Z"),
+            [LineItem("server-product", Timestamp(expiryTimestamp))])), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable, result.Code);
+        Assert.Null(result.VerifiedPurchase);
+    }
+
+    [Fact]
+    public async Task UnknownOrUnspecifiedAcknowledgementFailsClosed()
+    {
+        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), [LineItem("server-product", Timestamp("2026-08-27T10:00:00Z"))], acknowledgementState: null)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable, result.Code);
+        Assert.Null(result.VerifiedPurchase);
+    }
+
+    [Fact]
+    public async Task UndefinedAcknowledgementStateFailsClosed()
+    {
+        var result = await CreateVerifier(new RecordingClient(Snapshot(
+            "SUBSCRIPTION_STATE_ACTIVE",
+            Timestamp("2026-07-27T10:00:00Z"),
+            [LineItem("server-product", Timestamp("2026-08-27T10:00:00Z"))],
+            (GooglePlayPurchaseAcknowledgementState)999)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable, result.Code);
+        Assert.Null(result.VerifiedPurchase);
     }
 
     [Fact]
     public async Task LinkedPurchaseTokenPresenceFailsClosedWithoutExposure()
     {
-        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", ["server-product"], hasLinkedPurchaseToken: true)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), [LineItem("server-product", Timestamp("2026-08-27T10:00:00Z"))], hasLinkedPurchaseToken: true)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
         Assert.Equal(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable, result.Code);
         Assert.DoesNotContain("linked", result.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void SanitizedContractsExcludeTokensPayloadOrderAndCredentialData()
+    {
+        Assert.Equal(
+            ["AcknowledgementState", "HasLinkedPurchaseToken", "IsTestPurchase", "LineItems", "StartTimeUtc", "SubscriptionState"],
+            typeof(GooglePlaySubscriptionV2Snapshot).GetProperties().Select(property => property.Name).OrderBy(name => name).ToArray());
+        Assert.Equal(
+            ["ExpiryTimeUtc", "ProductId"],
+            typeof(GooglePlaySubscriptionLineItemSnapshot).GetProperties().Select(property => property.Name).OrderBy(name => name).ToArray());
+        Assert.Equal(
+            ["AcknowledgementState", "ExpiresAtUtc", "IsTestPurchase", "ProductId", "StartedAtUtc"],
+            typeof(GooglePlayVerifiedPurchase).GetProperties().Select(property => property.Name).OrderBy(name => name).ToArray());
     }
 
     [Theory]
@@ -130,7 +214,9 @@ public sealed class GooglePlayPurchaseVerifierTests
 
     private static GooglePlayPurchaseVerifier CreateVerifier(IGooglePlaySubscriptionsV2Client client, GooglePlayBillingOptions options, RecordingLogger<GooglePlayPurchaseVerifier>? logger = null) => new(client, Microsoft.Extensions.Options.Options.Create(options), logger ?? new RecordingLogger<GooglePlayPurchaseVerifier>());
     private static GooglePlayBillingOptions Options(bool enabled = true, string packageName = "com.example.test", List<string>? allowedProductIds = null) => new() { Enabled = enabled, PackageName = packageName, AllowedProductIds = allowedProductIds ?? ["server-product"] };
-    private static GooglePlaySubscriptionV2Snapshot Snapshot(string? state, IReadOnlyList<string>? products = null, bool hasLinkedPurchaseToken = false) => new(state, products ?? [], "ACKNOWLEDGEMENT_STATE_PENDING", hasLinkedPurchaseToken);
+    private static GooglePlaySubscriptionV2Snapshot Snapshot(string? state, DateTimeOffset? startTime = null, IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot>? lineItems = null, GooglePlayPurchaseAcknowledgementState? acknowledgementState = GooglePlayPurchaseAcknowledgementState.Pending, bool isTestPurchase = false, bool hasLinkedPurchaseToken = false) => new(state, startTime, lineItems ?? [], acknowledgementState, isTestPurchase, hasLinkedPurchaseToken);
+    private static GooglePlaySubscriptionLineItemSnapshot LineItem(string? productId, DateTimeOffset? expiryTime) => new(productId, expiryTime);
+    private static DateTimeOffset Timestamp(string value) => DateTimeOffset.Parse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal).ToUniversalTime();
 
     private sealed class RecordingClient(GooglePlaySubscriptionV2Snapshot? snapshot = null) : IGooglePlaySubscriptionsV2Client
     {

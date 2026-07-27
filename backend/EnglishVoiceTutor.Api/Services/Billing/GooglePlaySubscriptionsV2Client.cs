@@ -12,17 +12,16 @@ public sealed class GooglePlaySubscriptionsV2Client(IGooglePlayAndroidPublisherS
             using var service = await serviceFactory.CreateAsync(cancellationToken);
             var response = await service.Purchases.Subscriptionsv2.Get(packageName, purchaseToken).ExecuteAsync(cancellationToken);
             if (response is null) return null;
-            var productIds = response.LineItems?
-                .Select(item => item.ProductId)
-                .Where(productId => !string.IsNullOrWhiteSpace(productId))
-                .Cast<string>()
-                .Distinct(StringComparer.Ordinal)
+            var lineItems = response.LineItems?
+                .Select(item => new GooglePlaySubscriptionLineItemSnapshot(item.ProductId, NormalizeTimestamp(item.ExpiryTimeDateTimeOffset)))
                 .ToArray()
                 ?? [];
             return new GooglePlaySubscriptionV2Snapshot(
                 response.SubscriptionState,
-                productIds,
-                response.AcknowledgementState,
+                NormalizeTimestamp(response.StartTimeDateTimeOffset),
+                lineItems,
+                MapAcknowledgementState(response.AcknowledgementState),
+                response.TestPurchase is not null,
                 !string.IsNullOrWhiteSpace(response.LinkedPurchaseToken));
         }
         catch (OperationCanceledException)
@@ -42,4 +41,13 @@ public sealed class GooglePlaySubscriptionsV2Client(IGooglePlayAndroidPublisherS
             throw new GooglePlaySubscriptionsV2ClientException(GooglePlaySubscriptionsV2ClientFailure.TemporarilyUnavailable);
         }
     }
+
+    private static DateTimeOffset? NormalizeTimestamp(DateTimeOffset? value) => value?.ToUniversalTime();
+
+    private static GooglePlayPurchaseAcknowledgementState? MapAcknowledgementState(string? value) => value switch
+    {
+        "ACKNOWLEDGEMENT_STATE_PENDING" => GooglePlayPurchaseAcknowledgementState.Pending,
+        "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" => GooglePlayPurchaseAcknowledgementState.Acknowledged,
+        _ => null
+    };
 }
