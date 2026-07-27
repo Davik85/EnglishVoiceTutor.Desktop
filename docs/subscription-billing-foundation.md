@@ -134,7 +134,8 @@ Current config section:
   - Apple App Store for future iOS.
   - Google Play for future Android.
   - Manual admin grants via CMS/admin tooling.
-- The Apple/Google mobile entitlement bridge is not implemented yet.
+- A dormant provider-scoped verified-period persistence boundary exists for a later Apple/Google bridge. It requires an existing paid provider Subscription, creates or extends only an active `provider_event` Premium entitlement linked to that exact Subscription, and rejects test purchases. It has no runtime caller and is not connected to Google Play verification, Paddle processing, or account-status selection.
+- Google Play Subscription creation, ownership/persistence transaction orchestration, acknowledgement, RTDN, Mobile connection, sandbox testing, credentials, migration application, and deployment remain pending.
 - The backend remains the source of truth for entitlement state.
 
 ## Paddle checkout transaction creation v1

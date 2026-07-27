@@ -243,6 +243,7 @@ builder.Services.AddScoped<IBillingEventReconciliationDecisionService, BillingEv
 builder.Services.AddScoped<IBillingEventSubscriptionSnapshotService, BillingEventSubscriptionSnapshotService>();
 builder.Services.AddScoped<IBillingEventPaymentPersistenceService, BillingEventPaymentPersistenceService>();
 builder.Services.AddScoped<IBillingEventEntitlementActivationService, BillingEventEntitlementActivationService>();
+builder.Services.AddScoped<IProviderSubscriptionPeriodPersistenceService, ProviderSubscriptionPeriodPersistenceService>();
 builder.Services.AddScoped<IPaddleAdjustmentReprocessService, PaddleAdjustmentReprocessService>();
 builder.Services.AddScoped<IAdminUserLookupService, AdminUserLookupService>();
 builder.Services.AddSingleton<IAdminRolePermissionCatalogService, AdminRolePermissionCatalogService>();
