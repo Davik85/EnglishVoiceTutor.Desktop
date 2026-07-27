@@ -164,6 +164,8 @@ A future provider-verified purchase must pass ownership claiming before it can r
 
 A dormant subscriptions-v2 verifier implementation now validates disabled-by-default package configuration, exact allowed ProductIds, provider state, and line items through a sanitized Google-client boundary. Production still uses the disabled verifier; credentials and live registration remain absent. linkedPurchaseToken reconciliation, lifecycle reconciliation, acknowledgement, Premium activation, Mobile connection, RTDN, migration application, and deployment remain pending.
 
+Configuration-controlled live-verifier wiring now exists, but the default remains disabled. When enabled later, credentials are expected only through Application Default Credentials outside the repository, with lazy service creation and no credential values or paths in appsettings. Activation remains blocked pending Google Cloud and Play Console access, real package/product configuration, migration application, sandbox validation, entitlement work, acknowledgement, and deployment.
+
 Paddle remains valid for website and desktop checkout. Mobile billing may need a different provider because app stores have their own payment rules, but all providers must map into one backend entitlement source of truth.
 
 Required billing direction:

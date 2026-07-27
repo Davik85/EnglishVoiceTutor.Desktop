@@ -117,10 +117,13 @@ public sealed class GooglePlayPurchaseVerifierTests
     public void ProductionRegistrationRemainsDisabledAndNoCredentialsAreConfigured()
     {
         var program = ReadRepositoryFile("backend/EnglishVoiceTutor.Api/Program.cs");
+        var registration = ReadRepositoryFile("backend/EnglishVoiceTutor.Api/Services/Billing/GooglePlayBillingServiceCollectionExtensions.cs");
         var settings = ReadRepositoryFile("backend/EnglishVoiceTutor.Api/appsettings.json");
-        Assert.Contains("AddScoped<IGooglePlayPurchaseVerifier, DisabledGooglePlayPurchaseVerifier>()", program, StringComparison.Ordinal);
-        Assert.DoesNotContain("AddScoped<IGooglePlayPurchaseVerifier, GooglePlayPurchaseVerifier>()", program, StringComparison.Ordinal);
-        Assert.DoesNotContain("AddScoped<IGooglePlaySubscriptionsV2Client, GooglePlaySubscriptionsV2Client>()", program, StringComparison.Ordinal);
+        Assert.Contains("AddGooglePlayBilling(builder.Configuration)", program, StringComparison.Ordinal);
+        Assert.Contains("AddScoped<IGooglePlayPurchaseVerifier, DisabledGooglePlayPurchaseVerifier>()", registration, StringComparison.Ordinal);
+        Assert.Contains("AddScoped<IGooglePlayPurchaseVerifier, GooglePlayPurchaseVerifier>()", registration, StringComparison.Ordinal);
+        Assert.DoesNotContain("GoogleCredential.FromFile", registration, StringComparison.Ordinal);
+        Assert.DoesNotContain("GoogleCredential.FromStream", registration, StringComparison.Ordinal);
         Assert.DoesNotContain("AndroidPublisherService", program, StringComparison.Ordinal);
         foreach (var forbidden in new[] { "private_key", "client_email", "serviceAccount", "credential" }) Assert.DoesNotContain(forbidden, settings, StringComparison.OrdinalIgnoreCase);
     }

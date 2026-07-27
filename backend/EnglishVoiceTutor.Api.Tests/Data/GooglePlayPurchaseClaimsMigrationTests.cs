@@ -31,9 +31,11 @@ public sealed class GooglePlayPurchaseClaimsMigrationTests
     public void ProductionStillUsesDisabledVerifierAndDoesNotCallClaimServiceFromEndpoint()
     {
         var program = ReadRepositoryFile("backend/EnglishVoiceTutor.Api/Program.cs");
+        var registration = ReadRepositoryFile("backend/EnglishVoiceTutor.Api/Services/Billing/GooglePlayBillingServiceCollectionExtensions.cs");
         var endpoint = ReadRepositoryFile("backend/EnglishVoiceTutor.Api/Endpoints/GooglePlayPurchaseVerificationEndpoints.cs");
 
-        Assert.Contains("AddScoped<IGooglePlayPurchaseVerifier, DisabledGooglePlayPurchaseVerifier>()", program, StringComparison.Ordinal);
+        Assert.Contains("AddGooglePlayBilling(builder.Configuration)", program, StringComparison.Ordinal);
+        Assert.Contains("AddScoped<IGooglePlayPurchaseVerifier, DisabledGooglePlayPurchaseVerifier>()", registration, StringComparison.Ordinal);
         Assert.DoesNotContain("IGooglePlayPurchaseClaimService", endpoint, StringComparison.Ordinal);
     }
 

@@ -3,12 +3,13 @@ using Google.Apis.AndroidPublisher.v3;
 
 namespace EnglishVoiceTutor.Api.Services.Billing;
 
-public sealed class GooglePlaySubscriptionsV2Client(AndroidPublisherService service) : IGooglePlaySubscriptionsV2Client
+public sealed class GooglePlaySubscriptionsV2Client(IGooglePlayAndroidPublisherServiceFactory serviceFactory) : IGooglePlaySubscriptionsV2Client
 {
     public async Task<GooglePlaySubscriptionV2Snapshot?> GetAsync(string packageName, string purchaseToken, CancellationToken cancellationToken)
     {
         try
         {
+            using var service = await serviceFactory.CreateAsync(cancellationToken);
             var response = await service.Purchases.Subscriptionsv2.Get(packageName, purchaseToken).ExecuteAsync(cancellationToken);
             if (response is null) return null;
             var productIds = response.LineItems?
