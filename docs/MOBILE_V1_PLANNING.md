@@ -162,6 +162,8 @@ A Google Play purchase-claim table now stores only an irreversible SHA-256 token
 
 A future provider-verified purchase must pass ownership claiming before it can return `verified`: same-account retries return `already_processed`, while cross-account reuse returns `ownership_conflict`. Production verification remains disabled; no Google API, Premium activation, acknowledgement, Mobile connection, RTDN, migration application, or deployment exists.
 
+A dormant subscriptions-v2 verifier implementation now validates disabled-by-default package configuration, exact allowed ProductIds, provider state, and line items through a sanitized Google-client boundary. Production still uses the disabled verifier; credentials and live registration remain absent. linkedPurchaseToken reconciliation, lifecycle reconciliation, acknowledgement, Premium activation, Mobile connection, RTDN, migration application, and deployment remain pending.
+
 Paddle remains valid for website and desktop checkout. Mobile billing may need a different provider because app stores have their own payment rules, but all providers must map into one backend entitlement source of truth.
 
 Required billing direction:

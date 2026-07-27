@@ -66,6 +66,8 @@ builder.Services.Configure<PaddleBillingOptions>(
     builder.Configuration.GetSection(PaddleBillingOptions.SectionName));
 builder.Services.Configure<PaddleWebhookOptions>(
     builder.Configuration.GetSection(PaddleWebhookOptions.SectionName));
+builder.Services.Configure<GooglePlayBillingOptions>(
+    builder.Configuration.GetSection(GooglePlayBillingOptions.SectionName));
 builder.Services.Configure<AdminBootstrapOptions>(
     builder.Configuration.GetSection(AdminBootstrapOptions.SectionName));
 builder.Services.Configure<PasswordResetOptions>(
