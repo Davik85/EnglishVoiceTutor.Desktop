@@ -1,12 +1,12 @@
 # Mobile v1 Planning
 
-Review date: 2026-07-05.
+Review date: 2026-07-27.
 
 ## Progress contract
 
 Authenticated Progress V1 is available at `GET /api/me/progress`. Mobile consumes this backend-owned aggregate contract and must not calculate official totals or streaks from the maximum-50 History list. See [Progress Endpoints](PROGRESS_ENDPOINTS.md).
 
-This document prepares safe Mobile v1 planning for Language Voice Tutor. It is analysis-only and documentation-only. It does not create a mobile app project, select a final technology, change runtime behavior, change billing behavior, add database migrations, or change production deployment artifacts.
+This document retains the original Mobile v1 planning assumptions and records the implemented backend foundations that now affect later Mobile work. It does not select a final mobile technology or claim Mobile, store, billing, or deployment readiness.
 
 ## Product principle
 
@@ -42,11 +42,11 @@ Mobile v1 should plan for these shared capabilities:
 - Mobile account/settings screens where the same backend settings/profile data is applicable.
 - Mobile diagnostics/app-version metadata only where it helps support, abuse prevention, compatibility, and release triage.
 
-## Explicitly out of scope for this planning step
+## Historical planning-step constraints (not current repository status)
 
-The following are not part of this documentation-only planning step:
+The following were not part of the original documentation-only planning step; later accepted backend and Mobile foundations are recorded separately in their current-state sections:
 
-- No mobile implementation code yet.
+- No mobile implementation code was created by that original planning step.
 - No Flutter, React Native, Kotlin, .NET MAUI, Android, or iOS project creation yet.
 - No App Store or Google Play public release plan yet.
 - No separate mobile backend, database, account system, subscription model, or Premium state.
@@ -154,21 +154,15 @@ Mobile voice and lesson usage need cross-client limits that remain backend-owned
 
 ## Billing provider plan
 
-### Google Play purchase-verification foundation
+### Accepted Google Play foundation (repository state; not deployed)
 
-`POST /api/me/billing/google-play/purchases/verify` is an authenticated backend boundary. Its request contains only `purchaseToken`; the authenticated account is derived from access-token claims. Production currently registers a disabled verifier and returns `503 not_configured` with no entitlement change. There is no Google API, credential, purchase-token persistence, acknowledgement, RTDN, deployment, or Mobile production integration yet. Mobile must not call this route in production until a later approved live-verification and entitlement slice.
+The repository contains an authenticated `POST /api/me/billing/google-play/purchases/verify` boundary. It derives the user from authentication and accepts only a purchase token. Ownership claiming stores only a lowercase SHA-256 token fingerprint, preventing cross-account attachment without storing raw tokens. A provider result must claim ownership before the endpoint may return `verified`.
 
-A Google Play purchase-claim table now stores only an irreversible SHA-256 token fingerprint, allowing one verified purchase to be bound to one LVT account without storing the raw token. It prevents cross-account attachment while the production verifier remains disabled. There is still no Google API, Premium activation, acknowledgement, Mobile connection, RTDN, or deployment.
+The dormant subscriptions-v2 verifier accepts only a valid ACTIVE purchase with one exact allowed ProductId, unambiguous UTC start and expiry (expiry strictly after start), and Pending or Acknowledged state. It carries sanitized ProductId, UTC period, acknowledgement, and test-purchase metadata internally; the public endpoint does not expose that metadata. Unknown lifecycle or acknowledgement values, invalid periods, unsupported products, and linked purchase-token presence fail closed. Pending remains pending without verified metadata.
 
-A future provider-verified purchase must pass ownership claiming before it can return `verified`: same-account retries return `already_processed`, while cross-account reuse returns `ownership_conflict`. Production verification remains disabled; no Google API, Premium activation, acknowledgement, Mobile connection, RTDN, migration application, or deployment exists.
+Runtime remains disabled by default: missing or false `GooglePlayBilling:Enabled` resolves only the disabled verifier and the public endpoint returns `503 not_configured`. Dormant enabled wiring uses lazy Application Default Credentials with the Android Publisher scope only; no credentials, credential paths, package name, or product IDs are committed. The purchase-claim migration exists in the repository but has not been applied to production.
 
-A dormant subscriptions-v2 verifier implementation now validates disabled-by-default package configuration, exact allowed ProductIds, provider state, and line items through a sanitized Google-client boundary. Production still uses the disabled verifier; credentials and live registration remain absent. linkedPurchaseToken reconciliation, lifecycle reconciliation, acknowledgement, Premium activation, Mobile connection, RTDN, migration application, and deployment remain pending.
-
-Configuration-controlled live-verifier wiring now exists, but the default remains disabled. When enabled later, credentials are expected only through Application Default Credentials outside the repository, with lazy service creation and no credential values or paths in appsettings. Activation remains blocked pending Google Cloud and Play Console access, real package/product configuration, migration application, sandbox validation, entitlement work, acknowledgement, and deployment.
-
-The dormant verifier now carries sanitized provider-verified start, expiry, acknowledgement, and test-purchase metadata internally; it is not returned by the public endpoint. There is still no subscription or entitlement persistence and no acknowledgement call. Default production configuration remains disabled; credentials, real identifiers, migration application, sandbox validation, Mobile connection, RTDN, entitlement activation, acknowledgement, and deployment remain pending.
-
-Paddle remains valid for website and desktop checkout. Mobile billing may need a different provider because app stores have their own payment rules, but all providers must map into one backend entitlement source of truth.
+No Google Play Subscription, Entitlement, Payment, or BillingEvent persistence, Premium activation, acknowledgement call, replacement-token reconciliation, RTDN, production configuration, Mobile purchase connection, sandbox validation, or deployment exists yet. Paddle remains the working website/Desktop provider. Google Play must be an additional provider beside Paddle through the same backend entitlement source of truth; a user with active Paddle Premium must not be prompted into a duplicate Google Play subscription.
 
 Required billing direction:
 

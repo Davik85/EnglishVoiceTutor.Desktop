@@ -1,6 +1,6 @@
 # Pre-Mobile Readiness
 
-Review date: 2026-07-19.
+Review date: 2026-07-27.
 
 ## Progress contract
 
@@ -21,8 +21,8 @@ This note is a concise planning input for future mobile work. It records the cur
 
 ## Current backend baseline
 
-- Production backend is `0.1.35-backend.123` and healthy at `https://api.languagevoicetutor.com`.
-- Backend health and database health are expected to be verified with `/health` and `/api/health/database` before treating the backend as current; the previous release for the 2026-07-19 state is `0.1.35-backend.122`.
+- Production backend is `0.1.35-backend.133` at `https://api.languagevoicetutor.com`; source commits after `.133` are not deployment evidence.
+- Backend health and database health are expected to be verified with `/health` and `/api/health/database` before treating the backend as current.
 - OpenAI calls are backend-only. Desktop clients call backend APIs; future mobile clients must do the same.
 - Website analytics is working, including the fixed `pay.html` analytics/consent coverage.
 - Public website pages no longer show tester wording.
@@ -75,7 +75,7 @@ Required shared-boundary rules:
 
 ## Billing provider and payment verification boundary
 
-Payment provider may differ by purchase surface, but Premium entitlement must remain shared through the backend entitlement/source-of-truth model. Existing Paddle billing remains valid for website/desktop. A future Google Play Billing provider should plug into the backend as another billing provider, and a future Apple App Store provider may later plug into the same backend entitlement model.
+Payment provider may differ by purchase surface, but Premium entitlement must remain shared through the backend entitlement/source-of-truth model. Existing Paddle billing remains valid for website/desktop. The repository now contains a default-disabled Google Play verification foundation, but it has not been deployed and has no entitlement activation or acknowledgement. Google Play must later plug into the backend as another billing provider, without replacing or shortening a valid Paddle entitlement; a future Apple App Store provider may later use the same model.
 
 Android payments should be planned around Google Play Billing, not a separate client-side Google Pay-only entitlement model. The mobile app may initiate the Google Play purchase flow and send the resulting purchase token to the backend, but the backend must verify the purchase with the Google Play Developer API before Premium is granted. After verification, the backend creates, extends, pauses, expires, or revokes Premium through the same entitlement/source-of-truth model already used by desktop/Paddle.
 

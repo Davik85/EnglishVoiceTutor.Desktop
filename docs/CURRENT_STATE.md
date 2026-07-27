@@ -1,6 +1,12 @@
 # Current State
 
-Review date: 2026-07-23.
+Review date: 2026-07-27.
+
+## 2026-07-27 accepted Google Play Billing foundation (repository only; not deployed)
+
+Main contains the accepted disabled-by-default Google Play purchase-verification foundation through commit `335ef8a0`: authenticated token verification, SHA-256 purchase-token ownership fingerprinting, a sanitized subscriptions-v2 verifier, lazy ADC-backed dormant wiring, and internal verified ProductId/UTC period/acknowledgement/test-purchase metadata. The public endpoint is `POST /api/me/billing/google-play/purchases/verify`; it remains `503 not_configured` by default and does not expose provider metadata. Migration `20260727045935_AddGooglePlayPurchaseClaims` exists but is unapplied in production.
+
+This is repository state, not deployment evidence. Production remains `0.1.35-backend.133`; commits after `.133` do not change that release claim. No production credentials, package/product configuration, Google Play Subscription/Entitlement/Payment/BillingEvent persistence, Premium activation, acknowledgement, replacement-token reconciliation, RTDN, Mobile connection, or deployment exists. Paddle checkout, webhook processing, Premium activation/cancellation/refund behavior, and Desktop Premium-expiry display remain the working website/Desktop path. Google Play must later join—not replace—that shared entitlement source of truth.
 
 ## 2026-07-23 production `.133` account-deletion completion verification
 

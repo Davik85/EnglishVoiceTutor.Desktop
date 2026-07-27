@@ -1,13 +1,19 @@
 # Next Steps
 
-Review date: 2026-07-23.
+Review date: 2026-07-27.
 
-## Mobile v1 planning next step
+## Google Play entitlement-bridge next step
 
-The completed account-deletion rollout is not a current deployment or retest step. The next planning work is Mobile-only and must begin by inspecting the current Mobile UI, dependencies, Android configuration, shared backend contracts, and existing Settings placeholders. Then select small isolated slices; do not combine the following tracks in one code task:
+The next Google Play stage is inspection-first, not implementation, activation, or deployment. Inspect the provider-neutral `Subscription` and `Entitlement` model and the working Paddle reconciliation/activation path without changing either. Identify the smallest Google Play-specific persistence service that could map an already verified purchase into the same backend source of truth.
+
+That later work must preserve valid Paddle entitlement and Desktop Premium expiry; a Google Play failure must never revoke, shorten, hide, or replace Paddle Premium. Do not acknowledge a Google purchase until successful entitlement persistence is committed. Keep Google Play disabled in production, and keep migration application, credentials, Play Console work, Mobile connection, acknowledgement, RTDN, and deployment as separate later stages.
+
+## Other Mobile v1 planning
+
+The completed account-deletion rollout is not a current deployment or retest step. Other Mobile planning must begin by inspecting the current Mobile UI, dependencies, Android configuration, shared backend contracts, and existing Settings placeholders. Then select small isolated slices; do not combine the following tracks in one code task:
 
 1. **Notifications:** planned, not implemented. The first review must decide whether V1 needs local scheduled reminders, remote push notifications, or both. It must not assume Firebase Cloud Messaging, scheduling, content, cadence, or permission timing, and must not request unnecessary permissions or use background microphone access.
-2. **Premium purchase entry points and purchase flow:** separately decide whether the first slice is CTA/navigation only or a complete Google Play Billing flow. Premium remains backend-owned and backend-verified; a local button press or unverified store result must never unlock it. Plan purchase restoration and backend verification before claiming billing completion. No Paddle change is part of Mobile Google Play work.
+2. **Premium purchase entry points and purchase flow:** separately decide whether the first slice is CTA/navigation only or a complete Google Play Billing flow, after the entitlement bridge is approved. Premium remains backend-owned and backend-verified; a local button press or unverified store result must never unlock it. No Paddle change is part of Mobile Google Play work.
 3. **Eight-language interface localization:** separately decide the exact eight interface languages before implementation. It is distinct from the six study languages; planned Flutter localization resources such as ARB and `flutter_localizations` are not yet implemented. Interface localization does not translate backend-generated tutor replies, CMS canonical IDs, lesson runtime metadata, or user content. Once approved, new Notifications and Premium UI must use localization-ready strings.
 
 Consider whether a minimal localization foundation should precede new Notifications and Premium UI so those screens do not need to be rebuilt. Mobile remains the same backend account/product, with backend-owned Premium, no client-side OpenAI, no Mobile secrets or database, no unapproved endpoint, and no provider or production action during planning.
