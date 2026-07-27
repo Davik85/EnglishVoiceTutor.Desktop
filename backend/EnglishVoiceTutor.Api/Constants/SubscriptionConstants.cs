@@ -180,6 +180,11 @@ public static class SubscriptionConstants
 
     public static class Billing
     {
+        public const int GooglePlayPurchaseTokenMaximumLength = 4096;
+        public const string GooglePlayPurchaseVerificationUnavailableMessage = "Google Play purchase verification is not available yet.";
+        public const string GooglePlayPurchaseVerificationTemporarilyUnavailableMessage = "Google Play purchase verification is temporarily unavailable.";
+        public const string GooglePlayPurchaseTokenRequiredMessage = "Purchase token is required.";
+        public const string GooglePlayPurchaseTokenTooLongMessage = "Purchase token is too long.";
         public const string BillingProviderNotConfiguredCode = "billing_provider_not_configured";
         public const string InvalidBillingCheckoutRequestCode = "invalid_billing_checkout_request";
         public const string BillingCheckoutDisabledMessage = "Billing checkout is not configured yet.";

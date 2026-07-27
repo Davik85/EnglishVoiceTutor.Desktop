@@ -87,6 +87,10 @@ public static class RateLimitingServiceCollectionExtensions
                 context,
                 GetOptions(context).Billing.CheckoutPerUserLimit,
                 GetOptions(context).Billing.WindowMinutes));
+            options.AddPolicy(RateLimitingConstants.BillingGooglePlayPurchaseVerificationPolicyName, context => CreateUserOrIpPartition(
+                context,
+                GetOptions(context).Billing.CheckoutPerUserLimit,
+                GetOptions(context).Billing.WindowMinutes));
             options.AddPolicy(RateLimitingConstants.BillingCancelRenewalPolicyName, context => CreateUserOrIpPartition(
                 context,
                 GetOptions(context).Billing.CancelPerUserLimit,
@@ -286,6 +290,7 @@ public static class RateLimitingServiceCollectionExtensions
         RateLimitingConstants.AdminWritePolicyName => RateLimitingConstants.AdminWriteEndpointGroup,
         RateLimitingConstants.AdminRoleManagementPolicyName => RateLimitingConstants.AdminRoleManagementEndpointGroup,
         RateLimitingConstants.BillingCheckoutPolicyName => RateLimitingConstants.BillingCheckoutEndpointGroup,
+        RateLimitingConstants.BillingGooglePlayPurchaseVerificationPolicyName => RateLimitingConstants.BillingGooglePlayPurchaseVerificationEndpointGroup,
         RateLimitingConstants.BillingCancelRenewalPolicyName => RateLimitingConstants.BillingCancelRenewalEndpointGroup,
         RateLimitingConstants.PaddleCheckoutLaunchPolicyName => RateLimitingConstants.PaddleCheckoutLaunchEndpointGroup,
         RateLimitingConstants.PaddleWebhookPolicyName => RateLimitingConstants.PaddleWebhookEndpointGroup,
@@ -313,6 +318,7 @@ public static class RateLimitingServiceCollectionExtensions
         RateLimitingConstants.AdminWritePolicyName => RateLimitingConstants.AdminWriteMessage,
         RateLimitingConstants.AdminRoleManagementPolicyName => RateLimitingConstants.AdminRoleManagementMessage,
         RateLimitingConstants.BillingCheckoutPolicyName => RateLimitingConstants.BillingCheckoutMessage,
+        RateLimitingConstants.BillingGooglePlayPurchaseVerificationPolicyName => RateLimitingConstants.BillingGooglePlayPurchaseVerificationMessage,
         RateLimitingConstants.BillingCancelRenewalPolicyName => RateLimitingConstants.BillingCancelRenewalMessage,
         RateLimitingConstants.PaddleCheckoutLaunchPolicyName => RateLimitingConstants.PaddleCheckoutLaunchMessage,
         RateLimitingConstants.PaddleWebhookPolicyName => RateLimitingConstants.PaddleWebhookMessage,

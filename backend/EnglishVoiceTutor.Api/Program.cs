@@ -231,6 +231,8 @@ builder.Services.AddScoped<IBillingProviderCheckoutAdapter>(services => services
 builder.Services.AddScoped<IBillingProviderSubscriptionCancellationAdapter>(services => services.GetRequiredService<PaddleBillingProviderCheckoutAdapter>());
 builder.Services.AddScoped<IBillingProviderCheckoutAdapterResolver, BillingProviderCheckoutAdapterResolver>();
 builder.Services.AddScoped<IBillingCheckoutService, BillingCheckoutService>();
+builder.Services.AddScoped<IGooglePlayPurchaseVerifier, DisabledGooglePlayPurchaseVerifier>();
+builder.Services.AddScoped<IGooglePlayPurchaseVerificationService, GooglePlayPurchaseVerificationService>();
 builder.Services.AddScoped<IBillingSubscriptionCancellationService, BillingSubscriptionCancellationService>();
 builder.Services.AddSingleton<IPaddleWebhookSignatureVerifier, PaddleWebhookSignatureVerifier>();
 builder.Services.AddScoped<IPaddleWebhookIngestionService, PaddleWebhookIngestionService>();
@@ -427,6 +429,7 @@ app.MapLessonAccessDecisionEndpoints();
 app.MapSubscriptionDiagnosticsEndpoints();
 app.MapTrialClaimEndpoints();
 app.MapBillingCheckoutEndpoints();
+app.MapGooglePlayPurchaseVerificationEndpoints();
 app.MapBillingSubscriptionEndpoints();
 app.MapPaddleCheckoutLaunchEndpoints();
 app.MapPaddleWebhookEndpoints();
