@@ -24,6 +24,7 @@ public static class EntityConstants
         public const string TrialGrants = "trial_grants";
         public const string DailyFreeLessonUsage = "daily_free_lesson_usage";
         public const string BillingEvents = "billing_events";
+        public const string GooglePlayPurchaseClaims = "google_play_purchase_claims";
         public const string PaddleWebhookEvents = "paddle_webhook_events";
         public const string AdminActions = "admin_actions";
         public const string AdminUsers = "admin_users";
@@ -114,6 +115,7 @@ public static class EntityConstants
         public const int AccountAnonymizationFingerprintMaxLength = 128;
         public const int AccountAnonymizationStateMaxLength = 64;
         public const int AccountAnonymizationJsonMaxLength = 12000;
+        public const int GooglePlayPurchaseTokenFingerprintLength = 64;
     }
 
     public static class Precision

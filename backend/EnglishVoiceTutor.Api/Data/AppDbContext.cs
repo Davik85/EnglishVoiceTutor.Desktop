@@ -26,6 +26,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<TrialGrantEntity> TrialGrants => Set<TrialGrantEntity>();
     public DbSet<DailyFreeLessonUsageEntity> DailyFreeLessonUsages => Set<DailyFreeLessonUsageEntity>();
     public DbSet<BillingEventEntity> BillingEvents => Set<BillingEventEntity>();
+    public DbSet<GooglePlayPurchaseClaimEntity> GooglePlayPurchaseClaims => Set<GooglePlayPurchaseClaimEntity>();
     public DbSet<PaddleWebhookEventEntity> PaddleWebhookEvents => Set<PaddleWebhookEventEntity>();
     public DbSet<AdminActionEntity> AdminActions => Set<AdminActionEntity>();
     public DbSet<AdminUserEntity> AdminUsers => Set<AdminUserEntity>();
@@ -70,6 +71,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureTrialGrants(modelBuilder);
         ConfigureDailyFreeLessonUsage(modelBuilder);
         ConfigureBillingEvents(modelBuilder);
+        ConfigureGooglePlayPurchaseClaims(modelBuilder);
         ConfigurePaddleWebhookEvents(modelBuilder);
         ConfigureAdminActions(modelBuilder);
         ConfigureAdminRoleAssignmentPersistence(modelBuilder);
@@ -674,6 +676,20 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .WithMany(user => user.RefreshTokens)
             .HasForeignKey(token => token.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureGooglePlayPurchaseClaims(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<GooglePlayPurchaseClaimEntity>();
+        entity.ToTable(EntityConstants.TableNames.GooglePlayPurchaseClaims);
+        entity.HasKey(claim => claim.Id);
+        entity.Property(claim => claim.PurchaseTokenFingerprint).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayPurchaseTokenFingerprintLength);
+        entity.Property(claim => claim.ProductId).IsRequired().HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
+        entity.Property(claim => claim.CreatedAtUtc).IsRequired();
+        entity.Property(claim => claim.LastSeenAtUtc).IsRequired();
+        entity.HasIndex(claim => claim.PurchaseTokenFingerprint).IsUnique();
+        entity.HasIndex(claim => claim.UserId);
+        entity.HasOne<UserEntity>().WithMany().HasForeignKey(claim => claim.UserId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureAccountAnonymizationPreflightFoundation(ModelBuilder modelBuilder)

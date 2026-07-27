@@ -158,6 +158,8 @@ Mobile voice and lesson usage need cross-client limits that remain backend-owned
 
 `POST /api/me/billing/google-play/purchases/verify` is an authenticated backend boundary. Its request contains only `purchaseToken`; the authenticated account is derived from access-token claims. Production currently registers a disabled verifier and returns `503 not_configured` with no entitlement change. There is no Google API, credential, purchase-token persistence, acknowledgement, RTDN, deployment, or Mobile production integration yet. Mobile must not call this route in production until a later approved live-verification and entitlement slice.
 
+A Google Play purchase-claim table now stores only an irreversible SHA-256 token fingerprint, allowing one verified purchase to be bound to one LVT account without storing the raw token. It prevents cross-account attachment while the production verifier remains disabled. There is still no Google API, Premium activation, acknowledgement, Mobile connection, RTDN, or deployment.
+
 Paddle remains valid for website and desktop checkout. Mobile billing may need a different provider because app stores have their own payment rules, but all providers must map into one backend entitlement source of truth.
 
 Required billing direction:
