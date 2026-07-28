@@ -6,16 +6,16 @@ namespace EnglishVoiceTutor.Api.Services.Billing;
 public sealed class GooglePlayPurchaseVerificationService : IGooglePlayPurchaseVerificationService
 {
     private readonly IGooglePlayPurchaseVerifier verifier;
-    private readonly IGooglePlayPurchaseClaimService claimService;
+    private readonly IGooglePlayVerifiedPurchasePersistenceService persistenceService;
     private readonly ILogger<GooglePlayPurchaseVerificationService> logger;
 
     public GooglePlayPurchaseVerificationService(
         IGooglePlayPurchaseVerifier verifier,
-        IGooglePlayPurchaseClaimService claimService,
+        IGooglePlayVerifiedPurchasePersistenceService persistenceService,
         ILogger<GooglePlayPurchaseVerificationService> logger)
     {
         this.verifier = verifier;
-        this.claimService = claimService;
+        this.persistenceService = persistenceService;
         this.logger = logger;
     }
 
@@ -56,17 +56,21 @@ public sealed class GooglePlayPurchaseVerificationService : IGooglePlayPurchaseV
 
     private async Task<GooglePlayPurchaseVerificationServiceResult> MapVerifiedAsync(Guid userId, string purchaseToken, GooglePlayVerifiedPurchase? verifiedPurchase, CancellationToken cancellationToken)
     {
-        if (verifiedPurchase is null || string.IsNullOrWhiteSpace(verifiedPurchase.ProductId))
+        if (verifiedPurchase is null)
         {
             return Unavailable("temporarily_unavailable", SubscriptionConstants.Billing.GooglePlayPurchaseVerificationTemporarilyUnavailableMessage);
         }
 
-        var claim = await claimService.ClaimAsync(userId, purchaseToken, verifiedPurchase.ProductId, cancellationToken);
-        return claim.Code switch
+        var persistence = await persistenceService.PersistAsync(
+            new GooglePlayVerifiedPurchasePersistenceRequest(userId, purchaseToken, verifiedPurchase),
+            cancellationToken);
+        return persistence.Code switch
         {
-            GooglePlayPurchaseClaimResultCode.Claimed => Ok("verified", "Purchase verified.", true),
-            GooglePlayPurchaseClaimResultCode.AlreadyOwned => Ok("already_processed", "Purchase was already processed.", true),
-            GooglePlayPurchaseClaimResultCode.OwnershipConflict => Ok("ownership_conflict", "Purchase cannot be applied to this account.", false),
+            GooglePlayVerifiedPurchasePersistenceResultCode.Applied => Ok("verified", "Purchase verified.", true),
+            GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent => Ok("already_processed", "Purchase was already processed.", true),
+            GooglePlayVerifiedPurchasePersistenceResultCode.OwnershipConflict => Ok("ownership_conflict", "Purchase cannot be applied to this account.", false),
+            GooglePlayVerifiedPurchasePersistenceResultCode.ProductMismatch or GooglePlayVerifiedPurchasePersistenceResultCode.ConsistencyConflict => Ok("invalid_purchase", "Purchase could not be verified.", false),
+            GooglePlayVerifiedPurchasePersistenceResultCode.TestPurchaseNotSupported => Ok("unsupported_product", "This purchase is not supported.", false),
             _ => Unavailable("temporarily_unavailable", SubscriptionConstants.Billing.GooglePlayPurchaseVerificationTemporarilyUnavailableMessage)
         };
     }
