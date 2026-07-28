@@ -212,6 +212,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.<table_name> TO lvt_app;
 
 This owner/grant check does not replace SQL review. Review migration SQL first, then verify ownership and grant runtime table privileges as explicit rollout steps.
 
+For sensitive provider-ownership tables, review automatically inherited analytics-reader privileges explicitly after creation and revoke access when the table is outside the approved analytics surface. This is a table-by-table data-classification decision, not a blanket rule for every new table.
+
 ## Downloaded update installer cleanup
 
 The desktop app stores verified installers downloaded by **Check for updates** under the current user's local update cache:

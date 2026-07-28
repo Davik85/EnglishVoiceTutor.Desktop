@@ -4,9 +4,9 @@ Review date: 2026-07-28.
 
 ## Google Play entitlement-bridge next step
 
-Repository-only verification-to-atomic-persistence wiring is complete. When the disabled feature is later enabled, trusted verified Google Play metadata can reach token ownership, the exact `google_play` Subscription, and its linked Premium entitlement; account-status remains entitlement-first and protects valid Paddle access. The next production-safe stage is preparation of the disabled backend release and a bounded migration-application procedure, followed separately by credentials, package/product configuration, sandbox validation, Mobile connection, acknowledgement, replacement-token handling, and RTDN.
+The disabled backend release and migration-application stage are complete: production is `0.1.35-backend.134`, migration `20260727045935_AddGooglePlayPurchaseClaims` is applied, and the endpoint remains disabled and verified as `503 not_configured` with no claim created. The next Google Play stage is preparation of configuration and controlled sandbox validation: Google Play Console package/product configuration, production-safe credential storage, backend configuration review, controlled sandbox or license-tester verification, and Mobile purchase-flow integration planning.
 
-That later work must preserve valid Paddle entitlement and Desktop Premium expiry; a Google Play failure must never revoke, shorten, hide, or replace Paddle Premium. Test purchases remain unsupported, no acknowledgement occurs, and no Payment or BillingEvent projection is created. Keep Google Play disabled by default; migration `20260727045935_AddGooglePlayPurchaseClaims` remains unapplied in production. This repository work is not deployed, production remains `0.1.35-backend.133`, and migration application, credentials, Play Console work, backend release, Mobile connection, acknowledgement, RTDN, and deployment remain separate later stages.
+That later work must preserve valid Paddle entitlement and Desktop Premium expiry; a Google Play failure must never revoke, shorten, hide, or replace Paddle Premium. Enabling Google Play, real purchase verification, acknowledgement, replacement-token handling, RTDN, Payment/BillingEvent projections, and a production purchase rollout remain separate bounded stages. Test purchases remain unsupported; Paddle production behavior remains unchanged.
 
 ## Other Mobile v1 planning
 
@@ -68,7 +68,7 @@ Backend `0.1.35-backend.116` completes the backend prerequisite for learner leve
 
 Public release boundary: the current product remains a public Windows direct release, not a full broad production-readiness claim.
 
-- Backend: production healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.133`, with `.132` as rollback; the execution migration and complete account-deletion workflow are production-deployed and production-verified; CMS/Admin login security and persistent role management are production-verified.
+- Backend: production healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.134`, with `.133` as rollback; the execution migration, disabled Google Play claim-table migration, and complete account-deletion workflow are production-deployed and production-verified; CMS/Admin login security and persistent role management are production-verified.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.

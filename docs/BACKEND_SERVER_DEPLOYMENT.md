@@ -1,13 +1,13 @@
 # Backend server deployment
 
-Review date: 2026-07-22.
+Review date: 2026-07-28.
 
 ## Current production backend
 
 Production backend is deployed and healthy.
 
-- Current release: `0.1.35-backend.128`
-- Previous rollback release: `0.1.35-backend.127`
+- Current release: `0.1.35-backend.134`
+- Previous rollback release: `0.1.35-backend.133`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -23,7 +23,11 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.128`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.127`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.134`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.133`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+
+## 2026-07-28 `.134` disabled Google Play entitlement-bridge verification
+
+Migration `20260727045935_AddGooglePlayPurchaseClaims` was applied separately before deployment from `20260723045852_AddAccountAnonymizationExecution`. Google Play remained disabled: an authenticated verification request returned `503 not_configured` with no refresh recommendation, and the claim table remained empty. The same backend package also deployed bounded `LessonPromptBuilder` full-lesson history capacity; it changed no public route or JSON contract, required no additional migration, and Desktop and Mobile client releases remain separate. Public backend and database health were HTTP 200 `Healthy` with `canConnect=true`; `languagevoicetutor-backend.service` was active and running; and Admin CMS smoke covered login, dashboard, user lookup, manually granted Premium display, Paddle Premium provider/period display, Feedback & reports, logout, and repeat login. No rollback was required. This release did not enable Google Play purchases, acknowledgement, Payment/BillingEvent projections, or change Paddle production behavior.
 
 Previous backend rollback reference must be verified from `/opt/languagevoicetutor/backend/previous`. `0.1.35-backend.49` remains a documented older rollback reference, not a substitute for checking the live `previous` symlink.
 

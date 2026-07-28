@@ -154,15 +154,15 @@ Mobile voice and lesson usage need cross-client limits that remain backend-owned
 
 ## Billing provider plan
 
-### Accepted Google Play foundation (repository state; not deployed)
+### Deployed disabled Google Play backend infrastructure; Mobile/store work pending
 
 The repository contains an authenticated `POST /api/me/billing/google-play/purchases/verify` boundary. It derives the user from authentication and accepts only a purchase token. Ownership claiming stores only a lowercase SHA-256 token fingerprint, preventing cross-account attachment without storing raw tokens. A provider result must claim ownership before the endpoint may return `verified`.
 
 The dormant subscriptions-v2 verifier accepts only a valid ACTIVE purchase with one exact allowed ProductId, unambiguous UTC start and expiry (expiry strictly after start), and Pending or Acknowledged state. It carries sanitized ProductId, UTC period, acknowledgement, and test-purchase metadata internally; the public endpoint does not expose that metadata. Unknown lifecycle or acknowledgement values, invalid periods, unsupported products, and linked purchase-token presence fail closed. Pending remains pending without verified metadata.
 
-Runtime remains disabled by default: missing or false `GooglePlayBilling:Enabled` resolves only the disabled verifier and the public endpoint returns `503 not_configured`. Dormant enabled wiring uses lazy Application Default Credentials with the Android Publisher scope only; no credentials, credential paths, package name, or product IDs are committed. The purchase-claim migration exists in the repository but has not been applied to production.
+Runtime remains disabled by default: missing or false `GooglePlayBilling:Enabled` resolves only the disabled verifier and the public endpoint returns `503 not_configured`. Authenticated verification is connected to atomic persistence, migration `20260727045935_AddGooglePlayPurchaseClaims` is applied, and this infrastructure is deployed in `.134`. No credentials, credential paths, package name, or product IDs are committed.
 
-No Google Play Subscription, Entitlement, Payment, or BillingEvent persistence, Premium activation, acknowledgement call, replacement-token reconciliation, RTDN, production configuration, Mobile purchase connection, sandbox validation, or deployment exists yet. Paddle remains the working website/Desktop provider. Google Play must be an additional provider beside Paddle through the same backend entitlement source of truth; a user with active Paddle Premium must not be prompted into a duplicate Google Play subscription.
+Runtime processing remains dormant because Google Play is disabled, and no production claim, Subscription, Entitlement, Payment, or BillingEvent exists. Package/product configuration, credentials, controlled test validation, Mobile purchase flow, acknowledgement, replacement-token handling, RTDN, and production rollout remain pending. Paddle remains the working website/Desktop provider. Google Play must be an additional provider beside Paddle through the same backend entitlement source of truth; a user with active Paddle Premium must not be prompted into a duplicate Google Play subscription or have valid Paddle Premium replaced or shortened.
 
 Required billing direction:
 

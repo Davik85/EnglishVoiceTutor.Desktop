@@ -23,6 +23,12 @@ Last known production baseline at the time this Phase 4C asset was added:
 
 Treat these as a historical snapshot. Always verify live state before a future schema-dependent release or incident response.
 
+## 2026-07-28 Google Play claim-table migration record
+
+Migration `20260727045935_AddGooglePlayPurchaseClaims` was applied from the prior production migration `20260723045852_AddAccountAnonymizationExecution` before backend `.134` deployment. A fresh PostgreSQL backup was created first at `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260728_125528Z.dump` (7,253,981 bytes); its `pg_restore --list` readability check returned 287 lines. The reviewed bounded SQL and checksum comparison were completed before execution. The SQL added only `public.google_play_purchase_claims`, its primary key, the unique `PurchaseTokenFingerprint` index, the `UserId` index, and the migration-history entry.
+
+After application, ownership was changed to `lvt_app`, runtime read access was verified, and inherited `lvt_analytics_reader` access was explicitly revoked because this provider-ownership table contains UserId and purchase-token fingerprints. Backend and database health remained good; temporary SQL files were removed. The change is additive, and backend `.133` remains code-compatible with the empty table. It did not alter subscriptions, entitlements, payments, billing events, Paddle data, users, or existing billing tables.
+
 ## Principles
 
 ### Code rollback and database rollback are separate
