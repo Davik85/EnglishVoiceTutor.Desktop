@@ -4,7 +4,7 @@ Review date: 2026-07-27.
 
 ## Google Play entitlement-bridge next step
 
-The next Google Play stage remains inspection-first, not activation or deployment. Inspect the provider-neutral `Subscription` and `Entitlement` model and the working Paddle reconciliation/activation path without changing either. The dormant provider-scoped period persistence boundary is available only after an existing paid provider Subscription has been safely created and selected; determine the smallest ownership/persistence orchestration that can invoke it without touching the global Paddle provider-event path.
+The dormant atomic ownership/Subscription/entitlement orchestration now exists but has no runtime caller. Before endpoint wiring, complete account-status multi-provider selection and preserve the working Paddle path; acknowledgement, replacement-token handling, RTDN, Mobile connection, credentials, sandbox validation, migration application, and deployment remain separate later stages.
 
 That later work must preserve valid Paddle entitlement and Desktop Premium expiry; a Google Play failure must never revoke, shorten, hide, or replace Paddle Premium. Test-purchase persistence remains unresolved and is rejected by the dormant boundary. Do not acknowledge a Google purchase until successful entitlement persistence is committed. Keep Google Play disabled in production, and keep migration application, credentials, Play Console work, Mobile connection, acknowledgement, RTDN, and deployment as separate later stages.
 

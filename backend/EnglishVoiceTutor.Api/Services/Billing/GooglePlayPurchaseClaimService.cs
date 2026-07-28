@@ -30,28 +30,7 @@ public sealed class GooglePlayPurchaseClaimService(
 
         try
         {
-            var existing = await dbContext.GooglePlayPurchaseClaims.SingleOrDefaultAsync(item => item.PurchaseTokenFingerprint == fingerprint, cancellationToken);
-            if (existing is not null)
-            {
-                if (existing.UserId != userId) return new GooglePlayPurchaseClaimResult(GooglePlayPurchaseClaimResultCode.OwnershipConflict);
-                existing.LastSeenAtUtc = utcClock.UtcNow;
-                await dbContext.SaveChangesAsync(cancellationToken);
-                return new GooglePlayPurchaseClaimResult(GooglePlayPurchaseClaimResultCode.AlreadyOwned);
-            }
-
-            var now = utcClock.UtcNow;
-            var claim = new GooglePlayPurchaseClaimEntity
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                PurchaseTokenFingerprint = fingerprint,
-                ProductId = productId,
-                CreatedAtUtc = now,
-                LastSeenAtUtc = now
-            };
-            dbContext.GooglePlayPurchaseClaims.Add(claim);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return new GooglePlayPurchaseClaimResult(GooglePlayPurchaseClaimResultCode.Claimed);
+            return await ClaimWithinTransactionAsync(userId, fingerprint, productId, cancellationToken);
         }
         catch (DbUpdateException)
         {
@@ -74,5 +53,22 @@ public sealed class GooglePlayPurchaseClaimService(
         {
             return new GooglePlayPurchaseClaimResult(GooglePlayPurchaseClaimResultCode.TemporarilyUnavailable);
         }
+    }
+
+    internal async Task<GooglePlayPurchaseClaimResult> ClaimWithinTransactionAsync(Guid userId, string fingerprint, string productId, CancellationToken cancellationToken)
+    {
+        var existing = await dbContext.GooglePlayPurchaseClaims.SingleOrDefaultAsync(item => item.PurchaseTokenFingerprint == fingerprint, cancellationToken);
+        if (existing is not null)
+        {
+            if (existing.UserId != userId) return new GooglePlayPurchaseClaimResult(GooglePlayPurchaseClaimResultCode.OwnershipConflict);
+            existing.LastSeenAtUtc = utcClock.UtcNow;
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return new GooglePlayPurchaseClaimResult(GooglePlayPurchaseClaimResultCode.AlreadyOwned);
+        }
+
+        var now = utcClock.UtcNow;
+        dbContext.GooglePlayPurchaseClaims.Add(new GooglePlayPurchaseClaimEntity { Id = Guid.NewGuid(), UserId = userId, PurchaseTokenFingerprint = fingerprint, ProductId = productId, CreatedAtUtc = now, LastSeenAtUtc = now });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return new GooglePlayPurchaseClaimResult(GooglePlayPurchaseClaimResultCode.Claimed);
     }
 }

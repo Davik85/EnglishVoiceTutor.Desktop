@@ -24,7 +24,7 @@ public sealed class ProviderSubscriptionPeriodPersistenceService(
         try
         {
             return await BillingSerializableTransactionRetryPolicy.ExecuteAsync(
-                (_, retryCancellationToken) => ApplyWithinTransactionAsync(request, retryCancellationToken),
+                (_, retryCancellationToken) => ApplyWithOwnedTransactionAsync(request, retryCancellationToken),
                 dbContext.ChangeTracker.Clear,
                 logger,
                 "Provider-scoped subscription period persistence",
@@ -43,15 +43,24 @@ public sealed class ProviderSubscriptionPeriodPersistenceService(
         }
     }
 
-    private async Task<ProviderSubscriptionPeriodPersistenceResult> ApplyWithinTransactionAsync(
+    private async Task<ProviderSubscriptionPeriodPersistenceResult> ApplyWithOwnedTransactionAsync(
         ProviderSubscriptionPeriodPersistenceRequest request,
         CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        var result = await ApplyWithinTransactionAsync(request, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return result;
+    }
+
+    internal async Task<ProviderSubscriptionPeriodPersistenceResult> ApplyWithinTransactionAsync(
+        ProviderSubscriptionPeriodPersistenceRequest request,
+        CancellationToken cancellationToken)
+    {
         var subscription = await dbContext.Subscriptions.SingleOrDefaultAsync(candidate => candidate.Id == request.SubscriptionId, cancellationToken);
-        if (subscription is null) return await CommitAsync(transaction, Result(ProviderSubscriptionPeriodPersistenceResultCode.SubscriptionNotFound), cancellationToken);
-        if (subscription.UserId != request.UserId) return await CommitAsync(transaction, Result(ProviderSubscriptionPeriodPersistenceResultCode.SubscriptionOwnershipConflict), cancellationToken);
-        if (!IsSupportedSubscription(subscription)) return await CommitAsync(transaction, Result(ProviderSubscriptionPeriodPersistenceResultCode.UnsupportedSubscription), cancellationToken);
+        if (subscription is null) return Result(ProviderSubscriptionPeriodPersistenceResultCode.SubscriptionNotFound);
+        if (subscription.UserId != request.UserId) return Result(ProviderSubscriptionPeriodPersistenceResultCode.SubscriptionOwnershipConflict);
+        if (!IsSupportedSubscription(subscription)) return Result(ProviderSubscriptionPeriodPersistenceResultCode.UnsupportedSubscription);
 
         var matchingEntitlement = await dbContext.Entitlements.SingleOrDefaultAsync(candidate =>
             candidate.UserId == request.UserId
@@ -105,10 +114,7 @@ public sealed class ProviderSubscriptionPeriodPersistenceService(
         }
 
         if (changed) await dbContext.SaveChangesAsync(cancellationToken);
-        return await CommitAsync(
-            transaction,
-            Result(changed ? ProviderSubscriptionPeriodPersistenceResultCode.Applied : ProviderSubscriptionPeriodPersistenceResultCode.AlreadyCurrent),
-            cancellationToken);
+        return Result(changed ? ProviderSubscriptionPeriodPersistenceResultCode.Applied : ProviderSubscriptionPeriodPersistenceResultCode.AlreadyCurrent);
     }
 
     private static bool HasValidInput(ProviderSubscriptionPeriodPersistenceRequest request) =>
@@ -125,15 +131,6 @@ public sealed class ProviderSubscriptionPeriodPersistenceService(
         && !string.Equals(subscription.Provider, SubscriptionConstants.BillingProviders.None, StringComparison.OrdinalIgnoreCase)
         && !string.Equals(subscription.Provider, SubscriptionConstants.BillingProviders.Manual, StringComparison.OrdinalIgnoreCase)
         && !string.Equals(subscription.Provider, SubscriptionConstants.BillingProviders.InternalTrial, StringComparison.OrdinalIgnoreCase);
-
-    private static async Task<ProviderSubscriptionPeriodPersistenceResult> CommitAsync(
-        IDbContextTransaction transaction,
-        ProviderSubscriptionPeriodPersistenceResult result,
-        CancellationToken cancellationToken)
-    {
-        await transaction.CommitAsync(cancellationToken);
-        return result;
-    }
 
     private static ProviderSubscriptionPeriodPersistenceResult Result(ProviderSubscriptionPeriodPersistenceResultCode code) => new(code);
 }

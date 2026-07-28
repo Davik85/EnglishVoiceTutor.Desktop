@@ -135,7 +135,7 @@ Current config section:
   - Google Play for future Android.
   - Manual admin grants via CMS/admin tooling.
 - A dormant provider-scoped verified-period persistence boundary exists for a later Apple/Google bridge. It requires an existing paid provider Subscription, creates or extends only an active `provider_event` Premium entitlement linked to that exact Subscription, and rejects test purchases. It has no runtime caller and is not connected to Google Play verification, Paddle processing, or account-status selection.
-- Google Play Subscription creation, ownership/persistence transaction orchestration, acknowledgement, RTDN, Mobile connection, sandbox testing, credentials, migration application, and deployment remain pending.
+- A dormant atomic Google Play orchestration now establishes token-fingerprint ownership, creates/selects the exact `google_play` Subscription, and applies its linked Premium entitlement in one serializable transaction. It has no runtime caller, rejects test purchases, performs no acknowledgement, and creates no Payment or BillingEvent. Endpoint wiring, account-status multi-provider selection, replacement-token handling, RTDN, Mobile connection, sandbox testing, credentials, migration application, and deployment remain pending.
 - The backend remains the source of truth for entitlement state.
 
 ## Paddle checkout transaction creation v1

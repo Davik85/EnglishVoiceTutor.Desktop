@@ -1,0 +1,10 @@
+namespace EnglishVoiceTutor.Api.Services.Billing;
+
+public interface IGooglePlayVerifiedPurchasePersistenceService
+{
+    Task<GooglePlayVerifiedPurchasePersistenceResult> PersistAsync(GooglePlayVerifiedPurchasePersistenceRequest request, CancellationToken cancellationToken);
+}
+
+public sealed record GooglePlayVerifiedPurchasePersistenceRequest(Guid UserId, string PurchaseToken, GooglePlayVerifiedPurchase VerifiedPurchase);
+public enum GooglePlayVerifiedPurchasePersistenceResultCode { Applied, AlreadyCurrent, InvalidInput, OwnershipConflict, ProductMismatch, ConsistencyConflict, TestPurchaseNotSupported, TemporarilyUnavailable }
+public sealed record GooglePlayVerifiedPurchasePersistenceResult(GooglePlayVerifiedPurchasePersistenceResultCode Code);
