@@ -80,7 +80,9 @@ public static class AppConstants
     public const string HintFreeLimitMessage = "You have reached today's free hint limit. You can keep practicing without hints.";
     public const string HintFallbackUserMessage = "I need a hint for what to say next.";
     public const string MockBotFirstMessage = "Hi! Let's practice this situation. Are you ready?";
-    public const int RecentConversationMessagesLimit = 10;
+    public const int FallbackRecentConversationMessagesLimit = 10;
+    public const int MaximumRecentConversationMessagesLimit = 70;
+    public const int SetupContextHistoryMessageOverhead = 3;
     public const int DefaultLessonSoftLearnerTurnLimit = 10;
     public const int DefaultLessonHardLearnerTurnLimit = 15;
     public const int ExtendedLessonSoftLearnerTurnLimit = 25;

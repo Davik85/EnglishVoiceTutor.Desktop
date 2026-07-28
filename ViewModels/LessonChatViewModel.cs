@@ -5042,14 +5042,27 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     private IReadOnlyList<RecentConversationMessage> GetRecentConversationMessages()
     {
         return Messages
-            .TakeLast(AppConstants.RecentConversationMessagesLimit)
+            .Where(message => IsSummaryEligibleConversationText(message.Text))
+            .TakeLast(GetRecentConversationMessageLimit())
             .Select(message => new RecentConversationMessage
             {
                 Sender = message.IsFromBot ? TutorAvatarDisplayName : AppConstants.UserSenderName,
                 Text = message.Text
             })
-            .Where(message => IsSummaryEligibleConversationText(message.Text))
             .ToArray();
+    }
+
+    private int GetRecentConversationMessageLimit()
+    {
+        var finalTurn = GetFinalTurn();
+        if (finalTurn <= 0)
+        {
+            return AppConstants.FallbackRecentConversationMessagesLimit;
+        }
+
+        return Math.Min(
+            (finalTurn * 2) + AppConstants.SetupContextHistoryMessageOverhead,
+            AppConstants.MaximumRecentConversationMessagesLimit);
     }
 
     private ChatMessageViewModel AddMessage(

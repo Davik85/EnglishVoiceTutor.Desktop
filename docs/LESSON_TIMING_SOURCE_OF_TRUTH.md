@@ -21,6 +21,12 @@ The desktop resolves these values from the active `LevelProfile` on the loaded r
 
 Legacy scenario `metadata.softWrapUpAfterUserTurn` and `metadata.finalMessageAtUserTurn` remain required by the static JSON audit for import/deserialization compatibility. They are deprecated for runtime timing and must not drive runtime lesson limits. Runtime timing uses the active level profile from the loaded coherent bundle.
 
+## Bounded full-lesson prompt history
+
+The existing level-profile-first policy also supplies the effective final learner turn for prompt-history capacity. Desktop and backend use the same bound: `min((effectiveFinalLearnerTurn * 2) + 3, 70)`. A missing or non-positive effective final turn falls back to 10 messages; the backend remains the absolute 70-message safety boundary.
+
+This capacity preserves setup/context overhead and prior eligible conversation without changing lesson length, wrap-up timing, or final timing. The current learner input remains separate from the prior history and is not counted twice. No database, CMS timing, or level-profile value changed for this implementation.
+
 ## Prompt-template policy
 
 Prompt templates may refer to the current runtime phase (`active_roleplay`, `wrap_up`, `final`, `completed`) and to the resolved lesson-length section supplied by backend code. Prompt templates must not define independent numeric timing such as “wrap at turn 10” or “final at turn 15.”

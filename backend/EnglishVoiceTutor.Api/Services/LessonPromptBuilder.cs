@@ -46,7 +46,7 @@ public sealed class LessonPromptBuilder
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, request);
         AppendLessonLength(prompt, request);
-        AppendRecentConversation(prompt, request.RecentMessages);
+        AppendRecentConversation(prompt, request);
 
         prompt.AppendLine(UserMessageHeader);
         prompt.AppendLine(request.UserMessage);
@@ -92,7 +92,7 @@ public sealed class LessonPromptBuilder
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, chatRequest);
         AppendLessonLength(prompt, chatRequest);
-        AppendRecentConversation(prompt, chatRequest.RecentMessages);
+        AppendRecentConversation(prompt, chatRequest);
 
         prompt.AppendLine("Realtime output format:");
         prompt.AppendLine("- Speak naturally for voice, but follow the same lesson rules as normal Lesson Chat.");
@@ -173,6 +173,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Do not skip introduction or progression steps because a scenario title phrase appears again.");
         prompt.AppendLine("If the learner asks a meta question such as what to say or asks for an explanation, answer briefly as a tutor, then immediately continue the same roleplay scenario.");
         prompt.AppendLine("Use RecentMessages and LastBotMessage to preserve continuity from the latest exchange.");
+        prompt.AppendLine("Use facts already supplied in the conversation; do not ask again for a learner's name, origin, role, preference, or scenario detail unless genuine clarification is required.");
         prompt.AppendLine("Do not repeat the opening line unless this is the first active roleplay turn.");
         prompt.AppendLine("Do not restart the lesson.");
         prompt.AppendLine("Do not ask the learner to choose a topic or context.");
@@ -301,7 +302,7 @@ public sealed class LessonPromptBuilder
         AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, request);
-        AppendRecentConversation(prompt, request.RecentMessages);
+        AppendRecentConversation(prompt, request);
 
         prompt.AppendLine(LastBotMessageHeader);
         prompt.AppendLine(request.LastBotMessage);
@@ -892,16 +893,24 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine();
     }
 
-    private static void AppendRecentConversation(StringBuilder prompt, IReadOnlyList<RecentConversationMessage> recentMessages)
+    private static void AppendRecentConversation(StringBuilder prompt, LessonChatRequest request)
     {
         prompt.AppendLine(RecentConversationHeader);
 
-        var relevantMessages = recentMessages
+        var relevantMessages = request.RecentMessages
             .Where(message => !string.IsNullOrWhiteSpace(message.Text))
-            .TakeLast(OpenAiConstants.RecentConversationMessagesLimit)
-            .ToArray();
+            .ToList();
 
-        if (relevantMessages.Length == 0)
+        if (HasTrailingCurrentLearnerDuplicate(relevantMessages, request.UserMessage))
+        {
+            relevantMessages.RemoveAt(relevantMessages.Count - 1);
+        }
+
+        relevantMessages = relevantMessages
+            .TakeLast(ResolveHistoryMessageLimit(LessonLimitHelper.GetHardLearnerTurnLimit(request)))
+            .ToList();
+
+        if (relevantMessages.Count == 0)
         {
             prompt.AppendLine(NoRecentConversationContext);
             prompt.AppendLine();
@@ -914,6 +923,43 @@ public sealed class LessonPromptBuilder
         }
 
         prompt.AppendLine();
+    }
+
+    public static int ResolveHistoryMessageLimit(int hardLearnerTurnLimit)
+    {
+        if (hardLearnerTurnLimit <= 0)
+        {
+            return OpenAiConstants.FallbackRecentConversationMessagesLimit;
+        }
+
+        return Math.Min(
+            (hardLearnerTurnLimit * 2) + OpenAiConstants.SetupContextHistoryMessageOverhead,
+            OpenAiConstants.MaximumRecentConversationMessagesLimit);
+    }
+
+    private static bool HasTrailingCurrentLearnerDuplicate(
+        IReadOnlyList<RecentConversationMessage> recentMessages,
+        string userMessage)
+    {
+        if (recentMessages.Count == 0 || string.IsNullOrWhiteSpace(userMessage))
+        {
+            return false;
+        }
+
+        var trailingMessage = recentMessages[^1];
+        return IsLearnerSender(trailingMessage.Sender)
+            && string.Equals(
+                trailingMessage.Text.Trim(),
+                userMessage.Trim(),
+                StringComparison.Ordinal);
+    }
+
+    private static bool IsLearnerSender(string sender)
+    {
+        var normalized = NormalizeSender(sender);
+        return string.Equals(normalized, "user", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "learner", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "you", StringComparison.OrdinalIgnoreCase);
     }
 
 

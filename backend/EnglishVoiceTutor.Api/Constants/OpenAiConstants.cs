@@ -139,7 +139,9 @@ Rules:
 Output rules:
 - Return only JSON that matches the provided schema.
 """;
-    public const int RecentConversationMessagesLimit = 10;
+    public const int FallbackRecentConversationMessagesLimit = 10;
+    public const int MaximumRecentConversationMessagesLimit = 70;
+    public const int SetupContextHistoryMessageOverhead = 3;
     public const string LessonReplyFallbackText = "I understood your answer. Let's continue practicing.";
     public const string JsonSchemaFormatType = "json_schema";
     public const string LessonChatResponseSchemaName = "lesson_chat_response";

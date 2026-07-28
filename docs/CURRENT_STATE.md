@@ -1,6 +1,14 @@
 # Current State
 
-Review date: 2026-07-27.
+Review date: 2026-07-28.
+
+## 2026-07-28 accepted lesson-state and bounded-context repository verification (not deployed)
+
+Accepted repository work aligns Mobile, Desktop, and backend lesson-state handling with bounded full-lesson prompt context. Mobile verification passed `flutter analyze` and **512** Flutter tests, including B2 history retention through the turn-31 normal request and local turn-32 completion. Backend verification passed **422** tests; backend and Desktop builds passed.
+
+The shared history capacity is `min((effectiveFinalLearnerTurn * 2) + 3, 70)` with fallback 10 and backend absolute cap 70. Current learner input remains separate from prior history; normal provider replies remain stateless and persisted lesson messages are not used to hydrate normal reply prompts. This repository change added no migration, API route or JSON-field change, CMS publication, authentication, billing, or dependency change.
+
+Production remains on the previously deployed backend until a new backend deployment is explicitly approved; Mobile does not receive the expanded production history window while that backend still truncates to 10. The Desktop client-side behavior similarly awaits the next explicitly approved Windows release. Real-device validation after backend deployment remains pending.
 
 ## 2026-07-27 accepted Google Play Billing foundation (repository only; not deployed)
 
@@ -529,7 +537,7 @@ Production backend `0.1.35-backend.110` is deployed and verified for the backend
 
 The new route is `POST /api/me/lesson-sessions/{sessionId}/reply` with request body `{ "messageText": "..." }`. It authenticates the user, verifies session ownership, verifies active session state, checks existing limits where applicable, and for a valid active session intentionally returns controlled `409 Conflict` with `mobile_lesson_reply_not_implemented`. Blank `messageText` returns `400`, missing/not-owned sessions return `404`, inactive/ended sessions return the existing session-ended `409` payload, exceeded chat reply limits return the existing `429` free/rate-limit payload, and unavailable session storage returns the existing `503` storage-unavailable payload.
 
-This is not real mobile AI chat yet. Mobile must not call the existing desktop-owned `POST /api/lesson-chat/reply` endpoint directly, must not send the large desktop-built `LessonChatRequest`, must not duplicate desktop prompt/runtime/scenario/turn logic, and must not call OpenAI directly. The old `/api/lesson-chat/reply` endpoint was not changed. The expected next implementation direction is backend-side hydration of lesson runtime/server-side context before enabling AI replies, while mobile continues to send only `sessionId` and `messageText` to the new route.
+This historical placeholder note no longer describes the accepted Mobile lesson implementation. Mobile uses the existing authenticated `POST /api/lesson-chat/reply`, supplying the current learner message, bounded prior history, selected scenario/context, live phase, turn limits, and other existing `LessonChatRequest` fields. Mobile owns client-side live lesson state; backend owns final prompt construction, tutor-policy enforcement, provider calls, limits, and response generation. Mobile does not call OpenAI directly. Normal provider replies remain stateless, persisted lesson-session messages do not hydrate the prompt, and the placeholder route remains historical/diagnostic rather than the normal Mobile reply path.
 
 Pre-deploy verification passed: `dotnet test backend\EnglishVoiceTutor.Api.Tests\EnglishVoiceTutor.Api.Tests.csproj` passed `89/89`; `python .\tools\test_backend_linux_deployment_policy.py`, `python .\tools\test_backend_refresh_token_migration_policy.py`, `python .\tools\test_backend_refresh_token_policy.py`, and `python .\tools\test_desktop_release_backend_lock_policy.py` passed. This was docs/backend-route-only release scope and did not change desktop code, mobile repo code, billing, OpenAI/provider configuration, deployment scripts, Website CMS/static site content, voice, TTS, realtime, analytics, history, store setup, or installer release artifacts.
 
