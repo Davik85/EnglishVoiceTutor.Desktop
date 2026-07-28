@@ -97,6 +97,7 @@ MIGRATED_POLICY_CONSTANTS = {
     "FreeLessonResetPermissionPolicyName",
     "ManualPremiumRevokePermissionPolicyName",
     "ManualPremiumGrantPermissionPolicyName",
+    "AccountAnonymizationExecutePermissionPolicyName",
 }
 BOOTSTRAP_REQUIRED_ROUTES = {
     "AdminDevCmsStaticContentImportRoute",
@@ -774,14 +775,28 @@ def main() -> None:
         flags=re.MULTILINE,
     )
     permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName") and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute", "AdminRoleAssignmentAssignRoute", "AdminRoleAssignmentDisableAdminRoute", "AdminRoleAssignmentEnableAdminRoute", "AdminRoleAssignmentProvisionAdminUserRoute", "AdminRoleAssignmentBootstrapFirstOwnerRoute", "AdminRbacCutoverStatusRoute"}}
-    if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 36:
-        raise AssertionError(f"Exactly thirty-six Admin endpoints must remain permission-policy migrated after intentionally adding read-only Admin Activity as the 36th AuditRead endpoint. Found: {sorted(permission_migrated)}")
+    if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 37:
+        raise AssertionError(f"Exactly thirty-seven Admin endpoints must remain permission-policy migrated, including the POST-only Admin-created account-deletion request endpoint. Found: {sorted(permission_migrated)}")
     if ("GET", "AdminActivityRoute", "AuditLogViewPermissionPolicyName") not in permission_migrated:
-        raise AssertionError("Admin Activity must be present as the intentional 36th permission-policy endpoint: GET AdminActivityRoute with AuditLogViewPermissionPolicyName.")
+        raise AssertionError("Admin Activity must remain a GET-only permission-policy endpoint with AuditLogViewPermissionPolicyName.")
     if any(route == "AdminActivityRoute" and method != "GET" for method, route, _ in permission_migrated):
         raise AssertionError("Admin Activity must remain read-only: AdminActivityRoute may only be permission-policy migrated as GET.")
     if ("GET", "AdminUserAuditActionsRoute", "AuditLogViewPermissionPolicyName") not in permission_migrated:
         raise AssertionError("Existing target-user Audit Log endpoint must remain GET-only with AuditLogViewPermissionPolicyName; Admin Activity must not replace or weaken it.")
+    account_deletion_request_authorization = ("POST", "AdminUserAccountDeletionRequestsRoute", "AccountAnonymizationExecutePermissionPolicyName")
+    if account_deletion_request_authorization not in permission_migrated:
+        raise AssertionError("Admin-created account-deletion requests must remain POST-only with AccountAnonymizationExecutePermissionPolicyName.")
+    if any(route == "AdminUserAccountDeletionRequestsRoute" and method in {"GET", "PUT", "DELETE"} for method, route, _ in endpoint_authorizations):
+        raise AssertionError("Admin-created account-deletion requests must not be registered with GET, PUT, or DELETE.")
+    account_deletion_request_count = len(re.findall(r"MapPost\(ApiConstants\.AdminUserAccountDeletionRequestsRoute", admin_endpoints))
+    if account_deletion_request_count != 1:
+        raise AssertionError(f"Expected exactly one POST Admin-created account-deletion request endpoint. Found: {account_deletion_request_count}")
+    account_deletion_request_start = admin_endpoints.index("app.MapPost(ApiConstants.AdminUserAccountDeletionRequestsRoute, CreateAdminAccountDeletionRequestAsync)")
+    account_deletion_request_end = admin_endpoints.find("app.Map", account_deletion_request_start + 1)
+    account_deletion_request_registration = admin_endpoints[account_deletion_request_start:account_deletion_request_end]
+    require(account_deletion_request_registration, "RequireAuthorization(AdminAuthorizationConstants.AccountAnonymizationExecutePermissionPolicyName)", "account-deletion request execute permission policy")
+    if "BootstrapAdminPolicyName" in account_deletion_request_registration:
+        raise AssertionError("Admin-created account-deletion requests must not use BootstrapAdminPolicyName directly.")
     if ("GET", "AdminDevCmsRuntimeStatusRoute", "CmsRuntimeStatusReadPermissionPolicyName") not in permission_migrated:
         raise AssertionError("CMS runtime status must remain a GET-only AdminPermission migration.")
     if ("GET", "AdminDevCmsContentPacksRoute", "CmsContentReadPermissionPolicyName") not in permission_migrated:
@@ -1025,9 +1040,30 @@ def main() -> None:
         if forbidden in provision_handler:
             raise AssertionError(f"Provision-admin-user endpoint must not assign/revoke/disable, mutate EF directly, audit directly, use write service, or trust actor fields: {forbidden}")
 
-    for forbidden_route in ["CreateAdmin", "InviteRoute"]:
-        if forbidden_route in api_constants or forbidden_route in admin_endpoints:
-            raise AssertionError(f"No disable/create-admin/invite endpoint may exist: {forbidden_route}")
+    forbidden_admin_identity_route_pattern = re.compile(
+        r"(?:Admin\w*(?:Create|Creation|Invite|Invitation)\w*|(?:Create|Creation|Invite|Invitation)\w*Admin\w*)Route"
+    )
+    forbidden_admin_identity_route_constants = set(
+        re.findall(
+            rf"public const string ({forbidden_admin_identity_route_pattern.pattern})\s*=",
+            api_constants,
+        )
+    )
+    forbidden_admin_identity_endpoint_registrations = set(
+        re.findall(
+            rf"app\.Map(?:Get|Post|Put|Patch|Delete)\(ApiConstants\.({forbidden_admin_identity_route_pattern.pattern})\b",
+            admin_endpoints,
+        )
+    )
+    forbidden_admin_identity_routes = (
+        forbidden_admin_identity_route_constants
+        | forbidden_admin_identity_endpoint_registrations
+    )
+    if forbidden_admin_identity_routes:
+        raise AssertionError(
+            "No route constant or Map* registration may introduce an Admin identity creation or invitation flow: "
+            f"{sorted(forbidden_admin_identity_routes)}"
+        )
     for route in BOOTSTRAP_REQUIRED_ROUTES:
         if route_to_policy.get(route) != "BootstrapAdminPolicyName":
             raise AssertionError(f"Dangerous/write/billing/CMS/Premium/free-lesson/user-level endpoint must remain BootstrapAdmin: {route}")
