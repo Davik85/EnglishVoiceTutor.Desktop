@@ -639,13 +639,20 @@ def main() -> None:
 
     admin_activity_authorization = ("GET", "AdminActivityRoute", "AuditLogViewPermissionPolicyName")
     if admin_activity_authorization not in migrated_authorizations:
-        raise AssertionError("Admin Activity must be the intentional 36th AdminPermission endpoint: GET-only AdminActivityRoute protected by AuditLogViewPermissionPolicyName.")
+        raise AssertionError("Admin Activity must remain a GET-only AdminPermission endpoint protected by AuditLogViewPermissionPolicyName.")
     if any(route == "AdminActivityRoute" and method.upper() != "GET" for method, route, _ in endpoint_authorizations):
         raise AssertionError("Admin Activity must remain read-only: AdminActivityRoute may only be mapped with GET.")
     if ("GET", "AdminUserAuditActionsRoute", "AuditLogViewPermissionPolicyName") not in migrated_authorizations:
         raise AssertionError("Existing target-user Audit Log endpoint must remain GET-only and protected by AuditLogViewPermissionPolicyName; Admin Activity must not replace or weaken it.")
     if ("POST", "AdminUserAccountDeletionRequestsRoute", "AccountAnonymizationExecutePermissionPolicyName") not in migrated_authorizations:
         raise AssertionError("Admin-created account-deletion requests must remain POST-only and protected by AccountAnonymizationExecutePermissionPolicyName.")
+    if any(route == "AdminUserAccountDeletionRequestsRoute" and method.upper() in {"GET", "PUT", "PATCH", "DELETE"} for method, route, _ in endpoint_authorizations):
+        raise AssertionError("Admin-created account-deletion requests must not expose GET, PUT, PATCH, or DELETE mappings.")
+    account_deletion_request_start = admin_endpoints.index("app.MapPost(ApiConstants.AdminUserAccountDeletionRequestsRoute")
+    account_deletion_request_end = admin_endpoints.find("app.Map", account_deletion_request_start + 1)
+    account_deletion_request_registration = admin_endpoints[account_deletion_request_start:account_deletion_request_end]
+    if "BootstrapAdminPolicyName" in account_deletion_request_registration:
+        raise AssertionError("Admin-created account-deletion requests must not use BootstrapAdminPolicyName directly.")
     if ("POST", "AdminFeedbackReportAccountAnonymizationExecuteRoute", "AccountAnonymizationExecutePermissionPolicyName") not in migrated_authorizations:
         raise AssertionError("Account-anonymization execution must remain POST-only and protected by AccountAnonymizationExecutePermissionPolicyName.")
 

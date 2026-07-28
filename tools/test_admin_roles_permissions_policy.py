@@ -172,7 +172,7 @@ def main() -> None:
     migrated_permission_authorizations = re.findall(r"RequireAuthorization\(AdminAuthorizationConstants\.(\w+PermissionPolicyName)\)", admin_endpoints)
     expected_permission_authorizations = [
         "AdminSelfReadPermissionPolicyName", "AdminCapabilitiesReadPermissionPolicyName", "ProductStatisticsReadPermissionPolicyName",
-        "UserLookupPermissionPolicyName", "UserOverviewPermissionPolicyName", "ManualPremiumGrantPermissionPolicyName", "ManualPremiumRevokePermissionPolicyName", "AuditLogViewPermissionPolicyName", "AuditLogViewPermissionPolicyName",
+        "UserLookupPermissionPolicyName", "UserOverviewPermissionPolicyName", "ManualPremiumGrantPermissionPolicyName", "AccountAnonymizationExecutePermissionPolicyName", "ManualPremiumRevokePermissionPolicyName", "AuditLogViewPermissionPolicyName", "AuditLogViewPermissionPolicyName",
         "FreeLessonResetPermissionPolicyName", "BillingCancelRenewalPermissionPolicyName",
         "CmsContentReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName",
         "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName",
@@ -188,11 +188,21 @@ def main() -> None:
         if policy != "AdminRoleManagementPermissionPolicyName"
     ]
     if existing_endpoint_authorizations != expected_permission_authorizations:
-        raise AssertionError(f"Exactly thirty-six endpoints may use permission policies after intentionally adding read-only Admin Activity as the 36th AuditRead endpoint. Got: {existing_endpoint_authorizations}")
+        raise AssertionError(f"Exactly thirty-seven endpoints may use permission policies, including the POST-only Admin-created account-deletion request endpoint. Got: {existing_endpoint_authorizations}")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminActivityRoute, GetAdminActivityAsync)", "intentional read-only Admin Activity endpoint")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminUserAuditActionsRoute, GetTargetUserAuditActionsAsync)", "existing target-user Audit Log endpoint remains present")
-    if re.search(r"app\.Map(Post|Put|Delete)\(ApiConstants\.AdminActivityRoute", admin_endpoints):
-        raise AssertionError("Admin Activity must remain read-only and must not expose POST, PUT, or DELETE mappings.")
+    if re.search(r"app\.Map(Post|Put|Patch|Delete)\(ApiConstants\.AdminActivityRoute", admin_endpoints):
+        raise AssertionError("Admin Activity must remain read-only and must not expose POST, PUT, PATCH, or DELETE mappings.")
+    account_deletion_request_pattern = r"app\.MapPost\(ApiConstants\.AdminUserAccountDeletionRequestsRoute,.*?RequireAuthorization\(AdminAuthorizationConstants\.AccountAnonymizationExecutePermissionPolicyName\)"
+    if not re.search(account_deletion_request_pattern, admin_endpoints, re.DOTALL):
+        raise AssertionError("Admin-created account-deletion requests must remain POST-only with AccountAnonymizationExecutePermissionPolicyName.")
+    if re.search(r"app\.Map(Get|Put|Patch|Delete)\(ApiConstants\.AdminUserAccountDeletionRequestsRoute", admin_endpoints):
+        raise AssertionError("Admin-created account-deletion requests must not expose GET, PUT, PATCH, or DELETE mappings.")
+    account_deletion_request_start = admin_endpoints.index("app.MapPost(ApiConstants.AdminUserAccountDeletionRequestsRoute")
+    account_deletion_request_end = admin_endpoints.find("app.Map", account_deletion_request_start + 1)
+    account_deletion_request_registration = admin_endpoints[account_deletion_request_start:account_deletion_request_end]
+    if "BootstrapAdminPolicyName" in account_deletion_request_registration:
+        raise AssertionError("Admin-created account-deletion requests must not use BootstrapAdminPolicyName directly.")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)", "new role assignment diagnostics endpoint")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "new role assignment diagnostics endpoint uses role-management permission")
     forbid(read("program"), "GetProductionRolePermissions()", "production role catalog endpoint enforcement")

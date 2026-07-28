@@ -770,7 +770,7 @@ def main() -> None:
             raise AssertionError(f"AdminPermissionAuthorizationHandler must not use forbidden dependency, table, endpoint, or untrusted identity source: {forbidden}")
 
     endpoint_authorizations = re.findall(
-        r"app\.Map(Get|Post|Put|Delete)\(ApiConstants\.(Admin\w+Route),\s*[^)]*\)\s*\.RequireAuthorization\(AdminAuthorizationConstants\.(\w+)\)",
+        r"app\.Map(Get|Post|Put|Patch|Delete)\(ApiConstants\.(Admin\w+Route),\s*[^)]*\)\s*\.RequireAuthorization\(AdminAuthorizationConstants\.(\w+)\)",
         admin_endpoints,
         flags=re.MULTILINE,
     )
@@ -786,8 +786,8 @@ def main() -> None:
     account_deletion_request_authorization = ("POST", "AdminUserAccountDeletionRequestsRoute", "AccountAnonymizationExecutePermissionPolicyName")
     if account_deletion_request_authorization not in permission_migrated:
         raise AssertionError("Admin-created account-deletion requests must remain POST-only with AccountAnonymizationExecutePermissionPolicyName.")
-    if any(route == "AdminUserAccountDeletionRequestsRoute" and method in {"GET", "PUT", "DELETE"} for method, route, _ in endpoint_authorizations):
-        raise AssertionError("Admin-created account-deletion requests must not be registered with GET, PUT, or DELETE.")
+    if any(route == "AdminUserAccountDeletionRequestsRoute" and method in {"GET", "PUT", "PATCH", "DELETE"} for method, route, _ in endpoint_authorizations):
+        raise AssertionError("Admin-created account-deletion requests must not be registered with GET, PUT, PATCH, or DELETE.")
     account_deletion_request_count = len(re.findall(r"MapPost\(ApiConstants\.AdminUserAccountDeletionRequestsRoute", admin_endpoints))
     if account_deletion_request_count != 1:
         raise AssertionError(f"Expected exactly one POST Admin-created account-deletion request endpoint. Found: {account_deletion_request_count}")

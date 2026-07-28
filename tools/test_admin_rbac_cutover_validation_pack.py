@@ -164,17 +164,27 @@ def main() -> None:
         policy for policy in permission_authorizations
         if policy != "AdminRoleManagementPermissionPolicyName"
     ])
-    if admin_permission_count != 36:
-        raise AssertionError(f"AdminPermission endpoint count must remain exactly 36 after intentionally adding read-only Admin Activity as the 36th AuditRead endpoint; got {admin_permission_count}.")
+    if admin_permission_count != 37:
+        raise AssertionError(f"AdminPermission endpoint count must remain exactly 37, including the POST-only Admin-created account-deletion request endpoint; got {admin_permission_count}.")
 
     admin_activity_pattern = r"MapGet\(ApiConstants\.AdminActivityRoute,.*?RequireAuthorization\(AdminAuthorizationConstants\.AuditLogViewPermissionPolicyName\)"
     if not re.search(admin_activity_pattern, admin_endpoints, re.DOTALL):
         raise AssertionError("Admin Activity must be present as GET AdminActivityRoute protected by AuditLogViewPermissionPolicyName.")
-    if re.search(r"Map(Post|Put|Delete)\(ApiConstants\.AdminActivityRoute", admin_endpoints):
-        raise AssertionError("Admin Activity must remain read-only and must not expose POST, PUT, or DELETE mappings.")
+    if re.search(r"Map(Post|Put|Patch|Delete)\(ApiConstants\.AdminActivityRoute", admin_endpoints):
+        raise AssertionError("Admin Activity must remain read-only and must not expose POST, PUT, PATCH, or DELETE mappings.")
     target_audit_pattern = r"MapGet\(ApiConstants\.AdminUserAuditActionsRoute,.*?RequireAuthorization\(AdminAuthorizationConstants\.AuditLogViewPermissionPolicyName\)"
     if not re.search(target_audit_pattern, admin_endpoints, re.DOTALL):
         raise AssertionError("Existing target-user Audit Log endpoint must remain GET-only with AuditLogViewPermissionPolicyName; Admin Activity must not replace or weaken it.")
+    account_deletion_request_pattern = r"MapPost\(ApiConstants\.AdminUserAccountDeletionRequestsRoute,.*?RequireAuthorization\(AdminAuthorizationConstants\.AccountAnonymizationExecutePermissionPolicyName\)"
+    if not re.search(account_deletion_request_pattern, admin_endpoints, re.DOTALL):
+        raise AssertionError("Admin-created account-deletion requests must remain POST-only with AccountAnonymizationExecutePermissionPolicyName.")
+    if re.search(r"Map(Get|Put|Patch|Delete)\(ApiConstants\.AdminUserAccountDeletionRequestsRoute", admin_endpoints):
+        raise AssertionError("Admin-created account-deletion requests must not expose GET, PUT, PATCH, or DELETE mappings.")
+    account_deletion_request_start = admin_endpoints.index("app.MapPost(ApiConstants.AdminUserAccountDeletionRequestsRoute")
+    account_deletion_request_end = admin_endpoints.find("app.Map", account_deletion_request_start + 1)
+    account_deletion_request_registration = admin_endpoints[account_deletion_request_start:account_deletion_request_end]
+    if "BootstrapAdminPolicyName" in account_deletion_request_registration:
+        raise AssertionError("Admin-created account-deletion requests must not use BootstrapAdminPolicyName directly.")
 
     for route in [
         "AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute",
