@@ -3,7 +3,7 @@
 > Release direction note: this Inno Setup flow remains valid for controlled direct Windows releases until the owner explicitly changes the release flow. Microsoft Store/MSIX was evaluated and discontinued for now. Future Windows trust/signing work should focus on a code signing certificate for the direct EXE/Inno installer. Do not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior for this future-direction note.
 
 
-Review date: 2026-06-18.
+Review date: 2026-07-28.
 
 ## Source of truth for current versions
 
@@ -34,9 +34,9 @@ Inno Setup is the primary Windows direct-download installer track for Language V
 
 ## Current validated release
 
-The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-1.1.exe` with `version` set to `1.1`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `1.1`, and `updateMode` set to `manual-confirmation`. Treat this as a controlled direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
+The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-1.2.exe` with `version` set to `1.2`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `1.2`, `updateMode` set to `manual-confirmation`, `releaseDateUtc` set to `2026-07-28T15:17:03Z`, SHA-256 `852df1842ed24417f7a94099c0c9f5e96edf274d3305acc87a519d8ca5f84b49`, and size `188895825` bytes. The 1.1-to-1.2 update, updated application launch, lesson smoke, and manual-confirmation flow on other devices were verified. This was a Windows upload only: production backend remains `0.1.35-backend.134` and no backend deployment or migration occurred. Treat this as a controlled direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
 
-Windows Direct Release 1.1 is published on the public direct channel. This is not a claim that every operational area is broad-production-ready. Code signing remains deferred, so SmartScreen warnings are still expected until a signed installer is published.
+Windows Direct Release 1.2 is published on the public direct channel. This is not a claim that every operational area is broad-production-ready. Code signing remains deferred, so SmartScreen warnings are still expected until a signed installer is published.
 
 ## Decision
 

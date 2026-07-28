@@ -59,10 +59,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-relea
 6. Validate and upload through the canonical direct release scripts, keeping backend deploy separate from Windows release upload:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 1.1
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -ServerHost lvt-server -ServerUser deploy -RemotePath /var/www/languagevoicetutor/releases/windows/direct -DryRun
+
+# Review the dry-run output only after local validation succeeds, then run:
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -ServerHost lvt-server -ServerUser deploy -RemotePath /var/www/languagevoicetutor/releases/windows/direct
 ```
 
 Public direct Windows release files go to `/var/www/languagevoicetutor/releases/windows/direct`; the public website root is separate at `/var/www/languagevoicetutor/site`. Generated release artifacts must not be committed.
+
+Do not run the real upload before local validation and dry-run review succeed. Windows release upload remains separate from backend deployment, database migrations, Website CMS publication, and static website upload.
 
 Use the script-created installer as the direct release artifact:
 

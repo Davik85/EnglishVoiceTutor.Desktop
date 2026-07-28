@@ -2,6 +2,14 @@
 
 Review date: 2026-07-28.
 
+## 2026-07-28 Windows Direct Release 1.2
+
+Windows Direct Release `1.2` was published from source commit `1f957ebd`. The full Desktop release gate, installer packaging, local direct-release validation, and upload-helper dry run passed; the real upload completed to `/var/www/languagevoicetutor/releases/windows/direct`. The live `direct-public` manifest identifies `LanguageVoiceTutorSetup-1.2.exe`, `minimumSupportedVersion: 1.2`, `backendBaseUrl: https://api.languagevoicetutor.com`, `updateMode: manual-confirmation`, `releaseDateUtc: 2026-07-28T15:17:03Z`, SHA-256 `852df1842ed24417f7a94099c0c9f5e96edf274d3305acc87a519d8ca5f84b49`, and size `188895825` bytes. The public website downloads that installer.
+
+Updating an installed 1.1 application to 1.2 succeeded; the updated application launched and lessons worked. The manual-confirmation update flow also worked on other devices: the user chooses **Check for updates**, the app verifies the manifest and SHA-256, and installation proceeds only after confirmation. The app does not silently auto-update.
+
+This was a Windows static-release upload only: no backend deployment or migration occurred. Production remains `0.1.35-backend.134` with `.133` as rollback; Google Play remains disabled. Paddle, subscriptions, Website CMS publication, lesson scenarios, and backend lesson-context behavior were not changed. Generated `artifacts/` outputs remain uncommitted, code signing remains deferred, and this public Windows Direct release is not a broad production-readiness claim.
+
 ## 2026-07-28 production `.134` disabled Google Play entitlement-bridge deployment
 
 Production is `0.1.35-backend.134`, with `0.1.35-backend.133` retained as rollback. Commit `002807282cc9924cdc9eb631ae69e1343ce200d9` is deployed. Migration `20260727045935_AddGooglePlayPurchaseClaims` was applied separately after a fresh readable PostgreSQL backup (7,253,981 bytes; `pg_restore --list` returned 287 lines). Its reviewed bounded SQL added only `public.google_play_purchase_claims`, its primary key and indexes, and the EF migration-history entry; it did not modify subscriptions, entitlements, payments, billing events, Paddle data, users, or other existing billing tables. The table is owned by and available to `lvt_app`; `lvt_analytics_reader` access was explicitly revoked because this sensitive provider-ownership table is outside the approved analytics surface.
@@ -14,7 +22,7 @@ The deployed `.134` backend includes `LessonPromptBuilder` bounded full-lesson p
 
 Current learner input remains separate from prior history; normal provider replies remain stateless and persisted lesson messages are not used to hydrate normal reply prompts. The backend deployment required no additional migration, CMS publication, authentication, billing, or dependency change.
 
-The repository’s Desktop client-side changes were not published by the backend deployment and still await a separate Windows release. Mobile release and physical-device validation remain separate and pending.
+The repository’s Desktop client-side changes covered by this bounded backend deployment were subsequently published in Windows Direct Release 1.2. Mobile release and physical-device validation remain separate and pending.
 
 ## 2026-07-27 accepted Google Play Billing foundation and subsequent `.134` disabled deployment
 
@@ -87,8 +95,8 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 - Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.134`, with `.133` as rollback; the execution migration and complete Admin confirmation/execution flow are deployed and production-verified. The disabled Google Play claim-table migration is applied and verified; account-deletion backend work is complete for the approved current scope.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
-- Download: the current Windows direct public release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
-- Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
+- Download: Windows Direct 1.2 is available through the manifest-driven `/releases/windows/direct/latest.json` flow, and the normal public download was verified. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
+- Windows installer: current Windows direct public release is `1.2`, installer `LanguageVoiceTutorSetup-1.2.exe`; its verified update flow is manual-confirmation and does not silently auto-update.
 - AI Models: persistent production storage at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` is verified, survived a backend service restart, and contains the known-good `gpt-5.5` / `gpt-5.2` production setup.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: pricing, subscription terms, terms, privacy, refunds, cancellation, support, seller/company details, AI/data disclosure, platform availability/status, and download pages are ready for owner/legal final review as product/legal drafts, not final legal advice.
@@ -308,7 +316,7 @@ The Download page is a structured Website CMS release page for the Desktop app, 
 
 Current public Download page layout: the existing Windows desktop app release hero remains. The left CTA card shows eyebrow `WINDOWS DESKTOP APP`, the CMS page title as the main heading, CMS body intro text, current version and installer size, the **Download for Windows** button, manifest status line, and SmartScreen/support notes. The right side shows four CMS-driven feature cards with screenshot images and accepted click-to-enlarge lightbox behavior. The footer follows the hero directly. There is no visible Technical release details block and no separate below-hero support card. `bodyMarkdown` is split visually: intro paragraphs render before version/button, SmartScreen/support-like notes render after manifest status, and obsolete “Current version details are loaded from the release manifest” text must not be shown as a public user-facing block.
 
-`download.js` reads `/releases/windows/direct/latest.json`; version and installer size are manifest-driven. The safe non-JavaScript fallback download href is `/releases/windows/direct/LanguageVoiceTutorSetup-1.1.exe`. Do not reintroduce the old broken relative fallback `LanguageVoiceTutorSetup-1.1.exe`. The Download button must keep working if JavaScript or manifest loading fails by using the safe public installer fallback.
+`download.js` reads `/releases/windows/direct/latest.json`; version and installer size are manifest-driven. Normal manifest-driven public download of Windows 1.2 was verified. The static/no-JavaScript fallback should point to the intended current installer, but its tracked HTML value was not changed or separately verified by this Windows release upload. The Download button must keep working if JavaScript or manifest loading fails by using the safe public installer fallback.
 
 Accepted visual state: the Download page background is lightened to be closer to the Home page tone, cards use a readable blue-tinted translucent panel treatment, the CTA layout order is accepted, and feature-card lightbox behavior is accepted. Future visual changes should be small and scoped to Download page CSS unless explicitly requested.
 
@@ -383,7 +391,7 @@ Final local validation before/around this release included clean `git status`, `
 Use the Windows direct-release upload helper:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 1.1
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -ServerHost lvt-server -ServerUser deploy -RemotePath /var/www/languagevoicetutor/releases/windows/direct
 ```
 
 Do not manually `scp` installer files when the script exists. Windows direct release upload is separate from backend deploy and static website publish. After upload, verify `latest.json`, `installerFileName`, `backendBaseUrl`, installer hash, and that the download page button downloads the same installer named by the manifest.
@@ -447,7 +455,7 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 ### Current release point
 
-- Windows direct release: `1.1`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.1.exe`, production backend URL, `minimumSupportedVersion=1.1`, and manual-confirmation update mode. The tracked repository `site/public/releases/windows/direct/latest.json` was not changed by this docs update.
+- Windows direct release: `1.2`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.2.exe`, production backend URL, `minimumSupportedVersion=1.2`, and manual-confirmation update mode. The tracked repository `site/public/releases/windows/direct/latest.json` was not changed by this docs update.
 - Backend release in tracked release docs: current production is `0.1.35-backend.134`, with `.133` as rollback; `/health` and `/api/health/database` are verified healthy. Backend .99/.108/.112 references are historical and not current production unless a section is explicitly documenting those older releases.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it survived backend service restart, matched the current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`, and contains lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2`. For `gpt-5.5`, backend requests must omit `temperature`.
 

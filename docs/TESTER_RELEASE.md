@@ -35,9 +35,9 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Historical tester status and current direct release
 
-The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-1.1.exe` with `version` set to `1.1`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `1.1`, and `updateMode` set to `manual-confirmation`.
+The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-1.2.exe` with `version` set to `1.2`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `1.2`, and `updateMode` set to `manual-confirmation`.
 
-Windows Direct Release 1.1 is now published on the public direct channel. Historical tester-release notes in this document are retained only as history; they are not the current active release state. Always verify the website `latest.json` over HTTPS before naming the current public direct installer. This does not mean every operational area is fully public production-ready.
+Windows Direct Release 1.2 is now published on the public direct channel. The 1.1-to-1.2 update, application launch, lesson smoke, and manual-confirmation update flow were verified; no backend deployment or migration was part of this Windows upload. Historical tester-release notes in this document are retained only as history; they are not the current active release state. This does not mean every operational area is fully public production-ready.
 
 ## Release artifact boundary
 
@@ -45,7 +45,7 @@ Windows Direct Release 1.1 is now published on the public direct channel. Histor
 
 ## Historical backend notes
 
-Historical tester-era backend snapshot notes are retained only for context. Current production backend for the Windows Direct Release 1.1 documentation state is `0.1.35-backend.99`; verify the live value from the server symlink before calling it current.
+Historical tester-era backend snapshot notes are retained only for context. Current production backend for the Windows Direct Release 1.2 documentation state is `0.1.35-backend.134`, with `.133` rollback; verify the live value from the server symlink before calling it current.
 
 `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
@@ -57,7 +57,7 @@ Release Settings must not show a Diagnostics tab. Release Settings must not show
 
 ## Historical verified tester behavior
 
-The historical tester build verified these behaviors; the current active release state is Windows Direct Release 1.1:
+The historical tester build verified these behaviors; these are historical tester observations, while the current active release is Windows Direct Release 1.2:
 
 - registration and login from installed builds against `https://api.languagevoicetutor.com`;
 - registration on another device;
@@ -79,9 +79,9 @@ Raw passwords are not stored. Auth/session data is protected under the current u
 
 Auth session persistence works across app restart and Windows restart. Regression coverage now includes the stale access token + valid refresh token path, refresh retry behavior, and persisted refreshed session state so a refreshed replacement access token and refresh token survive subsequent restore.
 
-## Latest verified smoke summary
+## Historical tester smoke summary
 
-Clean-machine smoke passed: public download install works, installed app launches, registration/login works, auth/session persists after restart, interface/native/study language selection works, lesson start works, translation works, hints work, bot voice/TTS works, Conversation Mode works, and Lesson History/Progress update. CMS scenario edits and level profile edits are visible in the desktop app after **Save draft** plus **Publish**. Smaller Windows tablet / small-screen visual smoke passed for Welcome/start, primary actions, Settings, and lesson flow. Russian and French Welcome/start header text no longer truncates/clips after the localized layout fix. Admin roles/permissions policy and UI policy tests passed, the desktop release gate passed, and backend `0.1.35-backend.24` is deployed and healthy.
+This historical tester smoke record predates Windows Direct 1.2 and current backend `.134`: clean-machine smoke passed, including public download install, app launch, registration/login, lesson start, and Lesson History/Progress updates. Its then-current backend `0.1.35-backend.24` was healthy at that time; it is not the current production backend.
 
 ## Manual update flow
 

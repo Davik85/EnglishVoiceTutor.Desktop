@@ -1,6 +1,6 @@
 # Windows installer and manual update flow
 
-Review date: 2026-06-18.
+Review date: 2026-07-28.
 
 ## Source of truth for current versions
 
@@ -31,7 +31,9 @@ Inno Setup is the primary Windows direct-download installer foundation for Langu
 
 ## Current update status
 
-The public Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-1.1.exe`, uses `version: 1.1`, keeps `minimumSupportedVersion` at `1.1`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. Future local builds are not public/live unless the live website manifest points to them.
+The public Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-1.2.exe`, uses `version: 1.2`, keeps `minimumSupportedVersion` at `1.2`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. Its `releaseDateUtc` is `2026-07-28T15:17:03Z`, SHA-256 is `852df1842ed24417f7a94099c0c9f5e96edf274d3305acc87a519d8ca5f84b49`, and size is `188895825` bytes. Future local builds are not public/live unless the live website manifest points to them.
+
+The installed 1.1-to-1.2 update path was verified: the updated application launched and lessons worked. The same manual-confirmation update flow was verified on other devices; it remains SHA-256 protected and does not silently auto-update.
 
 The desktop release UX has a simple user-facing **Check for updates** button in Settings. The old technical update dashboard in Diagnostics is not part of release UX. Release Settings must not expose Diagnostics or Backend URL editing.
 
@@ -95,6 +97,6 @@ Release/tester installed builds are server-only and use `https://api.languagevoi
 - Production billing/Paddle/subscription payment lifecycle remains deferred.
 - Public production readiness is not claimed.
 
-## Windows Direct 1.1 auth/session update expectation
+## Historical Windows Direct 1.1 auth/session update expectation
 
-Current public Windows Direct `1.1` intentionally sets `minimumSupportedVersion` to `1.1` because it contains a desktop auth/session stability fix. Authenticated desktop clients that previously attached stale bearer tokens directly now use the central refresh-aware flow, including subscription status, checkout-session creation, cancel-renewal, trial claim, authenticated `/me/settings`, and lesson-access decision clients. With an expired access token and a valid refresh token, the app should refresh, retry, and persist the replacement session instead of logging the user out. Update/reinstall should preserve the auth session.
+Windows Direct `1.1` historically set `minimumSupportedVersion` to `1.1` because it contains a desktop auth/session stability fix. Authenticated desktop clients that previously attached stale bearer tokens directly now use the central refresh-aware flow, including subscription status, checkout-session creation, cancel-renewal, trial claim, authenticated `/me/settings`, and lesson-access decision clients. With an expired access token and a valid refresh token, the app should refresh, retry, and persist the replacement session instead of logging the user out. Update/reinstall should preserve the auth session.

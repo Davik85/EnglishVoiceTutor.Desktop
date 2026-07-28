@@ -1,6 +1,6 @@
 # Windows release server upload
 
-Review date: 2026-06-29.
+Review date: 2026-07-28.
 
 ## Source of truth for current versions
 
@@ -26,19 +26,19 @@ Windows direct release manifest:
 https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
 
-Current public direct release values:
+Current public direct release values (verified 2026-07-28):
 
 ```text
 channel: direct-public
-version: 1.1
-installerFileName: LanguageVoiceTutorSetup-1.1.exe
-installerRelativeUrl: LanguageVoiceTutorSetup-1.1.exe
+version: 1.2
+installerFileName: LanguageVoiceTutorSetup-1.2.exe
+installerRelativeUrl: LanguageVoiceTutorSetup-1.2.exe
 backendBaseUrl: https://api.languagevoicetutor.com
 updateMode: manual-confirmation
-minimumSupportedVersion: 1.1
+minimumSupportedVersion: 1.2
 ```
 
-This release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that manual-confirmation update flow works on other devices.
+This release passed local validation, upload dry run, and real upload; the public website download was verified. The 1.1-to-1.2 update launched successfully and lessons worked, and the manual-confirmation update flow worked on other devices. Production backend remains `0.1.35-backend.134` with `.133` rollback; this Windows-only upload performed no backend deployment or migration.
 
 Release/tester installed builds are server-only. The production backend URL for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`.
 
@@ -112,11 +112,11 @@ $manifest.checksums.sha256
 
 Confirm:
 
-- `version` is `1.1` or the intended newly uploaded direct version;
-- `installerFileName` is `LanguageVoiceTutorSetup-1.1.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.1.exe`, or both match the intended installer;
+- `version` is `1.2` or the intended newly uploaded direct version;
+- `installerFileName` is `LanguageVoiceTutorSetup-1.2.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.2.exe`, or both match the intended installer;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
 - `updateMode` is `manual-confirmation`;
-- `minimumSupportedVersion` is `1.1` for this uploaded direct release; this is intentional because Windows Direct `1.1` contains the desktop auth/session refresh stability fix;
+- `minimumSupportedVersion` is `1.2` for this uploaded direct release;
 - `installerSha256` and `checksums.sha256` are present and agree with the uploaded installer hash.
 
 ## Installer download verification
@@ -169,7 +169,7 @@ Required static fallback text:
 
 ## Release-readiness status and deferred items
 
-Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.108`. Website Paddle-review polish is completed separately from this upload flow. Paddle live payment validation, Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are complete; chargeback remains implemented/test-covered but not live-chargeback-tested and partial refunds remain conservative/manual-review. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
+Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.134`, with `.133` rollback. Website Paddle-review polish is completed separately from this upload flow. Historical Paddle validation performed on `.108` remains evidence for that dated release, not a current backend claim. Chargeback remains implemented/test-covered but not live-chargeback-tested and partial refunds remain conservative/manual-review. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
 
 Do not state that the product is fully public production-ready. The current Windows release remains a public Windows direct release, not a full broad production-readiness claim, and not broad public production readiness.
 
@@ -192,7 +192,7 @@ Current production facts after backend `0.1.35-backend.83` and before any real l
 - Static website nginx root is `/var/www/languagevoicetutor/site`. The parent `/var/www/languagevoicetutor` is not the nginx static-site root and must not be used as the static website upload target.
 - Public Paddle config is `/var/www/languagevoicetutor/site/paddle.public.json`; public Paddle checkout page is `/var/www/languagevoicetutor/site/pay.html`.
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
-- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.1`; direct `latest.json` remains active with manual-confirmation update mode.
+- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.2`; direct `latest.json` remains active with manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
 - Controlled live payment, webhook delivery, Premium entitlement activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed. Paid-launch readiness remains incomplete until final release-readiness review and remaining non-billing blockers are closed; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 
@@ -224,4 +224,4 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\upload-static-site.ps1 `
   -RemotePath "/var/www/languagevoicetutor/site"
 ```
 
-Current behavior: it uploads `site/public` root files and top-level folders such as `site/public/assets`, groups uploads instead of running one `mkdir`/`scp` per file, and skips `site/public/releases/**` completely. It must not upload `site/public/releases/windows/direct/latest.json`, does not manage `LanguageVoiceTutorSetup-1.1.exe`, does not manage any Windows release files, and does not deploy the backend. Windows direct release files remain managed only by the Windows direct release upload flow.
+Current behavior: it uploads `site/public` root files and top-level folders such as `site/public/assets`, groups uploads instead of running one `mkdir`/`scp` per file, and skips `site/public/releases/**` completely. It must not upload `site/public/releases/windows/direct/latest.json`, does not manage Windows release files, and does not deploy the backend. Windows direct release files remain managed only by the Windows direct release upload flow.
