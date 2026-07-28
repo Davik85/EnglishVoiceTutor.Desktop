@@ -88,6 +88,12 @@ FEEDBACK_REPORT_ENDPOINTS = [
         "permission_constant": "AccountAnonymizationPreflightRead",
         "policy_constant": "AccountAnonymizationPreflightReadPermissionPolicyName",
     },
+    {
+        "method": "POST",
+        "route_constant": "AdminFeedbackReportAccountAnonymizationExecuteRoute",
+        "permission_constant": "AccountAnonymizationExecute",
+        "policy_constant": "AccountAnonymizationExecutePermissionPolicyName",
+    },
 ]
 
 MIGRATED_ENDPOINTS = [
@@ -132,6 +138,13 @@ MIGRATED_ENDPOINTS = [
         "route_constant": "AdminUserAuditActionsRoute",
         "permission_constant": "AuditRead",
         "policy_constant": "AuditLogViewPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.users.account_deletion_request.create",
+        "method": "POST",
+        "route_constant": "AdminUserAccountDeletionRequestsRoute",
+        "permission_constant": "AccountAnonymizationExecute",
+        "policy_constant": "AccountAnonymizationExecutePermissionPolicyName",
     },
     {
         "action_key": "admin.activity.read",
@@ -350,6 +363,8 @@ DANGEROUS_ENDPOINT_MAPPINGS = {
     "admin.premium.revoke": "PremiumRevoke",
     "admin.free_lesson_allowance.reset": "FreeLessonAllowanceReset",
     "admin.billing.cancel_renewal": "BillingCancelRenewal",
+    "admin.users.account_deletion_request.create": "AccountAnonymizationExecute",
+    "admin.account_anonymization.execute": "AccountAnonymizationExecute",
     "admin.cms.publish": "CmsContentPublish",
     "admin.cms.restore": "CmsContentRestore",
     "admin.roles.manage": "AdminRolesManage",
@@ -368,7 +383,6 @@ FUTURE_ONLY_ENDPOINT_PERMISSIONS = {
     "BillingDiagnosticsRead",
     "SystemDiagnosticsRead",
     "AdminRolesManage",
-    "AccountAnonymizationExecute",
 }
 
 DANGEROUS_POLICY_CONSTANTS = [
@@ -593,9 +607,9 @@ def main() -> None:
         )
         for endpoint in FEEDBACK_REPORT_ENDPOINTS
     ]
-    if len(migrated_authorizations) != 42 or set(migrated_authorizations) != set(expected_migrations):
+    if len(migrated_authorizations) != 44 or set(migrated_authorizations) != set(expected_migrations):
         raise AssertionError(
-            f"Exactly forty-two Admin endpoints must use AdminPermission:* policies, including the six feedback-report/account-anonymization endpoints. Got: {migrated_authorizations}"
+            f"Exactly forty-four Admin endpoints must use AdminPermission:* policies, including the Admin-created account-deletion request and seven feedback-report/account-anonymization endpoints. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:
@@ -630,6 +644,10 @@ def main() -> None:
         raise AssertionError("Admin Activity must remain read-only: AdminActivityRoute may only be mapped with GET.")
     if ("GET", "AdminUserAuditActionsRoute", "AuditLogViewPermissionPolicyName") not in migrated_authorizations:
         raise AssertionError("Existing target-user Audit Log endpoint must remain GET-only and protected by AuditLogViewPermissionPolicyName; Admin Activity must not replace or weaken it.")
+    if ("POST", "AdminUserAccountDeletionRequestsRoute", "AccountAnonymizationExecutePermissionPolicyName") not in migrated_authorizations:
+        raise AssertionError("Admin-created account-deletion requests must remain POST-only and protected by AccountAnonymizationExecutePermissionPolicyName.")
+    if ("POST", "AdminFeedbackReportAccountAnonymizationExecuteRoute", "AccountAnonymizationExecutePermissionPolicyName") not in migrated_authorizations:
+        raise AssertionError("Account-anonymization execution must remain POST-only and protected by AccountAnonymizationExecutePermissionPolicyName.")
 
     cms_runtime_authorization = ("GET", "AdminDevCmsRuntimeStatusRoute", "CmsRuntimeStatusReadPermissionPolicyName")
     if cms_runtime_authorization not in migrated_authorizations:

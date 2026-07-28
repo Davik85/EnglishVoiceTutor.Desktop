@@ -28,6 +28,7 @@ public static class AdminEndpointPermissionCatalog
         new("admin.users.lookup_by_email", "GET", ApiConstants.AdminUserByEmailRoute, AdminPermissionConstants.UserLookupRead, "Look up an Admin-visible user record by email."),
         new("admin.users.overview.read", "GET", ApiConstants.AdminUserByIdRoute, AdminPermissionConstants.UserOverviewRead, "Read an Admin-visible user overview by user id."),
         new("admin.users.audit.read", "GET", ApiConstants.AdminUserAuditActionsRoute, AdminPermissionConstants.AuditRead, "Read audit actions for a target user."),
+        new("admin.users.account_deletion_request.create", "POST", ApiConstants.AdminUserAccountDeletionRequestsRoute, AdminPermissionConstants.AccountAnonymizationExecute, "Create an Admin account-deletion request for a target user."),
         new("admin.premium.grant", "POST", ApiConstants.AdminUserPremiumGrantsRoute, AdminPermissionConstants.PremiumGrant, "Grant manual Premium access to a user."),
         new("admin.premium.revoke", "POST", ApiConstants.AdminUserPremiumGrantRevokeRoute, AdminPermissionConstants.PremiumRevoke, "Emergency revoke Premium backend entitlement access for a user without mutating provider history."),
         new("admin.free_lesson_allowance.reset", "POST", ApiConstants.AdminUserFreeLessonAllowanceResetRoute, AdminPermissionConstants.FreeLessonAllowanceReset, "Reset a user's free lesson allowance."),
