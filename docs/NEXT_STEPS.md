@@ -1,12 +1,12 @@
 # Next Steps
 
-Review date: 2026-07-27.
+Review date: 2026-07-28.
 
 ## Google Play entitlement-bridge next step
 
-The dormant atomic ownership/Subscription/entitlement orchestration now exists but has no runtime caller. Before endpoint wiring, complete account-status multi-provider selection and preserve the working Paddle path; acknowledgement, replacement-token handling, RTDN, Mobile connection, credentials, sandbox validation, migration application, and deployment remain separate later stages.
+The dormant atomic ownership/Subscription/entitlement orchestration now exists but has no runtime caller. Repository-only account-status multi-provider selection is complete: active Premium and effective expiry remain entitlement-driven, provider metadata follows the effective linked entitlement or a safe legacy unscoped fallback, and a newer or shorter Google Play Subscription cannot replace valid Paddle access. Endpoint wiring, acknowledgement, replacement-token handling, RTDN, Mobile connection, credentials, sandbox validation, migration application, and deployment remain separate later stages.
 
-That later work must preserve valid Paddle entitlement and Desktop Premium expiry; a Google Play failure must never revoke, shorten, hide, or replace Paddle Premium. Test-purchase persistence remains unresolved and is rejected by the dormant boundary. Do not acknowledge a Google purchase until successful entitlement persistence is committed. Keep Google Play disabled in production, and keep migration application, credentials, Play Console work, Mobile connection, acknowledgement, RTDN, and deployment as separate later stages.
+That later work must preserve valid Paddle entitlement and Desktop Premium expiry; a Google Play failure must never revoke, shorten, hide, or replace Paddle Premium. Test-purchase persistence remains unresolved and is rejected by the dormant boundary. Do not acknowledge a Google purchase until successful entitlement persistence is committed. Keep Google Play disabled in production, and keep migration application, credentials, Play Console work, Mobile connection, acknowledgement, RTDN, and deployment as separate later stages. This repository work is not deployed.
 
 ## Other Mobile v1 planning
 

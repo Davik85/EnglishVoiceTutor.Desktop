@@ -25,28 +25,7 @@ public sealed class SubscriptionStatusService(
             EnforcementEnabled = subscriptionEnforcementOptions.Value.Enabled
         };
 
-        var latestSubscription = await dbContext.Subscriptions
-            .AsNoTracking()
-            .Where(subscription => subscription.UserId == userId)
-            .OrderByDescending(subscription => subscription.UpdatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (latestSubscription is not null)
-        {
-            response.SubscriptionStatus = latestSubscription.Status;
-            response.BillingProvider = latestSubscription.Provider;
-            response.CurrentPeriodEndUtc = latestSubscription.CurrentPeriodEndUtc;
-            response.CancelAtPeriodEnd = latestSubscription.CancelAtPeriodEnd;
-            response.ScheduledChangeAction = latestSubscription.ScheduledChangeAction;
-            response.ScheduledChangeEffectiveAtUtc = latestSubscription.ScheduledChangeEffectiveAtUtc;
-            response.ProviderSubscriptionPresent = !string.IsNullOrWhiteSpace(latestSubscription.ProviderSubscriptionId);
-            response.LastProviderEventId = latestSubscription.LastProviderEventId;
-            response.LastProviderEventType = latestSubscription.LastProviderEventType;
-            response.LastProviderEventOccurredAtUtc = latestSubscription.LastProviderEventOccurredAtUtc;
-            response.HasActivePaidProviderSubscription = HasPaidProviderSubscription(latestSubscription);
-        }
-
-        var premiumEntitlement = await dbContext.Entitlements
+        var activePremiumEntitlements = await dbContext.Entitlements
             .AsNoTracking()
             .Where(entitlement =>
                 entitlement.UserId == userId &&
@@ -54,13 +33,21 @@ public sealed class SubscriptionStatusService(
                 entitlement.Status == SubscriptionConstants.Entitlements.StatusActive &&
                 entitlement.StartsAtUtc <= now &&
                 (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > now))
-            .OrderByDescending(entitlement => entitlement.ExpiresAtUtc)
-            .ThenByDescending(entitlement => entitlement.StartsAtUtc)
-            .FirstOrDefaultAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
+
+        var premiumEntitlement = SelectEffectivePremiumEntitlement(activePremiumEntitlements);
+        var effectiveSubscription = await FindEffectiveSubscriptionAsync(userId, premiumEntitlement, cancellationToken);
+
+        if (effectiveSubscription is not null)
+        {
+            ApplySubscriptionMetadata(response, effectiveSubscription);
+        }
 
         response.PremiumActive = premiumEntitlement is not null;
         response.PremiumEntitlementExpiresAtUtc = premiumEntitlement?.ExpiresAtUtc;
-        response.PaidAccessUntilUtc = premiumEntitlement?.ExpiresAtUtc ?? response.CurrentPeriodEndUtc;
+        response.PaidAccessUntilUtc = premiumEntitlement is null
+            ? response.CurrentPeriodEndUtc
+            : premiumEntitlement.ExpiresAtUtc;
         if (premiumEntitlement is not null)
         {
             response.PlanId = SubscriptionConstants.Plans.PremiumPlanId;
@@ -110,10 +97,121 @@ public sealed class SubscriptionStatusService(
             .AnyAsync(usage => usage.UserId == userId && usage.UsageDate == todayUtc, cancellationToken);
 
         response.FreeLessonRemainingToday = response.FreeLessonUsedToday ? 0 : SubscriptionConstants.FreeLessonsPerDay;
-        ApplyRenewalSummary(response, latestSubscription is not null);
+        ApplyRenewalSummary(response, effectiveSubscription is not null);
         ApplyLearnerSubscriptionSummary(response, premiumEntitlement, response.TrialActive, response.TrialEndsAtUtc, futurePremiumEntitlements, now);
 
         return response;
+    }
+
+    private async Task<SubscriptionEntity?> FindEffectiveSubscriptionAsync(
+        Guid userId,
+        EntitlementEntity? effectiveEntitlement,
+        CancellationToken cancellationToken)
+    {
+        if (effectiveEntitlement is null)
+        {
+            return null;
+        }
+
+        if (effectiveEntitlement.SubscriptionId.HasValue)
+        {
+            return await dbContext.Subscriptions
+                .AsNoTracking()
+                .SingleOrDefaultAsync(subscription =>
+                    subscription.Id == effectiveEntitlement.SubscriptionId.Value &&
+                    subscription.UserId == userId &&
+                    subscription.PlanId == SubscriptionConstants.Plans.PremiumPlanId,
+                    cancellationToken);
+        }
+
+        if (!string.Equals(effectiveEntitlement.Source, SubscriptionConstants.Entitlements.SourceProviderEvent, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var candidates = await dbContext.Subscriptions
+            .AsNoTracking()
+            .Where(subscription => subscription.UserId == userId && subscription.PlanId == SubscriptionConstants.Plans.PremiumPlanId)
+            .ToListAsync(cancellationToken);
+
+        return SelectLegacyProviderSubscription(candidates, effectiveEntitlement);
+    }
+
+    private static EntitlementEntity? SelectEffectivePremiumEntitlement(IEnumerable<EntitlementEntity> entitlements) =>
+        entitlements
+            .OrderByDescending(entitlement => !entitlement.ExpiresAtUtc.HasValue)
+            .ThenByDescending(entitlement => entitlement.ExpiresAtUtc)
+            .ThenBy(entitlement => entitlement.StartsAtUtc)
+            .ThenBy(entitlement => entitlement.CreatedAt)
+            .ThenBy(entitlement => entitlement.Id)
+            .FirstOrDefault();
+
+    private static SubscriptionEntity? SelectLegacyProviderSubscription(
+        IReadOnlyList<SubscriptionEntity> candidates,
+        EntitlementEntity entitlement)
+    {
+        var paidProviderCandidates = candidates.Where(IsExternalPaidProviderSubscription).ToList();
+        var exactMatches = paidProviderCandidates.Where(candidate => HasExactCoverage(candidate, entitlement)).ToList();
+        if (exactMatches.Count > 0)
+        {
+            return OrderLegacyCandidates(exactMatches).First();
+        }
+
+        var coveringMatches = paidProviderCandidates.Where(candidate => CoversEffectiveEntitlement(candidate, entitlement)).ToList();
+        if (coveringMatches.Count > 0)
+        {
+            return OrderLegacyCandidates(coveringMatches).First();
+        }
+
+        return paidProviderCandidates
+            .Where(candidate => candidate.CreatedAt <= entitlement.CreatedAt)
+            .OrderByDescending(candidate => candidate.CreatedAt)
+            .ThenByDescending(candidate => candidate.StartedAt)
+            .ThenBy(candidate => candidate.Id)
+            .FirstOrDefault();
+    }
+
+    private static IOrderedEnumerable<SubscriptionEntity> OrderLegacyCandidates(IEnumerable<SubscriptionEntity> candidates) =>
+        candidates
+            .OrderBy(candidate => candidate.StartedAt)
+            .ThenBy(candidate => candidate.CreatedAt)
+            .ThenBy(candidate => candidate.Id);
+
+    private static bool HasExactCoverage(SubscriptionEntity subscription, EntitlementEntity entitlement) =>
+        entitlement.ExpiresAtUtc.HasValue
+            ? subscription.CurrentPeriodEndUtc == entitlement.ExpiresAtUtc || subscription.ExpiresAt == entitlement.ExpiresAtUtc
+            : !subscription.CurrentPeriodEndUtc.HasValue && !subscription.ExpiresAt.HasValue;
+
+    private static bool CoversEffectiveEntitlement(SubscriptionEntity subscription, EntitlementEntity entitlement)
+    {
+        if (!entitlement.ExpiresAtUtc.HasValue)
+        {
+            return !subscription.CurrentPeriodEndUtc.HasValue && !subscription.ExpiresAt.HasValue;
+        }
+
+        var subscriptionEndsAtUtc = subscription.CurrentPeriodEndUtc ?? subscription.ExpiresAt;
+        return subscriptionEndsAtUtc.HasValue && subscriptionEndsAtUtc >= entitlement.ExpiresAtUtc;
+    }
+
+    private static bool IsExternalPaidProviderSubscription(SubscriptionEntity subscription) =>
+        !string.IsNullOrWhiteSpace(subscription.Provider)
+        && !IsProvider(subscription.Provider, SubscriptionConstants.BillingProviders.None)
+        && !IsProvider(subscription.Provider, SubscriptionConstants.BillingProviders.Manual)
+        && !IsProvider(subscription.Provider, SubscriptionConstants.BillingProviders.InternalTrial);
+
+    private static void ApplySubscriptionMetadata(SubscriptionStatusResponse response, SubscriptionEntity subscription)
+    {
+        response.SubscriptionStatus = subscription.Status;
+        response.BillingProvider = subscription.Provider;
+        response.CurrentPeriodEndUtc = subscription.CurrentPeriodEndUtc;
+        response.CancelAtPeriodEnd = subscription.CancelAtPeriodEnd;
+        response.ScheduledChangeAction = subscription.ScheduledChangeAction;
+        response.ScheduledChangeEffectiveAtUtc = subscription.ScheduledChangeEffectiveAtUtc;
+        response.ProviderSubscriptionPresent = !string.IsNullOrWhiteSpace(subscription.ProviderSubscriptionId);
+        response.LastProviderEventId = subscription.LastProviderEventId;
+        response.LastProviderEventType = subscription.LastProviderEventType;
+        response.LastProviderEventOccurredAtUtc = subscription.LastProviderEventOccurredAtUtc;
+        response.HasActivePaidProviderSubscription = HasPaidProviderSubscription(subscription);
     }
 
     private static void ApplyCurrentAccessSummary(
