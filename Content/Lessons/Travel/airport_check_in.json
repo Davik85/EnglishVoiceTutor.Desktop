@@ -394,5 +394,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à l’enregistrement à l’aéroport.\n\nObjectif : vous apprendrez à vous enregistrer pour un vol, à répondre à des questions simples et à poser des questions de base à l’aéroport.\n\nChoisissez une situation :\n1. S’enregistrer avec un passeport\n2. Poser des questions sur les bagages\n3. Poser des questions sur la porte d’embarquement\n\nOu proposez votre propre situation simple d’enregistrement à l’aéroport.",
+      "contextVariantTitles": {
+        "passport_check_in": "S’enregistrer avec un passeport",
+        "baggage_check": "Poser des questions sur les bagages",
+        "gate_question": "Poser des questions sur la porte d’embarquement",
+        "seat_question": "Poser des questions sur le siège",
+        "boarding_pass": "Obtenir une carte d’embarquement"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir den Check-in am Flughafen.\n\nZiel: Sie lernen, für einen Flug einzuchecken, einfache Fragen zu beantworten und grundlegende Fragen am Flughafen zu stellen.\n\nWählen Sie eine Situation:\n1. Mit einem Reisepass einchecken\n2. Nach dem Gepäck fragen\n3. Nach dem Abfluggate fragen\n\nOder schlagen Sie eine eigene einfache Situation beim Check-in am Flughafen vor.",
+      "contextVariantTitles": {
+        "passport_check_in": "Mit einem Reisepass einchecken",
+        "baggage_check": "Nach dem Gepäck fragen",
+        "gate_question": "Nach dem Abfluggate fragen",
+        "seat_question": "Nach dem Sitzplatz fragen",
+        "boarding_pass": "Eine Bordkarte erhalten"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar o check-in no aeroporto.\n\nObjetivo: você aprenderá a fazer o check-in de um voo, responder a perguntas simples e fazer perguntas básicas no aeroporto.\n\nEscolha uma situação:\n1. Fazer o check-in com o passaporte\n2. Perguntar sobre a bagagem\n3. Perguntar sobre o portão de embarque\n\nOu sugira a sua própria situação simples de check-in no aeroporto.",
+      "contextVariantTitles": {
+        "passport_check_in": "Fazer o check-in com o passaporte",
+        "baggage_check": "Perguntar sobre a bagagem",
+        "gate_question": "Perguntar sobre o portão de embarque",
+        "seat_question": "Perguntar sobre o assento",
+        "boarding_pass": "Obter o cartão de embarque"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos la facturación en el aeropuerto.\n\nObjetivo: aprenderás a facturar para un vuelo, responder preguntas sencillas y hacer preguntas básicas en el aeropuerto.\n\nElige una situación:\n1. Facturar con un pasaporte\n2. Preguntar por el equipaje\n3. Preguntar por la puerta de embarque\n\nO propón tu propia situación sencilla de facturación en el aeropuerto.",
+      "contextVariantTitles": {
+        "passport_check_in": "Facturar con un pasaporte",
+        "baggage_check": "Preguntar por el equipaje",
+        "gate_question": "Preguntar por la puerta de embarque",
+        "seat_question": "Preguntar por el asiento",
+        "boarding_pass": "Obtener una tarjeta de embarque"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo con il check-in in aeroporto.\n\nObiettivo: imparerai a fare il check-in per un volo, rispondere a domande semplici e fare domande di base in aeroporto.\n\nScegli una situazione:\n1. Fare il check-in con il passaporto\n2. Chiedere informazioni sul bagaglio\n3. Chiedere informazioni sul gate\n\nOppure proponi una tua semplice situazione di check-in in aeroporto.",
+      "contextVariantTitles": {
+        "passport_check_in": "Fare il check-in con il passaporto",
+        "baggage_check": "Chiedere informazioni sul bagaglio",
+        "gate_question": "Chiedere informazioni sul gate",
+        "seat_question": "Chiedere informazioni sul posto",
+        "boarding_pass": "Ottenere una carta d’imbarco"
+      }
+    }
+  }
 }

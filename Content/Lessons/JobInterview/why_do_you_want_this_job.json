@@ -405,5 +405,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal, interviewer role, candidate role, or selected interview scenario."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à répondre à « Pourquoi voulez-vous ce poste ? »\n\nObjectif : vous apprendrez à expliquer votre motivation, à montrer votre intérêt pour le poste et à relier votre réponse à vos compétences.\n\nChoisissez une situation :\n1. Expliquer votre intérêt pour le poste\n2. Parler de l’entreprise\n3. Relier vos compétences au poste\n\nOu proposez votre propre situation simple d’entretien sur la motivation.",
+      "contextVariantTitles": {
+        "interest_in_role": "Expliquer votre intérêt pour le poste",
+        "company_interest": "Parler de l’entreprise",
+        "skills_fit": "Relier vos compétences au poste",
+        "career_growth": "Parler de l’évolution professionnelle",
+        "learning_opportunity": "Parler d’une occasion d’apprendre"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir die Antwort auf „Warum möchten Sie diese Stelle?“\n\nZiel: Sie lernen, Ihre Motivation zu erklären, Interesse an der Stelle zu zeigen und Ihre Antwort mit Ihren Fähigkeiten zu verbinden.\n\nWählen Sie eine Situation:\n1. Interesse an der Stelle erklären\n2. Über das Unternehmen sprechen\n3. Ihre Fähigkeiten mit der Stelle verbinden\n\nOder schlagen Sie eine eigene einfache Bewerbungssituation zum Thema Motivation vor.",
+      "contextVariantTitles": {
+        "interest_in_role": "Interesse an der Stelle erklären",
+        "company_interest": "Über das Unternehmen sprechen",
+        "skills_fit": "Ihre Fähigkeiten mit der Stelle verbinden",
+        "career_growth": "Über berufliche Entwicklung sprechen",
+        "learning_opportunity": "Über eine Lernmöglichkeit sprechen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como responder a “Por que você quer este emprego?”\n\nObjetivo: você aprenderá a explicar a sua motivação, demonstrar interesse pela função e relacionar a sua resposta às suas competências.\n\nEscolha uma situação:\n1. Explicar o interesse pela função\n2. Falar sobre a empresa\n3. Relacionar as suas competências ao emprego\n\nOu sugira a sua própria situação simples de entrevista sobre motivação.",
+      "contextVariantTitles": {
+        "interest_in_role": "Explicar o interesse pela função",
+        "company_interest": "Falar sobre a empresa",
+        "skills_fit": "Relacionar as suas competências ao emprego",
+        "career_growth": "Falar sobre crescimento profissional",
+        "learning_opportunity": "Falar sobre uma oportunidade de aprendizagem"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo responder a «¿Por qué quieres este trabajo?»\n\nObjetivo: aprenderás a explicar tu motivación, mostrar interés por el puesto y relacionar tu respuesta con tus habilidades.\n\nElige una situación:\n1. Explicar tu interés por el puesto\n2. Hablar de la empresa\n3. Relacionar tus habilidades con el trabajo\n\nO propón tu propia situación sencilla de entrevista sobre motivación.",
+      "contextVariantTitles": {
+        "interest_in_role": "Explicar tu interés por el puesto",
+        "company_interest": "Hablar de la empresa",
+        "skills_fit": "Relacionar tus habilidades con el trabajo",
+        "career_growth": "Hablar del crecimiento profesional",
+        "learning_opportunity": "Hablar de una oportunidad de aprendizaje"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a rispondere a «Perché vuole questo lavoro?»\n\nObiettivo: imparerai a spiegare la tua motivazione, mostrare interesse per il ruolo e collegare la risposta alle tue competenze.\n\nScegli una situazione:\n1. Spiegare l’interesse per il ruolo\n2. Parlare dell’azienda\n3. Collegare le tue competenze al lavoro\n\nOppure proponi una tua semplice situazione di colloquio sulla motivazione.",
+      "contextVariantTitles": {
+        "interest_in_role": "Spiegare l’interesse per il ruolo",
+        "company_interest": "Parlare dell’azienda",
+        "skills_fit": "Collegare le tue competenze al lavoro",
+        "career_growth": "Parlare della crescita professionale",
+        "learning_opportunity": "Parlare di un’opportunità di apprendimento"
+      }
+    }
+  }
 }

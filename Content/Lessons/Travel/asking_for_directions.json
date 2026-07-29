@@ -394,5 +394,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à demander notre chemin.\n\nObjectif : vous apprendrez à demander où se trouve un lieu et à comprendre des indications simples.\n\nChoisissez une situation :\n1. Demander où se trouve la gare\n2. Demander comment aller à un hôtel\n3. Demander le chemin vers un musée\n\nOu proposez votre propre situation simple pour demander votre chemin.",
+      "contextVariantTitles": {
+        "station_directions": "Demander où se trouve la gare",
+        "hotel_directions": "Demander comment aller à un hôtel",
+        "museum_directions": "Demander le chemin vers un musée",
+        "bus_stop_directions": "Demander où se trouve l’arrêt de bus",
+        "city_center_directions": "Demander comment aller au centre-ville"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, nach dem Weg zu fragen.\n\nZiel: Sie lernen, nach dem Standort eines Ortes zu fragen und einfache Wegbeschreibungen zu verstehen.\n\nWählen Sie eine Situation:\n1. Fragen, wo der Bahnhof ist\n2. Fragen, wie man zu einem Hotel kommt\n3. Nach dem Weg zu einem Museum fragen\n\nOder schlagen Sie eine eigene einfache Situation zum Fragen nach dem Weg vor.",
+      "contextVariantTitles": {
+        "station_directions": "Fragen, wo der Bahnhof ist",
+        "hotel_directions": "Fragen, wie man zu einem Hotel kommt",
+        "museum_directions": "Nach dem Weg zu einem Museum fragen",
+        "bus_stop_directions": "Fragen, wo die Bushaltestelle ist",
+        "city_center_directions": "Fragen, wie man ins Stadtzentrum kommt"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como pedir informações de direção.\n\nObjetivo: você aprenderá a perguntar onde fica um lugar e a entender indicações simples.\n\nEscolha uma situação:\n1. Perguntar onde fica a estação\n2. Perguntar como chegar a um hotel\n3. Pedir indicações para chegar a um museu\n\nOu sugira a sua própria situação simples para pedir informações de direção.",
+      "contextVariantTitles": {
+        "station_directions": "Perguntar onde fica a estação",
+        "hotel_directions": "Perguntar como chegar a um hotel",
+        "museum_directions": "Pedir indicações para chegar a um museu",
+        "bus_stop_directions": "Perguntar onde fica o ponto de ônibus",
+        "city_center_directions": "Perguntar como chegar ao centro da cidade"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo pedir indicaciones.\n\nObjetivo: aprenderás a preguntar dónde está un lugar y a entender indicaciones sencillas.\n\nElige una situación:\n1. Preguntar dónde está la estación\n2. Preguntar cómo llegar a un hotel\n3. Pedir indicaciones para llegar a un museo\n\nO propón tu propia situación sencilla para pedir indicaciones.",
+      "contextVariantTitles": {
+        "station_directions": "Preguntar dónde está la estación",
+        "hotel_directions": "Preguntar cómo llegar a un hotel",
+        "museum_directions": "Pedir indicaciones para llegar a un museo",
+        "bus_stop_directions": "Preguntar dónde está la parada de autobús",
+        "city_center_directions": "Preguntar cómo llegar al centro de la ciudad"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a chiedere indicazioni stradali.\n\nObiettivo: imparerai a chiedere dove si trova un luogo e a capire indicazioni semplici.\n\nScegli una situazione:\n1. Chiedere dove si trova la stazione\n2. Chiedere come arrivare a un hotel\n3. Chiedere indicazioni per un museo\n\nOppure proponi una tua semplice situazione per chiedere indicazioni.",
+      "contextVariantTitles": {
+        "station_directions": "Chiedere dove si trova la stazione",
+        "hotel_directions": "Chiedere come arrivare a un hotel",
+        "museum_directions": "Chiedere indicazioni per un museo",
+        "bus_stop_directions": "Chiedere dove si trova la fermata dell’autobus",
+        "city_center_directions": "Chiedere come arrivare in centro"
+      }
+    }
+  }
 }

@@ -407,5 +407,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal, interviewer role, candidate role, or selected interview scenario."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à poser des questions à la fin d’un entretien d’embauche.\n\nObjectif : vous apprendrez à poser des questions polies et utiles sur le poste, l’équipe et les prochaines étapes.\n\nChoisissez une situation :\n1. Poser des questions sur le poste\n2. Poser des questions sur l’équipe\n3. Poser des questions sur les prochaines étapes\n\nOu proposez votre propre situation simple de question en fin d’entretien.",
+      "contextVariantTitles": {
+        "role_question": "Poser des questions sur le poste",
+        "team_question": "Poser des questions sur l’équipe",
+        "next_steps_question": "Poser des questions sur les prochaines étapes",
+        "training_question": "Poser des questions sur la formation",
+        "company_culture_question": "Poser des questions sur la culture de l’entreprise"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, am Ende eines Vorstellungsgesprächs Fragen zu stellen.\n\nZiel: Sie lernen, höfliche und nützliche Fragen zur Stelle, zum Team und zu den nächsten Schritten zu stellen.\n\nWählen Sie eine Situation:\n1. Nach der Stelle fragen\n2. Nach dem Team fragen\n3. Nach den nächsten Schritten fragen\n\nOder schlagen Sie eine eigene einfache Situation für eine Frage am Ende des Gesprächs vor.",
+      "contextVariantTitles": {
+        "role_question": "Nach der Stelle fragen",
+        "team_question": "Nach dem Team fragen",
+        "next_steps_question": "Nach den nächsten Schritten fragen",
+        "training_question": "Nach der Einarbeitung fragen",
+        "company_culture_question": "Nach der Unternehmenskultur fragen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como fazer perguntas no fim de uma entrevista de emprego.\n\nObjetivo: você aprenderá a fazer perguntas educadas e úteis sobre a função, a equipe e os próximos passos.\n\nEscolha uma situação:\n1. Perguntar sobre a função\n2. Perguntar sobre a equipe\n3. Perguntar sobre os próximos passos\n\nOu sugira a sua própria situação simples de pergunta no fim de uma entrevista.",
+      "contextVariantTitles": {
+        "role_question": "Perguntar sobre a função",
+        "team_question": "Perguntar sobre a equipe",
+        "next_steps_question": "Perguntar sobre os próximos passos",
+        "training_question": "Perguntar sobre o treinamento",
+        "company_culture_question": "Perguntar sobre a cultura da empresa"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo hacer preguntas al final de una entrevista de trabajo.\n\nObjetivo: aprenderás a hacer preguntas educadas y útiles sobre el puesto, el equipo y los siguientes pasos.\n\nElige una situación:\n1. Preguntar sobre el puesto\n2. Preguntar sobre el equipo\n3. Preguntar sobre los siguientes pasos\n\nO propón tu propia situación sencilla para hacer una pregunta al final de la entrevista.",
+      "contextVariantTitles": {
+        "role_question": "Preguntar sobre el puesto",
+        "team_question": "Preguntar sobre el equipo",
+        "next_steps_question": "Preguntar sobre los siguientes pasos",
+        "training_question": "Preguntar sobre la formación",
+        "company_culture_question": "Preguntar sobre la cultura de la empresa"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a fare domande alla fine di un colloquio di lavoro.\n\nObiettivo: imparerai a fare domande cortesi e utili sul ruolo, sul team e sui passaggi successivi.\n\nScegli una situazione:\n1. Fare domande sul ruolo\n2. Fare domande sul team\n3. Fare domande sui passaggi successivi\n\nOppure proponi una tua semplice situazione con una domanda alla fine del colloquio.",
+      "contextVariantTitles": {
+        "role_question": "Fare domande sul ruolo",
+        "team_question": "Fare domande sul team",
+        "next_steps_question": "Fare domande sui passaggi successivi",
+        "training_question": "Fare domande sulla formazione",
+        "company_culture_question": "Fare domande sulla cultura aziendale"
+      }
+    }
+  }
 }

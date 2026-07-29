@@ -421,5 +421,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à parler de votre journée.\n\nObjectif : vous apprendrez à décrire votre journée avec des phrases simples et à répondre à des questions de base.\n\nChoisissez une situation :\n1. Parler de votre matinée\n2. Parler du travail ou des études\n3. Parler de votre soirée\n\nOu proposez votre propre situation simple sur votre routine quotidienne.",
+      "contextVariantTitles": {
+        "morning_routine": "Parler de votre matinée",
+        "work_or_study_day": "Parler du travail ou des études",
+        "evening_routine": "Parler de votre soirée",
+        "busy_day": "Parler d’une journée chargée",
+        "weekend_day": "Parler de votre journée de week-end"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, über Ihren Tag zu sprechen.\n\nZiel: Sie lernen, Ihren Tag mit einfachen Sätzen zu beschreiben und grundlegende Fragen zu beantworten.\n\nWählen Sie eine Situation:\n1. Über Ihren Morgen sprechen\n2. Über Arbeit oder Studium sprechen\n3. Über Ihren Abend sprechen\n\nOder schlagen Sie eine eigene einfache Situation aus Ihrem Tagesablauf vor.",
+      "contextVariantTitles": {
+        "morning_routine": "Über Ihren Morgen sprechen",
+        "work_or_study_day": "Über Arbeit oder Studium sprechen",
+        "evening_routine": "Über Ihren Abend sprechen",
+        "busy_day": "Über einen arbeitsreichen Tag sprechen",
+        "weekend_day": "Über Ihren Tag am Wochenende sprechen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como falar sobre o seu dia.\n\nObjetivo: você aprenderá a descrever o seu dia com frases simples e a responder a perguntas básicas.\n\nEscolha uma situação:\n1. Falar sobre a sua manhã\n2. Falar sobre o trabalho ou os estudos\n3. Falar sobre a sua noite\n\nOu sugira a sua própria situação simples sobre a rotina diária.",
+      "contextVariantTitles": {
+        "morning_routine": "Falar sobre a sua manhã",
+        "work_or_study_day": "Falar sobre o trabalho ou os estudos",
+        "evening_routine": "Falar sobre a sua noite",
+        "busy_day": "Falar sobre um dia agitado",
+        "weekend_day": "Falar sobre o seu dia de fim de semana"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo hablar de tu día.\n\nObjetivo: aprenderás a describir tu día con frases sencillas y a responder preguntas básicas.\n\nElige una situación:\n1. Hablar de tu mañana\n2. Hablar del trabajo o los estudios\n3. Hablar de tu tarde o noche\n\nO propón tu propia situación sencilla sobre tu rutina diaria.",
+      "contextVariantTitles": {
+        "morning_routine": "Hablar de tu mañana",
+        "work_or_study_day": "Hablar del trabajo o los estudios",
+        "evening_routine": "Hablar de tu tarde o noche",
+        "busy_day": "Hablar de un día ajetreado",
+        "weekend_day": "Hablar de tu día de fin de semana"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a parlare della tua giornata.\n\nObiettivo: imparerai a descrivere la tua giornata con frasi semplici e a rispondere a domande di base.\n\nScegli una situazione:\n1. Parlare della tua mattina\n2. Parlare del lavoro o dello studio\n3. Parlare della tua serata\n\nOppure proponi una tua semplice situazione sulla routine quotidiana.",
+      "contextVariantTitles": {
+        "morning_routine": "Parlare della tua mattina",
+        "work_or_study_day": "Parlare del lavoro o dello studio",
+        "evening_routine": "Parlare della tua serata",
+        "busy_day": "Parlare di una giornata impegnativa",
+        "weekend_day": "Parlare della tua giornata nel fine settimana"
+      }
+    }
+  }
 }

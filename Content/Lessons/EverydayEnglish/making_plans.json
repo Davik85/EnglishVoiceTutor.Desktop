@@ -413,5 +413,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à faire des projets.\n\nObjectif : vous apprendrez à proposer une activité simple, à convenir d’une heure et d’un lieu, et à répondre poliment.\n\nChoisissez une situation :\n1. Prévoir de prendre un café\n2. Prévoir une promenade\n3. Prévoir d’étudier l’anglais ensemble\n\nOu proposez votre propre projet simple.",
+      "contextVariantTitles": {
+        "coffee_plan": "Prévoir de prendre un café",
+        "walk_plan": "Prévoir une promenade",
+        "english_study_plan": "Prévoir d’étudier l’anglais ensemble",
+        "lunch_plan": "Prévoir un déjeuner",
+        "movie_plan": "Prévoir de regarder un film"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, Pläne zu machen.\n\nZiel: Sie lernen, eine einfache Aktivität vorzuschlagen, Zeit und Ort zu vereinbaren und höflich zu antworten.\n\nWählen Sie eine Situation:\n1. Sich auf einen Kaffee verabreden\n2. Einen Spaziergang planen\n3. Gemeinsam Englisch lernen\n\nOder schlagen Sie einen eigenen einfachen Plan vor.",
+      "contextVariantTitles": {
+        "coffee_plan": "Sich auf einen Kaffee verabreden",
+        "walk_plan": "Einen Spaziergang planen",
+        "english_study_plan": "Gemeinsam Englisch lernen",
+        "lunch_plan": "Ein Mittagessen planen",
+        "movie_plan": "Einen Filmabend planen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como fazer planos.\n\nObjetivo: você aprenderá a sugerir uma atividade simples, combinar um horário e um lugar e responder com educação.\n\nEscolha uma situação:\n1. Combinar de tomar um café\n2. Planejar uma caminhada\n3. Planejar estudar inglês juntos\n\nOu sugira o seu próprio plano simples.",
+      "contextVariantTitles": {
+        "coffee_plan": "Combinar de tomar um café",
+        "walk_plan": "Planejar uma caminhada",
+        "english_study_plan": "Planejar estudar inglês juntos",
+        "lunch_plan": "Planejar um almoço",
+        "movie_plan": "Planejar assistir a um filme"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo hacer planes.\n\nObjetivo: aprenderás a proponer una actividad sencilla, acordar una hora y un lugar y responder con educación.\n\nElige una situación:\n1. Quedar para tomar un café\n2. Planear un paseo\n3. Planear estudiar inglés juntos\n\nO propón tu propio plan sencillo.",
+      "contextVariantTitles": {
+        "coffee_plan": "Quedar para tomar un café",
+        "walk_plan": "Planear un paseo",
+        "english_study_plan": "Planear estudiar inglés juntos",
+        "lunch_plan": "Planear un almuerzo",
+        "movie_plan": "Planear ver una película"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a fare programmi.\n\nObiettivo: imparerai a proporre un’attività semplice, concordare un orario e un luogo e rispondere con cortesia.\n\nScegli una situazione:\n1. Organizzarsi per prendere un caffè\n2. Organizzare una passeggiata\n3. Organizzarsi per studiare inglese insieme\n\nOppure proponi un tuo semplice programma.",
+      "contextVariantTitles": {
+        "coffee_plan": "Organizzarsi per prendere un caffè",
+        "walk_plan": "Organizzare una passeggiata",
+        "english_study_plan": "Organizzarsi per studiare inglese insieme",
+        "lunch_plan": "Organizzare un pranzo",
+        "movie_plan": "Organizzarsi per guardare un film"
+      }
+    }
+  }
 }

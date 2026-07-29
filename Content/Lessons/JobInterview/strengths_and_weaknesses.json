@@ -403,5 +403,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal, interviewer role, candidate role, or selected interview scenario."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à parler de vos qualités et de vos points faibles.\n\nObjectif : vous apprendrez à décrire une qualité, à expliquer un point faible et à paraître honnête tout en restant professionnel.\n\nChoisissez une situation :\n1. Parler de votre principale qualité\n2. Parler d’un point faible\n3. Équilibrer une qualité et un point faible dans une même réponse\n\nOu proposez votre propre situation simple d’entretien sur les qualités et les points faibles.",
+      "contextVariantTitles": {
+        "main_strength": "Parler de votre principale qualité",
+        "weakness_answer": "Parler d’un point faible",
+        "balanced_answer": "Équilibrer une qualité et un point faible dans une même réponse",
+        "teamwork_strength": "Une qualité dans le travail en équipe",
+        "time_management_weakness": "Améliorer la gestion du temps"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, über Stärken und Schwächen zu sprechen.\n\nZiel: Sie lernen, eine Stärke zu beschreiben, eine Schwäche zu erklären und ehrlich, aber professionell zu wirken.\n\nWählen Sie eine Situation:\n1. Über Ihre größte Stärke sprechen\n2. Über eine Schwäche sprechen\n3. Stärke und Schwäche in einer Antwort ausgleichen\n\nOder schlagen Sie eine eigene einfache Bewerbungssituation zu Stärken und Schwächen vor.",
+      "contextVariantTitles": {
+        "main_strength": "Über Ihre größte Stärke sprechen",
+        "weakness_answer": "Über eine Schwäche sprechen",
+        "balanced_answer": "Stärke und Schwäche in einer Antwort ausgleichen",
+        "teamwork_strength": "Stärke in der Teamarbeit",
+        "time_management_weakness": "Das Zeitmanagement verbessern"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como falar sobre pontos fortes e pontos fracos.\n\nObjetivo: você aprenderá a descrever um ponto forte, explicar um ponto fraco e parecer sincero, mas profissional.\n\nEscolha uma situação:\n1. Falar sobre o seu principal ponto forte\n2. Falar sobre um ponto fraco\n3. Equilibrar um ponto forte e um ponto fraco numa resposta\n\nOu sugira a sua própria situação simples de entrevista sobre pontos fortes e pontos fracos.",
+      "contextVariantTitles": {
+        "main_strength": "Falar sobre o seu principal ponto forte",
+        "weakness_answer": "Falar sobre um ponto fraco",
+        "balanced_answer": "Equilibrar um ponto forte e um ponto fraco numa resposta",
+        "teamwork_strength": "Ponto forte no trabalho em equipe",
+        "time_management_weakness": "Melhorar a gestão do tempo"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo hablar de fortalezas y debilidades.\n\nObjetivo: aprenderás a describir una fortaleza, explicar una debilidad y sonar sincero pero profesional.\n\nElige una situación:\n1. Hablar de tu principal fortaleza\n2. Hablar de una debilidad\n3. Equilibrar una fortaleza y una debilidad en una respuesta\n\nO propón tu propia situación sencilla de entrevista sobre fortalezas y debilidades.",
+      "contextVariantTitles": {
+        "main_strength": "Hablar de tu principal fortaleza",
+        "weakness_answer": "Hablar de una debilidad",
+        "balanced_answer": "Equilibrar una fortaleza y una debilidad en una respuesta",
+        "teamwork_strength": "Fortaleza en el trabajo en equipo",
+        "time_management_weakness": "Mejorar la gestión del tiempo"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a parlare di punti di forza e punti deboli.\n\nObiettivo: imparerai a descrivere un punto di forza, spiegare un punto debole e risultare sincero ma professionale.\n\nScegli una situazione:\n1. Parlare del tuo principale punto di forza\n2. Parlare di un punto debole\n3. Bilanciare un punto di forza e un punto debole in una risposta\n\nOppure proponi una tua semplice situazione di colloquio su punti di forza e punti deboli.",
+      "contextVariantTitles": {
+        "main_strength": "Parlare del tuo principale punto di forza",
+        "weakness_answer": "Parlare di un punto debole",
+        "balanced_answer": "Bilanciare un punto di forza e un punto debole in una risposta",
+        "teamwork_strength": "Punto di forza nel lavoro di squadra",
+        "time_management_weakness": "Migliorare la gestione del tempo"
+      }
+    }
+  }
 }

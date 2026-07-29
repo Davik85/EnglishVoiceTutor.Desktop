@@ -397,5 +397,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à réserver une table.\n\nObjectif : vous apprendrez à réserver une table, à indiquer le nombre de personnes, à choisir une heure et à confirmer votre réservation.\n\nChoisissez une situation :\n1. Réserver une table par téléphone\n2. Réserver une table au restaurant\n3. Modifier l’heure d’une réservation\n\nOu proposez votre propre situation simple de réservation de table.",
+      "contextVariantTitles": {
+        "phone_reservation": "Réserver une table par téléphone",
+        "walk_in_booking": "Réserver une table au restaurant",
+        "change_time": "Modifier l’heure d’une réservation",
+        "table_for_two": "Réserver une table pour deux",
+        "outdoor_table": "Demander une table en terrasse"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, einen Tisch zu reservieren.\n\nZiel: Sie lernen, einen Tisch zu reservieren, die Personenzahl zu nennen, eine Uhrzeit zu wählen und die Reservierung zu bestätigen.\n\nWählen Sie eine Situation:\n1. Einen Tisch telefonisch reservieren\n2. Einen Tisch im Restaurant reservieren\n3. Die Uhrzeit einer Reservierung ändern\n\nOder schlagen Sie eine eigene einfache Situation für eine Tischreservierung vor.",
+      "contextVariantTitles": {
+        "phone_reservation": "Einen Tisch telefonisch reservieren",
+        "walk_in_booking": "Einen Tisch im Restaurant reservieren",
+        "change_time": "Die Uhrzeit einer Reservierung ändern",
+        "table_for_two": "Einen Tisch für zwei reservieren",
+        "outdoor_table": "Nach einem Tisch im Freien fragen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como reservar uma mesa.\n\nObjetivo: você aprenderá a reservar uma mesa, dizer o número de pessoas, escolher um horário e confirmar a reserva.\n\nEscolha uma situação:\n1. Reservar uma mesa por telefone\n2. Reservar uma mesa no restaurante\n3. Alterar o horário de uma reserva\n\nOu sugira a sua própria situação simples de reserva de mesa.",
+      "contextVariantTitles": {
+        "phone_reservation": "Reservar uma mesa por telefone",
+        "walk_in_booking": "Reservar uma mesa no restaurante",
+        "change_time": "Alterar o horário de uma reserva",
+        "table_for_two": "Reservar uma mesa para duas pessoas",
+        "outdoor_table": "Pedir uma mesa ao ar livre"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo reservar una mesa.\n\nObjetivo: aprenderás a reservar una mesa, indicar el número de personas, elegir una hora y confirmar la reserva.\n\nElige una situación:\n1. Reservar una mesa por teléfono\n2. Reservar una mesa en el restaurante\n3. Cambiar la hora de una reserva\n\nO propón tu propia situación sencilla para reservar una mesa.",
+      "contextVariantTitles": {
+        "phone_reservation": "Reservar una mesa por teléfono",
+        "walk_in_booking": "Reservar una mesa en el restaurante",
+        "change_time": "Cambiar la hora de una reserva",
+        "table_for_two": "Reservar una mesa para dos",
+        "outdoor_table": "Pedir una mesa al aire libre"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a prenotare un tavolo.\n\nObiettivo: imparerai a prenotare un tavolo, indicare il numero di persone, scegliere un orario e confermare la prenotazione.\n\nScegli una situazione:\n1. Prenotare un tavolo per telefono\n2. Prenotare un tavolo al ristorante\n3. Cambiare l’orario di una prenotazione\n\nOppure proponi una tua semplice situazione di prenotazione di un tavolo.",
+      "contextVariantTitles": {
+        "phone_reservation": "Prenotare un tavolo per telefono",
+        "walk_in_booking": "Prenotare un tavolo al ristorante",
+        "change_time": "Cambiare l’orario di una prenotazione",
+        "table_for_two": "Prenotare un tavolo per due",
+        "outdoor_table": "Chiedere un tavolo all’aperto"
+      }
+    }
+  }
 }

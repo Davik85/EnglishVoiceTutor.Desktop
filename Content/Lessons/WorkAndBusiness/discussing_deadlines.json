@@ -396,5 +396,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à discuter des échéances au travail.\n\nObjectif : vous apprendrez à poser des questions sur une échéance, à expliquer le calendrier et à convenir des prochaines étapes.\n\nChoisissez une situation :\n1. Confirmer une échéance\n2. Demander plus de temps\n3. Convenir des prochaines étapes\n\nOu proposez votre propre situation simple de discussion d’échéance.",
+      "contextVariantTitles": {
+        "confirm_deadline": "Confirmer une échéance",
+        "ask_more_time": "Demander plus de temps",
+        "agree_next_steps": "Convenir des prochaines étapes",
+        "deadline_with_manager": "Discuter d’une échéance avec un responsable",
+        "client_deadline": "Discuter d’une échéance avec un client"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, bei der Arbeit über Fristen zu sprechen.\n\nZiel: Sie lernen, nach einer Frist zu fragen, den Zeitplan zu erklären und die nächsten Schritte zu vereinbaren.\n\nWählen Sie eine Situation:\n1. Eine Frist bestätigen\n2. Um mehr Zeit bitten\n3. Die nächsten Schritte vereinbaren\n\nOder schlagen Sie eine eigene einfache Situation für ein Gespräch über eine Frist vor.",
+      "contextVariantTitles": {
+        "confirm_deadline": "Eine Frist bestätigen",
+        "ask_more_time": "Um mehr Zeit bitten",
+        "agree_next_steps": "Die nächsten Schritte vereinbaren",
+        "deadline_with_manager": "Eine Frist mit einer Führungskraft besprechen",
+        "client_deadline": "Eine Kundenfrist besprechen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como discutir prazos no trabalho.\n\nObjetivo: você aprenderá a perguntar sobre um prazo, explicar o cronograma e combinar os próximos passos.\n\nEscolha uma situação:\n1. Confirmar um prazo\n2. Pedir mais tempo\n3. Combinar os próximos passos\n\nOu sugira a sua própria situação simples de discussão de prazo.",
+      "contextVariantTitles": {
+        "confirm_deadline": "Confirmar um prazo",
+        "ask_more_time": "Pedir mais tempo",
+        "agree_next_steps": "Combinar os próximos passos",
+        "deadline_with_manager": "Discutir um prazo com um gerente",
+        "client_deadline": "Discutir um prazo de cliente"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo hablar de fechas límite en el trabajo.\n\nObjetivo: aprenderás a preguntar por una fecha límite, explicar los plazos y acordar los siguientes pasos.\n\nElige una situación:\n1. Confirmar una fecha límite\n2. Pedir más tiempo\n3. Acordar los siguientes pasos\n\nO propón tu propia situación sencilla para hablar de una fecha límite.",
+      "contextVariantTitles": {
+        "confirm_deadline": "Confirmar una fecha límite",
+        "ask_more_time": "Pedir más tiempo",
+        "agree_next_steps": "Acordar los siguientes pasos",
+        "deadline_with_manager": "Hablar de una fecha límite con un responsable",
+        "client_deadline": "Hablar de una fecha límite de un cliente"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a discutere le scadenze sul lavoro.\n\nObiettivo: imparerai a chiedere informazioni su una scadenza, spiegare i tempi e concordare i passaggi successivi.\n\nScegli una situazione:\n1. Confermare una scadenza\n2. Chiedere più tempo\n3. Concordare i passaggi successivi\n\nOppure proponi una tua semplice situazione di discussione di una scadenza.",
+      "contextVariantTitles": {
+        "confirm_deadline": "Confermare una scadenza",
+        "ask_more_time": "Chiedere più tempo",
+        "agree_next_steps": "Concordare i passaggi successivi",
+        "deadline_with_manager": "Discutere una scadenza con un responsabile",
+        "client_deadline": "Discutere una scadenza di un cliente"
+      }
+    }
+  }
 }

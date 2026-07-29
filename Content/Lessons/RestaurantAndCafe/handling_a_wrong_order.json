@@ -394,5 +394,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à gérer une commande incorrecte.\n\nObjectif : vous apprendrez à expliquer poliment un problème avec votre commande et à demander qu’il soit corrigé.\n\nChoisissez une situation :\n1. Vous avez reçu le mauvais plat\n2. Il manque quelque chose dans votre commande\n3. Votre plat est froid\n\nOu proposez votre propre situation simple de commande incorrecte.",
+      "contextVariantTitles": {
+        "wrong_dish": "Vous avez reçu le mauvais plat",
+        "missing_item": "Il manque quelque chose dans votre commande",
+        "cold_food": "Votre plat est froid",
+        "incorrect_drink": "Vous avez reçu la mauvaise boisson",
+        "overcooked_food": "Votre plat est trop cuit"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, mit einer falschen Bestellung umzugehen.\n\nZiel: Sie lernen, ein Problem mit Ihrer Bestellung höflich zu erklären und um eine Korrektur zu bitten.\n\nWählen Sie eine Situation:\n1. Sie haben das falsche Gericht erhalten\n2. In Ihrer Bestellung fehlt etwas\n3. Ihr Essen ist kalt\n\nOder schlagen Sie eine eigene einfache Situation mit einer falschen Bestellung vor.",
+      "contextVariantTitles": {
+        "wrong_dish": "Sie haben das falsche Gericht erhalten",
+        "missing_item": "In Ihrer Bestellung fehlt etwas",
+        "cold_food": "Ihr Essen ist kalt",
+        "incorrect_drink": "Sie haben das falsche Getränk erhalten",
+        "overcooked_food": "Ihr Essen ist zu lange gegart"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como lidar com um pedido errado.\n\nObjetivo: você aprenderá a explicar com educação um problema com o seu pedido e a pedir que ele seja corrigido.\n\nEscolha uma situação:\n1. Você recebeu o prato errado\n2. Está faltando algo no seu pedido\n3. A sua comida está fria\n\nOu sugira a sua própria situação simples de pedido errado.",
+      "contextVariantTitles": {
+        "wrong_dish": "Você recebeu o prato errado",
+        "missing_item": "Está faltando algo no seu pedido",
+        "cold_food": "A sua comida está fria",
+        "incorrect_drink": "Você recebeu a bebida errada",
+        "overcooked_food": "A sua comida está passada do ponto"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo resolver un pedido equivocado.\n\nObjetivo: aprenderás a explicar con educación un problema con tu pedido y a pedir que lo corrijan.\n\nElige una situación:\n1. Has recibido el plato equivocado\n2. Falta algo en tu pedido\n3. Tu comida está fría\n\nO propón tu propia situación sencilla con un pedido equivocado.",
+      "contextVariantTitles": {
+        "wrong_dish": "Has recibido el plato equivocado",
+        "missing_item": "Falta algo en tu pedido",
+        "cold_food": "Tu comida está fría",
+        "incorrect_drink": "Has recibido la bebida equivocada",
+        "overcooked_food": "Tu comida está demasiado hecha"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a gestire un ordine sbagliato.\n\nObiettivo: imparerai a spiegare con cortesia un problema con il tuo ordine e a chiedere che venga corretto.\n\nScegli una situazione:\n1. Hai ricevuto il piatto sbagliato\n2. Manca qualcosa nel tuo ordine\n3. Il tuo cibo è freddo\n\nOppure proponi una tua semplice situazione con un ordine sbagliato.",
+      "contextVariantTitles": {
+        "wrong_dish": "Hai ricevuto il piatto sbagliato",
+        "missing_item": "Manca qualcosa nel tuo ordine",
+        "cold_food": "Il tuo cibo è freddo",
+        "incorrect_drink": "Hai ricevuto la bevanda sbagliata",
+        "overcooked_food": "Il tuo cibo è troppo cotto"
+      }
+    }
+  }
 }

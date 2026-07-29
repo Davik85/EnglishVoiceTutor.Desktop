@@ -397,5 +397,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à participer à une réunion quotidienne au travail.\n\nObjectif : vous apprendrez à faire un bref point sur ce qui est terminé, ce qui vient ensuite et un problème simple.\n\nChoisissez une situation :\n1. Faire un bref point pendant une réunion d’équipe\n2. Faire le point sur un petit problème\n3. Parler des prochaines étapes\n\nOu proposez votre propre situation simple de réunion quotidienne.",
+      "contextVariantTitles": {
+        "team_meeting_update": "Faire un bref point pendant une réunion d’équipe",
+        "small_problem_update": "Faire le point sur un petit problème",
+        "next_steps": "Parler des prochaines étapes",
+        "completed_task": "Parler d’une tâche terminée",
+        "manager_update": "Faire le point avec un responsable"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir ein tägliches Stand-up bei der Arbeit.\n\nZiel: Sie lernen, kurz zu berichten, was erledigt ist, was als Nächstes kommt und welches einfache Problem besteht.\n\nWählen Sie eine Situation:\n1. Kurzes Update in einer Teambesprechung\n2. Update zu einem kleinen Problem\n3. Über die nächsten Schritte sprechen\n\nOder schlagen Sie eine eigene einfache Situation für ein tägliches Stand-up vor.",
+      "contextVariantTitles": {
+        "team_meeting_update": "Kurzes Update in einer Teambesprechung",
+        "small_problem_update": "Update zu einem kleinen Problem",
+        "next_steps": "Über die nächsten Schritte sprechen",
+        "completed_task": "Über eine erledigte Aufgabe sprechen",
+        "manager_update": "Update für eine Führungskraft"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar uma reunião diária de acompanhamento no trabalho.\n\nObjetivo: você aprenderá a dar uma atualização curta sobre o que foi concluído, o que vem a seguir e um problema simples.\n\nEscolha uma situação:\n1. Atualização curta numa reunião de equipe\n2. Atualização sobre um pequeno problema\n3. Falar sobre os próximos passos\n\nOu sugira a sua própria situação simples de reunião diária.",
+      "contextVariantTitles": {
+        "team_meeting_update": "Atualização curta numa reunião de equipe",
+        "small_problem_update": "Atualização sobre um pequeno problema",
+        "next_steps": "Falar sobre os próximos passos",
+        "completed_task": "Falar sobre uma tarefa concluída",
+        "manager_update": "Atualização para um gerente"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos una reunión diaria de seguimiento en el trabajo.\n\nObjetivo: aprenderás a dar una actualización breve sobre lo que está terminado, lo que sigue y un problema sencillo.\n\nElige una situación:\n1. Actualización breve en una reunión de equipo\n2. Actualización sobre un pequeño problema\n3. Hablar de los siguientes pasos\n\nO propón tu propia situación sencilla de reunión diaria.",
+      "contextVariantTitles": {
+        "team_meeting_update": "Actualización breve en una reunión de equipo",
+        "small_problem_update": "Actualización sobre un pequeño problema",
+        "next_steps": "Hablar de los siguientes pasos",
+        "completed_task": "Hablar de una tarea terminada",
+        "manager_update": "Actualización para un responsable"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo con una riunione quotidiana di aggiornamento sul lavoro.\n\nObiettivo: imparerai a dare un breve aggiornamento su ciò che è stato completato, su cosa viene dopo e su un semplice problema.\n\nScegli una situazione:\n1. Breve aggiornamento in una riunione di gruppo\n2. Aggiornamento su un piccolo problema\n3. Parlare dei passaggi successivi\n\nOppure proponi una tua semplice situazione di riunione quotidiana.",
+      "contextVariantTitles": {
+        "team_meeting_update": "Breve aggiornamento in una riunione di gruppo",
+        "small_problem_update": "Aggiornamento su un piccolo problema",
+        "next_steps": "Parlare dei passaggi successivi",
+        "completed_task": "Parlare di un compito completato",
+        "manager_update": "Aggiornamento per un responsabile"
+      }
+    }
+  }
 }

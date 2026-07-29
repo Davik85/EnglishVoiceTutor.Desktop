@@ -406,5 +406,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal, interviewer role, candidate role, or selected interview scenario."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à parler de votre expérience professionnelle.\n\nObjectif : vous apprendrez à décrire votre expérience passée, vos responsabilités et un résultat obtenu.\n\nChoisissez une situation :\n1. Décrire un emploi précédent\n2. Parler de vos responsabilités\n3. Parler d’un projet ou d’une réussite\n\nOu proposez votre propre situation simple d’entretien sur l’expérience professionnelle.",
+      "contextVariantTitles": {
+        "previous_job": "Décrire un emploi précédent",
+        "responsibilities": "Parler de vos responsabilités",
+        "project_achievement": "Parler d’un projet ou d’une réussite",
+        "internship_experience": "Parler d’une expérience de stage",
+        "no_formal_experience": "Répondre avec peu d’expérience professionnelle"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, über Ihre Berufserfahrung zu sprechen.\n\nZiel: Sie lernen, Ihre bisherige Erfahrung, Ihre Aufgaben und ein Ergebnis zu beschreiben.\n\nWählen Sie eine Situation:\n1. Eine frühere Stelle beschreiben\n2. Über Aufgaben sprechen\n3. Über ein Projekt oder einen Erfolg sprechen\n\nOder schlagen Sie eine eigene einfache Bewerbungssituation zur Berufserfahrung vor.",
+      "contextVariantTitles": {
+        "previous_job": "Eine frühere Stelle beschreiben",
+        "responsibilities": "Über Aufgaben sprechen",
+        "project_achievement": "Über ein Projekt oder einen Erfolg sprechen",
+        "internship_experience": "Über Praktikumserfahrung sprechen",
+        "no_formal_experience": "Mit wenig Berufserfahrung antworten"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como falar sobre a sua experiência profissional.\n\nObjetivo: você aprenderá a descrever a sua experiência anterior, as suas responsabilidades e um resultado.\n\nEscolha uma situação:\n1. Descrever um emprego anterior\n2. Falar sobre responsabilidades\n3. Falar sobre um projeto ou uma conquista\n\nOu sugira a sua própria situação simples de entrevista sobre experiência profissional.",
+      "contextVariantTitles": {
+        "previous_job": "Descrever um emprego anterior",
+        "responsibilities": "Falar sobre responsabilidades",
+        "project_achievement": "Falar sobre um projeto ou uma conquista",
+        "internship_experience": "Falar sobre experiência de estágio",
+        "no_formal_experience": "Responder com pouca experiência profissional"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo hablar de tu experiencia laboral.\n\nObjetivo: aprenderás a describir tu experiencia anterior, tus responsabilidades y un resultado.\n\nElige una situación:\n1. Describir un trabajo anterior\n2. Hablar de responsabilidades\n3. Hablar de un proyecto o un logro\n\nO propón tu propia situación sencilla de entrevista sobre experiencia laboral.",
+      "contextVariantTitles": {
+        "previous_job": "Describir un trabajo anterior",
+        "responsibilities": "Hablar de responsabilidades",
+        "project_achievement": "Hablar de un proyecto o un logro",
+        "internship_experience": "Hablar de la experiencia en prácticas",
+        "no_formal_experience": "Responder con poca experiencia laboral"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a parlare della tua esperienza lavorativa.\n\nObiettivo: imparerai a descrivere la tua esperienza precedente, le tue responsabilità e un risultato.\n\nScegli una situazione:\n1. Descrivere un lavoro precedente\n2. Parlare delle responsabilità\n3. Parlare di un progetto o di un risultato\n\nOppure proponi una tua semplice situazione di colloquio sull’esperienza lavorativa.",
+      "contextVariantTitles": {
+        "previous_job": "Descrivere un lavoro precedente",
+        "responsibilities": "Parlare delle responsabilità",
+        "project_achievement": "Parlare di un progetto o di un risultato",
+        "internship_experience": "Parlare di un’esperienza di tirocinio",
+        "no_formal_experience": "Rispondere con poca esperienza lavorativa"
+      }
+    }
+  }
 }

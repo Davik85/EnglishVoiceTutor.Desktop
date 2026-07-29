@@ -395,5 +395,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à demander des précisions au travail.\n\nObjectif : vous apprendrez à demander poliment à quelqu’un de répéter, d’expliquer ou de préciser quelque chose.\n\nChoisissez une situation :\n1. Demander à quelqu’un de répéter\n2. Demander ce qu’une tâche signifie\n3. Clarifier une échéance\n\nOu proposez votre propre situation simple où vous demandez des précisions.",
+      "contextVariantTitles": {
+        "repeat_instruction": "Demander à quelqu’un de répéter",
+        "task_meaning": "Demander ce qu’une tâche signifie",
+        "deadline_clarification": "Clarifier une échéance",
+        "meeting_point": "Clarifier un lieu de rendez-vous",
+        "technical_word": "Poser une question sur un terme technique"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, bei der Arbeit um Klärung zu bitten.\n\nZiel: Sie lernen, jemanden höflich zu bitten, etwas zu wiederholen, zu erklären oder genauer zu erläutern.\n\nWählen Sie eine Situation:\n1. Jemanden bitten, etwas zu wiederholen\n2. Fragen, was eine Aufgabe bedeutet\n3. Eine Frist klären\n\nOder schlagen Sie eine eigene einfache Situation vor, in der Sie um Klärung bitten.",
+      "contextVariantTitles": {
+        "repeat_instruction": "Jemanden bitten, etwas zu wiederholen",
+        "task_meaning": "Fragen, was eine Aufgabe bedeutet",
+        "deadline_clarification": "Eine Frist klären",
+        "meeting_point": "Einen Treffpunkt klären",
+        "technical_word": "Nach einem Fachbegriff fragen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como pedir esclarecimentos no trabalho.\n\nObjetivo: você aprenderá a pedir com educação para alguém repetir, explicar ou esclarecer algo.\n\nEscolha uma situação:\n1. Pedir a alguém para repetir\n2. Perguntar o que uma tarefa significa\n3. Esclarecer um prazo\n\nOu sugira a sua própria situação simples para pedir esclarecimentos.",
+      "contextVariantTitles": {
+        "repeat_instruction": "Pedir a alguém para repetir",
+        "task_meaning": "Perguntar o que uma tarefa significa",
+        "deadline_clarification": "Esclarecer um prazo",
+        "meeting_point": "Esclarecer um ponto de encontro",
+        "technical_word": "Perguntar sobre um termo técnico"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo pedir aclaraciones en el trabajo.\n\nObjetivo: aprenderás a pedirle a alguien con educación que repita, explique o aclare algo.\n\nElige una situación:\n1. Pedirle a alguien que repita\n2. Preguntar qué significa una tarea\n3. Aclarar una fecha límite\n\nO propón tu propia situación sencilla para pedir una aclaración.",
+      "contextVariantTitles": {
+        "repeat_instruction": "Pedirle a alguien que repita",
+        "task_meaning": "Preguntar qué significa una tarea",
+        "deadline_clarification": "Aclarar una fecha límite",
+        "meeting_point": "Aclarar un punto de encuentro",
+        "technical_word": "Preguntar por un término técnico"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a chiedere chiarimenti sul lavoro.\n\nObiettivo: imparerai a chiedere con cortesia a qualcuno di ripetere, spiegare o chiarire qualcosa.\n\nScegli una situazione:\n1. Chiedere a qualcuno di ripetere\n2. Chiedere cosa significa un compito\n3. Chiarire una scadenza\n\nOppure proponi una tua semplice situazione in cui chiedere chiarimenti.",
+      "contextVariantTitles": {
+        "repeat_instruction": "Chiedere a qualcuno di ripetere",
+        "task_meaning": "Chiedere cosa significa un compito",
+        "deadline_clarification": "Chiarire una scadenza",
+        "meeting_point": "Chiarire un punto d’incontro",
+        "technical_word": "Chiedere informazioni su un termine tecnico"
+      }
+    }
+  }
 }

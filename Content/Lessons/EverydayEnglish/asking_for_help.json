@@ -395,5 +395,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à demander de l’aide.\n\nObjectif : vous apprendrez à demander poliment une aide simple et à comprendre une réponse courte.\n\nChoisissez une situation :\n1. Demander où se trouve quelque chose\n2. Demander à quelqu’un de répéter\n3. Demander de l’aide pour un petit problème\n\nOu proposez votre propre situation simple où vous demandez de l’aide.",
+      "contextVariantTitles": {
+        "where_is_classroom": "Demander où se trouve quelque chose",
+        "repeat_please": "Demander à quelqu’un de répéter",
+        "small_problem": "Demander de l’aide pour un petit problème",
+        "help_with_door": "Demander de l’aide avec une porte",
+        "help_with_bag": "Demander de l’aide avec un sac"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, um Hilfe zu bitten.\n\nZiel: Sie lernen, höflich um einfache Hilfe zu bitten und eine kurze Antwort zu verstehen.\n\nWählen Sie eine Situation:\n1. Fragen, wo sich etwas befindet\n2. Jemanden bitten, etwas zu wiederholen\n3. Um Hilfe bei einem kleinen Problem bitten\n\nOder schlagen Sie eine eigene einfache Situation vor, in der Sie um Hilfe bitten.",
+      "contextVariantTitles": {
+        "where_is_classroom": "Fragen, wo sich etwas befindet",
+        "repeat_please": "Jemanden bitten, etwas zu wiederholen",
+        "small_problem": "Um Hilfe bei einem kleinen Problem bitten",
+        "help_with_door": "Um Hilfe mit einer Tür bitten",
+        "help_with_bag": "Um Hilfe mit einer Tasche bitten"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como pedir ajuda.\n\nObjetivo: você aprenderá a pedir ajuda simples com educação e a entender uma resposta curta.\n\nEscolha uma situação:\n1. Perguntar onde fica alguma coisa\n2. Pedir a alguém para repetir\n3. Pedir ajuda com um pequeno problema\n\nOu sugira a sua própria situação simples para pedir ajuda.",
+      "contextVariantTitles": {
+        "where_is_classroom": "Perguntar onde fica alguma coisa",
+        "repeat_please": "Pedir a alguém para repetir",
+        "small_problem": "Pedir ajuda com um pequeno problema",
+        "help_with_door": "Pedir ajuda com uma porta",
+        "help_with_bag": "Pedir ajuda com uma mala"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo pedir ayuda.\n\nObjetivo: aprenderás a pedir ayuda sencilla con educación y a entender una respuesta corta.\n\nElige una situación:\n1. Preguntar dónde está algo\n2. Pedirle a alguien que repita\n3. Pedir ayuda con un pequeño problema\n\nO propón tu propia situación sencilla para pedir ayuda.",
+      "contextVariantTitles": {
+        "where_is_classroom": "Preguntar dónde está algo",
+        "repeat_please": "Pedirle a alguien que repita",
+        "small_problem": "Pedir ayuda con un pequeño problema",
+        "help_with_door": "Pedir ayuda con una puerta",
+        "help_with_bag": "Pedir ayuda con una bolsa"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a chiedere aiuto.\n\nObiettivo: imparerai a chiedere con cortesia un aiuto semplice e a capire una risposta breve.\n\nScegli una situazione:\n1. Chiedere dove si trova qualcosa\n2. Chiedere a qualcuno di ripetere\n3. Chiedere aiuto per un piccolo problema\n\nOppure proponi una tua semplice situazione in cui chiedere aiuto.",
+      "contextVariantTitles": {
+        "where_is_classroom": "Chiedere dove si trova qualcosa",
+        "repeat_please": "Chiedere a qualcuno di ripetere",
+        "small_problem": "Chiedere aiuto per un piccolo problema",
+        "help_with_door": "Chiedere aiuto con una porta",
+        "help_with_bag": "Chiedere aiuto con una borsa"
+      }
+    }
+  }
 }

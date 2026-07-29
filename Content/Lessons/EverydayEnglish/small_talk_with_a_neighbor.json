@@ -386,5 +386,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à bavarder avec un voisin.\n\nObjectif : vous apprendrez à dire bonjour, à poser des questions simples et amicales, et à donner de courtes réponses polies.\n\nChoisissez une situation :\n1. Rencontrer un voisin dans le couloir\n2. Parler près de l’entrée de l’immeuble\n3. Bavarder dans l’ascenseur\n\nOu proposez votre propre situation de conversation avec un voisin.",
+      "contextVariantTitles": {
+        "hallway_neighbor": "Rencontrer un voisin dans le couloir",
+        "building_entrance": "Parler près de l’entrée de l’immeuble",
+        "elevator_small_talk": "Bavarder dans l’ascenseur",
+        "courtyard_neighbor": "Bavarder dans la cour",
+        "mailbox_neighbor": "Parler près des boîtes aux lettres"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir Small Talk mit einem Nachbarn.\n\nZiel: Sie lernen, Hallo zu sagen, einfache freundliche Fragen zu stellen und kurze höfliche Antworten zu geben.\n\nWählen Sie eine Situation:\n1. Einen Nachbarn im Flur treffen\n2. Am Gebäudeeingang sprechen\n3. Small Talk im Aufzug\n\nOder schlagen Sie eine eigene Situation für Small Talk mit einem Nachbarn vor.",
+      "contextVariantTitles": {
+        "hallway_neighbor": "Einen Nachbarn im Flur treffen",
+        "building_entrance": "Am Gebäudeeingang sprechen",
+        "elevator_small_talk": "Small Talk im Aufzug",
+        "courtyard_neighbor": "Small Talk im Innenhof",
+        "mailbox_neighbor": "Bei den Briefkästen sprechen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar uma conversa informal com um vizinho.\n\nObjetivo: você aprenderá a cumprimentar, fazer perguntas simples e amigáveis e dar respostas curtas e educadas.\n\nEscolha uma situação:\n1. Encontrar um vizinho no corredor\n2. Conversar perto da entrada do prédio\n3. Conversar no elevador\n\nOu sugira a sua própria situação de conversa informal com um vizinho.",
+      "contextVariantTitles": {
+        "hallway_neighbor": "Encontrar um vizinho no corredor",
+        "building_entrance": "Conversar perto da entrada do prédio",
+        "elevator_small_talk": "Conversar no elevador",
+        "courtyard_neighbor": "Conversar no pátio",
+        "mailbox_neighbor": "Conversar perto das caixas de correio"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos una conversación informal con un vecino.\n\nObjetivo: aprenderás a saludar, hacer preguntas sencillas y amistosas y dar respuestas breves y educadas.\n\nElige una situación:\n1. Encontrarse con un vecino en el pasillo\n2. Hablar cerca de la entrada del edificio\n3. Conversar en el ascensor\n\nO propón tu propia situación de conversación informal con un vecino.",
+      "contextVariantTitles": {
+        "hallway_neighbor": "Encontrarse con un vecino en el pasillo",
+        "building_entrance": "Hablar cerca de la entrada del edificio",
+        "elevator_small_talk": "Conversar en el ascensor",
+        "courtyard_neighbor": "Conversar en el patio",
+        "mailbox_neighbor": "Hablar cerca de los buzones"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a fare conversazione con un vicino.\n\nObiettivo: imparerai a salutare, fare domande semplici e cordiali e dare risposte brevi e cortesi.\n\nScegli una situazione:\n1. Incontrare un vicino nel corridoio\n2. Parlare vicino all’ingresso del palazzo\n3. Fare conversazione in ascensore\n\nOppure proponi una tua situazione di conversazione con un vicino.",
+      "contextVariantTitles": {
+        "hallway_neighbor": "Incontrare un vicino nel corridoio",
+        "building_entrance": "Parlare vicino all’ingresso del palazzo",
+        "elevator_small_talk": "Fare conversazione in ascensore",
+        "courtyard_neighbor": "Fare conversazione nel cortile",
+        "mailbox_neighbor": "Parlare vicino alle cassette della posta"
+      }
+    }
+  }
 }

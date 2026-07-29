@@ -395,5 +395,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à payer l’addition.\n\nObjectif : vous apprendrez à demander l’addition, à confirmer le paiement et à terminer poliment l’échange au restaurant.\n\nChoisissez une situation :\n1. Demander l’addition\n2. Payer par carte\n3. Partager l’addition\n\nOu proposez votre propre situation simple de paiement.",
+      "contextVariantTitles": {
+        "ask_for_bill": "Demander l’addition",
+        "card_payment": "Payer par carte",
+        "split_bill": "Partager l’addition",
+        "service_charge": "Poser une question sur les frais de service",
+        "receipt_request": "Demander un reçu"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, die Rechnung zu bezahlen.\n\nZiel: Sie lernen, nach der Rechnung zu fragen, die Zahlung zu bestätigen und das Gespräch im Restaurant höflich zu beenden.\n\nWählen Sie eine Situation:\n1. Nach der Rechnung fragen\n2. Mit Karte bezahlen\n3. Die Rechnung teilen\n\nOder schlagen Sie eine eigene einfache Zahlungssituation vor.",
+      "contextVariantTitles": {
+        "ask_for_bill": "Nach der Rechnung fragen",
+        "card_payment": "Mit Karte bezahlen",
+        "split_bill": "Die Rechnung teilen",
+        "service_charge": "Nach der Servicegebühr fragen",
+        "receipt_request": "Nach einem Beleg fragen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como pagar a conta.\n\nObjetivo: você aprenderá a pedir a conta, confirmar o pagamento e encerrar a interação no restaurante com educação.\n\nEscolha uma situação:\n1. Pedir a conta\n2. Pagar com cartão\n3. Dividir a conta\n\nOu sugira a sua própria situação simples de pagamento.",
+      "contextVariantTitles": {
+        "ask_for_bill": "Pedir a conta",
+        "card_payment": "Pagar com cartão",
+        "split_bill": "Dividir a conta",
+        "service_charge": "Perguntar sobre a taxa de serviço",
+        "receipt_request": "Pedir um recibo"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo pagar la cuenta.\n\nObjetivo: aprenderás a pedir la cuenta, confirmar el pago y terminar la interacción en el restaurante con educación.\n\nElige una situación:\n1. Pedir la cuenta\n2. Pagar con tarjeta\n3. Dividir la cuenta\n\nO propón tu propia situación sencilla de pago.",
+      "contextVariantTitles": {
+        "ask_for_bill": "Pedir la cuenta",
+        "card_payment": "Pagar con tarjeta",
+        "split_bill": "Dividir la cuenta",
+        "service_charge": "Preguntar por el cargo por servicio",
+        "receipt_request": "Pedir un recibo"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a pagare il conto.\n\nObiettivo: imparerai a chiedere il conto, confermare il pagamento e concludere con cortesia l’interazione al ristorante.\n\nScegli una situazione:\n1. Chiedere il conto\n2. Pagare con la carta\n3. Dividere il conto\n\nOppure proponi una tua semplice situazione di pagamento.",
+      "contextVariantTitles": {
+        "ask_for_bill": "Chiedere il conto",
+        "card_payment": "Pagare con la carta",
+        "split_bill": "Dividere il conto",
+        "service_charge": "Chiedere informazioni sul costo del servizio",
+        "receipt_request": "Chiedere una ricevuta"
+      }
+    }
+  }
 }

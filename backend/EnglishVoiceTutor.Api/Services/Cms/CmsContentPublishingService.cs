@@ -64,7 +64,7 @@ public sealed partial class CmsContentPublishingService(
         }
 
         var now = DateTimeOffset.UtcNow;
-        var validation = await validationService.ValidateDraftRowsAsync(pack.Id, cancellationToken);
+        var validation = await validationService.ValidateDraftRowsForPublicationAsync(pack.Id, cancellationToken);
         var validationResponse = MapValidation(pack.Slug, validation, now);
         var response = new PublishCmsContentResponse
         {

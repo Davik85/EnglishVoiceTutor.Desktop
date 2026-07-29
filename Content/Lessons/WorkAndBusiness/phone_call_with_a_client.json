@@ -394,5 +394,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à téléphoner à un client.\n\nObjectif : vous apprendrez à saluer un client, à expliquer la raison de votre appel et à confirmer une prochaine étape simple.\n\nChoisissez une situation :\n1. Vous présenter lors d’un appel avec un client\n2. Confirmer les détails d’une réunion\n3. Demander des informations à un client\n\nOu proposez votre propre situation simple d’appel téléphonique avec un client.",
+      "contextVariantTitles": {
+        "introducing_on_client_call": "Vous présenter lors d’un appel avec un client",
+        "confirming_meeting_details": "Confirmer les détails d’une réunion",
+        "asking_for_information": "Demander des informations à un client",
+        "moving_client_meeting": "Déplacer une réunion avec un client",
+        "closing_client_call": "Terminer un appel avec un client"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir ein Telefongespräch mit einem Kunden.\n\nZiel: Sie lernen, einen Kunden zu begrüßen, den Grund für Ihren Anruf zu erklären und einen einfachen nächsten Schritt zu bestätigen.\n\nWählen Sie eine Situation:\n1. Sich in einem Kundengespräch vorstellen\n2. Besprechungsdetails bestätigen\n3. Einen Kunden um Informationen bitten\n\nOder schlagen Sie eine eigene einfache Situation für ein Telefongespräch mit einem Kunden vor.",
+      "contextVariantTitles": {
+        "introducing_on_client_call": "Sich in einem Kundengespräch vorstellen",
+        "confirming_meeting_details": "Besprechungsdetails bestätigen",
+        "asking_for_information": "Einen Kunden um Informationen bitten",
+        "moving_client_meeting": "Einen Kundentermin verschieben",
+        "closing_client_call": "Ein Kundengespräch beenden"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar uma chamada telefônica com um cliente.\n\nObjetivo: você aprenderá a cumprimentar um cliente, explicar o motivo da chamada e confirmar um próximo passo simples.\n\nEscolha uma situação:\n1. Apresentar-se numa chamada com um cliente\n2. Confirmar detalhes de uma reunião\n3. Pedir informações a um cliente\n\nOu sugira a sua própria situação simples de chamada telefônica com um cliente.",
+      "contextVariantTitles": {
+        "introducing_on_client_call": "Apresentar-se numa chamada com um cliente",
+        "confirming_meeting_details": "Confirmar detalhes de uma reunião",
+        "asking_for_information": "Pedir informações a um cliente",
+        "moving_client_meeting": "Remarcar uma reunião com um cliente",
+        "closing_client_call": "Encerrar uma chamada com um cliente"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos una llamada telefónica con un cliente.\n\nObjetivo: aprenderás a saludar a un cliente, explicar el motivo de la llamada y confirmar un siguiente paso sencillo.\n\nElige una situación:\n1. Presentarte en una llamada con un cliente\n2. Confirmar los detalles de una reunión\n3. Pedir información a un cliente\n\nO propón tu propia situación sencilla de llamada telefónica con un cliente.",
+      "contextVariantTitles": {
+        "introducing_on_client_call": "Presentarte en una llamada con un cliente",
+        "confirming_meeting_details": "Confirmar los detalles de una reunión",
+        "asking_for_information": "Pedir información a un cliente",
+        "moving_client_meeting": "Cambiar una reunión con un cliente",
+        "closing_client_call": "Finalizar una llamada con un cliente"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo con una telefonata a un cliente.\n\nObiettivo: imparerai a salutare un cliente, spiegare il motivo della chiamata e confermare un semplice passaggio successivo.\n\nScegli una situazione:\n1. Presentarti durante una chiamata con un cliente\n2. Confermare i dettagli di una riunione\n3. Chiedere informazioni a un cliente\n\nOppure proponi una tua semplice situazione di telefonata con un cliente.",
+      "contextVariantTitles": {
+        "introducing_on_client_call": "Presentarti durante una chiamata con un cliente",
+        "confirming_meeting_details": "Confermare i dettagli di una riunione",
+        "asking_for_information": "Chiedere informazioni a un cliente",
+        "moving_client_meeting": "Spostare una riunione con un cliente",
+        "closing_client_call": "Concludere una chiamata con un cliente"
+      }
+    }
+  }
 }

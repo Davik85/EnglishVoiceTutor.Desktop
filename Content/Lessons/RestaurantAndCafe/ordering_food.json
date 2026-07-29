@@ -400,5 +400,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à commander à manger.\n\nObjectif : vous apprendrez à commander poliment des plats et des boissons et à poser des questions simples sur le menu.\n\nChoisissez une situation :\n1. Commander dans un café\n2. Commander le dîner dans un restaurant\n3. Demander une recommandation\n\nOu proposez votre propre situation simple de commande de repas.",
+      "contextVariantTitles": {
+        "cafe_order": "Commander dans un café",
+        "restaurant_dinner": "Commander le dîner dans un restaurant",
+        "recommendation": "Demander une recommandation",
+        "drink_order": "Commander une boisson",
+        "takeaway_order": "Commander à emporter"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, Essen zu bestellen.\n\nZiel: Sie lernen, Speisen und Getränke höflich zu bestellen und einfache Fragen zur Speisekarte zu stellen.\n\nWählen Sie eine Situation:\n1. In einem Café bestellen\n2. In einem Restaurant Abendessen bestellen\n3. Nach einer Empfehlung fragen\n\nOder schlagen Sie eine eigene einfache Situation zum Bestellen von Essen vor.",
+      "contextVariantTitles": {
+        "cafe_order": "In einem Café bestellen",
+        "restaurant_dinner": "In einem Restaurant Abendessen bestellen",
+        "recommendation": "Nach einer Empfehlung fragen",
+        "drink_order": "Ein Getränk bestellen",
+        "takeaway_order": "Essen zum Mitnehmen bestellen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como pedir comida.\n\nObjetivo: você aprenderá a pedir comida e bebidas com educação e a fazer perguntas simples sobre o cardápio.\n\nEscolha uma situação:\n1. Fazer um pedido num café\n2. Pedir o jantar num restaurante\n3. Pedir uma recomendação\n\nOu sugira a sua própria situação simples para pedir comida.",
+      "contextVariantTitles": {
+        "cafe_order": "Fazer um pedido num café",
+        "restaurant_dinner": "Pedir o jantar num restaurante",
+        "recommendation": "Pedir uma recomendação",
+        "drink_order": "Pedir uma bebida",
+        "takeaway_order": "Pedir comida para levar"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo pedir comida.\n\nObjetivo: aprenderás a pedir comida y bebidas con educación y a hacer preguntas sencillas sobre el menú.\n\nElige una situación:\n1. Pedir en una cafetería\n2. Pedir la cena en un restaurante\n3. Pedir una recomendación\n\nO propón tu propia situación sencilla para pedir comida.",
+      "contextVariantTitles": {
+        "cafe_order": "Pedir en una cafetería",
+        "restaurant_dinner": "Pedir la cena en un restaurante",
+        "recommendation": "Pedir una recomendación",
+        "drink_order": "Pedir una bebida",
+        "takeaway_order": "Pedir comida para llevar"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a ordinare da mangiare.\n\nObiettivo: imparerai a ordinare cibi e bevande con cortesia e a fare domande semplici sul menu.\n\nScegli una situazione:\n1. Ordinare in un bar\n2. Ordinare la cena in un ristorante\n3. Chiedere un consiglio\n\nOppure proponi una tua semplice situazione per ordinare da mangiare.",
+      "contextVariantTitles": {
+        "cafe_order": "Ordinare in un bar",
+        "restaurant_dinner": "Ordinare la cena in un ristorante",
+        "recommendation": "Chiedere un consiglio",
+        "drink_order": "Ordinare una bevanda",
+        "takeaway_order": "Ordinare da asporto"
+      }
+    }
+  }
 }

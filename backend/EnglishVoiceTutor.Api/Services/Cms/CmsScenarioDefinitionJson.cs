@@ -211,6 +211,154 @@ internal static class CmsScenarioDefinitionJson
         }
     }
 
+    public static IReadOnlyList<string> ValidateSetupLocalizationsForPublication(string? definitionJson, string scenarioKey)
+    {
+        var errors = new List<string>();
+        if (string.IsNullOrWhiteSpace(definitionJson))
+        {
+            errors.Add($"Scenario '{scenarioKey}' is missing full scenario JSON required for setup-localization publication.");
+            return errors;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(definitionJson);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                errors.Add($"Scenario '{scenarioKey}' full scenario JSON root must be an object for setup-localization publication.");
+                return errors;
+            }
+
+            if (!root.TryGetProperty("lessonSetup", out var lessonSetup)
+                || lessonSetup.ValueKind != JsonValueKind.Object
+                || !lessonSetup.TryGetProperty("setupMessage", out var setupMessage)
+                || setupMessage.ValueKind != JsonValueKind.String)
+            {
+                errors.Add($"Scenario '{scenarioKey}' is missing canonical lessonSetup.setupMessage required for setup-localization publication.");
+                return errors;
+            }
+
+            var requiredPlaceholders = ExtractPlaceholders(setupMessage.GetString());
+            var variantIds = GetContextVariantIds(root, scenarioKey, errors);
+            if (errors.Count > 0)
+            {
+                return errors;
+            }
+
+            if (!root.TryGetProperty("setupLocalizations", out var localizations)
+                || localizations.ValueKind != JsonValueKind.Object)
+            {
+                foreach (var languageId in RequiredNonEnglishStudyLanguageIds)
+                {
+                    errors.Add($"Scenario '{scenarioKey}' is missing required setup localization language '{languageId}' for publication.");
+                }
+
+                return errors;
+            }
+
+            foreach (var languageId in RequiredNonEnglishStudyLanguageIds)
+            {
+                if (!localizations.TryGetProperty(languageId, out var localization)
+                    || localization.ValueKind != JsonValueKind.Object)
+                {
+                    errors.Add($"Scenario '{scenarioKey}' is missing required setup localization language '{languageId}' for publication.");
+                    continue;
+                }
+
+                if (!localization.TryGetProperty("setupMessageTemplate", out var template)
+                    || template.ValueKind != JsonValueKind.String
+                    || string.IsNullOrWhiteSpace(template.GetString()))
+                {
+                    errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' is missing a non-empty setupMessageTemplate for publication.");
+                }
+                else
+                {
+                    var actualPlaceholders = ExtractPlaceholders(template.GetString());
+                    foreach (var placeholder in requiredPlaceholders.Except(actualPlaceholders, StringComparer.Ordinal))
+                    {
+                        errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' is missing required placeholder '{placeholder}'.");
+                    }
+
+                    foreach (var placeholder in actualPlaceholders.Except(requiredPlaceholders, StringComparer.Ordinal))
+                    {
+                        errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' contains unsupported placeholder '{placeholder}'.");
+                    }
+                }
+
+                if (!localization.TryGetProperty("contextVariantTitles", out var titles)
+                    || titles.ValueKind != JsonValueKind.Object)
+                {
+                    errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' is missing contextVariantTitles required for publication.");
+                    continue;
+                }
+
+                var titleIds = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var title in titles.EnumerateObject())
+                {
+                    if (!titleIds.Add(title.Name) || !variantIds.Contains(title.Name))
+                    {
+                        errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' contains unknown context variant ID '{title.Name}'.");
+                    }
+                    else if (title.Value.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(title.Value.GetString()))
+                    {
+                        errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' has a blank context title for ID '{title.Name}'.");
+                    }
+                }
+
+                foreach (var variantId in variantIds.Except(titleIds, StringComparer.Ordinal))
+                {
+                    errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' is missing context variant ID '{variantId}'.");
+                }
+            }
+        }
+        catch (JsonException ex)
+        {
+            errors.Add($"Scenario '{scenarioKey}' full scenario JSON is invalid for setup-localization publication: {ex.Message}");
+        }
+
+        return errors;
+    }
+
+    private static readonly string[] RequiredNonEnglishStudyLanguageIds = StudyLanguageCatalog.All
+        .Where(language => !language.IsDefault)
+        .Select(language => language.Id)
+        .ToArray();
+
+    private static HashSet<string> GetContextVariantIds(JsonElement root, string scenarioKey, List<string> errors)
+    {
+        var variantIds = new HashSet<string>(StringComparer.Ordinal);
+        if (!root.TryGetProperty("controlledVariation", out var variation)
+            || variation.ValueKind != JsonValueKind.Object
+            || !variation.TryGetProperty("contextVariants", out var variants)
+            || variants.ValueKind != JsonValueKind.Array)
+        {
+            errors.Add($"Scenario '{scenarioKey}' is missing controlledVariation.contextVariants required for setup-localization publication.");
+            return variantIds;
+        }
+
+        foreach (var variant in variants.EnumerateArray())
+        {
+            var id = variant.ValueKind == JsonValueKind.Object && variant.TryGetProperty("id", out var idElement)
+                ? idElement.GetString()
+                : null;
+            if (string.IsNullOrWhiteSpace(id) || !variantIds.Add(id))
+            {
+                errors.Add($"Scenario '{scenarioKey}' has blank or duplicate context variant IDs for setup-localization publication.");
+                break;
+            }
+        }
+
+        return variantIds;
+    }
+
+    private static HashSet<string> ExtractPlaceholders(string? value)
+    {
+        return System.Text.RegularExpressions.Regex.Matches(value ?? string.Empty, @"\{\{[^{}]+\}\}")
+            .Select(match => match.Value)
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
     public static IReadOnlyList<string> ValidateSimpleFieldConsistency(
         string definitionJson,
         string stableScenarioKey,

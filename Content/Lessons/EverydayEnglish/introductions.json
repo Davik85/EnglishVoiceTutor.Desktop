@@ -451,5 +451,57 @@
     "If the learner asks the tutor's name, tutor answers with the active tutor profile name and continues the scenario.",
     "Wrap-up begins at the configured soft wrap-up point.",
     "Final message appears at the configured final turn before lesson controls are disabled."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à faire les présentations.\n\nObjectif : vous apprendrez à dire votre nom, votre pays d’origine et à poser des questions simples.\n\nChoisissez une situation :\n1. Rencontrer un nouveau voisin\n2. Premier jour dans une école de langues\n3. Rencontrer quelqu’un dans un club de loisirs\n\nOu proposez votre propre situation de présentation.",
+      "contextVariantTitles": {
+        "new_neighbor": "Rencontrer un nouveau voisin",
+        "language_school_first_day": "Premier jour dans une école de langues",
+        "hobby_club": "Rencontrer quelqu’un dans un club de loisirs",
+        "work_break_room": "Rencontrer un collègue",
+        "online_meeting": "Rejoindre une réunion d’anglais en ligne"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, uns vorzustellen.\n\nZiel: Sie lernen, Ihren Namen und Ihr Herkunftsland zu nennen und einfache Fragen zu stellen.\n\nWählen Sie eine Situation:\n1. Einen neuen Nachbarn kennenlernen\n2. Erster Tag in einer Sprachschule\n3. Jemanden in einem Freizeitverein kennenlernen\n\nOder schlagen Sie eine eigene Situation zum Kennenlernen vor.",
+      "contextVariantTitles": {
+        "new_neighbor": "Einen neuen Nachbarn kennenlernen",
+        "language_school_first_day": "Erster Tag in einer Sprachschule",
+        "hobby_club": "Jemanden in einem Freizeitverein kennenlernen",
+        "work_break_room": "Einen Kollegen kennenlernen",
+        "online_meeting": "An einem Online-Englischtreffen teilnehmen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar apresentações.\n\nObjetivo: você aprenderá a dizer o seu nome, de onde é e a fazer perguntas simples.\n\nEscolha uma situação:\n1. Conhecer um novo vizinho\n2. Primeiro dia numa escola de idiomas\n3. Conhecer alguém num clube de hobbies\n\nOu sugira a sua própria situação de apresentação.",
+      "contextVariantTitles": {
+        "new_neighbor": "Conhecer um novo vizinho",
+        "language_school_first_day": "Primeiro dia numa escola de idiomas",
+        "hobby_club": "Conhecer alguém num clube de hobbies",
+        "work_break_room": "Conhecer um colega",
+        "online_meeting": "Participar numa reunião de inglês on-line"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos las presentaciones.\n\nObjetivo: aprenderás a decir tu nombre, de dónde eres y a hacer preguntas sencillas.\n\nElige una situación:\n1. Conocer a un nuevo vecino\n2. Primer día en una escuela de idiomas\n3. Conocer a alguien en un club de aficiones\n\nO propón tu propia situación de presentación.",
+      "contextVariantTitles": {
+        "new_neighbor": "Conocer a un nuevo vecino",
+        "language_school_first_day": "Primer día en una escuela de idiomas",
+        "hobby_club": "Conocer a alguien en un club de aficiones",
+        "work_break_room": "Conocer a un compañero de trabajo",
+        "online_meeting": "Unirse a una reunión de inglés en línea"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo con le presentazioni.\n\nObiettivo: imparerai a dire il tuo nome, da dove vieni e a fare domande semplici.\n\nScegli una situazione:\n1. Conoscere un nuovo vicino\n2. Primo giorno in una scuola di lingue\n3. Conoscere qualcuno in un circolo ricreativo\n\nOppure proponi una tua situazione di presentazione.",
+      "contextVariantTitles": {
+        "new_neighbor": "Conoscere un nuovo vicino",
+        "language_school_first_day": "Primo giorno in una scuola di lingue",
+        "hobby_club": "Conoscere qualcuno in un circolo ricreativo",
+        "work_break_room": "Conoscere un collega",
+        "online_meeting": "Partecipare a una riunione di inglese online"
+      }
+    }
+  }
 }

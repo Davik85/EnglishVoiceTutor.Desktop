@@ -391,5 +391,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à l’arrivée à l’hôtel.\n\nObjectif : vous apprendrez à vous enregistrer à l’hôtel, à donner les détails de votre réservation et à poser des questions simples.\n\nChoisissez une situation :\n1. S’enregistrer avec une réservation\n2. Poser des questions sur le petit-déjeuner\n3. Poser des questions sur l’heure de départ\n\nOu proposez votre propre situation simple d’arrivée à l’hôtel.",
+      "contextVariantTitles": {
+        "reservation_check_in": "S’enregistrer avec une réservation",
+        "breakfast_question": "Poser des questions sur le petit-déjeuner",
+        "checkout_time": "Poser des questions sur l’heure de départ",
+        "room_key": "Obtenir la clé de la chambre",
+        "wifi_question": "Poser des questions sur le Wi-Fi"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir den Check-in im Hotel.\n\nZiel: Sie lernen, im Hotel einzuchecken, Ihre Reservierungsdaten anzugeben und einfache Fragen zu stellen.\n\nWählen Sie eine Situation:\n1. Mit einer Reservierung einchecken\n2. Nach dem Frühstück fragen\n3. Nach der Check-out-Zeit fragen\n\nOder schlagen Sie eine eigene einfache Situation beim Check-in im Hotel vor.",
+      "contextVariantTitles": {
+        "reservation_check_in": "Mit einer Reservierung einchecken",
+        "breakfast_question": "Nach dem Frühstück fragen",
+        "checkout_time": "Nach der Check-out-Zeit fragen",
+        "room_key": "Den Zimmerschlüssel erhalten",
+        "wifi_question": "Nach dem WLAN fragen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar o check-in no hotel.\n\nObjetivo: você aprenderá a fazer o check-in no hotel, informar os dados da sua reserva e fazer perguntas simples.\n\nEscolha uma situação:\n1. Fazer o check-in com uma reserva\n2. Perguntar sobre o café da manhã\n3. Perguntar sobre o horário de check-out\n\nOu sugira a sua própria situação simples de check-in no hotel.",
+      "contextVariantTitles": {
+        "reservation_check_in": "Fazer o check-in com uma reserva",
+        "breakfast_question": "Perguntar sobre o café da manhã",
+        "checkout_time": "Perguntar sobre o horário de check-out",
+        "room_key": "Receber a chave do quarto",
+        "wifi_question": "Perguntar sobre o Wi-Fi"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos el registro de entrada en un hotel.\n\nObjetivo: aprenderás a registrarte en un hotel, dar los datos de tu reserva y hacer preguntas sencillas.\n\nElige una situación:\n1. Registrarse con una reserva\n2. Preguntar por el desayuno\n3. Preguntar por la hora de salida\n\nO propón tu propia situación sencilla de registro de entrada en un hotel.",
+      "contextVariantTitles": {
+        "reservation_check_in": "Registrarse con una reserva",
+        "breakfast_question": "Preguntar por el desayuno",
+        "checkout_time": "Preguntar por la hora de salida",
+        "room_key": "Obtener la llave de la habitación",
+        "wifi_question": "Preguntar por el Wi-Fi"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo con il check-in in hotel.\n\nObiettivo: imparerai a fare il check-in in un hotel, fornire i dati della prenotazione e fare domande semplici.\n\nScegli una situazione:\n1. Fare il check-in con una prenotazione\n2. Chiedere informazioni sulla colazione\n3. Chiedere l’orario del check-out\n\nOppure proponi una tua semplice situazione di check-in in hotel.",
+      "contextVariantTitles": {
+        "reservation_check_in": "Fare il check-in con una prenotazione",
+        "breakfast_question": "Chiedere informazioni sulla colazione",
+        "checkout_time": "Chiedere l’orario del check-out",
+        "room_key": "Ricevere la chiave della camera",
+        "wifi_question": "Chiedere informazioni sul Wi-Fi"
+      }
+    }
+  }
 }

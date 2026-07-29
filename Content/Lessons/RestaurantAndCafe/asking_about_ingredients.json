@@ -397,5 +397,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à poser des questions sur les ingrédients.\n\nObjectif : vous apprendrez à poser poliment des questions sur les ingrédients, les allergies et les détails d’un plat.\n\nChoisissez une situation :\n1. Poser des questions sur les allergies\n2. Demander si un plat est végétarien\n3. Demander ce qu’il y a dans un plat\n\nOu proposez votre propre situation simple de question sur les ingrédients.",
+      "contextVariantTitles": {
+        "allergy_question": "Poser des questions sur les allergies",
+        "vegetarian_question": "Demander si un plat est végétarien",
+        "dish_ingredients": "Demander ce qu’il y a dans un plat",
+        "spicy_food": "Demander si un plat est épicé",
+        "gluten_free": "Demander des options sans gluten"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, nach Zutaten zu fragen.\n\nZiel: Sie lernen, höflich nach Zutaten, Allergien und Einzelheiten zu einem Gericht zu fragen.\n\nWählen Sie eine Situation:\n1. Nach Allergien fragen\n2. Fragen, ob ein Gericht vegetarisch ist\n3. Fragen, was in einem Gericht enthalten ist\n\nOder schlagen Sie eine eigene einfache Situation mit einer Frage zu Zutaten vor.",
+      "contextVariantTitles": {
+        "allergy_question": "Nach Allergien fragen",
+        "vegetarian_question": "Fragen, ob ein Gericht vegetarisch ist",
+        "dish_ingredients": "Fragen, was in einem Gericht enthalten ist",
+        "spicy_food": "Fragen, ob das Essen scharf ist",
+        "gluten_free": "Nach glutenfreien Optionen fragen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como perguntar sobre ingredientes.\n\nObjetivo: você aprenderá a perguntar com educação sobre ingredientes, alergias e detalhes de um prato.\n\nEscolha uma situação:\n1. Perguntar sobre alergias\n2. Perguntar se um prato é vegetariano\n3. Perguntar o que há num prato\n\nOu sugira a sua própria situação simples de pergunta sobre ingredientes.",
+      "contextVariantTitles": {
+        "allergy_question": "Perguntar sobre alergias",
+        "vegetarian_question": "Perguntar se um prato é vegetariano",
+        "dish_ingredients": "Perguntar o que há num prato",
+        "spicy_food": "Perguntar se a comida é picante",
+        "gluten_free": "Perguntar sobre opções sem glúten"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo preguntar por los ingredientes.\n\nObjetivo: aprenderás a preguntar con educación por los ingredientes, las alergias y los detalles de un plato.\n\nElige una situación:\n1. Preguntar por las alergias\n2. Preguntar si un plato es vegetariano\n3. Preguntar qué lleva un plato\n\nO propón tu propia situación sencilla para preguntar por los ingredientes.",
+      "contextVariantTitles": {
+        "allergy_question": "Preguntar por las alergias",
+        "vegetarian_question": "Preguntar si un plato es vegetariano",
+        "dish_ingredients": "Preguntar qué lleva un plato",
+        "spicy_food": "Preguntar si la comida es picante",
+        "gluten_free": "Preguntar por opciones sin gluten"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a chiedere informazioni sugli ingredienti.\n\nObiettivo: imparerai a fare domande con cortesia sugli ingredienti, sulle allergie e sui dettagli di un piatto.\n\nScegli una situazione:\n1. Chiedere informazioni sulle allergie\n2. Chiedere se un piatto è vegetariano\n3. Chiedere cosa contiene un piatto\n\nOppure proponi una tua semplice situazione con una domanda sugli ingredienti.",
+      "contextVariantTitles": {
+        "allergy_question": "Chiedere informazioni sulle allergie",
+        "vegetarian_question": "Chiedere se un piatto è vegetariano",
+        "dish_ingredients": "Chiedere cosa contiene un piatto",
+        "spicy_food": "Chiedere se il cibo è piccante",
+        "gluten_free": "Chiedere opzioni senza glutine"
+      }
+    }
+  }
 }

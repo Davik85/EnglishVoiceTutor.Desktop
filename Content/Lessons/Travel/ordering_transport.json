@@ -391,5 +391,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à commander un transport.\n\nObjectif : vous apprendrez à commander un taxi ou une course, à indiquer une destination et à confirmer des détails simples.\n\nChoisissez une situation :\n1. Commander un taxi pour l’hôtel\n2. Demander le prix\n3. Confirmer le lieu de prise en charge\n\nOu proposez votre propre situation simple de transport.",
+      "contextVariantTitles": {
+        "taxi_to_hotel": "Commander un taxi pour l’hôtel",
+        "price_question": "Demander le prix",
+        "pickup_place": "Confirmer le lieu de prise en charge",
+        "airport_transfer": "Commander un transport pour l’aéroport",
+        "train_station_transport": "Commander un transport pour la gare"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, eine Fahrt zu bestellen.\n\nZiel: Sie lernen, ein Taxi oder eine Fahrt zu bestellen, ein Ziel anzugeben und einfache Einzelheiten zu bestätigen.\n\nWählen Sie eine Situation:\n1. Ein Taxi zum Hotel bestellen\n2. Nach dem Preis fragen\n3. Den Abholort bestätigen\n\nOder schlagen Sie eine eigene einfache Transportsituation vor.",
+      "contextVariantTitles": {
+        "taxi_to_hotel": "Ein Taxi zum Hotel bestellen",
+        "price_question": "Nach dem Preis fragen",
+        "pickup_place": "Den Abholort bestätigen",
+        "airport_transfer": "Eine Fahrt zum Flughafen bestellen",
+        "train_station_transport": "Eine Fahrt zum Bahnhof bestellen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como pedir transporte.\n\nObjetivo: você aprenderá a pedir um táxi ou uma corrida, informar um destino e confirmar detalhes simples.\n\nEscolha uma situação:\n1. Pedir um táxi para o hotel\n2. Perguntar o preço\n3. Confirmar o local de embarque\n\nOu sugira a sua própria situação simples de transporte.",
+      "contextVariantTitles": {
+        "taxi_to_hotel": "Pedir um táxi para o hotel",
+        "price_question": "Perguntar o preço",
+        "pickup_place": "Confirmar o local de embarque",
+        "airport_transfer": "Pedir transporte para o aeroporto",
+        "train_station_transport": "Pedir transporte para a estação de trem"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo pedir transporte.\n\nObjetivo: aprenderás a pedir un taxi o un viaje, indicar un destino y confirmar detalles sencillos.\n\nElige una situación:\n1. Pedir un taxi al hotel\n2. Preguntar el precio\n3. Confirmar el lugar de recogida\n\nO propón tu propia situación sencilla de transporte.",
+      "contextVariantTitles": {
+        "taxi_to_hotel": "Pedir un taxi al hotel",
+        "price_question": "Preguntar el precio",
+        "pickup_place": "Confirmar el lugar de recogida",
+        "airport_transfer": "Pedir transporte al aeropuerto",
+        "train_station_transport": "Pedir transporte a la estación de tren"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a prenotare un mezzo di trasporto.\n\nObiettivo: imparerai a prenotare un taxi o una corsa, indicare una destinazione e confermare semplici dettagli.\n\nScegli una situazione:\n1. Prenotare un taxi per l’hotel\n2. Chiedere il prezzo\n3. Confermare il punto di raccolta\n\nOppure proponi una tua semplice situazione di trasporto.",
+      "contextVariantTitles": {
+        "taxi_to_hotel": "Prenotare un taxi per l’hotel",
+        "price_question": "Chiedere il prezzo",
+        "pickup_place": "Confermare il punto di raccolta",
+        "airport_transfer": "Prenotare un trasporto per l’aeroporto",
+        "train_station_transport": "Prenotare un trasporto per la stazione ferroviaria"
+      }
+    }
+  }
 }

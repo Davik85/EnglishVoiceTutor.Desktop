@@ -402,5 +402,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal, interviewer role, candidate role, or selected interview scenario."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à répondre à « Parlez-moi de vous ».\n\nObjectif : vous apprendrez à vous présenter lors d’un entretien d’embauche avec une réponse courte, claire et pertinente.\n\nChoisissez une situation :\n1. Premier entretien pour un emploi de bureau\n2. Entretien pour un poste junior\n3. Présentation lors d’un entretien en ligne\n\nOu proposez votre propre situation simple de présentation en entretien.",
+      "contextVariantTitles": {
+        "office_job_intro": "Premier entretien pour un emploi de bureau",
+        "junior_role_intro": "Entretien pour un poste junior",
+        "online_interview_intro": "Présentation lors d’un entretien en ligne",
+        "career_change_intro": "Entretien après une reconversion professionnelle",
+        "first_job_intro": "Entretien pour un premier emploi"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir die Antwort auf „Erzählen Sie etwas über sich.“\n\nZiel: Sie lernen, sich in einem Vorstellungsgespräch mit einer kurzen, klaren und passenden Antwort vorzustellen.\n\nWählen Sie eine Situation:\n1. Erstes Vorstellungsgespräch für eine Bürostelle\n2. Vorstellungsgespräch für eine Juniorposition\n3. Vorstellung bei einem Online-Interview\n\nOder schlagen Sie eine eigene einfache Situation für eine Vorstellung im Bewerbungsgespräch vor.",
+      "contextVariantTitles": {
+        "office_job_intro": "Erstes Vorstellungsgespräch für eine Bürostelle",
+        "junior_role_intro": "Vorstellungsgespräch für eine Juniorposition",
+        "online_interview_intro": "Vorstellung bei einem Online-Interview",
+        "career_change_intro": "Vorstellungsgespräch nach einem Berufswechsel",
+        "first_job_intro": "Vorstellungsgespräch für die erste Stelle"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como responder a “Fale-me sobre você”.\n\nObjetivo: você aprenderá a se apresentar numa entrevista de emprego com uma resposta curta, clara e relevante.\n\nEscolha uma situação:\n1. Primeira entrevista para um trabalho de escritório\n2. Entrevista para uma vaga júnior\n3. Apresentação numa entrevista on-line\n\nOu sugira a sua própria situação simples de apresentação numa entrevista.",
+      "contextVariantTitles": {
+        "office_job_intro": "Primeira entrevista para um trabalho de escritório",
+        "junior_role_intro": "Entrevista para uma vaga júnior",
+        "online_interview_intro": "Apresentação numa entrevista on-line",
+        "career_change_intro": "Entrevista depois de uma mudança de carreira",
+        "first_job_intro": "Entrevista para o primeiro emprego"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo responder a «Háblame de ti».\n\nObjetivo: aprenderás a presentarte en una entrevista de trabajo con una respuesta breve, clara y relevante.\n\nElige una situación:\n1. Primera entrevista para un trabajo de oficina\n2. Entrevista para un puesto júnior\n3. Presentación en una entrevista en línea\n\nO propón tu propia situación sencilla de presentación en una entrevista.",
+      "contextVariantTitles": {
+        "office_job_intro": "Primera entrevista para un trabajo de oficina",
+        "junior_role_intro": "Entrevista para un puesto júnior",
+        "online_interview_intro": "Presentación en una entrevista en línea",
+        "career_change_intro": "Entrevista después de un cambio de carrera",
+        "first_job_intro": "Entrevista para un primer empleo"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a rispondere a «Mi parli di lei».\n\nObiettivo: imparerai a presentarti in un colloquio di lavoro con una risposta breve, chiara e pertinente.\n\nScegli una situazione:\n1. Primo colloquio per un lavoro d’ufficio\n2. Colloquio per un ruolo junior\n3. Presentazione in un colloquio online\n\nOppure proponi una tua semplice situazione di presentazione a un colloquio.",
+      "contextVariantTitles": {
+        "office_job_intro": "Primo colloquio per un lavoro d’ufficio",
+        "junior_role_intro": "Colloquio per un ruolo junior",
+        "online_interview_intro": "Presentazione in un colloquio online",
+        "career_change_intro": "Colloquio dopo un cambio di carriera",
+        "first_job_intro": "Colloquio per il primo lavoro"
+      }
+    }
+  }
 }

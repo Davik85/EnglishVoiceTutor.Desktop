@@ -396,5 +396,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à gérer la perte de bagages.\n\nObjectif : vous apprendrez à signaler un bagage perdu, à décrire votre sac et à demander quoi faire ensuite.\n\nChoisissez une situation :\n1. Signaler une valise manquante\n2. Décrire votre sac\n3. Demander quand vos bagages arriveront\n\nOu proposez votre propre situation simple de bagage perdu.",
+      "contextVariantTitles": {
+        "missing_suitcase": "Signaler une valise manquante",
+        "bag_description": "Décrire votre sac",
+        "luggage_arrival_time": "Demander quand vos bagages arriveront",
+        "baggage_claim": "Poser une question au retrait des bagages",
+        "luggage_form": "Remplir un formulaire de bagage"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir, mit verlorenem Gepäck umzugehen.\n\nZiel: Sie lernen, verlorenes Gepäck zu melden, Ihre Tasche zu beschreiben und nach den nächsten Schritten zu fragen.\n\nWählen Sie eine Situation:\n1. Einen fehlenden Koffer melden\n2. Ihre Tasche beschreiben\n3. Fragen, wann Ihr Gepäck ankommt\n\nOder schlagen Sie eine eigene einfache Situation mit verlorenem Gepäck vor.",
+      "contextVariantTitles": {
+        "missing_suitcase": "Einen fehlenden Koffer melden",
+        "bag_description": "Ihre Tasche beschreiben",
+        "luggage_arrival_time": "Fragen, wann Ihr Gepäck ankommt",
+        "baggage_claim": "Bei der Gepäckausgabe nachfragen",
+        "luggage_form": "Ein Gepäckformular ausfüllen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar como lidar com bagagem perdida.\n\nObjetivo: você aprenderá a comunicar a perda de bagagem, descrever a sua mala e perguntar o que fazer em seguida.\n\nEscolha uma situação:\n1. Comunicar o desaparecimento de uma mala\n2. Descrever a sua mala\n3. Perguntar quando a sua bagagem chegará\n\nOu sugira a sua própria situação simples de bagagem perdida.",
+      "contextVariantTitles": {
+        "missing_suitcase": "Comunicar o desaparecimento de uma mala",
+        "bag_description": "Descrever a sua mala",
+        "luggage_arrival_time": "Perguntar quando a sua bagagem chegará",
+        "baggage_claim": "Perguntar na área de retirada de bagagem",
+        "luggage_form": "Preencher um formulário de bagagem"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos cómo actuar ante la pérdida de equipaje.\n\nObjetivo: aprenderás a informar de la pérdida de equipaje, describir tu maleta y preguntar qué debes hacer después.\n\nElige una situación:\n1. Informar de una maleta desaparecida\n2. Describir tu maleta\n3. Preguntar cuándo llegará tu equipaje\n\nO propón tu propia situación sencilla de equipaje perdido.",
+      "contextVariantTitles": {
+        "missing_suitcase": "Informar de una maleta desaparecida",
+        "bag_description": "Describir tu maleta",
+        "luggage_arrival_time": "Preguntar cuándo llegará tu equipaje",
+        "baggage_claim": "Preguntar en la zona de recogida de equipaje",
+        "luggage_form": "Rellenar un formulario de equipaje"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo a gestire lo smarrimento del bagaglio.\n\nObiettivo: imparerai a segnalare un bagaglio smarrito, descrivere la tua valigia e chiedere cosa fare dopo.\n\nScegli una situazione:\n1. Segnalare una valigia mancante\n2. Descrivere la tua valigia\n3. Chiedere quando arriverà il tuo bagaglio\n\nOppure proponi una tua semplice situazione di bagaglio smarrito.",
+      "contextVariantTitles": {
+        "missing_suitcase": "Segnalare una valigia mancante",
+        "bag_description": "Descrivere la tua valigia",
+        "luggage_arrival_time": "Chiedere quando arriverà il tuo bagaglio",
+        "baggage_claim": "Chiedere informazioni al ritiro bagagli",
+        "luggage_form": "Compilare un modulo per il bagaglio"
+      }
+    }
+  }
 }

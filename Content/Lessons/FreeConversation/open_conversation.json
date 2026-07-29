@@ -300,5 +300,27 @@
     "Example redirection: Let’s keep this safe and respectful. We can talk about travel, hobbies, work, movies, technology, food, or daily life.",
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Bonjour, {{userDisplayName}} ! Vous voulez simplement discuter, sans leçon ? Avec plaisir. Quel sujet aimeriez-vous pratiquer ?",
+      "contextVariantTitles": {}
+    },
+    "de": {
+      "setupMessageTemplate": "Hallo, {{userDisplayName}}! Möchten Sie einfach ohne Unterricht plaudern? Sehr gern. Welches Thema möchten Sie üben?",
+      "contextVariantTitles": {}
+    },
+    "pt": {
+      "setupMessageTemplate": "Olá, {{userDisplayName}}! Quer apenas conversar, sem uma aula? Será um prazer. Que assunto você gostaria de praticar?",
+      "contextVariantTitles": {}
+    },
+    "es": {
+      "setupMessageTemplate": "¡Hola, {{userDisplayName}}! ¿Quieres charlar sin hacer una lección? Encantado. ¿Qué tema te gustaría practicar?",
+      "contextVariantTitles": {}
+    },
+    "it": {
+      "setupMessageTemplate": "Ciao, {{userDisplayName}}! Vuoi semplicemente chiacchierare senza fare una lezione? Volentieri. Quale argomento ti piacerebbe esercitare?",
+      "contextVariantTitles": {}
+    }
+  }
 }

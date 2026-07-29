@@ -394,5 +394,57 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
-  ]
+  ],
+  "setupLocalizations": {
+    "fr": {
+      "setupMessageTemplate": "Aujourd’hui, nous allons nous entraîner à une première réunion au travail.\n\nObjectif : vous apprendrez à vous présenter, à indiquer votre rôle et à poser une question professionnelle simple.\n\nChoisissez une situation :\n1. Premier jour dans un nouvel emploi\n2. Rencontrer un nouveau collègue\n3. Rejoindre un appel d’équipe\n\nOu proposez votre propre situation simple de présentation professionnelle.",
+      "contextVariantTitles": {
+        "first_day_new_job": "Premier jour dans un nouvel emploi",
+        "meeting_new_colleague": "Rencontrer un nouveau collègue",
+        "joining_team_call": "Rejoindre un appel d’équipe",
+        "meeting_manager": "Rencontrer un responsable",
+        "meeting_client": "Rencontrer un client"
+      }
+    },
+    "de": {
+      "setupMessageTemplate": "Heute üben wir ein erstes Treffen bei der Arbeit.\n\nZiel: Sie lernen, sich vorzustellen, Ihre Rolle zu nennen und eine einfache berufliche Frage zu stellen.\n\nWählen Sie eine Situation:\n1. Erster Tag in einem neuen Job\n2. Einen neuen Kollegen kennenlernen\n3. An einem Teamgespräch teilnehmen\n\nOder schlagen Sie eine eigene einfache Situation für eine berufliche Vorstellung vor.",
+      "contextVariantTitles": {
+        "first_day_new_job": "Erster Tag in einem neuen Job",
+        "meeting_new_colleague": "Einen neuen Kollegen kennenlernen",
+        "joining_team_call": "An einem Teamgespräch teilnehmen",
+        "meeting_manager": "Eine Führungskraft kennenlernen",
+        "meeting_client": "Einen Kunden kennenlernen"
+      }
+    },
+    "pt": {
+      "setupMessageTemplate": "Hoje vamos praticar uma primeira reunião no trabalho.\n\nObjetivo: você aprenderá a se apresentar, dizer qual é a sua função e fazer uma pergunta profissional simples.\n\nEscolha uma situação:\n1. Primeiro dia num novo emprego\n2. Conhecer um novo colega\n3. Participar numa chamada da equipe\n\nOu sugira a sua própria situação simples de apresentação profissional.",
+      "contextVariantTitles": {
+        "first_day_new_job": "Primeiro dia num novo emprego",
+        "meeting_new_colleague": "Conhecer um novo colega",
+        "joining_team_call": "Participar numa chamada da equipe",
+        "meeting_manager": "Conhecer um gerente",
+        "meeting_client": "Conhecer um cliente"
+      }
+    },
+    "es": {
+      "setupMessageTemplate": "Hoy practicaremos una primera reunión en el trabajo.\n\nObjetivo: aprenderás a presentarte, decir cuál es tu función y hacer una pregunta profesional sencilla.\n\nElige una situación:\n1. Primer día en un nuevo trabajo\n2. Conocer a un nuevo compañero\n3. Unirse a una llamada de equipo\n\nO propón tu propia situación sencilla de presentación profesional.",
+      "contextVariantTitles": {
+        "first_day_new_job": "Primer día en un nuevo trabajo",
+        "meeting_new_colleague": "Conocer a un nuevo compañero",
+        "joining_team_call": "Unirse a una llamada de equipo",
+        "meeting_manager": "Conocer a un responsable",
+        "meeting_client": "Conocer a un cliente"
+      }
+    },
+    "it": {
+      "setupMessageTemplate": "Oggi ci eserciteremo con un primo incontro di lavoro.\n\nObiettivo: imparerai a presentarti, dire qual è il tuo ruolo e fare una semplice domanda professionale.\n\nScegli una situazione:\n1. Primo giorno in un nuovo lavoro\n2. Conoscere un nuovo collega\n3. Partecipare a una chiamata del team\n\nOppure proponi una tua semplice situazione di presentazione professionale.",
+      "contextVariantTitles": {
+        "first_day_new_job": "Primo giorno in un nuovo lavoro",
+        "meeting_new_colleague": "Conoscere un nuovo collega",
+        "joining_team_call": "Partecipare a una chiamata del team",
+        "meeting_manager": "Conoscere un responsabile",
+        "meeting_client": "Conoscere un cliente"
+      }
+    }
+  }
 }

@@ -98,6 +98,30 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
         return result;
     }
 
+    public async Task<CmsContentValidationResult> ValidateDraftRowsForPublicationAsync(Guid contentPackId, CancellationToken cancellationToken)
+    {
+        var result = await ValidateDraftRowsAsync(contentPackId, cancellationToken);
+        if (!result.Success)
+        {
+            return result;
+        }
+
+        var activeScenarios = await dbContext.CmsLessonScenarios
+            .AsNoTracking()
+            .Where(scenario => scenario.ContentPackId == contentPackId && scenario.IsActive)
+            .OrderBy(scenario => scenario.StableScenarioKey)
+            .ToListAsync(cancellationToken);
+
+        foreach (var scenario in activeScenarios)
+        {
+            result.Errors.AddRange(CmsScenarioDefinitionJson.ValidateSetupLocalizationsForPublication(
+                scenario.DefinitionJson,
+                scenario.StableScenarioKey));
+        }
+
+        return result;
+    }
+
     private static void ValidateStudyLanguages(CmsStaticContentImportDraft draft, CmsContentValidationResult result)
     {
         foreach (var languageId in draft.StudyLanguageIds)
