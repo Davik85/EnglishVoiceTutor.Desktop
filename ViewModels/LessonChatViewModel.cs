@@ -687,8 +687,10 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             SelectedSubtopic.Title,
             UserDisplayName,
             this.studyLanguage,
-            RenderLessonTemplate);
-        Debug.WriteLine($"Opening message created: Source={LocalizedLessonTextService.OpeningMessageSource}; TargetLanguageId={this.studyLanguage.Id}; GeneratedLocally=True; InputScenarioMetadataOnly=True; OutputLength={setupMessage.Length}.");
+            template => RenderLessonTemplate(template),
+            RenderLocalizedLessonTemplate);
+        var backendLocalized = LocalizedLessonTextService.TryGetCompleteBackendLocalizedSetup(this.lessonScenario, this.studyLanguage, out var projection);
+        Debug.WriteLine($"Opening message created: Source={(backendLocalized ? "BackendLocalizedSetup" : (string.Equals(this.studyLanguage.Id, "en", StringComparison.Ordinal) ? "CanonicalEnglish" : "PackagedLocalizedFallback"))}; SelectedLanguageId={this.studyLanguage.Id}; ResolvedLanguageId={projection?.ResolvedStudyLanguageId ?? string.Empty}; ProjectionStatus={projection?.Status ?? string.Empty}; ProjectionFallbackUsed={projection?.FallbackUsed ?? false}; SetupMessageLength={setupMessage.Length}.");
         AddMessage(TutorAvatarDisplayName, setupMessage, true);
         lastBotMessage = setupMessage;
         ConversationLatestBotText = setupMessage;
@@ -2689,7 +2691,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 SelectedContextTitle = GetSelectedContextTitle(),
                 SelectedContextLocalizedTitle = GetSelectedLocalizedContextTitle(),
                 SelectedContextOpeningLine = GetSelectedContextOpeningLine(),
-                SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant),
+                SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant, GetSelectedLocalizedContextTitle()),
                 SelectedContextOpeningIntent = selectedContextVariant?.OpeningIntent ?? string.Empty,
                 UserTurnNumber = nextLearnerTurnCount,
                 SoftWrapUpAfterUserTurn = softWrapUpTurn,
@@ -2942,7 +2944,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             SelectedContextTitle = GetSelectedContextTitle(),
             SelectedContextLocalizedTitle = GetSelectedLocalizedContextTitle(),
             SelectedContextOpeningLine = GetSelectedContextOpeningLine(),
-            SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant),
+            SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant, GetSelectedLocalizedContextTitle()),
             SelectedContextOpeningIntent = selectedContextVariant?.OpeningIntent ?? string.Empty,
             LastBotMessage = lastBotMessage,
             LearnerTurnCount = LearnerTurnCount,
@@ -3807,7 +3809,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             selectedLocalizedContextTitle = localizedScenario;
             selectedCustomContextTitle = string.Empty;
 
-            var startMessage = $"{GetSelectedContextConfirmationLine(matchedVariant)}\n\n{GetSelectedContextOpeningLine()}";
+            var startMessage = $"{GetSelectedContextConfirmationLine(matchedVariant, localizedScenario)}\n\n{GetSelectedContextOpeningLine()}";
             Debug.WriteLine($"Localized scenario selection resolved: TargetLanguageId={studyLanguage.Id}; InputPreview={GetLimitedTranscriptPreview(userMessage)}; CanonicalScenario={canonicalScenario}; LocalizedScenario={localizedScenario}; SelectedContextVariantId={matchedVariant.Id}; CountsAsActiveRoleplayTurn=False.");
             Debug.WriteLine($"Opening message created: Source=context selection target-language builder; TargetLanguageId={studyLanguage.Id}; CanonicalScenario={canonicalScenario}; LocalizedScenario={localizedScenario}; GeneratedLocally=True; InputScenarioMetadataOnly=True; OutputLength={startMessage.Length}.");
             await StartActiveRoleplayAfterContextSelectionAsync(startMessage, learnerTurnCountBefore);
@@ -4015,13 +4017,13 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         return LocalizedLessonTextService.BuildContextOpeningLine(englishOpeningLine, lessonScenario, studyLanguage);
     }
 
-    private string GetSelectedContextConfirmationLine(ContextVariant variant)
+    private string GetSelectedContextConfirmationLine(ContextVariant variant, string resolvedLocalizedTitle)
     {
         var englishConfirmationLine = !string.IsNullOrWhiteSpace(variant.ContextConfirmationLine)
             ? ResolveScenarioPlaceholders(variant.ContextConfirmationLine)
             : $"Great! Let's imagine {BuildContextConfirmationText(variant)}.";
 
-        return LocalizedLessonTextService.BuildContextConfirmationLine(variant, studyLanguage, englishConfirmationLine);
+        return LocalizedLessonTextService.BuildContextConfirmationLine(variant, resolvedLocalizedTitle, studyLanguage, englishConfirmationLine);
     }
 
     private static string BuildContextConfirmationText(ContextVariant variant)
@@ -4143,23 +4145,40 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         return string.Equals(lessonScenario.Metadata.LessonType, "guided_roleplay", StringComparison.OrdinalIgnoreCase);
     }
 
-    private string RenderLessonTemplate(string template)
+    private string RenderLessonTemplate(string template, bool preserveFormatting = false)
     {
         if (string.IsNullOrWhiteSpace(template))
         {
             return string.Empty;
         }
 
-        var rendered = template.Trim();
+        var rendered = preserveFormatting ? template : template.Trim();
 
         if (rendered.Contains("{{userDisplayName}}", StringComparison.Ordinal))
         {
             rendered = string.IsNullOrWhiteSpace(UserDisplayName)
-                ? rendered.Replace("Hi, {{userDisplayName}}!", "Hi!", StringComparison.Ordinal)
+                ? (preserveFormatting
+                    ? rendered.Replace("{{userDisplayName}}", string.Empty, StringComparison.Ordinal)
+                    : rendered.Replace("Hi, {{userDisplayName}}!", "Hi!", StringComparison.Ordinal))
                 : rendered.Replace("{{userDisplayName}}", UserDisplayName, StringComparison.Ordinal);
         }
 
-        return rendered.Replace("Hi, !", "Hi!", StringComparison.Ordinal).Trim();
+        rendered = rendered.Replace("Hi, !", "Hi!", StringComparison.Ordinal);
+        return preserveFormatting ? rendered : rendered.Trim();
+    }
+
+    private string RenderLocalizedLessonTemplate(string template)
+    {
+        if (!string.IsNullOrWhiteSpace(UserDisplayName))
+        {
+            return template.Replace("{{userDisplayName}}", UserDisplayName, StringComparison.Ordinal);
+        }
+
+        var rendered = template.Replace(", {{userDisplayName}}", string.Empty, StringComparison.Ordinal)
+            .Replace("{{userDisplayName}}", string.Empty, StringComparison.Ordinal);
+        return rendered.StartsWith("¡", StringComparison.Ordinal) && rendered.IndexOf('!') > 0
+            ? rendered[1..]
+            : rendered;
     }
 
     private string BuildFeedbackRulesSummary()
@@ -4527,7 +4546,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             SelectedContextTitle = GetSelectedContextTitle(),
             SelectedContextLocalizedTitle = GetSelectedLocalizedContextTitle(),
             SelectedContextOpeningLine = GetSelectedContextOpeningLine(),
-            SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant),
+            SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant, GetSelectedLocalizedContextTitle()),
             SelectedContextOpeningIntent = selectedContextVariant?.OpeningIntent ?? string.Empty,
             UserTurnNumber = LearnerTurnCount,
             SoftWrapUpAfterUserTurn = softWrapUpTurn,

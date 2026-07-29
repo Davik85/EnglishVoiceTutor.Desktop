@@ -8,18 +8,60 @@ namespace EnglishVoiceTutor.Desktop.Services;
 
 public static class LocalizedLessonTextService
 {
-    public const string OpeningMessageSource = "target-language localized semantic lesson setup builder";
+    public const string OpeningMessageSource = "backend localized setup template or canonical lesson setup";
     // The lesson JSON scenario text is semantic metadata.
 
     public sealed record LocalizedScenarioOption(int Number, string CanonicalTitle, string LocalizedTitle, ContextVariant Variant);
 
     public sealed record LocalizedScenarioSelection(string CanonicalScenario, string LocalizedScenario, ContextVariant Variant);
+    public sealed record BackendLocalizedSetupValidationResult(bool IsValid, string Reason, LocalizedLessonSetup? LocalizedSetup);
+
+    public static bool TryGetCompleteBackendLocalizedSetup(LessonScenario lessonScenario, StudyLanguageDefinition studyLanguage, out LocalizedLessonSetup? localizedSetup)
+    {
+        var result = ValidateBackendLocalizedSetup(lessonScenario, studyLanguage);
+        localizedSetup = result.LocalizedSetup;
+        return result.IsValid;
+    }
+
+    public static BackendLocalizedSetupValidationResult ValidateBackendLocalizedSetup(LessonScenario lessonScenario, StudyLanguageDefinition studyLanguage)
+    {
+        var language = ResolveLanguage(studyLanguage);
+        if (IsEnglish(language)) return new(false, "english_uses_canonical_setup", null);
+        var candidate = lessonScenario.LocalizedSetup;
+        if (candidate is null
+            || !string.Equals(candidate.Status, "complete", StringComparison.Ordinal)
+            || candidate.FallbackUsed
+            || !string.Equals(candidate.ResolvedStudyLanguageId, language.Id, StringComparison.Ordinal)
+            || string.IsNullOrWhiteSpace(candidate.SetupMessageTemplate)) return new(false, "missing_or_incomplete_localized_setup", null);
+
+        var variants = lessonScenario.ControlledVariation.ContextVariants;
+        var variantIds = variants.Select(variant => variant.Id).ToArray();
+        if (variantIds.Any(string.IsNullOrWhiteSpace)
+            || variantIds.Distinct(StringComparer.Ordinal).Count() != variantIds.Length
+            || variantIds.Distinct(StringComparer.OrdinalIgnoreCase).Count() != variantIds.Length) return new(false, "invalid_context_variant_ids", null);
+
+        var titles = candidate.ContextVariantDisplayTitles;
+        if (titles is null || titles.Count != variantIds.Length
+            || titles.Keys.Any(key => string.IsNullOrWhiteSpace(key))
+            || titles.Keys.Distinct(StringComparer.OrdinalIgnoreCase).Count() != titles.Count
+            || titles.Any(pair => string.IsNullOrWhiteSpace(pair.Value))) return new(false, "invalid_context_title_mapping", null);
+
+        var expected = variantIds.ToHashSet(StringComparer.Ordinal);
+        if (!titles.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(expected)) return new(false, "context_title_ids_do_not_match", null);
+        return new(true, "complete", candidate);
+    }
 
     public static IReadOnlyList<LocalizedScenarioOption> GetLocalizedScenarioOptions(
         LessonScenario lessonScenario,
         StudyLanguageDefinition studyLanguage)
     {
         var language = ResolveLanguage(studyLanguage);
+        if (TryGetCompleteBackendLocalizedSetup(lessonScenario, language, out var localizedSetup))
+        {
+            return lessonScenario.ControlledVariation.ContextVariants
+                .Select((variant, index) => new LocalizedScenarioOption(index + 1, variant.Title.Trim(), localizedSetup!.ContextVariantDisplayTitles[variant.Id], variant))
+                .ToArray();
+        }
         return lessonScenario.ControlledVariation.ContextVariants
             .Select((variant, index) => new LocalizedScenarioOption(
                 index + 1,
@@ -118,7 +160,8 @@ public static class LocalizedLessonTextService
         string selectedSubtopicTitle,
         string userDisplayName,
         StudyLanguageDefinition studyLanguage,
-        Func<string, string> renderEnglishTemplate)
+        Func<string, string> renderEnglishTemplate,
+        Func<string, string> renderLocalizedTemplate)
     {
         var language = ResolveLanguage(studyLanguage);
         var englishTemplate = string.IsNullOrWhiteSpace(lessonScenario.LessonSetup.SetupMessage)
@@ -128,6 +171,11 @@ public static class LocalizedLessonTextService
         if (IsEnglish(language))
         {
             return englishTemplate;
+        }
+
+        if (TryGetCompleteBackendLocalizedSetup(lessonScenario, language, out var localizedSetup))
+        {
+            return renderLocalizedTemplate(localizedSetup!.SetupMessageTemplate!);
         }
 
         var subtopic = AdaptShortScenarioText(selectedSubtopicTitle, language);
@@ -151,7 +199,7 @@ public static class LocalizedLessonTextService
         };
     }
 
-    public static string BuildContextConfirmationLine(ContextVariant variant, StudyLanguageDefinition studyLanguage, string englishFallback)
+    public static string BuildContextConfirmationLine(ContextVariant variant, string resolvedLocalizedTitle, StudyLanguageDefinition studyLanguage, string englishFallback)
     {
         var language = ResolveLanguage(studyLanguage);
         if (IsEnglish(language))
@@ -159,7 +207,9 @@ public static class LocalizedLessonTextService
             return englishFallback;
         }
 
-        var title = AdaptShortScenarioText(variant.Title, language);
+        var title = string.IsNullOrWhiteSpace(resolvedLocalizedTitle)
+            ? AdaptShortScenarioText(variant.Title, language)
+            : resolvedLocalizedTitle;
         return language.Id switch
         {
             "fr" => $"Très bien ! Imaginons cette situation : {title}.",

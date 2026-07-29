@@ -686,13 +686,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 localScenario.Id,
                 timeoutCancellation.Token);
 
-            if (runtimeScenario is not null && IsRuntimeLessonScenarioValid(runtimeScenario))
+            var selectedStudyLanguage = StudyLanguageCatalog.GetById(userSettings.StudyLanguageId);
+            if (runtimeScenario is not null && IsRuntimeLessonScenarioValid(runtimeScenario, selectedStudyLanguage))
             {
                 Debug.WriteLine($"Using backend runtime lesson scenario. ScenarioId={runtimeScenario.Id}; Source={runtimeScenario.RuntimeContent.Source}; EffectiveSource={runtimeScenario.RuntimeContent.EffectiveSource}; ContentPackSlug={runtimeScenario.RuntimeContent.ContentPackSlug}; Version={runtimeScenario.RuntimeContent.VersionNumber?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty}; SnapshotHash={runtimeScenario.RuntimeContent.SnapshotHash}; FallbackUsed={runtimeScenario.RuntimeContent.FallbackUsed}; SetupMessageLength={runtimeScenario.LessonSetup.SetupMessage.Length}.");
                 return runtimeScenario;
             }
 
-            Debug.WriteLine($"Backend runtime lesson scenario failed validation or was unavailable; packaged local content fallback will be used. ScenarioId={localScenario.Id}.");
+            LogRuntimeScenarioLocalizationRejection(localScenario.Id, selectedStudyLanguage, runtimeScenario);
         }
         catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException or TaskCanceledException)
         {
@@ -714,12 +715,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         scenario.RuntimeContent.ScenarioKey = scenario.Id;
     }
 
-    private static bool IsRuntimeLessonScenarioValid(LessonScenario? runtimeScenario)
+    private static bool IsRuntimeLessonScenarioValid(LessonScenario? runtimeScenario, StudyLanguageDefinition studyLanguage)
     {
         return runtimeScenario is not null
             && !string.IsNullOrWhiteSpace(runtimeScenario.Id)
             && runtimeScenario.LessonSetup is not null
-            && !string.IsNullOrWhiteSpace(runtimeScenario.LessonSetup.SetupMessage);
+            && !string.IsNullOrWhiteSpace(runtimeScenario.LessonSetup.SetupMessage)
+            && (string.Equals(studyLanguage.Id, "en", StringComparison.Ordinal)
+                || LocalizedLessonTextService.TryGetCompleteBackendLocalizedSetup(runtimeScenario, studyLanguage, out _));
+    }
+
+    private static void LogRuntimeScenarioLocalizationRejection(string scenarioId, StudyLanguageDefinition selectedStudyLanguage, LessonScenario? runtimeScenario)
+    {
+        var projection = runtimeScenario?.LocalizedSetup;
+        var validation = runtimeScenario is null
+            ? new LocalizedLessonTextService.BackendLocalizedSetupValidationResult(false, "runtime_scenario_unavailable", null)
+            : LocalizedLessonTextService.ValidateBackendLocalizedSetup(runtimeScenario, selectedStudyLanguage);
+        Debug.WriteLine($"Backend runtime scenario rejected; ScenarioId={scenarioId}; SelectedStudyLanguageId={selectedStudyLanguage.Id}; LocalizedSetupPresent={projection is not null}; ResolvedStudyLanguageId={projection?.ResolvedStudyLanguageId ?? string.Empty}; ProjectionStatus={projection?.Status ?? string.Empty}; ProjectionFallbackUsed={projection?.FallbackUsed ?? false}; SetupTemplateLength={projection?.SetupMessageTemplate?.Length ?? 0}; ContextTitleCount={projection?.ContextVariantDisplayTitles?.Count ?? 0}; RejectionReason={validation.Reason}. Packaged local content fallback will be used.");
     }
 
     private LessonScenario LoadLessonScenarioForSubtopic(Topic selectedTopic, Subtopic selectedSubtopic)
