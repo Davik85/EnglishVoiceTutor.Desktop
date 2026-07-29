@@ -72,7 +72,7 @@ Copy the installer to another Windows device or clean VM, install it, choose a c
 
 ## Generated release artifacts
 
-Latest verified status (not a local-artifact claim): Windows Direct 1.2 passed the Desktop release gate, packaging, and direct-release validation; an installed 1.1 application updated to 1.2, launched, and completed a lesson smoke.
+Latest verified status (not a local-artifact claim): Windows Direct 1.3 passed public download, in-app manual-confirmation update, installed application launch, and localized lesson setup verification; it is the current public release.
 
 `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, installers, packages, and other files under `artifacts/` are generated outputs. Validate them locally and upload through the Windows direct release flow when intended, but do not commit them.
 

@@ -4,7 +4,7 @@ Review date: 2026-07-28.
 
 ## Google Play entitlement-bridge next step
 
-The disabled backend release and migration-application stage are complete: production is `0.1.35-backend.134`, migration `20260727045935_AddGooglePlayPurchaseClaims` is applied, and the endpoint remains disabled and verified as `503 not_configured` with no claim created. The next Google Play stage is preparation of configuration and controlled sandbox validation: Google Play Console package/product configuration, production-safe credential storage, backend configuration review, controlled sandbox or license-tester verification, and Mobile purchase-flow integration planning.
+The disabled backend release and migration-application stage are complete: production is `0.1.35-backend.136` with `.135` retained as rollback, migration `20260727045935_AddGooglePlayPurchaseClaims` is applied, and the endpoint remains disabled and verified as `503 not_configured` with no claim created. The next Google Play stage is preparation of configuration and controlled sandbox validation: Google Play Console package/product configuration, production-safe credential storage, backend configuration review, controlled sandbox or license-tester verification, and Mobile purchase-flow integration planning.
 
 That later work must preserve valid Paddle entitlement and Desktop Premium expiry; a Google Play failure must never revoke, shorten, hide, or replace Paddle Premium. Enabling Google Play, real purchase verification, acknowledgement, replacement-token handling, RTDN, Payment/BillingEvent projections, and a production purchase rollout remain separate bounded stages. Test purchases remain unsupported; Paddle production behavior remains unchanged.
 
@@ -68,10 +68,10 @@ Backend `0.1.35-backend.116` completes the backend prerequisite for learner leve
 
 Public release boundary: the current product remains a public Windows direct release, not a full broad production-readiness claim.
 
-- Backend: production healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.134`, with `.133` as rollback; the execution migration, disabled Google Play claim-table migration, and complete account-deletion workflow are production-deployed and production-verified; CMS/Admin login security and persistent role management are production-verified.
+- Backend: production healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.136`, with `.135` as rollback; CMS published version `51` is the valid `CmsPublishedSnapshot` runtime source with `fallbackUsed=false`, 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. The execution migration, disabled Google Play claim-table migration, and complete account-deletion workflow are production-deployed and production-verified; CMS/Admin login security and persistent role management are production-verified.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
-- Download: Windows Direct 1.2 is available through the manifest-driven download flow, and the normal public download was verified. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
-- Windows installer: current Windows direct public release is `1.2`, installer `LanguageVoiceTutorSetup-1.2.exe`; gate, packaging, validation, upload, website download, 1.1-to-1.2 update, app launch, lesson smoke, and manual-confirmation flow were verified.
+- Download: Windows Direct 1.3 is available through the manifest-driven download flow, and the normal public download was verified. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
+- Windows installer: current Windows direct public release is `1.3`, installer `LanguageVoiceTutorSetup-1.3.exe`; public download, in-app manual-confirmation update, installed-app launch, and localized setup behavior were manually verified against `https://api.languagevoicetutor.com`. Non-English new lessons use the backend template with only the user display name rendered; blank-name greeting, stable-ID localized context-title resolution, English canonical behavior, invalid-backend packaged fallback, and unchanged open lessons were verified.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: legal/support/seller/AI/status/download pages are ready for owner/legal final review as drafts, not final legal advice.
 
@@ -153,7 +153,7 @@ Current manifest: `https://languagevoicetutor.com/releases/windows/direct/latest
 Expected current values:
 
 - `version`: `1.2`
-- `installerFileName`: `LanguageVoiceTutorSetup-1.2.exe`
+- Historical 1.2 `installerFileName`: `LanguageVoiceTutorSetup-1.2.exe`
 - `backendBaseUrl`: `https://api.languagevoicetutor.com`
 - `updateMode`: `manual-confirmation`
 - `minimumSupportedVersion`: `1.2`
@@ -214,7 +214,7 @@ Windows release work stays on the Direct EXE/Inno installer. Updates continue th
 7. Controlled Paddle live payment, webhook delivery, Premium activation, failed-payment non-activation, desktop cancel-renewal, and full-refund Premium revocation are documented as completed for the 2026-07-02 owner-led test; do not claim paid public launch until final release-readiness review, remaining release smoke/signing, and owner release decision are complete.
 8. Collect controlled tester feedback, triage severity, and make an explicit release decision before broader public distribution.
 9. Before any future tester handoff, re-verify the live Windows direct manifest points to the intended release, production backend URL, and `manual-confirmation`.
-10. Keep backend current-state docs aligned with current production: the live symlink is `0.1.35-backend.134`, rollback is `0.1.35-backend.133`; verify `/health` and `/api/health/database` before any separate backend operation. The 2026-07-11 `.112`/`.111` verification remains historical only.
+10. Keep backend current-state docs aligned with current production: the live symlink is `0.1.35-backend.136`, rollback is `0.1.35-backend.135`; verify `/health` and `/api/health/database` before any separate backend operation. The 2026-07-11 `.112`/`.111` verification remains historical only.
 11. Keep the AI Models persistence risk closed: preserve `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` as persistent server data/config, do not package release-folder JSON as the production source of truth, and verify it after future backend deploys.
 12. Keep Store/MSIX removed/discontinued; do not recreate `packaging/windows-msix`, Store channel logic, Store update messaging, WACK commands, or Partner Center planning.
 13. Run backend deploy only for an approved backend runtime/configuration change; do not deploy backend for Website CMS publish, Windows installer upload, AI Models persistence correction, or docs-only work.

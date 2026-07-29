@@ -35,9 +35,9 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Historical tester status and current direct release
 
-The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-1.2.exe` with `version` set to `1.2`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `1.2`, and `updateMode` set to `manual-confirmation`.
+The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-1.3.exe` with `version` set to `1.3`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `1.3`, and `updateMode` set to `manual-confirmation`.
 
-Windows Direct Release 1.2 is now published on the public direct channel. The 1.1-to-1.2 update, application launch, lesson smoke, and manual-confirmation update flow were verified; no backend deployment or migration was part of this Windows upload. Historical tester-release notes in this document are retained only as history; they are not the current active release state. This does not mean every operational area is fully public production-ready.
+Windows Direct Release 1.3 is now published on the public direct channel. Public download, in-app manual-confirmation update, installed application launch, and localized lesson setup were verified; no backend deployment or migration was part of this Windows upload. Historical tester-release notes in this document are retained only as history; they are not the current active release state. This does not mean every operational area is fully public production-ready.
 
 ## Release artifact boundary
 
@@ -45,7 +45,7 @@ Windows Direct Release 1.2 is now published on the public direct channel. The 1.
 
 ## Historical backend notes
 
-Historical tester-era backend snapshot notes are retained only for context. Current production backend for the Windows Direct Release 1.2 documentation state is `0.1.35-backend.134`, with `.133` rollback; verify the live value from the server symlink before calling it current.
+Historical tester-era backend snapshot notes are retained only for context. Current production backend for the Windows Direct Release 1.3 documentation state is `0.1.35-backend.136`, with `.135` rollback; verify the live value from the server symlink before calling it current.
 
 `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
@@ -57,7 +57,7 @@ Release Settings must not show a Diagnostics tab. Release Settings must not show
 
 ## Historical verified tester behavior
 
-The historical tester build verified these behaviors; these are historical tester observations, while the current active release is Windows Direct Release 1.2:
+The historical tester build verified these behaviors; these are historical tester observations, while the current active release is Windows Direct Release 1.3:
 
 - registration and login from installed builds against `https://api.languagevoicetutor.com`;
 - registration on another device;

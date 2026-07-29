@@ -30,15 +30,15 @@ Current public direct release values (verified 2026-07-28):
 
 ```text
 channel: direct-public
-version: 1.2
-installerFileName: LanguageVoiceTutorSetup-1.2.exe
-installerRelativeUrl: LanguageVoiceTutorSetup-1.2.exe
+version: 1.3
+installerFileName: LanguageVoiceTutorSetup-1.3.exe
+installerRelativeUrl: LanguageVoiceTutorSetup-1.3.exe
 backendBaseUrl: https://api.languagevoicetutor.com
 updateMode: manual-confirmation
-minimumSupportedVersion: 1.2
+minimumSupportedVersion: 1.3
 ```
 
-This release passed local validation, upload dry run, and real upload; the public website download was verified. The 1.1-to-1.2 update launched successfully and lessons worked, and the manual-confirmation update flow worked on other devices. Production backend remains `0.1.35-backend.134` with `.133` rollback; this Windows-only upload performed no backend deployment or migration.
+This release passed local validation, upload dry run, and real upload; the public website download was verified. The in-app manual-confirmation update, installed application launch, and localized lesson setup were verified. Production backend is `0.1.35-backend.136` with `.135` rollback; this Windows-only upload performed no backend deployment or migration.
 
 Release/tester installed builds are server-only. The production backend URL for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`.
 
@@ -113,7 +113,7 @@ $manifest.checksums.sha256
 Confirm:
 
 - `version` is `1.2` or the intended newly uploaded direct version;
-- `installerFileName` is `LanguageVoiceTutorSetup-1.2.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.2.exe`, or both match the intended installer;
+- `installerFileName` is `LanguageVoiceTutorSetup-1.3.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.3.exe`, or both match the intended installer;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
 - `updateMode` is `manual-confirmation`;
 - `minimumSupportedVersion` is `1.2` for this uploaded direct release;

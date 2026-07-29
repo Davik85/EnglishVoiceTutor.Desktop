@@ -4,7 +4,7 @@ Review date: 2026-07-22.
 
 ## CMS setup-localization draft import
 
-With backend `0.1.35-backend.135` active (and `.134` retained as rollback), no migration is needed. In CMS Content → Overview, preview the localized setup import, confirm the exact matching/totals and absence of conflicts, then apply it to the draft. Apply revalidates those conditions in its protected transaction. This only fills missing `setupLocalizations`; malformed, differing, or concurrently edited draft data produces zero writes and requires a fresh Preview. It never publishes or changes runtime. Review the five fields, run Validation, and publish separately when ready. Backend deployment alone does not populate localization fields in an older existing draft; deployment of this operation remains pending.
+Production closeout: backend `0.1.35-backend.136` is active (with `.135` retained as rollback), CMS published version `51` is active at runtime, and no migration was needed. Runtime status is `CmsPublishedSnapshot` with `fallbackUsed=false`; the published content contains 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. The import procedure below remains for a future older draft only; it is not a pending production operation.
 
 ## Source of truth for current versions
 
@@ -123,7 +123,7 @@ Invoke-WebRequest https://languagevoicetutor.com/assets/images/landing/mobile.we
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
 
-The first four checks must return `200 OK`. The `latest.json` check must remain valid and should still show the intended Windows release metadata. Current verified manifest values are `version=1.2`, `installerFileName=LanguageVoiceTutorSetup-1.2.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.2`, and `updateMode=manual-confirmation`.
+The first four checks must return `200 OK`. The `latest.json` check must remain valid and should still show the intended Windows release metadata. Current verified manifest values are `version=1.3`, `installerFileName=LanguageVoiceTutorSetup-1.3.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.3`, and `updateMode=manual-confirmation`.
 
 ### Rollback public website files
 
@@ -358,9 +358,9 @@ CmsContent__ContentPackSlug=static-json-v1
 CmsContent__FallbackToStaticJson=true
 ```
 
-For the current Windows Direct Release 1.2 phase, confirm the backend release, health, database health, and that Admin CMS has a published version. Runtime status must show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, and counts of 6 topics, 26 scenarios, 3 prompt templates, and 3 tutor behavior profiles. Run a short installed-app lesson smoke before handoff.
+For the current Windows Direct Release 1.3, confirm the backend release, health, database health, and that Admin CMS has published version `51`. Runtime status must show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. The installed-app localized setup smoke has been completed; run it again only when validating a subsequent release or content change.
 
-Rollback remains disabling or removing the CMS runtime flags and restarting the backend, then rerunning the read-only status check and confirming `effectiveSource=StaticJson`. CMS runtime is active for the Windows Direct Release 1.2 phase; do not expand this into broad public release without a separate decision. This process has no billing, Paddle, subscription, entitlement, installer, desktop runtime, lesson JSON, public `latest.json`, deployment-script, or EF migration involvement.
+Rollback remains disabling or removing the CMS runtime flags and restarting the backend, then rerunning the read-only status check and confirming `effectiveSource=StaticJson`. CMS runtime is active for the Windows Direct Release 1.3 phase; do not expand this into broad public release without a separate decision. This process has no billing, Paddle, subscription, entitlement, installer, desktop runtime, lesson JSON, public `latest.json`, deployment-script, or EF migration involvement.
 
 ## CMS-managed level profiles (A1-B2)
 
@@ -373,7 +373,7 @@ Rollback remains disabling or removing the CMS runtime flags and restarting the 
 
 ## Current controlled tester handoff checks after CMS runtime milestone
 
-Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.134` and the live public direct Windows manifest points to `version=1.2`, `installerFileName=LanguageVoiceTutorSetup-1.2.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.2`, and `updateMode=manual-confirmation`. For future tester handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
+Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.136` and the live public direct Windows manifest points to `version=1.3`, `installerFileName=LanguageVoiceTutorSetup-1.3.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.3`, and `updateMode=manual-confirmation`. The public download, in-app manual-confirmation update, installed 1.3 launch, and localized setup smoke have been verified. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
 
 Verify the public direct release manifest before handoff:
 
