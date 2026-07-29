@@ -436,6 +436,13 @@
     const cmsScenarioTitleInput = document.getElementById("cms-scenario-title");
     const cmsScenarioDescriptionInput = document.getElementById("cms-scenario-description");
     const cmsScenarioSetupMessageInput = document.getElementById("cms-scenario-setup-message");
+    const cmsScenarioLocalizedSetupMessageInputs = Object.freeze({
+        fr: document.getElementById("cms-scenario-localized-setup-message-fr"),
+        de: document.getElementById("cms-scenario-localized-setup-message-de"),
+        pt: document.getElementById("cms-scenario-localized-setup-message-pt"),
+        es: document.getElementById("cms-scenario-localized-setup-message-es"),
+        it: document.getElementById("cms-scenario-localized-setup-message-it")
+    });
     const cmsScenarioIsActiveInput = document.getElementById("cms-scenario-is-active");
     const cmsScenarioDefinitionJsonInput = document.getElementById("cms-scenario-definition-json");
     const cmsScenarioFirstBotMessageLinesInput = document.getElementById("cms-scenario-first-bot-message-lines");
@@ -615,6 +622,7 @@
     const UnsavedChangesMessage = "You have unsaved changes. Save draft before leaving, or discard changes.";
     const cmsScenarioStructuredInputs = [
         cmsScenarioTitleInput, cmsScenarioDescriptionInput, cmsScenarioSetupMessageInput, cmsScenarioIsActiveInput,
+        ...Object.values(cmsScenarioLocalizedSetupMessageInputs),
         cmsScenarioFirstBotMessageLinesInput, cmsScenarioContextOptionLinesInput, cmsScenarioValidContextKeywordsLinesInput, cmsScenarioCustomContextRulesLinesInput,
         cmsScenarioInvalidContextRedirectInput, cmsScenarioGoalTextInput, cmsScenarioCanDoLinesInput, cmsScenarioOpeningTextInput,
         cmsScenarioFirstUserTaskInput, cmsScenarioGuidedFollowUpLinesInput, cmsScenarioAiInstructionLinesInput,
@@ -625,7 +633,7 @@
 
     function getCmsDraftSnapshot(editorKey) {
         if (editorKey === "topic") { return { title: cmsTopicTitleInput.value, description: cmsTopicDescriptionInput.value, sortOrder: cmsTopicSortOrderInput.value, isActive: cmsTopicIsActiveInput.checked }; }
-        if (editorKey === "scenario") { return { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, structuredScenarioFields: getCmsStructuredScenarioSnapshot(), definitionJson: cmsScenarioDefinitionJsonInput.value, isActive: cmsScenarioIsActiveInput.checked }; }
+        if (editorKey === "scenario") { return { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, localizedSetupMessages: getCmsLocalizedSetupMessageSnapshot(), structuredScenarioFields: getCmsStructuredScenarioSnapshot(), definitionJson: cmsScenarioDefinitionJsonInput.value, isActive: cmsScenarioIsActiveInput.checked }; }
         if (editorKey === "promptTemplate") { return { body: cmsPromptTemplateBodyInput.value, isActive: cmsPromptTemplateIsActiveInput.checked }; }
         if (editorKey === "level") { return { displayName: cmsLevelDisplayNameInput.value, sortOrder: cmsLevelSortOrderInput.value, wrapUpAfterUserTurn: cmsLevelWrapUpTurnInput.value, finalMessageAtUserTurn: cmsLevelFinalTurnInput.value, botLanguageComplexityGuidance: cmsLevelComplexityGuidanceInput.value, correctionGuidance: cmsLevelCorrectionGuidanceInput.value, answerLengthGuidance: cmsLevelAnswerGuidanceInput.value, adminNotes: cmsLevelAdminNotesInput.value, isActive: cmsLevelIsActiveInput.checked }; }
         if (editorKey === "tutorProfile") { return { displayName: cmsTutorProfileDisplayNameInput.value, communicationStyleJson: cmsTutorProfileCommunicationStyleJsonInput.value, safetyNotesJson: cmsTutorProfileSafetyNotesJsonInput.value, isActive: cmsTutorProfileIsActiveInput.checked }; }
@@ -2082,6 +2090,22 @@
     function setCmsArrayField(root, keys, value) { const parent = getCmsNestedObject(root, keys.slice(0, -1)); parent[keys[keys.length - 1]] = splitCmsLines(value); }
     function getCmsStringField(root, keys) { let current = root; for (const key of keys) { if (!current || typeof current !== "object") { return ""; } current = current[key]; } return typeof current === "string" || typeof current === "number" ? String(current) : ""; }
     function getCmsArrayField(root, keys) { let current = root; for (const key of keys) { if (!current || typeof current !== "object") { return ""; } current = current[key]; } return joinCmsLines(current); }
+    function getCmsLocalizedSetupMessageSnapshot() { return Object.fromEntries(Object.entries(cmsScenarioLocalizedSetupMessageInputs).map(([languageId, input]) => [languageId, input?.value || ""])); }
+    function mergeCmsLocalizedSetupMessagesToDefinition(root) {
+        let changed = false;
+        for (const [languageId, input] of Object.entries(cmsScenarioLocalizedSetupMessageInputs)) {
+            const value = input?.value || "";
+            const existingLocalization = root.setupLocalizations && typeof root.setupLocalizations === "object" && !Array.isArray(root.setupLocalizations) ? root.setupLocalizations[languageId] : undefined;
+            const existingTemplate = existingLocalization && typeof existingLocalization === "object" && !Array.isArray(existingLocalization) && typeof existingLocalization.setupMessageTemplate === "string" ? existingLocalization.setupMessageTemplate : "";
+            if (value === existingTemplate) { continue; }
+            if (!root.setupLocalizations || typeof root.setupLocalizations !== "object" || Array.isArray(root.setupLocalizations)) { root.setupLocalizations = {}; }
+            const localization = root.setupLocalizations[languageId] && typeof root.setupLocalizations[languageId] === "object" && !Array.isArray(root.setupLocalizations[languageId]) ? root.setupLocalizations[languageId] : { contextVariantTitles: {} };
+            localization.setupMessageTemplate = value;
+            root.setupLocalizations[languageId] = localization;
+            changed = true;
+        }
+        return changed;
+    }
     function getCmsStructuredScenarioSnapshot() {
         return {
             firstBotMessageShouldExplain: cmsScenarioFirstBotMessageLinesInput.value,
@@ -2113,6 +2137,9 @@
             return;
         }
         const root = parsed.value;
+        Object.entries(cmsScenarioLocalizedSetupMessageInputs).forEach(([languageId, input]) => {
+            input.value = getCmsStringField(root, ["setupLocalizations", languageId, "setupMessageTemplate"]);
+        });
         cmsScenarioFirstBotMessageLinesInput.value = getCmsArrayField(root, ["lessonSetup", "firstBotMessageShouldExplain"]);
         const variants = root.controlledVariation && Array.isArray(root.controlledVariation.contextVariants) ? root.controlledVariation.contextVariants : [];
         cmsScenarioContextOptionLinesInput.value = variants.map((variant) => variant && typeof variant === "object" && typeof variant.title === "string" ? variant.title : "").filter(Boolean).join("\n");
@@ -2135,6 +2162,7 @@
         if (cmsSelectedScenario?.stableScenarioKey) { root.id = cmsSelectedScenario.stableScenarioKey; }
         setCmsStringField(root, ["metadata", "subtopic"], cmsScenarioTitleInput.value);
         setCmsStringField(root, ["lessonSetup", "setupMessage"], cmsScenarioSetupMessageInput.value);
+        mergeCmsLocalizedSetupMessagesToDefinition(root);
         setCmsArrayField(root, ["lessonSetup", "firstBotMessageShouldExplain"], cmsScenarioFirstBotMessageLinesInput.value);
         const titles = splitCmsLines(cmsScenarioContextOptionLinesInput.value);
         const controlledVariation = getCmsObject(root, "controlledVariation");
