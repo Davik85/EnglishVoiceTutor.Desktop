@@ -1,6 +1,7 @@
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Data.Entities.Cms;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
+using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Api.Services.Cms;
 
@@ -32,7 +33,13 @@ internal static class CmsScenarioDefinitionJson
         "aiTutorPromptInstructions"
     ];
 
-    public static string SerializeDefinition(LessonScenario scenario) => CmsContentJson.SerializeDeterministic(scenario);
+    public static string SerializeDefinition(LessonScenario scenario)
+    {
+        var canonicalScenario = JsonSerializer.Deserialize<LessonScenario>(JsonSerializer.Serialize(scenario), ReadJsonOptions)
+            ?? throw new JsonException("Scenario definition serialization produced an empty lesson scenario.");
+        canonicalScenario.LocalizedSetup = null;
+        return CmsContentJson.SerializeDeterministic(canonicalScenario);
+    }
 
     public static string GetDefinitionJsonOrFallback(CmsLessonScenarioEntity scenario)
     {
@@ -51,8 +58,10 @@ internal static class CmsScenarioDefinitionJson
 
     public static LessonScenario DeserializeLessonScenario(CmsLessonScenarioEntity scenario)
     {
-        return JsonSerializer.Deserialize<LessonScenario>(GetDefinitionJsonOrFallback(scenario), ReadJsonOptions)
+        var lesson = JsonSerializer.Deserialize<LessonScenario>(GetDefinitionJsonOrFallback(scenario), ReadJsonOptions)
             ?? throw new JsonException($"Scenario '{scenario.StableScenarioKey}' definition JSON deserialized to an empty lesson scenario.");
+        lesson.LocalizedSetup = null;
+        return lesson;
     }
 
     public static IReadOnlyList<string> ValidateDefinitionJson(string? definitionJson, string scenarioKey, bool requireNonEmpty)
@@ -109,9 +118,97 @@ internal static class CmsScenarioDefinitionJson
             {
                 errors.Add($"Scenario '{scenarioKey}' full scenario JSON is missing required string property 'lessonSetup.setupMessage'.");
             }
+
+            if (root.EnumerateObject().Any(property => string.Equals(property.Name, "localizedSetup", StringComparison.OrdinalIgnoreCase)))
+            {
+                errors.Add($"Scenario '{scenarioKey}' full scenario JSON must not contain response-only property 'localizedSetup'.");
+            }
+
+            ValidateSetupLocalizations(root, scenarioKey, errors);
         }
 
         return errors;
+    }
+
+    private static void ValidateSetupLocalizations(JsonElement root, string scenarioKey, List<string> errors)
+    {
+        if (!root.TryGetProperty("setupLocalizations", out var localizations))
+        {
+            return;
+        }
+
+        if (localizations.ValueKind != JsonValueKind.Object)
+        {
+            errors.Add($"Scenario '{scenarioKey}' setupLocalizations must be an object.");
+            return;
+        }
+
+        var supportedIds = StudyLanguageCatalog.All.Select(language => language.Id).ToHashSet(StringComparer.Ordinal);
+        var variantIds = new HashSet<string>(StringComparer.Ordinal);
+        var equivalentVariantIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (root.TryGetProperty("controlledVariation", out var variation)
+            && variation.ValueKind == JsonValueKind.Object
+            && variation.TryGetProperty("contextVariants", out var variants)
+            && variants.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var variant in variants.EnumerateArray())
+            {
+                var id = variant.ValueKind == JsonValueKind.Object && variant.TryGetProperty("id", out var idElement)
+                    ? idElement.GetString()?.Trim()
+                    : null;
+                if (string.IsNullOrWhiteSpace(id) || !equivalentVariantIds.Add(id))
+                {
+                    errors.Add($"Scenario '{scenarioKey}' has blank or duplicate-equivalent context variant IDs.");
+                    return;
+                }
+
+                variantIds.Add(id);
+            }
+        }
+
+        var languageIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var languageProperty in localizations.EnumerateObject())
+        {
+            var languageId = languageProperty.Name.Trim();
+            if (!supportedIds.Contains(languageId) || !languageIds.Add(languageId))
+            {
+                errors.Add($"Scenario '{scenarioKey}' setupLocalizations contains unsupported or duplicate-equivalent language id '{languageProperty.Name}'.");
+                continue;
+            }
+
+            if (languageProperty.Value.ValueKind != JsonValueKind.Object)
+            {
+                errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' must be an object.");
+                continue;
+            }
+
+            if (!languageProperty.Value.TryGetProperty("setupMessageTemplate", out var template)
+                || template.ValueKind != JsonValueKind.String
+                || string.IsNullOrWhiteSpace(template.GetString()))
+            {
+                errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' requires a non-empty setupMessageTemplate.");
+            }
+
+            if (!languageProperty.Value.TryGetProperty("contextVariantTitles", out var titles) || titles.ValueKind != JsonValueKind.Object)
+            {
+                errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' requires a contextVariantTitles object.");
+                continue;
+            }
+
+            var titleIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var title in titles.EnumerateObject())
+            {
+                if (!titleIds.Add(title.Name) || !variantIds.Contains(title.Name) || title.Value.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(title.Value.GetString()))
+                {
+                    errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' contains an unknown, duplicate-equivalent, or blank context variant title.");
+                }
+            }
+
+            if (!titleIds.SetEquals(variantIds))
+            {
+                errors.Add($"Scenario '{scenarioKey}' setup localization '{languageId}' must cover each context variant ID exactly.");
+            }
+        }
     }
 
     public static IReadOnlyList<string> ValidateSimpleFieldConsistency(

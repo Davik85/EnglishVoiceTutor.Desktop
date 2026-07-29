@@ -31,6 +31,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Shared.StudyLanguages;
@@ -276,6 +277,7 @@ builder.Services.AddScoped<ICmsContentImportService, CmsContentImportService>();
 builder.Services.AddScoped<ICmsPublishedContentService, CmsPublishedContentService>();
 
 builder.Services.AddScoped<ICmsRuntimeLessonContentService, CmsRuntimeLessonContentService>();
+builder.Services.AddScoped<LocalizedLessonSetupResolver>();
 builder.Services.AddScoped<ICmsContentAdminService, CmsContentAdminService>();
 builder.Services.AddScoped<ICmsContentPublishingService, CmsContentPublishingService>();
 builder.Services.AddScoped<IWebsiteContentService, WebsiteContentService>();
@@ -515,6 +517,9 @@ static async Task<IResult> HandleDatabaseHealthAsync(
 static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
     string scenarioKey,
     ICmsRuntimeLessonContentService cmsRuntimeLessonContentService,
+    LocalizedLessonSetupResolver localizedLessonSetupResolver,
+    IUserSettingsService userSettingsService,
+    ClaimsPrincipal principal,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -541,7 +546,15 @@ static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
         return Results.NotFound(new { error = "Scenario was not found in runtime lesson content." });
     }
 
-    scenario.Lesson.RuntimeContent = new RuntimeContentDiagnostics
+    var responseScenario = JsonSerializer.Deserialize<LessonScenario>(JsonSerializer.Serialize(scenario.Lesson))
+        ?? throw new InvalidOperationException("Runtime lesson scenario could not be copied for response projection.");
+    var userId = ClaimsUserAccessor.TryGetUserId(principal);
+    var settings = userId.HasValue
+        ? await userSettingsService.GetOrCreateAsync(userId.Value, cancellationToken)
+        : await userSettingsService.GetDevUserSettingsAsync(cancellationToken);
+
+    responseScenario.LocalizedSetup = localizedLessonSetupResolver.Resolve(responseScenario, settings.StudyLanguage);
+    responseScenario.RuntimeContent = new RuntimeContentDiagnostics
     {
         Source = result.Source,
         EffectiveSource = result.EffectiveSource,
@@ -554,7 +567,7 @@ static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
         ScenarioKey = scenario.StableScenarioKey
     };
 
-    scenario.Lesson.TutorProfiles = result.Content.TutorBehaviorProfiles
+    responseScenario.TutorProfiles = result.Content.TutorBehaviorProfiles
         .Where(profile => profile.IsActive)
         .OrderBy(profile => profile.TutorId, StringComparer.Ordinal)
         .Select(profile => new TutorRuntimeMetadata
@@ -564,7 +577,7 @@ static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
         })
         .ToList();
 
-    scenario.Lesson.PromptTemplates = result.Content.PromptTemplates
+    responseScenario.PromptTemplates = result.Content.PromptTemplates
         .Where(template => template.IsActive && !string.IsNullOrWhiteSpace(template.TemplateKey))
         .GroupBy(template => template.TemplateKey.Trim(), StringComparer.OrdinalIgnoreCase)
         .ToDictionary(group => group.Key, group => group.First().Body.Trim(), StringComparer.OrdinalIgnoreCase);
@@ -576,12 +589,12 @@ static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
         result.FallbackUsed,
         result.VersionNumber,
         result.ContentPackSlug,
-        scenario.Lesson.LessonSetup.SetupMessage.Length,
-        scenario.Lesson.LessonSetup.FirstBotMessageShouldExplain.Count,
+        responseScenario.LessonSetup.SetupMessage.Length,
+        responseScenario.LessonSetup.FirstBotMessageShouldExplain.Count,
         result.EffectiveSource,
         result.SnapshotHash ?? string.Empty);
 
-    return Results.Ok(scenario.Lesson);
+    return Results.Ok(responseScenario);
 }
 
 static int ResolveTutorOptionSortOrder(string tutorId)

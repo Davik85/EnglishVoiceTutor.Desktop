@@ -8,6 +8,9 @@ public sealed class LessonScenario
 
     public LessonSetup LessonSetup { get; set; } = new();
 
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, LessonSetupLocalization>? SetupLocalizations { get; set; }
+
     public LearningGoal LearningGoal { get; set; } = new();
 
     public LessonSituation Situation { get; set; } = new();
@@ -43,6 +46,9 @@ public sealed class LessonScenario
     public Dictionary<string, string> PromptTemplates { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     public RuntimeContentDiagnostics RuntimeContent { get; set; } = new();
+
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public LocalizedLessonSetup? LocalizedSetup { get; set; }
 }
 
 public sealed class RuntimeContentDiagnostics
