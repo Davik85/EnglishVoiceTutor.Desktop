@@ -54,6 +54,8 @@
         cmsRestoreTemplate: "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore",
         cmsAuditEntriesTemplate: "/api/admin/dev/cms/content-packs/{slug}/audit-entries",
         cmsStaticJsonV1Initialize: "/api/admin/dev/cms/content-packs/static-json-v1/initialize-from-static-json",
+        cmsSetupLocalizationsImportPreview: "/api/admin/dev/cms/content-packs/static-json-v1/setup-localizations/import-preview",
+        cmsSetupLocalizationsImport: "/api/admin/dev/cms/content-packs/static-json-v1/setup-localizations/import",
         cmsRuntimeStatus: "/api/admin/dev/cms/runtime-status",
         roleAssignmentActor: "/api/admin/role-assignments/actor",
         roleAssignmentDiagnostics: "/api/admin/role-assignments/diagnostics",
@@ -208,6 +210,7 @@
     let tabsInitialized = false;
     let restoringCmsSelection = false;
     let cmsDraftSavedInSession = false;
+    let cmsSetupLocalizationImportPreview = null;
     let cmsDraftLikelyHasChangesInSession = false;
     let adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" };
     const CmsDefaultLevelProfiles = [
@@ -403,6 +406,9 @@
     const cmsRefreshButton = document.getElementById("cms-refresh-button");
     const cmsInitializeStaticJsonButton = document.getElementById("cms-initialize-static-json-button");
     const cmsStaticJsonInitializePanel = document.getElementById("cms-static-json-initialize-panel");
+    const cmsPreviewSetupLocalizationsImportButton = document.getElementById("cms-preview-setup-localizations-import-button");
+    const cmsApplySetupLocalizationsImportButton = document.getElementById("cms-apply-setup-localizations-import-button");
+    const cmsSetupLocalizationsImportResultElement = document.getElementById("cms-setup-localizations-import-result");
     const cmsLoadingElement = document.getElementById("cms-loading");
     const cmsErrorElement = document.getElementById("cms-error");
     const cmsSuccessElement = document.getElementById("cms-success");
@@ -1382,7 +1388,7 @@
         adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable"; systemBillingPaddleStatusElement.textContent = "not configured"; systemBillingPaddleStatusElement.className = "badge unavailable";
         setLookupError(""); setLookupLoading(false); setLookupSourceLoading(LookupSources.premium, false); setLookupSourceLoading(LookupSources.freeLesson, false); clearLookupErrors(); clearUserLookupResult(); lookupForm.reset(); premiumLookupForm.reset(); freeLessonLookupForm.reset(); clearSelectedUserState();
         setGrantVisible(false); setRevokeVisible(false); setBillingCancelRenewalVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearBillingCancelRenewalState(); clearFreeLessonResetState(); grantForm.reset(); revokeForm.reset(); billingCancelRenewalForm.reset(); freeLessonResetForm.reset(); clearAuditLog(); clearAllCmsDirtyState();
-        clearFeedbackReportsState();
+        clearFeedbackReportsState(); clearSetupLocalizationImportPreview();
     }
 
     function resetSession() {
@@ -2974,6 +2980,22 @@
     }
 
     function setCmsStaticJsonInitializePanelVisible(visible) { if (cmsStaticJsonInitializePanel) { cmsStaticJsonInitializePanel.classList.toggle("hidden", !visible); } }
+    function clearSetupLocalizationImportPreview() { cmsSetupLocalizationImportPreview = null; if (cmsApplySetupLocalizationsImportButton) cmsApplySetupLocalizationsImportButton.disabled = true; if (cmsSetupLocalizationsImportResultElement) cmsSetupLocalizationsImportResultElement.textContent = ""; }
+    function renderSetupLocalizationImportResult(result, applied = false) {
+        if (!cmsSetupLocalizationsImportResultElement) return;
+        const lines = [
+            `Scenarios matched: ${result?.matchedScenarioCount ?? result?.scenariosUpdated ?? 0}.`,
+            `Scenarios requiring changes: ${result?.scenariosRequiringChanges ?? result?.scenariosUpdated ?? 0}.`,
+            `Language blocks to add: ${result?.languageBlocksToAdd ?? result?.languageBlocksAdded ?? 0}.`,
+            `Templates: ${result?.templateCount ?? result?.templatesAdded ?? 0}.`,
+            `Context titles: ${result?.contextTitleCount ?? result?.contextTitlesAdded ?? 0}.`,
+            `Conflicts: ${(result?.conflictingExistingLocalizationBlocks || result?.conflicts || []).length}.`,
+            `Missing scenarios: ${(result?.missingDraftScenarioKeys || []).length}; unknown scenarios: ${(result?.unknownDraftScenarioKeys || []).length}.`,
+            applied ? "Draft-only import complete. Review scenarios and run Validation before Publish." : `Safe to apply: ${result?.safeToApply ? "Yes" : "No"}.`,
+            "Published snapshot unchanged. Learner runtime unchanged."
+        ];
+        cmsSetupLocalizationsImportResultElement.textContent = lines.join(" ");
+    }
 
     function clearCmsContentPackSummary(slug) {
         cmsSummarySlugElement.textContent = formatValue(slug);
@@ -3128,6 +3150,7 @@
     }
 
     async function refreshCmsContentPack(restoreSelection = false) {
+        clearSetupLocalizationImportPreview();
         if (!restoreSelection && !confirmDiscardUnsavedChanges()) { return false; }
         const slug = getSelectedCmsSlug();
         updateHashField("contentPackSlug", slug);
@@ -3321,6 +3344,30 @@
         finally { setCmsLoading(false); }
     }
 
+    async function previewSetupLocalizationsImport() {
+        clearSetupLocalizationImportPreview(); setCmsError(""); setCmsSuccess(""); setCmsLoading(true);
+        try {
+            const result = await adminFetch(ApiPaths.cmsSetupLocalizationsImportPreview);
+            cmsSetupLocalizationImportPreview = result?.safeToApply ? result : null;
+            cmsApplySetupLocalizationsImportButton.disabled = !cmsSetupLocalizationImportPreview;
+            renderSetupLocalizationImportResult(result);
+        } catch (error) { handleCmsError(error); }
+        finally { setCmsLoading(false); }
+    }
+    async function applySetupLocalizationsImport() {
+        if (!cmsSetupLocalizationImportPreview) return;
+        if (!confirm("This adds only missing localized lesson setup data to the CMS draft. It does not publish content or change learner runtime.")) return;
+        setCmsLoading(true); setCmsError(""); setCmsSuccess("");
+        try {
+            const result = await adminFetch(ApiPaths.cmsSetupLocalizationsImport, { method: "POST" });
+            clearSetupLocalizationImportPreview();
+            await refreshCmsContentPack(true);
+            renderSetupLocalizationImportResult(result, true);
+            setCmsSuccess("Localized setup data was added to the draft only. Review scenarios and run Validation before Publish.");
+        } catch (error) { clearSetupLocalizationImportPreview(); handleCmsError(error); }
+        finally { setCmsLoading(false); }
+    }
+
     async function runCmsValidation() {
         setCmsError("");
         try {
@@ -3489,6 +3536,8 @@
     cmsContentPackSelect.addEventListener("change", async () => { setCmsLoading(true); try { if (await refreshCmsContentPack(false)) { setCmsSuccess("CMS content pack refreshed."); } } catch (error) { handleCmsError(error); } finally { setCmsLoading(false); } });
     cmsRefreshButton.addEventListener("click", async () => { setCmsLoading(true); try { if (await refreshCmsContentPack(false)) { setCmsSuccess("CMS content pack refreshed."); } } catch (error) { handleCmsError(error); } finally { setCmsLoading(false); } });
     cmsInitializeStaticJsonButton.addEventListener("click", async () => { await initializeStaticJsonContentPack(); });
+    cmsPreviewSetupLocalizationsImportButton.addEventListener("click", previewSetupLocalizationsImport);
+    cmsApplySetupLocalizationsImportButton.addEventListener("click", applySetupLocalizationsImport);
     cmsTopicFilterInput.addEventListener("input", () => { renderCmsTopicsTable(); });
     cmsScenarioFilterInput.addEventListener("input", () => { renderCmsScenariosTable(); });
     cmsScenarioTopicFilterSelect.addEventListener("change", () => { renderCmsScenariosTable(); });

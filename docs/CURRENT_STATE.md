@@ -2,6 +2,10 @@
 
 Review date: 2026-07-28.
 
+## CMS setup-localization draft import
+
+Production backend `0.1.35-backend.135` is active and healthy; `0.1.35-backend.134` remains the rollback release. No migration was run. The deployed five localized CMS setup-message fields are empty in the existing production draft because that draft predates packaged `setupLocalizations`. Preview reports exact matching/counts. Apply authoritatively revalidates inside its protected transaction, so malformed or differing localization data produces zero writes; concurrent changes require a new Preview. Apply neither publishes nor changes learner runtime. Operators must review the populated fields, run Validation, then use the separate Publish action. Production deployment of this draft-only operation remains pending. Desktop and Mobile remain unchanged.
+
 ## 2026-07-28 Windows Direct Release 1.2
 
 Windows Direct Release `1.2` was published from source commit `1f957ebd`. The full Desktop release gate, installer packaging, local direct-release validation, and upload-helper dry run passed; the real upload completed to `/var/www/languagevoicetutor/releases/windows/direct`. The live `direct-public` manifest identifies `LanguageVoiceTutorSetup-1.2.exe`, `minimumSupportedVersion: 1.2`, `backendBaseUrl: https://api.languagevoicetutor.com`, `updateMode: manual-confirmation`, `releaseDateUtc: 2026-07-28T15:17:03Z`, SHA-256 `852df1842ed24417f7a94099c0c9f5e96edf274d3305acc87a519d8ca5f84b49`, and size `188895825` bytes. The public website downloads that installer.

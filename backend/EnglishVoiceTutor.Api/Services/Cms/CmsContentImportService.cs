@@ -1,8 +1,11 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Data;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities.Cms;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
+using EnglishVoiceTutor.Shared.StudyLanguages;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services.Cms;
@@ -11,6 +14,7 @@ public sealed class CmsContentImportService(
     AppDbContext dbContext,
     ICmsContentValidationService validationService) : ICmsContentImportService
 {
+    private static readonly string[] RequiredSetupLocalizationLanguageIds = ["fr", "de", "pt", "es", "it"];
     private static readonly JsonSerializerOptions ReadJsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -234,6 +238,199 @@ public sealed class CmsContentImportService(
 
         result.IdempotentNoChanges = !result.ContentPackCreated && !result.DraftInitialized;
         result.Success = true;
+        return result;
+    }
+
+    public async Task<CmsSetupLocalizationImportPreviewResult> PreviewSetupLocalizationsImportAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await BuildSetupLocalizationImportPreviewAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+        {
+            return new CmsSetupLocalizationImportPreviewResult { Errors = [$"Packaged setup localizations could not be read safely: {ex.Message}"] };
+        }
+    }
+
+    public async Task<CmsSetupLocalizationImportResult> ImportSetupLocalizationsAsync(Guid actorUserId, CancellationToken cancellationToken)
+    {
+        await using var transaction = dbContext.Database.IsRelational()
+            ? await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken)
+            : null;
+        try
+        {
+        var pack = await dbContext.ContentPacks.SingleOrDefaultAsync(pack => pack.Slug == CmsContentConstants.StaticImport.ContentPackSlug, cancellationToken);
+        if (pack is null) return FailedSetupLocalizationImport("CMS content pack static-json-v1 was not found.");
+        var scenarios = await dbContext.CmsLessonScenarios.Where(scenario => scenario.ContentPackId == pack.Id).ToListAsync(cancellationToken);
+        var preview = await BuildSetupLocalizationImportPreviewAsync(cancellationToken, pack, scenarios);
+        var result = new CmsSetupLocalizationImportResult
+        {
+            AlreadyIdenticalBlocks = preview.LanguageBlocksAlreadyIdentical, Conflicts = preview.ConflictingExistingLocalizationBlocks,
+            PublishedVersionChanged = false, PublishedSnapshotCreated = false, RuntimeChanged = false
+        };
+        if (!preview.SafeToApply)
+        {
+            result.Errors.AddRange(preview.Errors);
+            if (result.Errors.Count == 0) result.Errors.Add("Setup localization import is unsafe; no draft data was changed.");
+            return result;
+        }
+
+        var packagedDraft = await LoadDraftAsync(cancellationToken);
+        var packagedByKey = packagedDraft.Scenarios.ToDictionary(scenario => scenario.StableScenarioKey, StringComparer.Ordinal);
+        var audits = new List<ContentAuditLogEntity>();
+        foreach (var scenario in scenarios)
+        {
+            var packaged = packagedByKey[scenario.StableScenarioKey];
+            var beforeHash = HashScenario(scenario);
+            var root = JsonNode.Parse(scenario.DefinitionJson!) as JsonObject ?? throw new JsonException($"Scenario '{scenario.StableScenarioKey}' has no object definition JSON.");
+            var before = root.DeepClone() as JsonObject ?? throw new JsonException("Scenario JSON clone failed.");
+            var sourceRoot = JsonNode.Parse(packaged.DefinitionJson) as JsonObject ?? throw new JsonException($"Packaged scenario '{scenario.StableScenarioKey}' has no object definition JSON.");
+            var sourceLocalizations = sourceRoot["setupLocalizations"] as JsonObject ?? throw new JsonException($"Packaged scenario '{scenario.StableScenarioKey}' is missing setupLocalizations.");
+            if (root.ContainsKey("setupLocalizations") && root["setupLocalizations"] is not JsonObject)
+            {
+                return FailedSetupLocalizationImport($"Scenario '{scenario.StableScenarioKey}' has malformed setupLocalizations; run Preview again.");
+            }
+            var localizations = root["setupLocalizations"] as JsonObject;
+            if (localizations is null)
+            {
+                localizations = new JsonObject();
+                root["setupLocalizations"] = localizations;
+            }
+
+            var addedLanguages = new List<string>();
+            foreach (var languageId in RequiredSetupLocalizationLanguageIds)
+            {
+                if (localizations[languageId] is not null) continue;
+                localizations[languageId] = sourceLocalizations[languageId]!.DeepClone();
+                addedLanguages.Add(languageId);
+            }
+            if (addedLanguages.Count == 0) continue;
+
+            var beforeWithoutLocalizations = before.DeepClone() as JsonObject;
+            var afterWithoutLocalizations = root.DeepClone() as JsonObject;
+            beforeWithoutLocalizations!.Remove("setupLocalizations");
+            afterWithoutLocalizations!.Remove("setupLocalizations");
+            if (!JsonNode.DeepEquals(beforeWithoutLocalizations, afterWithoutLocalizations))
+            {
+                throw new InvalidOperationException($"Scenario '{scenario.StableScenarioKey}' setup localization merge would change a non-localization property.");
+            }
+
+            scenario.DefinitionJson = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+            scenario.UpdatedAtUtc = DateTimeOffset.UtcNow;
+            result.ScenariosUpdated++;
+            result.LanguageBlocksAdded += addedLanguages.Count;
+            result.TemplatesAdded += addedLanguages.Count;
+            result.ContextTitlesAdded += addedLanguages.Sum(languageId => ((JsonObject)sourceLocalizations[languageId]!["contextVariantTitles"]!).Count);
+            audits.Add(new ContentAuditLogEntity
+            {
+                Id = Guid.NewGuid(), ActorUserId = actorUserId, Action = CmsContentConstants.ContentAuditActions.DraftSaved,
+                EntityType = nameof(CmsLessonScenarioEntity), EntityId = scenario.Id, ContentPackId = pack.Id, ContentPackSlug = pack.Slug,
+                StableKey = scenario.StableScenarioKey, BeforeHash = beforeHash, AfterHash = HashScenario(scenario),
+                ChangedFieldsJson = CmsContentJson.SerializeDeterministic(new[] { "setupLocalizations" }),
+                Reason = "Imported missing packaged setup localizations into CMS draft.", Source = CmsContentConstants.StaticImport.ContentPackSlug,
+                Status = "DraftOnly", CreatedAtUtc = DateTimeOffset.UtcNow,
+                RequestMetadataJson = CmsContentJson.SerializeDeterministic(new { scenarioKey = scenario.StableScenarioKey, languageIds = addedLanguages.OrderBy(id => id, StringComparer.Ordinal).ToArray() })
+            });
+        }
+        if (audits.Count > 0) dbContext.ContentAuditLogs.AddRange(audits);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+        result.Success = true;
+        result.AuditEntriesCreated = audits.Count;
+        return result;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            dbContext.ChangeTracker.Clear();
+            return FailedSetupLocalizationImport("The CMS draft changed concurrently. Run Preview again before applying localized setup data.");
+        }
+        catch (DbUpdateException)
+        {
+            dbContext.ChangeTracker.Clear();
+            return FailedSetupLocalizationImport("The CMS draft changed concurrently. Run Preview again before applying localized setup data.");
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            dbContext.ChangeTracker.Clear();
+            return FailedSetupLocalizationImport("Setup localization import could not be completed safely. Run Preview again and resolve any reported draft conflict.");
+        }
+    }
+
+    private static CmsSetupLocalizationImportResult FailedSetupLocalizationImport(string error) => new()
+    {
+        PublishedVersionChanged = false, PublishedSnapshotCreated = false, RuntimeChanged = false, Errors = [error]
+    };
+
+    private async Task<CmsSetupLocalizationImportPreviewResult> BuildSetupLocalizationImportPreviewAsync(
+        CancellationToken cancellationToken,
+        ContentPackEntity? currentPack = null,
+        IReadOnlyList<CmsLessonScenarioEntity>? currentRows = null)
+    {
+        var result = new CmsSetupLocalizationImportPreviewResult { LanguageCount = RequiredSetupLocalizationLanguageIds.Length };
+        var catalogLanguageIds = StudyLanguageCatalog.All.Where(language => !language.IsDefault).Select(language => language.Id).ToHashSet(StringComparer.Ordinal);
+        if (!catalogLanguageIds.SetEquals(RequiredSetupLocalizationLanguageIds)) result.Errors.Add("The shared study-language catalog does not match the required setup-localization language IDs.");
+        var packaged = await LoadDraftAsync(cancellationToken);
+        result.PackagedScenarioCount = packaged.Scenarios.Count;
+        var duplicatePackaged = packaged.Scenarios.GroupBy(scenario => scenario.StableScenarioKey, StringComparer.Ordinal).Where(group => group.Count() != 1).Select(group => group.Key);
+        if (result.PackagedScenarioCount != 26) result.Errors.Add($"Packaged scenario total must be 26, found {result.PackagedScenarioCount}.");
+        result.Errors.AddRange(duplicatePackaged.Select(key => $"Packaged scenario key '{key}' is duplicated."));
+        if (result.Errors.Count > 0) return result;
+        foreach (var scenario in packaged.Scenarios)
+        {
+            result.Errors.AddRange(CmsScenarioDefinitionJson.ValidateDefinitionJson(scenario.DefinitionJson, scenario.StableScenarioKey, true));
+            result.Errors.AddRange(CmsScenarioDefinitionJson.ValidateSetupLocalizationsForPublication(scenario.DefinitionJson, scenario.StableScenarioKey));
+            if (scenario.Scenario.LocalizedSetup is not null) result.Errors.Add($"Packaged scenario '{scenario.StableScenarioKey}' contains response-only localizedSetup.");
+            var localizations = scenario.Scenario.SetupLocalizations;
+            if (localizations is null || localizations.Count != RequiredSetupLocalizationLanguageIds.Length || !RequiredSetupLocalizationLanguageIds.All(localizations.ContainsKey)) result.Errors.Add($"Packaged scenario '{scenario.StableScenarioKey}' does not contain exactly the required setup localization languages.");
+            if (localizations is not null)
+            {
+                result.TemplateCount += localizations.Count;
+                result.ContextTitleCount += localizations.Values.Sum(localization => localization.ContextVariantTitles?.Count ?? 0);
+            }
+        }
+        if (result.TemplateCount != 130) result.Errors.Add($"Packaged setup template total must be 130, found {result.TemplateCount}.");
+        if (result.ContextTitleCount != 625) result.Errors.Add($"Packaged context title total must be 625, found {result.ContextTitleCount}.");
+
+        var pack = currentPack ?? await dbContext.ContentPacks.AsNoTracking().SingleOrDefaultAsync(pack => pack.Slug == CmsContentConstants.StaticImport.ContentPackSlug, cancellationToken);
+        if (pack is null) { result.Errors.Add("CMS content pack static-json-v1 was not found."); return result; }
+        var draftRows = currentRows?.ToList() ?? await dbContext.CmsLessonScenarios.AsNoTracking().Where(scenario => scenario.ContentPackId == pack.Id).ToListAsync(cancellationToken);
+        result.CmsDraftScenarioCount = draftRows.Count;
+        var packagedByKey = packaged.Scenarios.ToDictionary(scenario => scenario.StableScenarioKey, StringComparer.Ordinal);
+        var duplicateDraftKeys = draftRows.GroupBy(row => row.StableScenarioKey, StringComparer.Ordinal).Where(group => group.Count() != 1).Select(group => group.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray();
+        var uniquePackagedKeys = packaged.Scenarios.GroupBy(scenario => scenario.StableScenarioKey, StringComparer.Ordinal).Where(group => group.Count() == 1).Select(group => group.Key);
+        var uniqueDraftKeys = draftRows.GroupBy(row => row.StableScenarioKey, StringComparer.Ordinal).Where(group => group.Count() == 1).Select(group => group.Key);
+        result.MatchedScenarioCount = uniquePackagedKeys.Intersect(uniqueDraftKeys, StringComparer.Ordinal).Count();
+        result.MissingDraftScenarioKeys = packagedByKey.Keys.Except(draftRows.Select(row => row.StableScenarioKey), StringComparer.Ordinal).OrderBy(key => key, StringComparer.Ordinal).ToList();
+        result.UnknownDraftScenarioKeys = draftRows.Select(row => row.StableScenarioKey).Except(packagedByKey.Keys, StringComparer.Ordinal).Concat(duplicateDraftKeys).Distinct(StringComparer.Ordinal).OrderBy(key => key, StringComparer.Ordinal).ToList();
+        if (result.MissingDraftScenarioKeys.Count > 0) result.Errors.Add("CMS draft is missing packaged scenario keys.");
+        if (result.UnknownDraftScenarioKeys.Count > 0) result.Errors.Add("CMS draft contains unknown or duplicate scenario keys.");
+        foreach (var row in draftRows.Where(row => packagedByKey.ContainsKey(row.StableScenarioKey)))
+        {
+            result.Errors.AddRange(CmsScenarioDefinitionJson.ValidateDefinitionJson(row.DefinitionJson, row.StableScenarioKey, true));
+            var root = JsonNode.Parse(row.DefinitionJson!) as JsonObject;
+            var sourceRoot = JsonNode.Parse(packagedByKey[row.StableScenarioKey].DefinitionJson) as JsonObject;
+            if (root is null || sourceRoot is null) { result.Errors.Add($"Scenario '{row.StableScenarioKey}' does not have object definition JSON."); continue; }
+            if (root.ContainsKey("setupLocalizations") && root["setupLocalizations"] is not JsonObject)
+            {
+                result.Errors.Add($"Scenario '{row.StableScenarioKey}' has malformed setupLocalizations.");
+                continue;
+            }
+            var localizations = root["setupLocalizations"] as JsonObject;
+            var sourceLocalizations = sourceRoot["setupLocalizations"] as JsonObject;
+            var scenarioNeedsChange = false;
+            foreach (var languageId in RequiredSetupLocalizationLanguageIds)
+            {
+                var current = localizations?[languageId];
+                var source = sourceLocalizations?[languageId];
+                if (current is null) { result.LanguageBlocksToAdd++; scenarioNeedsChange = true; }
+                else if (JsonNode.DeepEquals(current, source)) result.LanguageBlocksAlreadyIdentical++;
+                else result.ConflictingExistingLocalizationBlocks.Add($"{row.StableScenarioKey}:{languageId}");
+            }
+            if (scenarioNeedsChange) result.ScenariosRequiringChanges++;
+        }
+        if (result.ConflictingExistingLocalizationBlocks.Count > 0) result.Errors.Add("Existing draft setup localization blocks differ from packaged canonical data and will not be overwritten.");
+        result.SafeToApply = result.Errors.Count == 0;
         return result;
     }
 

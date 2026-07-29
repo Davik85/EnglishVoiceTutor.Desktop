@@ -44,6 +44,8 @@ public static class AdminEndpointPermissionCatalog
         new("admin.system.ai_models.reset_draft", "POST", ApiConstants.AdminAiModelSettingsResetDraftRoute, AdminPermissionConstants.SystemAiModelSettingsManage, "Reset Super Admin AI model CMS draft settings from active."),
         new("admin.cms.static_content.import", "POST", ApiConstants.AdminDevCmsStaticContentImportRoute, AdminPermissionConstants.CmsContentWriteDraft, "Import static CMS content into the draft CMS store."),
         new("admin.cms.static_json_v1.initialize", "POST", ApiConstants.AdminDevCmsStaticJsonV1InitializeRoute, AdminPermissionConstants.CmsContentWriteDraft, "Initialize the static-json-v1 CMS draft content pack."),
+        new("admin.cms.setup_localizations.import_preview", "GET", ApiConstants.AdminDevCmsStaticJsonV1SetupLocalizationsImportPreviewRoute, AdminPermissionConstants.CmsContentRead, "Preview a setup-localizations-only CMS draft import."),
+        new("admin.cms.setup_localizations.import", "POST", ApiConstants.AdminDevCmsStaticJsonV1SetupLocalizationsImportRoute, AdminPermissionConstants.CmsContentWriteDraft, "Import only missing setup localizations into the CMS draft."),
         new("admin.cms.published_status.read", "GET", ApiConstants.AdminDevCmsPublishedContentStatusRoute, AdminPermissionConstants.CmsContentRead, "Read published CMS content status."),
         new("admin.cms.runtime_content_status.read", "GET", ApiConstants.AdminDevCmsRuntimeContentStatusRoute, AdminPermissionConstants.CmsRuntimeStatusRead, "Read runtime CMS content status."),
         new("admin.cms.runtime_status.read", "GET", ApiConstants.AdminDevCmsRuntimeStatusRoute, AdminPermissionConstants.CmsRuntimeStatusRead, "Read runtime CMS status."),

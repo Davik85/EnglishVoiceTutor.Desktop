@@ -141,6 +141,16 @@ public static class AdminEndpoints
             rateLimitingEnabled);
 
         ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsStaticJsonV1SetupLocalizationsImportPreviewRoute, PreviewSetupLocalizationsImportAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
+
+        ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminDevCmsStaticJsonV1SetupLocalizationsImportRoute, ImportSetupLocalizationsAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
+            rateLimitingEnabled);
+
+        ApplyAdminReadRateLimiting(
             app.MapGet(ApiConstants.AdminDevCmsPublishedContentStatusRoute, GetPublishedCmsContentStatusAsync)
             .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
             rateLimitingEnabled);
@@ -1115,6 +1125,25 @@ public static class AdminEndpoints
         }
 
         var result = await cmsContentImportService.InitializeStaticJsonV1DraftAsync(adminUserId.Value, cancellationToken);
+        return result.Success ? Results.Ok(result) : Results.BadRequest(result);
+    }
+
+    private static async Task<IResult> PreviewSetupLocalizationsImportAsync(
+        ICmsContentImportService cmsContentImportService,
+        CancellationToken cancellationToken)
+    {
+        var result = await cmsContentImportService.PreviewSetupLocalizationsImportAsync(cancellationToken);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> ImportSetupLocalizationsAsync(
+        ClaimsPrincipal principal,
+        ICmsContentImportService cmsContentImportService,
+        CancellationToken cancellationToken)
+    {
+        var adminUserId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!adminUserId.HasValue) return Results.Unauthorized();
+        var result = await cmsContentImportService.ImportSetupLocalizationsAsync(adminUserId.Value, cancellationToken);
         return result.Success ? Results.Ok(result) : Results.BadRequest(result);
     }
 

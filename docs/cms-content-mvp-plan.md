@@ -2,6 +2,10 @@
 
 Review date: 2026-06-13.
 
+## Existing-draft setup localizations
+
+For an existing `static-json-v1` draft created before packaged setup localizations, use the CMS Overview sequence: Preview localized setup import → Apply localized setup to draft → review the five full-message fields → Validation → Publish. Preview is read-only and reports exact scenario/template/title counts. Apply repeats the full safety check inside its protected transaction; malformed or differing existing localization data causes zero writes, and concurrent editing requires the administrator to rerun Preview. It adds only absent `setupLocalizations` language blocks, preserves all other JSON properties, creates no version or published snapshot, and does not change learner runtime.
+
 
 
 ## Step 5D-6d update — refresh resilience and unsaved-change protection

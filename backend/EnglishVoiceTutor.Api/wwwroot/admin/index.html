@@ -288,6 +288,12 @@
                                     <p><strong>Content pack static-json-v1 has not been initialized in CMS yet.</strong></p>
                                     <p class="muted">Use Initialize from static JSON to create CMS draft/admin content from the packaged static JSON. This does not publish automatically and does not change learner runtime. Static JSON initializes CMS draft content and remains available only as an emergency fallback.</p>
                                 </div>
+                                <section class="cms-result-panel" aria-labelledby="cms-setup-localization-import-heading">
+                                    <h3 id="cms-setup-localization-import-heading">Localized lesson setup import</h3>
+                                    <p class="muted">Preview copies only missing packaged setup localizations into this CMS draft. It never publishes content or changes learner runtime.</p>
+                                    <div class="cms-button-row"><button id="cms-preview-setup-localizations-import-button" type="button">Preview localized setup import</button><button id="cms-apply-setup-localizations-import-button" type="button" disabled>Apply localized setup to draft</button></div>
+                                    <div id="cms-setup-localizations-import-result" class="cms-result-panel" aria-live="polite"></div>
+                                </section>
                                 <h3 id="cms-summary-heading">CMS content pack / seed identity summary</h3>
                                 <dl id="cms-content-pack-summary" class="meta cms-summary-meta">
                                     <dt>Slug</dt><dd id="cms-summary-slug">-</dd>

@@ -46,6 +46,42 @@ public sealed class CmsContentImportCounts
     public int AuditLogEntriesCreated { get; set; }
 }
 
+public sealed class CmsSetupLocalizationImportPreviewResult
+{
+    public bool SafeToApply { get; set; }
+    public int PackagedScenarioCount { get; set; }
+    public int CmsDraftScenarioCount { get; set; }
+    public int MatchedScenarioCount { get; set; }
+    public int LanguageCount { get; set; }
+    public int TemplateCount { get; set; }
+    public int ContextTitleCount { get; set; }
+    public int ScenariosRequiringChanges { get; set; }
+    public int LanguageBlocksToAdd { get; set; }
+    public int LanguageBlocksAlreadyIdentical { get; set; }
+    public List<string> MissingDraftScenarioKeys { get; set; } = [];
+    public List<string> UnknownDraftScenarioKeys { get; set; } = [];
+    public List<string> ConflictingExistingLocalizationBlocks { get; set; } = [];
+    public List<string> Errors { get; set; } = [];
+    public bool PublishedSnapshotUnchanged { get; set; } = true;
+    public bool RuntimeUnchanged { get; set; } = true;
+}
+
+public sealed class CmsSetupLocalizationImportResult
+{
+    public bool Success { get; set; }
+    public int ScenariosUpdated { get; set; }
+    public int LanguageBlocksAdded { get; set; }
+    public int TemplatesAdded { get; set; }
+    public int ContextTitlesAdded { get; set; }
+    public int AlreadyIdenticalBlocks { get; set; }
+    public List<string> Conflicts { get; set; } = [];
+    public List<string> Errors { get; set; } = [];
+    public int AuditEntriesCreated { get; set; }
+    public bool PublishedVersionChanged { get; set; }
+    public bool PublishedSnapshotCreated { get; set; }
+    public bool RuntimeChanged { get; set; }
+}
+
 public sealed class CmsContentValidationResult
 {
     public bool Success => Errors.Count == 0;

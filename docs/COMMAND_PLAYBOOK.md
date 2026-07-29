@@ -2,6 +2,10 @@
 
 Review date: 2026-07-22.
 
+## CMS setup-localization draft import
+
+With backend `0.1.35-backend.135` active (and `.134` retained as rollback), no migration is needed. In CMS Content → Overview, preview the localized setup import, confirm the exact matching/totals and absence of conflicts, then apply it to the draft. Apply revalidates those conditions in its protected transaction. This only fills missing `setupLocalizations`; malformed, differing, or concurrently edited draft data produces zero writes and requires a fresh Preview. It never publishes or changes runtime. Review the five fields, run Validation, and publish separately when ready. Backend deployment alone does not populate localization fields in an older existing draft; deployment of this operation remains pending.
+
 ## Source of truth for current versions
 
 These docs are a snapshot of the last known verified state. They can become stale and must not be used as the only source of truth for live versions. Always verify the live/public state before telling a tester that a version is current.
