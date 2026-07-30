@@ -45,7 +45,7 @@ Windows Direct Release 1.3 is now published on the public direct channel. Public
 
 ## Historical backend notes
 
-Historical tester-era backend snapshot notes are retained only for context. Current production backend for the Windows Direct Release 1.3 documentation state is `0.1.35-backend.136`, with `.135` rollback; verify the live value from the server symlink before calling it current.
+Historical tester-era backend snapshot notes are retained only for context. Current production backend for the Windows Direct Release 1.3 documentation state is `0.1.35-backend.138`, with `.137` rollback; verify the live value from the server symlink before calling it current.
 
 `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 

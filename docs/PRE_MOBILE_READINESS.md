@@ -21,7 +21,7 @@ This note is a concise planning input for future mobile work. It records the cur
 
 ## Current backend baseline
 
-- Production backend is `0.1.35-backend.134` at `https://api.languagevoicetutor.com`; `0.1.35-backend.133` is the rollback release.
+- Production backend is `0.1.35-backend.138` at `https://api.languagevoicetutor.com`; `0.1.35-backend.137` is the rollback release.
 - Backend health and database health are expected to be verified with `/health` and `/api/health/database` before treating the backend as current.
 - OpenAI calls are backend-only. Desktop clients call backend APIs; future mobile clients must do the same.
 - Website analytics is working, including the fixed `pay.html` analytics/consent coverage.
@@ -75,7 +75,7 @@ Required shared-boundary rules:
 
 ## Billing provider and payment verification boundary
 
-Payment provider may differ by purchase surface, but Premium entitlement must remain shared through the backend entitlement/source-of-truth model. Existing Paddle billing remains the active working website/desktop provider. Disabled Google Play verification and atomic persistence infrastructure are deployed in `.134`, and migration `20260727045935_AddGooglePlayPurchaseClaims` is applied; runtime remains disabled, so no production Google Play purchase, claim, Subscription, or entitlement has been created. Acknowledgement and Mobile purchase integration remain pending. Google Play must later join the backend as another billing provider, without replacing or shortening a valid Paddle entitlement; a future Apple App Store provider may later use the same model.
+Payment provider may differ by purchase surface, but Premium entitlement must remain shared through the backend entitlement/source-of-truth model. Existing Paddle billing remains the active working website/desktop provider. Disabled Google Play verification and atomic persistence infrastructure are deployed, and migration `20260727045935_AddGooglePlayPurchaseClaims` is applied; runtime remains disabled, so no production Google Play purchase, claim, Subscription, or entitlement has been created. Acknowledgement and Mobile purchase integration remain pending. Google Play is an additional provider: it must not replace provider-neutral access calculation or shorten, hide, or relabel valid trial, `manual_admin`, or Paddle Premium. Provider metadata selection and common Premium coverage calculation remain separate responsibilities. A future Apple App Store provider must follow the same [mandatory billing-adapter regression gate](subscription-billing-foundation.md#mandatory-billing-adapter-regression-gate).
 
 Android payments should be planned around Google Play Billing, not a separate client-side Google Pay-only entitlement model. The mobile app may initiate the Google Play purchase flow and send the resulting purchase token to the backend, but the backend must verify the purchase with the Google Play Developer API before Premium is granted. After verification, the backend creates, extends, pauses, expires, or revokes Premium through the same entitlement/source-of-truth model already used by desktop/Paddle.
 

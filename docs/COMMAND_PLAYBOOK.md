@@ -1,10 +1,10 @@
 # Command Playbook
 
-Review date: 2026-07-22.
+Review date: 2026-07-30.
 
 ## CMS setup-localization draft import
 
-Production closeout: backend `0.1.35-backend.136` is active (with `.135` retained as rollback), CMS published version `51` is active at runtime, and no migration was needed. Runtime status is `CmsPublishedSnapshot` with `fallbackUsed=false`; the published content contains 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. The import procedure below remains for a future older draft only; it is not a pending production operation.
+Production closeout: backend `0.1.35-backend.138` is active (with `.137` retained as rollback), CMS published version `51` is active at runtime, and no migration was needed for the trial/manual Premium correction. Runtime status is `CmsPublishedSnapshot` with `fallbackUsed=false`; the published content contains 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. The import procedure below remains for a future older draft only; it is not a pending production operation.
 
 ## Source of truth for current versions
 
@@ -219,6 +219,12 @@ This owner/grant check does not replace SQL review. Review migration SQL first, 
 
 For sensitive provider-ownership tables, review automatically inherited analytics-reader privileges explicitly after creation and revoke access when the table is outside the approved analytics surface. This is a table-by-table data-classification decision, not a blanket rule for every new table.
 
+## Mandatory billing-adapter regression gate
+
+Before accepting Paddle, Google Play, Apple App Store, another provider adapter, or shared billing/status work, follow the detailed [mandatory billing-adapter regression gate](subscription-billing-foundation.md#mandatory-billing-adapter-regression-gate). Provider-specific tests or sandbox checks alone are insufficient.
+
+At minimum, run focused `AdminPremiumGrantService`, `SubscriptionStatusService`, affected provider verification/persistence, Paddle cross-provider, Google Play cross-provider, and affected client parsing/display coverage. Manually verify a controlled trial plus scheduled/active manual Premium account: final expiry later than trial, correct tariff/provider/Auto-renew state, unchanged approved client layout, and correct **Premium Entitlement Schedule** versus **Active Entitlements** behavior.
+
 ## Downloaded update installer cleanup
 
 The desktop app stores verified installers downloaded by **Check for updates** under the current user's local update cache:
@@ -373,7 +379,7 @@ Rollback remains disabling or removing the CMS runtime flags and restarting the 
 
 ## Current controlled tester handoff checks after CMS runtime milestone
 
-Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.136` and the live public direct Windows manifest points to `version=1.3`, `installerFileName=LanguageVoiceTutorSetup-1.3.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.3`, and `updateMode=manual-confirmation`. The public download, in-app manual-confirmation update, installed 1.3 launch, and localized setup smoke have been verified. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
+Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.138` and the live public direct Windows manifest points to `version=1.3`, `installerFileName=LanguageVoiceTutorSetup-1.3.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.3`, and `updateMode=manual-confirmation`. The public download, in-app manual-confirmation update, installed 1.3 launch, and localized setup smoke have been verified. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
 
 Verify the public direct release manifest before handoff:
 

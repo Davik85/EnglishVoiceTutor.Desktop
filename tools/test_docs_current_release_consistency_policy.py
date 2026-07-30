@@ -20,11 +20,11 @@ DOCS = [
 ]
 
 REQUIRED_BY_DOCUMENT = {
-    "README.md": ["Windows Direct Release 1.3", "0.1.35-backend.136", "does not silently auto-update"],
-    "docs/CURRENT_STATE.md": ["Windows Direct Release 1.3", "LanguageVoiceTutorSetup-1.3.exe", "0.1.35-backend.136", "Google Play remains disabled", "no backend deployment or migration occurred"],
+    "README.md": ["Windows Direct Release 1.3", "0.1.35-backend.138", "does not silently auto-update"],
+    "docs/CURRENT_STATE.md": ["Windows Direct Release 1.3", "LanguageVoiceTutorSetup-1.3.exe", "0.1.35-backend.138", "Google Play remains disabled", "no backend deployment or migration occurred"],
     "docs/NEXT_STEPS.md": ["current Windows direct public release is `1.3`", "LanguageVoiceTutorSetup-1.3.exe", "endpoint remains disabled"],
-    "docs/TESTER_RELEASE.md": ["Windows Direct Release 1.3", "LanguageVoiceTutorSetup-1.3.exe", "0.1.35-backend.136"],
-    "docs/WINDOWS_INSTALLER_RELEASE_FLOW.md": ["LanguageVoiceTutorSetup-1.3.exe", "0.1.35-backend.136", "manual-confirmation"],
+    "docs/TESTER_RELEASE.md": ["Windows Direct Release 1.3", "LanguageVoiceTutorSetup-1.3.exe", "0.1.35-backend.138"],
+    "docs/WINDOWS_INSTALLER_RELEASE_FLOW.md": ["LanguageVoiceTutorSetup-1.3.exe", "0.1.35-backend.138", "manual-confirmation"],
     "docs/WINDOWS_INSTALLER_UPDATE_FLOW.md": ["LanguageVoiceTutorSetup-1.3.exe", "version: 1.3", "does not silently auto-update"],
     "docs/WINDOWS_RELEASE_SERVER_UPLOAD.md": ["version: 1.3", "LanguageVoiceTutorSetup-1.3.exe", "no backend deployment or migration"],
     "docs/LOCAL_RELEASE.md": ["$ReleaseVersion = \"<release-version>\"", "Windows Direct 1.3 passed"],

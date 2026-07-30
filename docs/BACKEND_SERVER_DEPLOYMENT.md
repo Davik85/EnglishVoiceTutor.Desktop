@@ -6,8 +6,8 @@ Review date: 2026-07-30.
 
 Production backend is deployed and healthy.
 
-- Current release: `0.1.35-backend.137`
-- Previous rollback release: `0.1.35-backend.136`
+- Current release: `0.1.35-backend.138`
+- Previous rollback release: `0.1.35-backend.137`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -23,7 +23,13 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.137`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.136`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.138`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.137`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+
+## 2026-07-30 `.138` trial/manual Premium expiry deployment verification
+
+Source commit `fcba7a8d5a92e77da868b7857c7c5bd85d4f93bb` (`Fix trial and manual premium expiry calculation`) passed the backend upload dry run. The real upload used the standard `scripts/upload-backend-linux-release.ps1` flow with `-PackageFirst`. The live `current` symlink switched from `/opt/languagevoicetutor/backend/releases/0.1.35-backend.137` to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.138`, while `previous` retained `.137`. The service restarted successfully and remained active/running; public `/health` and `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`.
+
+Controlled production smoke passed for backend-driven trial/manual Premium expiry, provider/auto-renew state, and Admin CMS entitlement schedule visibility. No EF migration, schema change, production-data rewrite, Desktop or Mobile release, Windows installer upload, static-site deployment, or Website CMS publish occurred.
 
 ## 2026-07-30 `.137` Website CMS legal-text deployment verification
 
@@ -261,7 +267,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.137`; verified rollback target `.136` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.138`; verified rollback target `.137` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.

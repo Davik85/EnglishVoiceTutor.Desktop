@@ -32,12 +32,13 @@ English Voice Tutor is a global, cross-platform, provider-agnostic product for d
 ## Learner Account subscription UI
 
 - The learner Account subscription block is intentionally simplified to four customer-facing lines: current tariff, free lessons remaining, Premium status, and auto-renewal.
-- Trial is displayed as tariff `Trial`, including when paid Premium has been purchased during the trial but the paid provider-event entitlement is scheduled for after trial expiry.
-- The learner Premium line is a backend-computed display summary of the current continuous Premium coverage window. It can show coverage through the active Trial/Premium entitlement plus queued `provider_event` Premium entitlements only when each queued entitlement starts at or before the current coverage end; gaps stop the display chain.
-- This continuous coverage date is display-only and does not change access authority: `PremiumActive` still comes only from currently started, unexpired Premium `EntitlementEntity` rows, and future-start provider-event entitlements do not grant access before `StartsAtUtc`.
+- Trial is displayed as tariff `Trial`, including when paid or manual Premium is scheduled for after trial expiry.
+- The learner Premium line is a backend-computed display summary of the current continuous Premium coverage window. It can show coverage through active Trial/Premium access plus adjacent queued `provider_event` or `manual_admin` Premium entitlements; gaps stop the display chain.
+- This continuous coverage date is display-only and does not change access authority: `PremiumActive` still comes only from currently started, unexpired Premium `EntitlementEntity` rows, and future-start entitlements do not grant access before `StartsAtUtc`.
 - Admin diagnostics remain the place to inspect detailed entitlement schedules, sources, provider events, renewal/cancellation details, and raw timing.
 - Trial and Premium show free lessons as unlimited/without limits because active entitlement access bypasses the daily free lesson counter.
 - Renewal internals, cancellation explanations, provider-subscription presence, source/authenticated/enforcement/checked-at values, scheduled paid Premium starts/ends, and Paddle diagnostics remain Admin/diagnostic concerns and are not rendered in the learner Account block.
+- Backend `.138` changed no Desktop or Mobile production code and introduced no new trial-status line. Existing clients continue to render the backend-owned final Premium expiry in their existing layouts.
 
 ## Account requirement for normal lesson start
 
@@ -75,6 +76,19 @@ English Voice Tutor is a global, cross-platform, provider-agnostic product for d
 - Scheduled cancellation and past-due snapshots do not revoke Premium early.
 - Manual/admin/trial/development/future-mobile entitlements are not touched by the provider-event canceled/paused expiry path.
 - In local Development, a configured development test account can simulate unlimited Premium entitlement.
+
+## Restored trial/manual Premium extension behavior
+
+Backend `0.1.35-backend.138` restored the established Premium extension behavior; it did not add a new subscription scheduling system.
+
+- `AdminPremiumGrantService` must consider both active account trials in `TrialGrants` and applicable active Premium `Entitlements`.
+- For an active trial ending at `T1`, a new manual grant starts at `T1` and its expiry is calculated by adding the requested duration to `T1`, not to the current time.
+- If an applicable Premium entitlement ends later than the trial, that later expiry remains the extension base.
+- Expired, revoked, inactive, and other-user records do not extend the grant.
+- Subscription status must preserve the later final Premium coverage expiry while the trial remains current access.
+- A status read is read-only: it must not repair or rewrite entitlement dates. An existing overlapping record can still report its later stored expiry without database mutation.
+- A scheduled future entitlement is visible in **Premium Entitlement Schedule** but is correctly absent from **Active Entitlements** until `StartsAtUtc`.
+- Manual Premium remains provider-neutral and must not expose Paddle or Google Play metadata, auto-renewal, or cancellation controls.
 
 ## Enforcement model
 
@@ -135,8 +149,78 @@ Current config section:
   - Google Play for future Android.
   - Manual admin grants via CMS/admin tooling.
 - `ProviderSubscriptionPeriodPersistenceService` is an internal component of the atomic Google Play orchestration. It persists a verified period only for the exact paid-provider Subscription and its linked active `provider_event` Premium entitlement; it rejects test purchases.
-- `GooglePlayPurchaseVerificationService` is connected to `IGooglePlayVerifiedPurchasePersistenceService`. The atomic orchestration establishes token-fingerprint ownership, selects or creates the exact `google_play` Subscription, and persists its linked entitlement state in one serializable transaction. This disabled infrastructure is deployed in production backend `0.1.35-backend.134`, and migration `20260727045935_AddGooglePlayPurchaseClaims` is applied. Runtime purchase processing remains dormant because Google Play is disabled; no Google Play claim or entitlement has been created in production, and actual Google Play purchase validation remains pending. Test purchases remain unsupported, no acknowledgement occurs, and no Payment or BillingEvent projection is created. Repository-only account-status multi-provider selection is complete: valid active Premium entitlement coverage determines access and expiry; provider metadata comes only from the selected linked Subscription, or from a stable safe legacy fallback for an unscoped `provider_event` entitlement. A newer or shorter Google Play Subscription cannot hide or replace valid Paddle Premium. Paddle production behavior remains unchanged. Credentials, package/product configuration, sandbox validation, Mobile connection, acknowledgement, replacement-token handling, RTDN, and production purchase rollout remain pending.
+- `GooglePlayPurchaseVerificationService` is connected to `IGooglePlayVerifiedPurchasePersistenceService`. The atomic orchestration establishes token-fingerprint ownership, selects or creates the exact `google_play` Subscription, and persists its linked entitlement state in one serializable transaction. This disabled infrastructure has been deployed since production backend `0.1.35-backend.134` and remains present in `.138`; migration `20260727045935_AddGooglePlayPurchaseClaims` is applied. Runtime purchase processing remains dormant because Google Play is disabled; no Google Play claim or entitlement has been created in production, and actual Google Play purchase validation remains pending. Test purchases remain unsupported, no acknowledgement occurs, and no Payment or BillingEvent projection is created. Repository-only account-status multi-provider selection is complete: valid active Premium entitlement coverage determines access and expiry; provider metadata comes only from the selected linked Subscription, or from a stable safe legacy fallback for an unscoped `provider_event` entitlement. A newer or shorter Google Play Subscription cannot hide or replace valid Paddle Premium. Paddle production behavior remains unchanged. Credentials, package/product configuration, sandbox validation, Mobile connection, acknowledgement, replacement-token handling, RTDN, and production purchase rollout remain pending.
 - The backend remains the source of truth for entitlement state.
+
+Google Play is an additional billing provider, not a replacement for the provider-neutral entitlement calculation. Google Play adapter work must not shorten, hide, or relabel valid trial, `manual_admin`, or Paddle Premium. Selecting provider-specific `Subscription` metadata and calculating common Premium access/coverage are separate responsibilities. Every Google Play change must pass the shared mandatory billing-adapter regression gate below before acceptance.
+
+## Mandatory billing-adapter regression gate
+
+This gate is mandatory for Paddle changes, Google Play changes, future Apple App Store or other provider adapters, provider-selection logic, purchase persistence, entitlement creation, subscription-status calculation, and cancellation, renewal, refund, restore, replacement, or replay handling. Provider-specific tests alone are insufficient.
+
+### A. Premium grant timing
+
+Verify separately:
+
+- active trial followed by manual Premium;
+- manual Premium followed by another manual Premium;
+- provider Premium followed by manual Premium;
+- manual Premium followed by provider Premium where supported;
+- expired, revoked, inactive, and other-user records do not extend access;
+- each new period starts from the correct existing coverage end rather than from the current time.
+
+### B. Subscription and entitlement stacking
+
+Verify both **subscription/Premium period stacking** and **Premium coverage aggregation**:
+
+- adjacent Premium periods extend rather than overwrite one another;
+- overlapping periods preserve the later final expiry;
+- a shorter new provider record cannot shorten valid existing Premium;
+- Paddle, Google Play, `manual_admin`, and trial remain parts of one backend-owned Premium source of truth;
+- provider metadata selection does not replace provider-neutral access calculation;
+- an orphan provider `Subscription` without a valid linked entitlement does not grant Premium.
+
+### C. User-visible subscription status
+
+For every supported client affected by the contract, verify:
+
+- the final Premium expiry shown to the user;
+- trial expiry is not substituted for the later final Premium expiry;
+- current tariff/source remains correct;
+- Auto-renew and cancellation controls match the real provider state;
+- manual Premium is not presented as Paddle or Google Play;
+- no unapproved UI element or status line is added;
+- Desktop and Mobile retain their existing layouts unless a separate UI task is approved.
+
+### D. Admin and support visibility
+
+Verify **Premium Entitlement Schedule**, **Active Entitlements**, current-versus-future entitlement distinction, provider/renewal state, and final expiry. A future scheduled entitlement is expected to be absent from **Active Entitlements** before `StartsAtUtc`; that absence is not a defect.
+
+### E. Required automated regression coverage
+
+Billing-adapter work is not complete with provider-specific tests alone. Select and run the existing focused coverage, using repository test filters/conventions, for:
+
+- `AdminPremiumGrantService`;
+- `SubscriptionStatusService`;
+- the affected provider adapter, verification, and persistence path;
+- Paddle behavior when Google Play or shared subscription logic changes;
+- Google Play behavior when Paddle or shared subscription logic changes;
+- client JSON parsing and display when the response contract or status calculation changes.
+
+Typical backend filters include `FullyQualifiedName~AdminPremiumGrant`, `FullyQualifiedName~SubscriptionStatusServiceTests`, `FullyQualifiedName~GooglePlay`, and `FullyQualifiedName~Paddle`. Use the focused Desktop policy checks and Mobile model/widget tests that own the affected display contract. Do not hardcode pass counts as policy.
+
+### F. Required controlled manual smoke
+
+Any billing-adapter change that can affect subscription status requires at least one controlled account with:
+
+- a current trial;
+- scheduled or active manual Premium;
+- final Premium expiry later than the trial;
+- correct provider and Auto-renew state;
+- correct affected Desktop or Mobile display;
+- correct Admin CMS entitlement schedule and current/future distinction.
+
+Provider sandbox checks alone are insufficient. Record only non-identifying evidence.
 
 ## Paddle checkout transaction creation v1
 
@@ -416,7 +500,7 @@ Deferred scope / next roadmap:
 - Chargeback handling is not implemented yet.
 - Manual revocation automation is not implemented yet.
 - Full subscription reconciliation / background reconciliation job is not implemented yet.
-- Future Apple App Store / Google Play mobile entitlement bridge is not implemented yet.
+- Google Play verification and atomic persistence are integrated but disabled; Mobile purchase connection, acknowledgement, replacement-token handling, RTDN, and production rollout remain pending. A future Apple App Store adapter is not implemented.
 - Production RBAC/admin system is not implemented yet.
 - Contabo deployment is not part of this task.
 
