@@ -1,13 +1,13 @@
 # Backend server deployment
 
-Review date: 2026-07-28.
+Review date: 2026-07-30.
 
 ## Current production backend
 
 Production backend is deployed and healthy.
 
-- Current release: `0.1.35-backend.134`
-- Previous rollback release: `0.1.35-backend.133`
+- Current release: `0.1.35-backend.137`
+- Previous rollback release: `0.1.35-backend.136`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -23,7 +23,13 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.134`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.133`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.137`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.136`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+
+## 2026-07-30 `.137` Website CMS legal-text deployment verification
+
+Commit `fc00d5e9c482c4aed857ff16669e4677bbc2ace2` (`Expand Website CMS legal text limits`) was packaged and deployed through the normal reviewed `scripts/upload-backend-linux-release.ps1` dry-run and upload flow. The live `current` symlink switched to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.137`; `previous` retained `/opt/languagevoicetutor/backend/releases/0.1.35-backend.136`. `languagevoicetutor-backend.service` was active and running, startup logs showed normal listening on `127.0.0.1:5001`, and public `/health` plus `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`.
+
+The release includes the Admin CMS JavaScript, whose required real-`admin.js` parse verification passed. Owner-led production smoke confirmed Admin CMS load and long-form legal-text Save Draft, reload, Preview, intentional Publish, and published public-page verification. No EF migration or schema change ran; no separate Desktop, Mobile, Windows installer, or Windows Direct release occurred. The backend release packages CMS capability only: it does not publish or replace public legal content until an authorized operator explicitly uses Website CMS Publish.
 
 ## 2026-07-28 `.134` disabled Google Play entitlement-bridge verification
 
@@ -100,7 +106,7 @@ Record all of these results with the symlink, service, logs, backend health, dat
 
 Historical incident: backend `.126` was deployed; both health endpoints returned HTTP 200, and the new endpoint existed and correctly returned `401` without authentication. Admin CMS login nevertheless failed, so production was rolled back to `.125`, where login immediately worked again. The cause was not authentication, roles, cookies, routes, rate limiting, nginx, or the database.
 
-The root cause was a JavaScript syntax error in `backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js`: two closing parentheses were missing from the expanded feedback-status action expression. The browser could not parse the script, so the entire Admin CMS script stopped loading and the login submit handler was never registered. Backend regression coverage was added using Node syntax validation of the real `admin.js`. The correction was released as `.127`; Admin CMS login and the feedback queue were then manually verified successfully. This is historical incident context; the current active release is `.128`, not `.125`, `.126`, or `.127`.
+The root cause was a JavaScript syntax error in `backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js`: two closing parentheses were missing from the expanded feedback-status action expression. The browser could not parse the script, so the entire Admin CMS script stopped loading and the login submit handler was never registered. Backend regression coverage was added using Node syntax validation of the real `admin.js`. The correction was released as `.127`; Admin CMS login and the feedback queue were then manually verified successfully. This is historical incident context; `.128` was the active release after that correction, not `.125`, `.126`, or `.127`.
 
 ## 2026-07-22 backend `0.1.35-backend.128` Admin login fail-closed verification
 
@@ -255,7 +261,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.128`; verified rollback target `.127` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.137`; verified rollback target `.136` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.

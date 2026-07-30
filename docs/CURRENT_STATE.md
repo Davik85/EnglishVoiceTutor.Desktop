@@ -1,6 +1,14 @@
 # Current State
 
-Review date: 2026-07-28.
+Review date: 2026-07-30.
+
+## 2026-07-30 production `.137` Website CMS legal-text deployment
+
+Production backend is `0.1.35-backend.137`, with `0.1.35-backend.136` retained as rollback. Commit `fc00d5e9c482c4aed857ff16669e4677bbc2ace2` (`Expand Website CMS legal text limits`) is deployed. The service is active and running; public `/health` and `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`.
+
+Website CMS long-form pages `terms`, `privacy`, `refunds`, `cancellation`, `seller`, `aiData`, and `status` now preserve `bodyMarkdown` up to 64,000 characters. Oversized legal text is rejected before normalization rather than silently truncated, including Save Draft, Preview, stored-document reading, and Publish; the previously saved draft remains unchanged. Non-legal `bodyMarkdown`, including Download, remains limited to 12,000 characters; SEO and ordinary short-text limits remain 180 and 900 characters. The owner verified Admin CMS load, the live counter, full-text save/reload/preview/publish, and the published public legal page.
+
+No EF migration or schema change ran. No Desktop, Mobile, Windows installer, or Windows Direct release changed. Backend deployment packaged the Admin CMS code but did not itself publish or replace public legal content; the authorized owner separately used Website CMS Publish.
 
 ## CMS setup-localization draft import
 
@@ -97,7 +105,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.136`, with `.135` as rollback; the execution migration and complete Admin confirmation/execution flow are deployed and production-verified. The disabled Google Play claim-table migration is applied and verified; account-deletion backend work is complete for the approved current scope.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.137`, with `.136` as rollback; the Website CMS legal-text limit deployment is production-verified. The execution migration and complete Admin confirmation/execution flow remain deployed and production-verified; the disabled Google Play claim-table migration remains applied and verified.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: Windows Direct Release 1.3 is available through the manifest-driven `/releases/windows/direct/latest.json` flow, and the normal public download was verified. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Windows installer: current Windows direct public release is `1.3`, installer `LanguageVoiceTutorSetup-1.3.exe`; its verified update flow is manual-confirmation and does not silently auto-update. No backend deployment or migration occurred for this Windows release.
@@ -127,7 +135,7 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-The current backend release is `0.1.35-backend.134`; `0.1.35-backend.133` is the previous rollback release. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`, and the disabled Google Play claim-table migration `20260727045935_AddGooglePlayPurchaseClaims` is applied. Public backend and database health returned HTTP 200 `Healthy`, and the controlled deletion verification passed after deployment. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
+The current backend release is `0.1.35-backend.137`; `0.1.35-backend.136` is the previous rollback release. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`, and the disabled Google Play claim-table migration `20260727045935_AddGooglePlayPurchaseClaims` remains applied. Public backend and database health returned HTTP 200 `Healthy`, and the `.137` Website CMS legal-text deployment was production-verified. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
 
 Backend deployment uses:
 
@@ -195,7 +203,7 @@ The saved `CurrentLevel` is only the user's selected level and does not replace 
 
 ## 2026-07-13 authenticated voice scenario resolution production verification
 
-Backend `0.1.35-backend.115` was deployed and verified for this dated voice scenario structured-output fix; `0.1.35-backend.114` was the previous backend release for that deployment. This is historical context; production has since advanced to `0.1.35-backend.134`. Backend `0.1.35-backend.114` was already active before the `.115` deployment, so it must not be described as containing the `.115` structured-output fix. The `.115` deployment completed successfully through the existing `scripts/upload-backend-linux-release.ps1` flow, `languagevoicetutor-backend.service` was active, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or database schema change was required or run. Website and Windows installer files were not deployed.
+Backend `0.1.35-backend.115` was deployed and verified for this dated voice scenario structured-output fix; `0.1.35-backend.114` was the previous backend release for that deployment. This is historical context; production has since advanced to `0.1.35-backend.137`. Backend `0.1.35-backend.114` was already active before the `.115` deployment, so it must not be described as containing the `.115` structured-output fix. The `.115` deployment completed successfully through the existing `scripts/upload-backend-linux-release.ps1` flow, `languagevoicetutor-backend.service` was active, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or database schema change was required or run. Website and Windows installer files were not deployed.
 
 Backend `0.1.35-backend.115` fixes `POST /api/me/lesson-sessions/{sessionId}/voice-scenario-resolution` returning HTTP 502 when the provider returned a structured-output shape that was permitted by the old provider schema but rejected by backend validation. The provider schema now has one explicit result shape for each decision: `published_context`, `free_context`, `clarify`, and `unsafe`. The backend converts the nested provider result back into the existing flat public endpoint response, so the public route and Mobile request/response contract did not change. `free_context` remains a first-class result, runtime candidate IDs are still validated against the current CMS candidates for the lesson, production credential validation remains unchanged, and the automated tests did not use a live OpenAI call. No scenario titles, transcript phrases, CMS scenario IDs, or language-specific production examples were added.
 
@@ -460,14 +468,14 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 ### Current release point
 
 - Windows direct release: `1.2`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.2.exe`, production backend URL, `minimumSupportedVersion=1.2`, and manual-confirmation update mode. The tracked repository `site/public/releases/windows/direct/latest.json` was not changed by this docs update.
-- Backend release in tracked release docs: current production is `0.1.35-backend.134`, with `.133` as rollback; `/health` and `/api/health/database` are verified healthy. Backend .99/.108/.112 references are historical and not current production unless a section is explicitly documenting those older releases.
+- Backend release in tracked release docs: current production is `0.1.35-backend.137`, with `.136` as rollback; `/health` and `/api/health/database` are verified healthy. Backend .99/.108/.112 references are historical and not current production unless a section is explicitly documenting those older releases.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it survived backend service restart, matched the current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`, and contains lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2`. For `gpt-5.5`, backend requests must omit `temperature`.
 
 ### What is ready, partial, and blocked
 
 Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, verified persistent AI Models production storage, Website CMS draft/publish mechanics, and documented secret boundaries.
 
-Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.134`, with deploys, health checks, database health checks, and migrations kept as separate operations.
+Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.137`, with deploys, health checks, database health checks, and migrations kept as separate operations.
 
 Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, final website/legal/support/pricing approval, monitoring/privacy/release-readiness review, and explicit release decision after controlled tester feedback. Controlled Paddle live payment/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed, but they are not a broad launch decision; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 
@@ -597,6 +605,6 @@ All 26 active canonical lesson scenarios now contain authored `setupLocalization
 
 CMS draft editing remains permissive so incomplete localization work can be saved. Creating a new CMS publication now requires every active scenario to have complete non-English setup localizations: each required language needs a non-empty template, exact stable-context coverage with non-blank titles, and exactly the canonical setup-message placeholders. Legacy published snapshots without `setupLocalizations` remain readable for runtime and rollback. No database migration, deployment, CMS import, CMS publication, or production operation was performed for this change.
 
-The localization rollout is complete. Production backend `0.1.35-backend.136` is active with `.135` retained for rollback; CMS published version `51` is the valid runtime source (`CmsPublishedSnapshot`, `fallbackUsed=false`) with 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. Runtime responses own the additive `localizedSetup` projection. Authored `setupLocalizations` remain backend/CMS data; clients do not consume that authored field directly, and no migration was required.
+The localization rollout is complete. Production backend `0.1.35-backend.137` is active with `.136` retained for rollback; CMS published version `51` is the valid runtime source (`CmsPublishedSnapshot`, `fallbackUsed=false`) with 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. Runtime responses own the additive `localizedSetup` projection. Authored `setupLocalizations` remain backend/CMS data; clients do not consume that authored field directly, and no migration was required.
 
 The Admin CMS scenario editor exposes five full localized first-message textareas for French, German, Portuguese, Spanish, and Italian directly below the canonical English field. Each edits one complete `setupMessageTemplate` text block; messages are not split into Goal, situation, or instruction controls. Structured Save draft uses those visible fields, while Advanced JSON Save draft preserves the entered `DefinitionJson` as authoritative; the normal successful-save reload synchronizes visible fields from saved JSON. `contextVariantTitles` stay internal to Advanced JSON, draft save remains permissive, and publication validation requires complete exact coverage. The completed Desktop and Mobile clients consume only the response-owned `localizedSetup` projection.

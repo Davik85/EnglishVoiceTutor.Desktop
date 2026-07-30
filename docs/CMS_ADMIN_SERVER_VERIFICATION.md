@@ -1,6 +1,6 @@
 # CMS/Admin Server Verification Runbook
 
-Review date: 2026-07-18.
+Review date: 2026-07-30.
 
 Public release is still not ready. This runbook prepares the production/server CMS/Admin connection foundation for Language Voice Tutor at `https://api.languagevoicetutor.com`. It does not change billing, Paddle, subscriptions, entitlements, password reset/change behavior, lesson JSON, or desktop runtime startup behavior.
 
@@ -126,6 +126,22 @@ The generic email sender uses real SMTP only when all requirements are true: `Sm
 Database validation for the deployed workflow is separate from backend deployment. Migration `20260717151432_AddUserFeedbackReportReplies` is applied in production, `user_feedback_report_replies` exists, the table owner is `lvt_app`, `lvt_app` has application access, and `lvt_analytics_reader` has no access to reply content. No additional migration is required for backend `.119`.
 
 ## CMS workflow verification
+
+### Website CMS long-form legal content
+
+For Website CMS pages `terms`, `privacy`, `refunds`, `cancellation`, `seller`, `aiData`, and `status`, `bodyMarkdown` supports up to 64,000 characters. Non-legal pages, including Download, remain limited to 12,000 characters. SEO fields remain limited to 180 characters and ordinary short text fields to 900 characters.
+
+The editor shows a live `current / maximum` character counter and visibly marks an oversized `bodyMarkdown` field invalid. Browser-side validation blocks oversized Save Draft and Preview requests as an interface safeguard; backend validation is authoritative for all callers. Save Draft, Preview, stored-document reading, and Publish reject oversized legal text before normalization rather than silently truncating it, and a rejected value does not replace the previously saved draft.
+
+Manual verification procedure:
+
+1. Open a legal page such as Privacy and confirm its counter shows the 64,000-character maximum.
+2. Enter content longer than 12,000 characters with a unique marker at the end, then save it.
+3. Reload and confirm the ending marker remains; use Preview and confirm the ending again.
+4. Publish intentionally and verify the public legal page contains the marker.
+5. Exceed 64,000 characters and confirm Save Draft and Preview are rejected without replacing the valid draft.
+
+Content truncated before backend `0.1.35-backend.137` cannot be reconstructed automatically; paste the complete source text again and publish it. After deploying `.137`, the owner completed the real production Admin CMS save/reload/preview/publish and public-page verification for full legal text. Backend deployment packages the editor capability, while public legal content changes only after an authorized Website CMS Publish action.
 
 ### Website CMS Home-page title styles
 
