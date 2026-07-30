@@ -643,6 +643,93 @@ Need help? Email support@languagevoicetutor.com.
     }
 
     [Fact]
+    public async Task LegalBodyMarkdownUpTo64000CharactersSavesReloadsPreviewsAndPublishesWithoutTruncation()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        const string sentinel = "LEGAL-END-SENTINEL";
+        var legalMarkdown = CreateMarkdown(64000, sentinel);
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        content.Pages["privacy"]["bodyMarkdown"] = legalMarkdown;
+
+        await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
+        var reloaded = (await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken)).Draft;
+        var preview = await fixture.CreateService().PreviewAsync(new WebsitePreviewRequest(reloaded, "privacy"), TestContext.Current.CancellationToken);
+        await fixture.CreateService().PublishAsync(TestContext.Current.CancellationToken);
+        var published = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "privacy.html"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(legalMarkdown, reloaded.Pages["privacy"]["bodyMarkdown"]);
+        Assert.EndsWith(sentinel, reloaded.Pages["privacy"]["bodyMarkdown"]);
+        Assert.Contains(sentinel, preview.Html);
+        Assert.Contains(sentinel, published);
+    }
+
+    [Fact]
+    public async Task OversizedLegalBodyMarkdownIsRejectedForSavePreviewAndPublishWithoutReplacingSavedDraft()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        const string savedSentinel = "SAVED-LEGAL-DRAFT";
+        var saved = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        saved.Pages["privacy"]["bodyMarkdown"] = savedSentinel;
+        await service.SaveDraftAsync(saved, TestContext.Current.CancellationToken);
+
+        var oversized = CreateMarkdown(64001, "OVERSIZED-LEGAL-END");
+        saved.Pages["privacy"]["bodyMarkdown"] = oversized;
+        var saveError = await Assert.ThrowsAsync<InvalidOperationException>(() => service.SaveDraftAsync(saved, TestContext.Current.CancellationToken));
+        var previewError = await Assert.ThrowsAsync<InvalidOperationException>(() => service.PreviewAsync(new WebsitePreviewRequest(saved, "privacy"), TestContext.Current.CancellationToken));
+
+        Assert.Contains("privacy.bodyMarkdown", saveError.Message);
+        Assert.Contains("64,000", saveError.Message);
+        Assert.Contains("privacy.bodyMarkdown", previewError.Message);
+        Assert.Equal(savedSentinel, (await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken)).Draft.Pages["privacy"]["bodyMarkdown"]);
+
+        var stored = await service.GetAsync(TestContext.Current.CancellationToken);
+        stored.Draft.Pages["privacy"]["bodyMarkdown"] = oversized;
+        await fixture.WriteDocumentAsync(new WebsiteContentDocument(stored.Active, stored.Draft));
+        var publishError = await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.CreateService().PublishAsync(TestContext.Current.CancellationToken));
+
+        Assert.Contains("privacy.bodyMarkdown", publishError.Message);
+        Assert.Contains("64,000", publishError.Message);
+    }
+
+    [Fact]
+    public async Task NonLegalBodyMarkdownAndExistingShortTextLimitsRemainUnchanged()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var oversizedDownload = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        oversizedDownload.Pages["download"]["bodyMarkdown"] = CreateMarkdown(12001, "DOWNLOAD-END");
+
+        var bodyError = await Assert.ThrowsAsync<InvalidOperationException>(() => service.SaveDraftAsync(oversizedDownload, TestContext.Current.CancellationToken));
+        Assert.Contains("download.bodyMarkdown", bodyError.Message);
+        Assert.Contains("12,000", bodyError.Message);
+
+        var shortFields = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        shortFields.Pages["support"]["seoTitle"] = new string('s', 181);
+        shortFields.Pages["support"]["pageTitle"] = new string('p', 901);
+        var saved = await service.SaveDraftAsync(shortFields, TestContext.Current.CancellationToken);
+
+        Assert.Equal(180, saved.Draft.Pages["support"]["seoTitle"].Length);
+        Assert.Equal(900, saved.Draft.Pages["support"]["pageTitle"].Length);
+    }
+
+    [Fact]
+    public void AdminWebsiteEditorDefinesPageAwareBodyMarkdownLimitsAndLiveCounterBehavior()
+    {
+        var adminJs = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "backend", "EnglishVoiceTutor.Api", "wwwroot", "admin", "admin.js"));
+
+        Assert.Contains("longFormWebsitePageKeys", adminJs);
+        Assert.Contains("longFormBodyMarkdownLimit = 64000", adminJs);
+        Assert.Contains("standardBodyMarkdownLimit = 12000", adminJs);
+        Assert.Contains("bodyMarkdownLimitForPage", adminJs);
+        Assert.Contains("website-body-markdown-counter", adminJs);
+        Assert.Contains("updateBodyMarkdownCounter", adminJs);
+        Assert.Contains("validateWebsiteBodyMarkdown", adminJs);
+        Assert.Contains("website-body-markdown-over-limit", adminJs);
+    }
+
+    [Fact]
     public async Task MarkdownLinksSafeUrlsEmailsAndBareDomainsAndRejectsUnsafeSchemes()
     {
         using var fixture = new WebsiteContentServiceFixture();
@@ -734,6 +821,12 @@ Need help? Email support@languagevoicetutor.com.
             index += token.Length;
         }
         return count;
+    }
+
+    private static string CreateMarkdown(int length, string sentinel)
+    {
+        Assert.True(length > sentinel.Length + 1);
+        return new string('x', length - sentinel.Length - 1) + "\n" + sentinel;
     }
 
     private sealed class WebsiteContentServiceFixture : IDisposable

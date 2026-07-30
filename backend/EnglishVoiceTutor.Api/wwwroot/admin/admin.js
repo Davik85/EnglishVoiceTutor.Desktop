@@ -1090,6 +1090,9 @@
     const websitePublishButton = document.getElementById("website-publish-button");
     const websitePreviewButton = document.getElementById("website-preview-button");
     const simpleWebsitePageKeys = new Set(["download", "mobile", "pricing", "support", "terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"]);
+    const longFormWebsitePageKeys = new Set(["terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"]);
+    const standardBodyMarkdownLimit = 12000;
+    const longFormBodyMarkdownLimit = 64000;
     const websiteSections = [
         ["home", "Home page", [["logoPath","Logo image path"],["logoAltText","Logo alt text"],["fallbackLogoText","Fallback logo text"],["topHeaderText","Top header text"],["supportedLanguageLine","Supported language line"],["windowsCardBadge","Windows card badge"],["windowsCardTitle","Windows card title"],["windowsCardDescription","Windows card description"],["windowsDownloadButtonText","Windows download button text"],["mobileCardBadge","Mobile card badge"],["mobileCardTitle","Mobile card title"],["mobileCardDescription","Mobile card description"],["mobileComingSoonButtonText","Mobile coming soon button text"],["footerCopyrightText","Footer copyright text"],["footerPrivacyLabel","Footer Privacy label"],["footerTermsLabel","Footer Terms label"],["footerRefundsLabel","Footer Refund label"],["footerCancellationLabel","Footer Cancellation label"],["footerSupportLabel","Footer Support label"],["footerPricingLabel","Footer Pricing label"]]],
         ["download", "Desktop app / Download"],
@@ -1160,6 +1163,38 @@
             if (!value) return "";
             return heading ? `## ${heading}\n\n${value}` : value;
         }).filter(Boolean).join("\n\n");
+    }
+    function bodyMarkdownLimitForPage(pageKey) { return longFormWebsitePageKeys.has(pageKey) ? longFormBodyMarkdownLimit : standardBodyMarkdownLimit; }
+    function updateBodyMarkdownCounter(textarea) {
+        const limit = Number(textarea.dataset.bodyMarkdownLimit);
+        const isOverLimit = textarea.value.length > limit;
+        const counter = textarea.closest(".field")?.querySelector(".website-body-markdown-counter");
+        if (counter) counter.textContent = `${textarea.value.length.toLocaleString()} / ${limit.toLocaleString()} characters`;
+        textarea.classList.toggle("website-body-markdown-over-limit", isOverLimit);
+        textarea.setAttribute("aria-invalid", String(isOverLimit));
+        textarea.setCustomValidity(isOverLimit ? `Body markdown must be ${limit.toLocaleString()} characters or fewer.` : "");
+        return !isOverLimit;
+    }
+    function addBodyMarkdownCounter(textarea, pageKey) {
+        const limit = bodyMarkdownLimitForPage(pageKey);
+        textarea.dataset.bodyMarkdownLimit = String(limit);
+        const counter = document.createElement("p");
+        counter.className = "muted website-body-markdown-counter";
+        textarea.insertAdjacentElement("afterend", counter);
+        textarea.addEventListener("input", () => updateBodyMarkdownCounter(textarea));
+        updateBodyMarkdownCounter(textarea);
+    }
+    function validateWebsiteBodyMarkdown() {
+        let error = "";
+        Object.entries(websiteContentDraft.pages || {}).forEach(([pageKey, values]) => {
+            const bodyMarkdown = values?.bodyMarkdown;
+            const limit = bodyMarkdownLimitForPage(pageKey);
+            if (!error && typeof bodyMarkdown === "string" && bodyMarkdown.length > limit) error = `${pageKey} body markdown must be ${limit.toLocaleString()} characters or fewer.`;
+        });
+        const textarea = websiteEditorFields.querySelector('textarea[data-website-key="bodyMarkdown"]');
+        if (textarea) updateBodyMarkdownCounter(textarea);
+        if (error) { setWebsiteError(error); return false; }
+        return true;
     }
     function createWebsiteField(key, label, value, options = {}) {
         const field = document.createElement("div");
@@ -1319,6 +1354,7 @@
         const bodyField = createWebsiteField("bodyMarkdown", "Body markdown", values.bodyMarkdown || getLegacyWebsiteBodyMarkdown(section.key, values), { long: true, textarea: true, rows: 18 });
         const bodyTextarea = bodyField.querySelector("textarea");
         bodyField.insertBefore(createMarkdownToolbar(bodyTextarea), bodyTextarea);
+        addBodyMarkdownCounter(bodyTextarea, section.key);
         websiteEditorFields.appendChild(bodyField);
         if (section.key === "download") { renderDownloadFeatureCardEditor(values); }
         const seoSection = document.createElement("section");
@@ -1380,8 +1416,8 @@
     async function readWebsiteResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
         if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
     async function loadWebsiteContent() { setWebsiteError(""); setWebsiteMessage("Loading Website editor..."); try { const response = await fetch(ApiPaths.websiteContent, { method: "GET", headers: getAdminHeaders() }); const payload = await readWebsiteResponse(response, "Unable to load Website content."); fillWebsiteForm(payload.draft || payload.active); websiteHasLoadedOnce = true; setWebsiteMessage("Draft loaded."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to load Website content."); } }
-    async function saveWebsiteDraft() { setWebsiteError(""); if (!validateHomeTitleStyles()) return false; collectCurrentWebsiteSection(); preserveDownloadFeatureCardFields(); setWebsiteMessage("Saving draft..."); websiteSaveDraftButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(websiteContentDraft) }); const payload = await readWebsiteResponse(response, "Unable to save Website draft."); fillWebsiteForm(payload.draft); setWebsiteMessage("Draft saved."); return true; } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to save Website draft."); return false; } finally { websiteSaveDraftButton.disabled = false; } }
-    async function previewWebsiteContent() { setWebsiteError(""); if (!validateHomeTitleStyles()) return; collectCurrentWebsiteSection(); setWebsiteMessage("Rendering Website preview..."); websitePreviewButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentPreview, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ content: websiteContentDraft, pageKey: activeWebsiteSection === "marketingSeo" ? "home" : activeWebsiteSection }) }); const payload = await readWebsiteResponse(response, "Unable to preview Website content."); const previewWindow = window.open("about:blank", "_blank"); if (!previewWindow) { throw new Error("Preview popup was blocked. Allow popups for this admin site and try again."); } previewWindow.opener = null; previewWindow.document.open(); previewWindow.document.write(payload.html || ""); previewWindow.document.close(); setWebsiteMessage("Preview opened in a new tab. Nothing was saved or published."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to preview Website content."); } finally { websitePreviewButton.disabled = false; } }
+    async function saveWebsiteDraft() { setWebsiteError(""); if (!validateHomeTitleStyles()) return false; collectCurrentWebsiteSection(); if (!validateWebsiteBodyMarkdown()) return false; preserveDownloadFeatureCardFields(); setWebsiteMessage("Saving draft..."); websiteSaveDraftButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(websiteContentDraft) }); const payload = await readWebsiteResponse(response, "Unable to save Website draft."); fillWebsiteForm(payload.draft); setWebsiteMessage("Draft saved."); return true; } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to save Website draft."); return false; } finally { websiteSaveDraftButton.disabled = false; } }
+    async function previewWebsiteContent() { setWebsiteError(""); if (!validateHomeTitleStyles()) return; collectCurrentWebsiteSection(); if (!validateWebsiteBodyMarkdown()) return; setWebsiteMessage("Rendering Website preview..."); websitePreviewButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentPreview, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ content: websiteContentDraft, pageKey: activeWebsiteSection === "marketingSeo" ? "home" : activeWebsiteSection }) }); const payload = await readWebsiteResponse(response, "Unable to preview Website content."); const previewWindow = window.open("about:blank", "_blank"); if (!previewWindow) { throw new Error("Preview popup was blocked. Allow popups for this admin site and try again."); } previewWindow.opener = null; previewWindow.document.open(); previewWindow.document.write(payload.html || ""); previewWindow.document.close(); setWebsiteMessage("Preview opened in a new tab. Nothing was saved or published."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to preview Website content."); } finally { websitePreviewButton.disabled = false; } }
     async function publishWebsiteContent() { setWebsiteError(""); if (!validateHomeTitleStyles()) return; collectCurrentWebsiteSection(); preserveDownloadFeatureCardFields(); setWebsiteMessage("Saving draft before publish..."); websitePublishButton.disabled = true; try { const saved = await saveWebsiteDraft(); if (!saved) { return; } setWebsiteMessage("Publishing saved draft to static website..."); const response = await fetch(ApiPaths.websiteContentPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readWebsiteResponse(response, "Unable to publish Website content."); fillWebsiteForm(payload.active); setWebsiteMessage(`Published saved draft to ${Array.isArray(payload.publishedFiles) ? payload.publishedFiles.length : ""} static website files.`); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website content."); } finally { websitePublishButton.disabled = false; } }
 
     function resetDashboard() {

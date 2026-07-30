@@ -435,6 +435,8 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     min-height: 24rem;
 }
+.website-body-markdown-counter { margin: 6px 0 0; }
+.website-body-markdown-over-limit { border-color: #dc2626; box-shadow: 0 0 0 1px #dc2626; }
 .website-markdown-toolbar {
     align-items: center;
     background: #f8fafc;

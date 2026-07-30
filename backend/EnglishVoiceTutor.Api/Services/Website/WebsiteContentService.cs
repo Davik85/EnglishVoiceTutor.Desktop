@@ -18,6 +18,9 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     private const string PublicSiteBaseUrl = "https://languagevoicetutor.com";
     private const string RequiredLanguageLine = "🇬🇧 English · 🇫🇷 French · 🇩🇪 German · 🇪🇸 Spanish · 🇮🇹 Italian · 🇵🇹 Portuguese";
     private const string ReleaseReadyDownloadPageTitle = "Language Voice Tutor for Windows";
+    private const int StandardBodyMarkdownLimit = 12000;
+    private const int LongFormBodyMarkdownLimit = 64000;
+    private static readonly HashSet<string> LongFormPageKeys = new(StringComparer.OrdinalIgnoreCase) { "terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status" };
     private const string ReleaseReadyDownloadSeoTitle = "Language Voice Tutor for Windows Download";
     private const string ReleaseReadyDownloadSeoDescription = "Download Language Voice Tutor for Windows and practice real conversations by text or voice with an AI tutor.";
     private const string WindowsDirectReleaseBasePath = "/releases/windows/direct/";
@@ -65,6 +68,7 @@ Need help? Email support@languagevoicetutor.com.
     public async Task<WebsiteContentResponse> SaveDraftAsync(WebsiteContentSet draft, CancellationToken cancellationToken)
     {
         ValidateHomeTitleTypography(draft);
+        ValidateBodyMarkdownLimits(draft);
         var document = await ReadDocumentAsync(cancellationToken);
         document = document with { Draft = MergeDraft(document.Draft, draft) };
         await WriteDocumentAsync(document, cancellationToken);
@@ -74,6 +78,7 @@ Need help? Email support@languagevoicetutor.com.
     public Task<WebsitePreviewResponse> PreviewAsync(WebsitePreviewRequest request, CancellationToken cancellationToken)
     {
         ValidateHomeTitleTypography(request.Content);
+        ValidateBodyMarkdownLimits(request.Content);
         var normalized = Normalize(request.Content);
         var pageKey = NormalizePageKey(request.PageKey);
         var html = RenderPage(normalized, pageKey, includePublicBaseHref: true);
@@ -83,6 +88,7 @@ Need help? Email support@languagevoicetutor.com.
     public async Task<WebsitePublishResponse> PublishAsync(CancellationToken cancellationToken)
     {
         var document = await ReadDocumentAsync(cancellationToken);
+        ValidateBodyMarkdownLimits(document.Draft);
         var active = Normalize(document.Draft);
         var publicRoot = ResolvePath(options.Value.PublicSiteRoot);
         if (!Directory.Exists(publicRoot)) { Directory.CreateDirectory(publicRoot); }
@@ -108,6 +114,8 @@ Need help? Email support@languagevoicetutor.com.
         }
 
         if (document is null) { var d = DefaultSet(); return new WebsiteContentDocument(d, d); }
+        ValidateBodyMarkdownLimits(document.Active);
+        ValidateBodyMarkdownLimits(document.Draft);
         var hasLegacyDownloadContent = IsLegacyDownloadContent(document.Active) || IsLegacyDownloadContent(document.Draft);
         var normalized = new WebsiteContentDocument(Normalize(document.Active), Normalize(document.Draft));
         if (hasLegacyDownloadContent || !WebsiteContentDocumentsEqual(document, normalized))
@@ -142,7 +150,7 @@ Need help? Email support@languagevoicetutor.com.
                     var fallback = target.GetValueOrDefault(key, string.Empty);
                     target[key] = key == "logoPath"
                         ? NormalizeLogoPath(value, fallback)
-                        : LimitText(value, TextLimitFor(key), fallback);
+                        : LimitText(value, TextLimitFor(page, key), fallback);
                 }
             }
         }
@@ -176,7 +184,7 @@ Need help? Email support@languagevoicetutor.com.
                     var fallback = target.GetValueOrDefault(key, string.Empty);
                     target[key] = key == "logoPath"
                         ? NormalizeLogoPath(value)
-                        : LimitText(value, TextLimitFor(key), fallback);
+                        : LimitText(value, TextLimitFor(page, key), fallback);
                 }
             }
         }
@@ -1204,7 +1212,32 @@ You can change or withdraw your choices by using the choices interface when avai
     private static string SafeAdsId(string? value) => value is not null && AdsIdRegex().IsMatch(value.Trim()) ? value.Trim() : string.Empty;
     private static string SafeConversionLabel(string? value) => value is not null && ConversionLabelRegex().IsMatch(value.Trim()) ? value.Trim() : string.Empty;
     private static string SafeSearchConsoleToken(string? value) => value is not null && SearchConsoleTokenRegex().IsMatch(value.Trim()) ? value.Trim() : string.Empty;
-    private static int TextLimitFor(string key) => key == "bodyMarkdown" ? 12000 : key.Contains("seo", StringComparison.OrdinalIgnoreCase) ? 180 : 900;
+    private static void ValidateBodyMarkdownLimits(WebsiteContentSet? content)
+    {
+        if (content?.Pages is null)
+        {
+            return;
+        }
+
+        foreach (var (pageKey, fields) in content.Pages)
+        {
+            if (fields is null || !fields.TryGetValue("bodyMarkdown", out var bodyMarkdown) || bodyMarkdown is null)
+            {
+                continue;
+            }
+
+            var limit = TextLimitFor(pageKey, "bodyMarkdown");
+            if (bodyMarkdown.Length > limit)
+            {
+                throw new InvalidOperationException($"{pageKey}.bodyMarkdown must be {limit.ToString("N0", CultureInfo.InvariantCulture)} characters or fewer.");
+            }
+        }
+    }
+
+    private static int TextLimitFor(string pageKey, string key) =>
+        key == "bodyMarkdown"
+            ? LongFormPageKeys.Contains(pageKey) ? LongFormBodyMarkdownLimit : StandardBodyMarkdownLimit
+            : key.Contains("seo", StringComparison.OrdinalIgnoreCase) ? 180 : 900;
     private static string LimitText(string? value, int max, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim()[..Math.Min(value.Trim().Length, max)];
     private static string NormalizeHex(string? value, string fallback) => value is not null && HexColorRegex().IsMatch(value.Trim()) ? value.Trim() : fallback;
     private static string NormalizeFontFamily(string? value, string fallback) => value is not null && SafeFontRegex().IsMatch(value.Trim()) ? LimitText(value, 120, fallback) : fallback;
