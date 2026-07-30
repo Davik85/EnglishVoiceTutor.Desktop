@@ -276,6 +276,107 @@ public sealed class SubscriptionStatusServiceTests
         Assert.Equal(SubscriptionConstants.BillingProviders.None, status.BillingProvider);
     }
 
+    [Fact]
+    public async Task TrialOnlyStatusRemainsUnchanged()
+    {
+        await using var db = CreateDb();
+        var userId = await AddUserAsync(db);
+        var trialEnd = Now.AddDays(7);
+        await AddTrialAsync(db, userId, trialEnd);
+
+        var status = await GetStatusAsync(db, userId);
+
+        Assert.True(status.TrialActive);
+        Assert.False(status.PremiumActive);
+        Assert.Equal(trialEnd, status.TrialEndsAtUtc);
+        Assert.Equal(trialEnd, status.PremiumCoverageEndsAtUtc);
+        Assert.Equal(SubscriptionConstants.BillingProviders.None, status.BillingProvider);
+        Assert.False(status.CanRequestCancelRenewal);
+    }
+
+    [Fact]
+    public async Task ManualOnlyStatusRemainsUnchanged()
+    {
+        await using var db = CreateDb();
+        var userId = await AddUserAsync(db);
+        var manualEnd = Now.AddDays(30);
+        await AddEntitlementAsync(db, userId, null, manualEnd, source: SubscriptionConstants.Entitlements.SourceManualAdmin);
+
+        var status = await GetStatusAsync(db, userId);
+
+        Assert.True(status.PremiumActive);
+        Assert.False(status.TrialActive);
+        Assert.Equal(manualEnd, status.PremiumCoverageEndsAtUtc);
+        Assert.Equal(manualEnd, status.PaidAccessUntilUtc);
+        Assert.Equal(SubscriptionConstants.BillingProviders.None, status.BillingProvider);
+        Assert.False(status.ProviderSubscriptionPresent);
+        Assert.False(status.HasActivePaidProviderSubscription);
+        Assert.False(status.CanRequestCancelRenewal);
+    }
+
+    [Fact]
+    public async Task TrialFollowedByFutureManualPremiumReturnsFinalManualExpiry()
+    {
+        await using var db = CreateDb();
+        var userId = await AddUserAsync(db);
+        var trialEnd = Now.AddDays(7);
+        var manualEnd = trialEnd.AddDays(30);
+        await AddTrialAsync(db, userId, trialEnd);
+        await AddEntitlementAsync(
+            db,
+            userId,
+            null,
+            manualEnd,
+            startsAt: trialEnd,
+            source: SubscriptionConstants.Entitlements.SourceManualAdmin);
+
+        var status = await GetStatusAsync(db, userId);
+
+        Assert.True(status.TrialActive);
+        Assert.Equal(trialEnd, status.TrialEndsAtUtc);
+        Assert.True(status.HasFuturePremiumEntitlement);
+        Assert.Equal(trialEnd, status.FuturePremiumStartsAtUtc);
+        Assert.Equal(manualEnd, status.FuturePremiumExpiresAtUtc);
+        Assert.Equal(manualEnd, status.PremiumEndsAtUtc);
+        Assert.Equal(manualEnd, status.PremiumCoverageEndsAtUtc);
+        Assert.Equal(SubscriptionConstants.BillingProviders.None, status.BillingProvider);
+        Assert.False(status.ProviderSubscriptionPresent);
+        Assert.False(status.HasActivePaidProviderSubscription);
+        Assert.False(status.CanRequestCancelRenewal);
+    }
+
+    [Fact]
+    public async Task TrialWithOverlappingManualPremiumReturnsLaterExpiryWithoutMutation()
+    {
+        await using var db = CreateDb();
+        var userId = await AddUserAsync(db);
+        var trialEnd = Now.AddDays(7);
+        var manualStart = Now.AddDays(-1);
+        var manualEnd = Now.AddDays(90);
+        await AddTrialAsync(db, userId, trialEnd);
+        await AddEntitlementAsync(
+            db,
+            userId,
+            null,
+            manualEnd,
+            startsAt: manualStart,
+            source: SubscriptionConstants.Entitlements.SourceManualAdmin);
+        db.ChangeTracker.Clear();
+
+        var status = await GetStatusAsync(db, userId);
+        var storedManual = await db.Entitlements.AsNoTracking().SingleAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(status.PremiumActive);
+        Assert.True(status.TrialActive);
+        Assert.Equal(trialEnd, status.TrialEndsAtUtc);
+        Assert.Equal(manualEnd, status.PremiumEntitlementExpiresAtUtc);
+        Assert.Equal(manualEnd, status.PaidAccessUntilUtc);
+        Assert.Equal(manualEnd, status.PremiumCoverageEndsAtUtc);
+        Assert.Equal(manualStart, storedManual.StartsAtUtc);
+        Assert.Equal(manualEnd, storedManual.ExpiresAtUtc);
+        Assert.False(db.ChangeTracker.HasChanges());
+    }
+
     private static async Task<EnglishVoiceTutor.Api.Contracts.Subscription.SubscriptionStatusResponse> GetStatusAsync(AppDbContext db, Guid userId) =>
         await new SubscriptionStatusService(db, Microsoft.Extensions.Options.Options.Create(new SubscriptionEnforcementOptions())).GetStatusAsync(userId, "test", TestContext.Current.CancellationToken);
 
@@ -310,6 +411,21 @@ public sealed class SubscriptionStatusServiceTests
             EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType, Source = source ?? SubscriptionConstants.Entitlements.SourceProviderEvent,
             Status = SubscriptionConstants.Entitlements.StatusActive, StartsAtUtc = startsAt ?? Now.AddDays(-1), ExpiresAtUtc = expiresAtUtc,
             CreatedAt = created, UpdatedAt = created
+        });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    private static async Task AddTrialAsync(AppDbContext db, Guid userId, DateTimeOffset expiresAtUtc)
+    {
+        db.TrialGrants.Add(new TrialGrantEntity
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            GrantedAtUtc = Now.AddDays(-1),
+            ExpiresAtUtc = expiresAtUtc,
+            SourcePlatform = "test",
+            Status = SubscriptionConstants.Entitlements.StatusActive,
+            CreatedAt = Now.AddDays(-1)
         });
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
     }

@@ -70,7 +70,18 @@ public sealed class AdminPremiumGrantService(
             .Where(entitlement => entitlement.ExpiresAtUtc > now)
             .MaxAsync(entitlement => (DateTimeOffset?)entitlement.ExpiresAtUtc, cancellationToken);
 
-        var startsAtUtc = latestActivePremiumExpiry ?? now;
+        var latestActiveTrialExpiry = await dbContext.TrialGrants
+            .AsNoTracking()
+            .Where(trial => trial.UserId == targetUserId)
+            .Where(trial => trial.Status == SubscriptionConstants.Entitlements.StatusActive)
+            .Where(trial => trial.GrantedAtUtc <= now)
+            .Where(trial => trial.ExpiresAtUtc > now)
+            .MaxAsync(trial => (DateTimeOffset?)trial.ExpiresAtUtc, cancellationToken);
+
+        var startsAtUtc = latestActivePremiumExpiry is not null
+            && (latestActiveTrialExpiry is null || latestActivePremiumExpiry.Value >= latestActiveTrialExpiry.Value)
+                ? latestActivePremiumExpiry.Value
+                : latestActiveTrialExpiry ?? now;
         var expiresAtUtc = startsAtUtc.AddDays(request.DurationDays);
 
         var entitlement = new EntitlementEntity

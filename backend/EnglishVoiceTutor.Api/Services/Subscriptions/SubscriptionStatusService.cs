@@ -353,9 +353,13 @@ public sealed class SubscriptionStatusService(
         var coverageStartsAtUtc = activePremiumEntitlement?.StartsAtUtc;
         var coverageEndsAtUtc = activePremiumEntitlement?.ExpiresAtUtc;
 
-        if (trialActive)
+        if (trialActive && activePremiumEntitlement is null)
         {
             coverageEndsAtUtc = trialEndsAtUtc ?? coverageEndsAtUtc;
+        }
+        else if (trialEndsAtUtc > coverageEndsAtUtc)
+        {
+            coverageEndsAtUtc = trialEndsAtUtc;
         }
 
         if (!coverageEndsAtUtc.HasValue)
@@ -364,7 +368,9 @@ public sealed class SubscriptionStatusService(
         }
 
         foreach (var entitlement in futurePremiumEntitlements
-                     .Where(entitlement => string.Equals(entitlement.Source, SubscriptionConstants.Entitlements.SourceProviderEvent, StringComparison.OrdinalIgnoreCase))
+                     .Where(entitlement =>
+                         string.Equals(entitlement.Source, SubscriptionConstants.Entitlements.SourceProviderEvent, StringComparison.OrdinalIgnoreCase)
+                         || string.Equals(entitlement.Source, SubscriptionConstants.Entitlements.SourceManualAdmin, StringComparison.OrdinalIgnoreCase))
                      .OrderBy(entitlement => entitlement.StartsAtUtc)
                      .ThenBy(entitlement => entitlement.ExpiresAtUtc))
         {
