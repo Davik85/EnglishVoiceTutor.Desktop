@@ -11,6 +11,15 @@ public sealed record GooglePlayPurchaseTokenSecretWriteRequest(Guid ClaimId, str
 
 public sealed class GooglePlayPurchaseTokenSecretPersistenceService(AppDbContext dbContext, IUtcClock utcClock)
 {
+    public Task<List<GooglePlayPurchaseTokenSecretEntity>> GetDueReconciliationBatchAsync(DateTimeOffset now, int maximumAttempts, int maximumCount, CancellationToken cancellationToken) =>
+        dbContext.GooglePlayPurchaseTokenSecrets.Where(item =>
+                item.ReconciliationAttemptCount < maximumAttempts &&
+                ((item.AcknowledgementPending && (item.NextProviderCheckAtUtc == null || item.NextProviderCheckAtUtc <= now)) ||
+                 (!item.AcknowledgementPending && item.NextProviderCheckAtUtc <= now && (item.FinalRecheckUntilUtc == null || item.FinalRecheckUntilUtc >= now))))
+            .OrderBy(item => item.AcknowledgementPending && item.NextProviderCheckAtUtc == null ? 0 : 1)
+            .ThenBy(item => item.NextProviderCheckAtUtc)
+            .ThenBy(item => item.Id)
+            .Take(Math.Clamp(maximumCount, 1, 100)).ToListAsync(cancellationToken);
     public async Task<GooglePlayPurchaseTokenSecretPersistenceResult> CreateOrUpdateAsync(GooglePlayPurchaseTokenSecretWriteRequest request, CancellationToken cancellationToken)
     {
         if (request.ClaimId == Guid.Empty || !IsFingerprint(request.PurchaseTokenFingerprint) || string.IsNullOrWhiteSpace(request.ProtectedPurchaseToken) || string.IsNullOrWhiteSpace(request.ProtectionFormatVersion)) return Result(GooglePlayPurchaseTokenSecretPersistenceResultCode.InvalidInput);

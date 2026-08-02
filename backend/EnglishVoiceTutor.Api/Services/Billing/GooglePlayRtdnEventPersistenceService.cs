@@ -19,6 +19,25 @@ public sealed record GooglePlayRtdnReceipt(string Provider, string PubSubMessage
 
 public sealed class GooglePlayRtdnEventPersistenceService(AppDbContext dbContext, IUtcClock utcClock)
 {
+    public Task<List<GooglePlayRtdnEventEntity>> GetProcessableBatchAsync(DateTimeOffset now, DateTimeOffset staleBeforeUtc, int maximumCount, CancellationToken cancellationToken) =>
+        dbContext.GooglePlayRtdnEvents.Where(item =>
+                item.Status == GooglePlayRtdnEventStatuses.Received ||
+                (item.Status == GooglePlayRtdnEventStatuses.RetryableFailure && item.NextAttemptAtUtc <= now) ||
+                (item.Status == GooglePlayRtdnEventStatuses.Processing && item.ProcessingStartedAtUtc <= staleBeforeUtc))
+            .OrderBy(item => item.ReceivedAtUtc).Take(Math.Clamp(maximumCount, 1, 100)).ToListAsync(cancellationToken);
+
+    public async Task<bool> TryMarkProcessingAsync(Guid eventId, DateTimeOffset now, DateTimeOffset staleBeforeUtc, CancellationToken cancellationToken)
+    {
+        var entity = await dbContext.GooglePlayRtdnEvents.SingleOrDefaultAsync(item => item.Id == eventId, cancellationToken);
+        if (entity is null || entity.Status is GooglePlayRtdnEventStatuses.Processed or GooglePlayRtdnEventStatuses.PermanentFailure) return false;
+        if (entity.Status == GooglePlayRtdnEventStatuses.Processing && entity.ProcessingStartedAtUtc > staleBeforeUtc) return false;
+        if (entity.Status == GooglePlayRtdnEventStatuses.RetryableFailure && entity.NextAttemptAtUtc > now) return false;
+        entity.Status = GooglePlayRtdnEventStatuses.Processing;
+        entity.ProcessingStartedAtUtc = now;
+        entity.AttemptCount++;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
     public async Task<GooglePlayRtdnReceiptResult> RecordReceiptAsync(GooglePlayRtdnReceipt receipt, CancellationToken cancellationToken)
     {
         if (!IsValid(receipt)) return new(GooglePlayRtdnReceiptResultCode.InvalidInput, null);

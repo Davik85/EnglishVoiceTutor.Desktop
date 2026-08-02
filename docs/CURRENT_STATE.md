@@ -1,6 +1,10 @@
 # Current State
 
-Review date: 2026-07-30.
+Review date: 2026-08-02.
+
+## Local Google Play RTDN and reconciliation foundation
+
+Authenticated Google Play RTDN receipt and protected purchase-token persistence are implemented locally. The reconciliation worker is also implemented but disabled by default; it reuses the authenticated purchase processor, and no Google Cloud, Play Console, production enablement, migration application, or deployment has occurred. `pendingRefundReviewNotification` intentionally returns HTTP 503 until protected pending-refund handling exists. Migration `20260802154345_AddGooglePlayRtdnPersistenceFoundation` exists locally but has not been applied to production. Production remains `0.1.35-backend.138`. The next local Google Play billing stage is linked-purchase-token replacement lifecycle handling; only after remaining local lifecycle work is accepted does one controlled server preparation, migration, and backend deployment sequence follow `COMMAND_PLAYBOOK.md`.
 
 ## 2026-07-30 production `.138` trial/manual Premium expiry correction
 

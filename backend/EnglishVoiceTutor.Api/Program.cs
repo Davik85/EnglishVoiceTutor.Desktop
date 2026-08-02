@@ -245,6 +245,7 @@ builder.Services.AddScoped<IGooglePlayPubSubOidcTokenValidator, GooglePlayPubSub
 builder.Services.AddScoped<IGooglePlayRtdnPushReceiptService, GooglePlayRtdnPushReceiptService>();
 builder.Services.AddScoped<GooglePlayPurchaseClaimService>();
 builder.Services.AddScoped<IGooglePlayPurchaseClaimService>(services => services.GetRequiredService<GooglePlayPurchaseClaimService>());
+builder.Services.AddGooglePlayReconciliation(builder.Configuration);
 builder.Services.AddScoped<IBillingSubscriptionCancellationService, BillingSubscriptionCancellationService>();
 builder.Services.AddSingleton<IPaddleWebhookSignatureVerifier, PaddleWebhookSignatureVerifier>();
 builder.Services.AddScoped<IPaddleWebhookIngestionService, PaddleWebhookIngestionService>();
