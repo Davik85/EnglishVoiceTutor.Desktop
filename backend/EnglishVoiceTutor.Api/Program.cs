@@ -73,6 +73,7 @@ builder.Services.Configure<PasswordResetOptions>(
     builder.Configuration.GetSection(PasswordResetOptions.SectionName));
 builder.Services.Configure<SmtpEmailOptions>(
     builder.Configuration.GetSection(SmtpEmailOptions.SectionName));
+builder.Services.AddBackendDataProtection(builder.Configuration);
 builder.Services.AddEnglishVoiceTutorRateLimiting(builder.Configuration);
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
