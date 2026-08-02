@@ -94,6 +94,7 @@ public static class ApiConstants
     public const string MeGooglePlayPurchaseVerificationRoute = "/api/me/billing/google-play/purchases/verify";
     public const string MeBillingSubscriptionCancelRoute = "/api/me/billing/subscription/cancel";
     public const string PaddleBillingWebhookRoute = "/api/billing/webhooks/paddle";
+    public const string GooglePlayRtdnPushRoute = "/api/billing/webhooks/google-play/rtdn";
     public const string PaddleCheckoutLaunchRoute = "/checkout/paddle";
     public const string AdminMeRoute = "/api/admin/me";
     public const string AdminSessionRoute = "/api/admin/session";

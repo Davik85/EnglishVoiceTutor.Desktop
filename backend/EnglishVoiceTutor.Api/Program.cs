@@ -67,6 +67,8 @@ builder.Services.Configure<PaddleBillingOptions>(
     builder.Configuration.GetSection(PaddleBillingOptions.SectionName));
 builder.Services.Configure<PaddleWebhookOptions>(
     builder.Configuration.GetSection(PaddleWebhookOptions.SectionName));
+builder.Services.Configure<GooglePlayRtdnOptions>(
+    builder.Configuration.GetSection(GooglePlayRtdnOptions.SectionName));
 builder.Services.Configure<AdminBootstrapOptions>(
     builder.Configuration.GetSection(AdminBootstrapOptions.SectionName));
 builder.Services.Configure<PasswordResetOptions>(
@@ -237,6 +239,10 @@ builder.Services.AddGooglePlayBilling(builder.Configuration);
 builder.Services.AddScoped<IGooglePlayPurchaseProcessor, GooglePlayPurchaseProcessor>();
 builder.Services.AddScoped<IGooglePlayPurchaseVerificationService, GooglePlayPurchaseVerificationService>();
 builder.Services.AddSingleton<IGooglePlayPurchaseTokenFingerprintService, GooglePlayPurchaseTokenFingerprintService>();
+builder.Services.AddScoped<GooglePlayRtdnEventPersistenceService>();
+builder.Services.AddSingleton<IGoogleJsonWebSignatureValidator, GoogleJsonWebSignatureValidator>();
+builder.Services.AddScoped<IGooglePlayPubSubOidcTokenValidator, GooglePlayPubSubOidcTokenValidator>();
+builder.Services.AddScoped<IGooglePlayRtdnPushReceiptService, GooglePlayRtdnPushReceiptService>();
 builder.Services.AddScoped<GooglePlayPurchaseClaimService>();
 builder.Services.AddScoped<IGooglePlayPurchaseClaimService>(services => services.GetRequiredService<GooglePlayPurchaseClaimService>());
 builder.Services.AddScoped<IBillingSubscriptionCancellationService, BillingSubscriptionCancellationService>();
@@ -440,6 +446,7 @@ app.MapSubscriptionDiagnosticsEndpoints();
 app.MapTrialClaimEndpoints();
 app.MapBillingCheckoutEndpoints();
 app.MapGooglePlayPurchaseVerificationEndpoints();
+app.MapGooglePlayRtdnEndpoints();
 app.MapBillingSubscriptionEndpoints();
 app.MapPaddleCheckoutLaunchEndpoints();
 app.MapPaddleWebhookEndpoints();
