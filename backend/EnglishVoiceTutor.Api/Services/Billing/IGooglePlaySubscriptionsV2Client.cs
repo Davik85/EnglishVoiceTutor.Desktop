@@ -3,6 +3,7 @@ namespace EnglishVoiceTutor.Api.Services.Billing;
 public interface IGooglePlaySubscriptionsV2Client
 {
     Task<GooglePlaySubscriptionV2Snapshot?> GetAsync(string packageName, string purchaseToken, CancellationToken cancellationToken);
+    Task AcknowledgeAsync(string packageName, string productId, string purchaseToken, CancellationToken cancellationToken);
 }
 
 public sealed record GooglePlaySubscriptionV2Snapshot(

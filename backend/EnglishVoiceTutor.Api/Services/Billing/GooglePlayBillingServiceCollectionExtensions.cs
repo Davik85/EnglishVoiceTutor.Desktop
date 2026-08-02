@@ -12,6 +12,7 @@ public static class GooglePlayBillingServiceCollectionExtensions
         if (!options.Enabled)
         {
             services.AddScoped<IGooglePlayPurchaseVerifier, DisabledGooglePlayPurchaseVerifier>();
+            services.AddScoped<IGooglePlaySubscriptionsV2Client, DisabledGooglePlaySubscriptionsV2Client>();
             return services;
         }
 

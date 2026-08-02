@@ -233,6 +233,7 @@ builder.Services.AddScoped<IBillingProviderSubscriptionCancellationAdapter>(serv
 builder.Services.AddScoped<IBillingProviderCheckoutAdapterResolver, BillingProviderCheckoutAdapterResolver>();
 builder.Services.AddScoped<IBillingCheckoutService, BillingCheckoutService>();
 builder.Services.AddGooglePlayBilling(builder.Configuration);
+builder.Services.AddScoped<IGooglePlayPurchaseProcessor, GooglePlayPurchaseProcessor>();
 builder.Services.AddScoped<IGooglePlayPurchaseVerificationService, GooglePlayPurchaseVerificationService>();
 builder.Services.AddSingleton<IGooglePlayPurchaseTokenFingerprintService, GooglePlayPurchaseTokenFingerprintService>();
 builder.Services.AddScoped<GooglePlayPurchaseClaimService>();

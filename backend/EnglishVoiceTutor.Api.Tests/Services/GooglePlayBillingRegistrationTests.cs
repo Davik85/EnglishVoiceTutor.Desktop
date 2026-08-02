@@ -9,7 +9,7 @@ namespace EnglishVoiceTutor.Api.Tests.Services;
 public sealed class GooglePlayBillingRegistrationTests
 {
     [Fact]
-    public void MissingOrDisabledConfigurationRegistersOnlyDisabledVerifier()
+    public void MissingOrDisabledConfigurationRegistersOnlyDisabledGooglePlayBoundaries()
     {
         foreach (var configuration in new[] { Configuration(), Configuration(("GooglePlayBilling:Enabled", "false")) })
         {
@@ -17,7 +17,7 @@ public sealed class GooglePlayBillingRegistrationTests
             services.AddGooglePlayBilling(configuration);
 
             Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IGooglePlayPurchaseVerifier) && descriptor.ImplementationType == typeof(DisabledGooglePlayPurchaseVerifier));
-            Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IGooglePlaySubscriptionsV2Client));
+            Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IGooglePlaySubscriptionsV2Client) && descriptor.ImplementationType == typeof(DisabledGooglePlaySubscriptionsV2Client));
             Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IGooglePlayAndroidPublisherServiceFactory));
         }
     }

@@ -1,5 +1,6 @@
 using Google;
 using Google.Apis.AndroidPublisher.v3;
+using Google.Apis.AndroidPublisher.v3.Data;
 
 namespace EnglishVoiceTutor.Api.Services.Billing;
 
@@ -23,6 +24,36 @@ public sealed class GooglePlaySubscriptionsV2Client(IGooglePlayAndroidPublisherS
                 MapAcknowledgementState(response.AcknowledgementState),
                 response.TestPurchase is not null,
                 !string.IsNullOrWhiteSpace(response.LinkedPurchaseToken));
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (GoogleApiException exception) when (exception.HttpStatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.BadRequest)
+        {
+            throw new GooglePlaySubscriptionsV2ClientException(GooglePlaySubscriptionsV2ClientFailure.InvalidPurchase);
+        }
+        catch (GoogleApiException)
+        {
+            throw new GooglePlaySubscriptionsV2ClientException(GooglePlaySubscriptionsV2ClientFailure.TemporarilyUnavailable);
+        }
+        catch (HttpRequestException)
+        {
+            throw new GooglePlaySubscriptionsV2ClientException(GooglePlaySubscriptionsV2ClientFailure.TemporarilyUnavailable);
+        }
+    }
+
+    public async Task AcknowledgeAsync(string packageName, string productId, string purchaseToken, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var service = await serviceFactory.CreateAsync(cancellationToken);
+            await service.Purchases.Subscriptions.Acknowledge(
+                    new SubscriptionPurchasesAcknowledgeRequest(),
+                    packageName,
+                    productId,
+                    purchaseToken)
+                .ExecuteAsync(cancellationToken);
         }
         catch (OperationCanceledException)
         {

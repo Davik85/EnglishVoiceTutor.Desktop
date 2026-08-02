@@ -20,7 +20,7 @@ public sealed class GooglePlayPurchaseVerifier(
         try
         {
             var snapshot = await client.GetAsync(options.PackageName, purchaseToken, cancellationToken);
-            var result = MapSnapshot(snapshot, options.AllowedProductIds);
+            var result = MapSnapshot(snapshot, options, userId);
             logger.LogInformation("Google Play subscriptions-v2 verification completed with safe result {ResultCode}.", result.Code);
             return result;
         }
@@ -43,7 +43,7 @@ public sealed class GooglePlayPurchaseVerifier(
         }
     }
 
-    private static GooglePlayPurchaseVerificationResult MapSnapshot(GooglePlaySubscriptionV2Snapshot? snapshot, IReadOnlyCollection<string> allowedProductIds)
+    private static GooglePlayPurchaseVerificationResult MapSnapshot(GooglePlaySubscriptionV2Snapshot? snapshot, GooglePlayBillingOptions options, Guid userId)
     {
         if (snapshot is null || snapshot.HasLinkedPurchaseToken) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
         if (string.Equals(snapshot.SubscriptionState, "SUBSCRIPTION_STATE_PENDING", StringComparison.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.Pending);
@@ -60,7 +60,8 @@ public sealed class GooglePlayPurchaseVerifier(
         if (lineItems.Length == 0 || lineItems.Any(item => item.ExpiryTimeUtc is null)) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
 
         var productIds = lineItems.Select(item => item.ProductId!).Distinct(StringComparer.Ordinal).ToArray();
-        if (productIds.Length != 1 || !allowedProductIds.Contains(productIds[0], StringComparer.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
+        if (productIds.Length != 1 || !options.AllowedProductIds.Contains(productIds[0], StringComparer.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
+        if (snapshot.IsTestPurchase && !IsAllowedTestPurchase(options, userId)) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
 
         var expiryTimes = lineItems
             .Where(item => string.Equals(item.ProductId, productIds[0], StringComparison.Ordinal))
@@ -76,6 +77,7 @@ public sealed class GooglePlayPurchaseVerifier(
         return new GooglePlayPurchaseVerificationResult(
             GooglePlayPurchaseVerificationResultCode.Verified,
             new GooglePlayVerifiedPurchase(
+                options.PackageName,
                 productIds[0],
                 startedAtUtc,
                 expiresAtUtc,
@@ -84,4 +86,9 @@ public sealed class GooglePlayPurchaseVerifier(
     }
 
     private static GooglePlayPurchaseVerificationResult Result(GooglePlayPurchaseVerificationResultCode code) => new(code);
+
+    private static bool IsAllowedTestPurchase(GooglePlayBillingOptions options, Guid userId) =>
+        options.Enabled
+        && options.TestPurchasesEnabled
+        && options.AllowedTestPurchaseUserIds.Any(value => Guid.TryParse(value, out var allowedUserId) && allowedUserId == userId);
 }

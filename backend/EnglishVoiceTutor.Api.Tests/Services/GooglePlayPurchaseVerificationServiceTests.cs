@@ -16,7 +16,7 @@ public sealed class GooglePlayPurchaseVerificationServiceTests
         var persistence = new RecordingPersistence();
         var logger = new RecordingLogger<GooglePlayPurchaseVerificationService>();
 
-        var result = await CreateService(new DisabledGooglePlayPurchaseVerifier(), persistence, logger).VerifyAsync(Guid.NewGuid(), Request(token), TestContext.Current.CancellationToken);
+        var result = await CreateService(new DisabledGooglePlayPurchaseVerifier(), persistence, logger: logger).VerifyAsync(Guid.NewGuid(), Request(token), TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, result.StatusCode);
         Assert.Equal("not_configured", result.Response.Result);
@@ -71,22 +71,49 @@ public sealed class GooglePlayPurchaseVerificationServiceTests
         Assert.Equal("verified", result.Response.Result);
     }
 
-    [Theory]
-    [InlineData(GooglePlayPurchaseAcknowledgementState.Pending)]
-    [InlineData(GooglePlayPurchaseAcknowledgementState.Acknowledged)]
-    public async Task TrustedAcknowledgementStatePassesUnchangedToPersistenceWithoutAcknowledgementAction(GooglePlayPurchaseAcknowledgementState acknowledgementState)
+    [Fact]
+    public async Task PendingAcknowledgementOccursOnlyAfterDurablePersistence()
     {
-        var trustedPurchase = VerifiedPurchase("server-product", acknowledgementState);
+        var trustedPurchase = VerifiedPurchase("server-product", GooglePlayPurchaseAcknowledgementState.Pending);
         var persistence = new RecordingPersistence();
+        var client = new RecordingSubscriptionsClient();
 
-        await CreateService(new RecordingVerifier(new GooglePlayPurchaseVerificationResult(GooglePlayPurchaseVerificationResultCode.Verified, trustedPurchase)), persistence).VerifyAsync(Guid.NewGuid(), Request("fake-token"), TestContext.Current.CancellationToken);
+        var result = await CreateService(new RecordingVerifier(new GooglePlayPurchaseVerificationResult(GooglePlayPurchaseVerificationResultCode.Verified, trustedPurchase)), persistence, client).VerifyAsync(Guid.NewGuid(), Request("fake-token"), TestContext.Current.CancellationToken);
 
         Assert.Same(trustedPurchase, Assert.Single(persistence.Calls).VerifiedPurchase);
+        Assert.Equal((trustedPurchase.PackageName, trustedPurchase.ProductId, "fake-token"), Assert.Single(client.AcknowledgementCalls));
+        Assert.Equal("verified", result.Response.Result);
+    }
+
+    [Fact]
+    public async Task AlreadyAcknowledgedPurchaseDoesNotCallAcknowledgement()
+    {
+        var client = new RecordingSubscriptionsClient();
+
+        var result = await CreateService(new RecordingVerifier(Verified("server-product", GooglePlayPurchaseAcknowledgementState.Acknowledged)), new RecordingPersistence(), client).VerifyAsync(Guid.NewGuid(), Request("fake-token"), TestContext.Current.CancellationToken);
+
+        Assert.Empty(client.AcknowledgementCalls);
+        Assert.Equal("verified", result.Response.Result);
+    }
+
+    [Fact]
+    public async Task AcknowledgementFailureIsRetryableAfterDurablePersistence()
+    {
+        var persistence = new RecordingPersistence();
+        var client = new RecordingSubscriptionsClient(new GooglePlaySubscriptionsV2ClientException(GooglePlaySubscriptionsV2ClientFailure.TemporarilyUnavailable));
+
+        var result = await CreateService(new RecordingVerifier(Verified("server-product")), persistence, client).VerifyAsync(Guid.NewGuid(), Request("fake-token"), TestContext.Current.CancellationToken);
+
+        Assert.Single(persistence.Calls);
+        Assert.Single(client.AcknowledgementCalls);
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, result.StatusCode);
+        Assert.Equal("acknowledgement_pending", result.Response.Result);
+        Assert.True(result.Response.SubscriptionStatusRefreshRecommended);
     }
 
     [Theory]
     [InlineData(GooglePlayVerifiedPurchasePersistenceResultCode.Applied, 200, "verified", true)]
-    [InlineData(GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent, 200, "already_processed", true)]
+    [InlineData(GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent, 200, "verified", true)]
     [InlineData(GooglePlayVerifiedPurchasePersistenceResultCode.OwnershipConflict, 200, "ownership_conflict", false)]
     [InlineData(GooglePlayVerifiedPurchasePersistenceResultCode.ProductMismatch, 200, "invalid_purchase", false)]
     [InlineData(GooglePlayVerifiedPurchasePersistenceResultCode.ConsistencyConflict, 200, "invalid_purchase", false)]
@@ -153,7 +180,7 @@ public sealed class GooglePlayPurchaseVerificationServiceTests
     {
         const string token = "fake-token";
         var logger = new RecordingLogger<GooglePlayPurchaseVerificationService>();
-        var result = await CreateService(new RecordingVerifier(Verified("server-product")), new ThrowingPersistence(), logger).VerifyAsync(Guid.NewGuid(), Request(token), TestContext.Current.CancellationToken);
+        var result = await CreateService(new RecordingVerifier(Verified("server-product")), new ThrowingPersistence(), logger: logger).VerifyAsync(Guid.NewGuid(), Request(token), TestContext.Current.CancellationToken);
 
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, result.StatusCode);
         Assert.Equal("temporarily_unavailable", result.Response.Result);
@@ -169,9 +196,9 @@ public sealed class GooglePlayPurchaseVerificationServiceTests
 
     private static GooglePlayPurchaseVerificationRequest Request(string token) => new() { PurchaseToken = token };
     private static GooglePlayPurchaseVerificationResult Pending() => new(GooglePlayPurchaseVerificationResultCode.Pending);
-    private static GooglePlayPurchaseVerificationResult Verified(string productId) => new(GooglePlayPurchaseVerificationResultCode.Verified, VerifiedPurchase(productId));
-    private static GooglePlayVerifiedPurchase VerifiedPurchase(string productId, GooglePlayPurchaseAcknowledgementState acknowledgementState = GooglePlayPurchaseAcknowledgementState.Pending) => new(productId, new DateTimeOffset(2026, 7, 27, 10, 0, 0, TimeSpan.Zero), new DateTimeOffset(2026, 8, 27, 10, 0, 0, TimeSpan.Zero), acknowledgementState, false);
-    private static GooglePlayPurchaseVerificationService CreateService(IGooglePlayPurchaseVerifier verifier, IGooglePlayVerifiedPurchasePersistenceService persistence, RecordingLogger<GooglePlayPurchaseVerificationService>? logger = null) => new(verifier, persistence, logger ?? new RecordingLogger<GooglePlayPurchaseVerificationService>());
+    private static GooglePlayPurchaseVerificationResult Verified(string productId, GooglePlayPurchaseAcknowledgementState acknowledgementState = GooglePlayPurchaseAcknowledgementState.Pending) => new(GooglePlayPurchaseVerificationResultCode.Verified, VerifiedPurchase(productId, acknowledgementState));
+    private static GooglePlayVerifiedPurchase VerifiedPurchase(string productId, GooglePlayPurchaseAcknowledgementState acknowledgementState = GooglePlayPurchaseAcknowledgementState.Pending) => new("com.example.test", productId, new DateTimeOffset(2026, 7, 27, 10, 0, 0, TimeSpan.Zero), new DateTimeOffset(2026, 8, 27, 10, 0, 0, TimeSpan.Zero), acknowledgementState, false);
+    private static GooglePlayPurchaseVerificationService CreateService(IGooglePlayPurchaseVerifier verifier, IGooglePlayVerifiedPurchasePersistenceService persistence, RecordingSubscriptionsClient? subscriptionsClient = null, RecordingLogger<GooglePlayPurchaseVerificationService>? logger = null) => new(new GooglePlayPurchaseProcessor(verifier, persistence, subscriptionsClient ?? new RecordingSubscriptionsClient(), Microsoft.Extensions.Logging.Abstractions.NullLogger<GooglePlayPurchaseProcessor>.Instance), logger ?? new RecordingLogger<GooglePlayPurchaseVerificationService>());
     private static void AssertSafe(string token, GooglePlayPurchaseVerificationServiceResult result, RecordingLogger<GooglePlayPurchaseVerificationService> logger)
     {
         var publicValues = JsonSerializer.Serialize(result.Response);
@@ -191,5 +218,6 @@ public sealed class GooglePlayPurchaseVerificationServiceTests
     private sealed class RecordingPersistence(GooglePlayVerifiedPurchasePersistenceResultCode code = GooglePlayVerifiedPurchasePersistenceResultCode.Applied) : IGooglePlayVerifiedPurchasePersistenceService { public List<GooglePlayVerifiedPurchasePersistenceRequest> Calls { get; } = []; public Task<GooglePlayVerifiedPurchasePersistenceResult> PersistAsync(GooglePlayVerifiedPurchasePersistenceRequest request, CancellationToken cancellationToken) { Calls.Add(request); return Task.FromResult(new GooglePlayVerifiedPurchasePersistenceResult(code)); } }
     private sealed class ThrowingPersistence : IGooglePlayVerifiedPurchasePersistenceService { public Task<GooglePlayVerifiedPurchasePersistenceResult> PersistAsync(GooglePlayVerifiedPurchasePersistenceRequest request, CancellationToken cancellationToken) => throw new InvalidOperationException("private persistence failure"); }
     private sealed class CancelingPersistence : IGooglePlayVerifiedPurchasePersistenceService { public Task<GooglePlayVerifiedPurchasePersistenceResult> PersistAsync(GooglePlayVerifiedPurchasePersistenceRequest request, CancellationToken cancellationToken) => throw new OperationCanceledException(); }
+    private sealed class RecordingSubscriptionsClient(Exception? acknowledgementException = null) : IGooglePlaySubscriptionsV2Client { public List<(string PackageName, string ProductId, string Token)> AcknowledgementCalls { get; } = []; public Task<GooglePlaySubscriptionV2Snapshot?> GetAsync(string packageName, string purchaseToken, CancellationToken cancellationToken) => throw new NotSupportedException(); public Task AcknowledgeAsync(string packageName, string productId, string purchaseToken, CancellationToken cancellationToken) { AcknowledgementCalls.Add((packageName, productId, purchaseToken)); if (acknowledgementException is not null) throw acknowledgementException; return Task.CompletedTask; } }
     private sealed class RecordingLogger<T> : ILogger<T> { public List<string> Messages { get; } = []; public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null; public bool IsEnabled(LogLevel logLevel) => true; public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) => Messages.Add(formatter(state, exception)); }
 }

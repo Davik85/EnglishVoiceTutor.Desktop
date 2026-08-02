@@ -29,7 +29,7 @@ public sealed class GooglePlayPurchaseVerificationEndpointsStaticTests
     }
 
     [Fact]
-    public void ProgramRegistersOnlyDisabledVerifierAndNoGoogleApiClient()
+    public void ProgramRegistersOnlyDisabledGooglePlayBoundariesWhenBillingIsDisabled()
     {
         var program = ReadRepositoryFile("backend/EnglishVoiceTutor.Api/Program.cs");
         var registration = ReadRepositoryFile("backend/EnglishVoiceTutor.Api/Services/Billing/GooglePlayBillingServiceCollectionExtensions.cs");
@@ -37,6 +37,7 @@ public sealed class GooglePlayPurchaseVerificationEndpointsStaticTests
 
         Assert.Contains("AddGooglePlayBilling(builder.Configuration)", program, StringComparison.Ordinal);
         Assert.Contains("AddScoped<IGooglePlayPurchaseVerifier, DisabledGooglePlayPurchaseVerifier>()", registration, StringComparison.Ordinal);
+        Assert.Contains("AddScoped<IGooglePlaySubscriptionsV2Client, DisabledGooglePlaySubscriptionsV2Client>()", registration, StringComparison.Ordinal);
         Assert.DoesNotContain("AndroidPublisherService", program, StringComparison.Ordinal);
         Assert.DoesNotContain("HttpClient", verifier, StringComparison.Ordinal);
         Assert.DoesNotContain("logger", verifier, StringComparison.OrdinalIgnoreCase);

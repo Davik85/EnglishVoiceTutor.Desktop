@@ -17,6 +17,7 @@ public enum GooglePlayPurchaseAcknowledgementState
 }
 
 public sealed record GooglePlayVerifiedPurchase(
+    string PackageName,
     string ProductId,
     DateTimeOffset StartedAtUtc,
     DateTimeOffset ExpiresAtUtc,

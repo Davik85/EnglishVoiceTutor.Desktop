@@ -11,7 +11,6 @@ public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext db
 {
     public async Task<GooglePlayVerifiedPurchasePersistenceResult> PersistAsync(GooglePlayVerifiedPurchasePersistenceRequest request, CancellationToken cancellationToken)
     {
-        if (request.VerifiedPurchase.IsTestPurchase) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.TestPurchaseNotSupported);
         if (request.UserId == Guid.Empty || string.IsNullOrWhiteSpace(request.PurchaseToken) || string.IsNullOrWhiteSpace(request.VerifiedPurchase.ProductId) || request.VerifiedPurchase.StartedAtUtc.Offset != TimeSpan.Zero || request.VerifiedPurchase.ExpiresAtUtc.Offset != TimeSpan.Zero || request.VerifiedPurchase.ExpiresAtUtc <= request.VerifiedPurchase.StartedAtUtc) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.InvalidInput);
         string fingerprint;
         try { fingerprint = fingerprintService.CreateFingerprint(request.PurchaseToken); } catch (ArgumentException) { return Result(GooglePlayVerifiedPurchasePersistenceResultCode.InvalidInput); }
