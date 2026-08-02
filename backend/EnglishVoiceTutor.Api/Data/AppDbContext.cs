@@ -27,6 +27,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<DailyFreeLessonUsageEntity> DailyFreeLessonUsages => Set<DailyFreeLessonUsageEntity>();
     public DbSet<BillingEventEntity> BillingEvents => Set<BillingEventEntity>();
     public DbSet<GooglePlayPurchaseClaimEntity> GooglePlayPurchaseClaims => Set<GooglePlayPurchaseClaimEntity>();
+    public DbSet<GooglePlayPurchaseTokenSecretEntity> GooglePlayPurchaseTokenSecrets => Set<GooglePlayPurchaseTokenSecretEntity>();
+    public DbSet<GooglePlayRtdnEventEntity> GooglePlayRtdnEvents => Set<GooglePlayRtdnEventEntity>();
     public DbSet<PaddleWebhookEventEntity> PaddleWebhookEvents => Set<PaddleWebhookEventEntity>();
     public DbSet<AdminActionEntity> AdminActions => Set<AdminActionEntity>();
     public DbSet<AdminUserEntity> AdminUsers => Set<AdminUserEntity>();
@@ -72,6 +74,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureDailyFreeLessonUsage(modelBuilder);
         ConfigureBillingEvents(modelBuilder);
         ConfigureGooglePlayPurchaseClaims(modelBuilder);
+        ConfigureGooglePlayRtdnPersistenceFoundation(modelBuilder);
         ConfigurePaddleWebhookEvents(modelBuilder);
         ConfigureAdminActions(modelBuilder);
         ConfigureAdminRoleAssignmentPersistence(modelBuilder);
@@ -690,6 +693,46 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.HasIndex(claim => claim.PurchaseTokenFingerprint).IsUnique();
         entity.HasIndex(claim => claim.UserId);
         entity.HasOne<UserEntity>().WithMany().HasForeignKey(claim => claim.UserId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureGooglePlayRtdnPersistenceFoundation(ModelBuilder modelBuilder)
+    {
+        var secret = modelBuilder.Entity<GooglePlayPurchaseTokenSecretEntity>();
+        secret.ToTable(EntityConstants.TableNames.GooglePlayPurchaseTokenSecrets);
+        secret.HasKey(item => item.Id);
+        secret.Property(item => item.PurchaseTokenFingerprint).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayPurchaseTokenFingerprintLength);
+        secret.Property(item => item.ProtectedPurchaseToken).IsRequired();
+        secret.Property(item => item.ProtectionFormatVersion).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayProtectionFormatVersionMaxLength);
+        secret.Property(item => item.CreatedAtUtc).IsRequired();
+        secret.Property(item => item.UpdatedAtUtc).IsRequired();
+        secret.Property(item => item.ReconciliationAttemptCount).IsRequired().HasDefaultValue(0);
+        secret.Property(item => item.LastSafeResultCode).HasMaxLength(EntityConstants.Lengths.GooglePlaySafeResultCodeMaxLength);
+        secret.Property(item => item.AcknowledgementPending).IsRequired().HasDefaultValue(false);
+        secret.HasIndex(item => item.GooglePlayPurchaseClaimId).IsUnique();
+        secret.HasIndex(item => item.PurchaseTokenFingerprint).IsUnique();
+        secret.HasIndex(item => new { item.NextProviderCheckAtUtc, item.ReconciliationAttemptCount });
+        secret.HasIndex(item => new { item.SupersededAtUtc, item.RetentionDeleteAfterUtc });
+        secret.HasOne(item => item.GooglePlayPurchaseClaim)
+            .WithOne(claim => claim.PurchaseTokenSecret)
+            .HasForeignKey<GooglePlayPurchaseTokenSecretEntity>(item => item.GooglePlayPurchaseClaimId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        var rtdn = modelBuilder.Entity<GooglePlayRtdnEventEntity>();
+        rtdn.ToTable(EntityConstants.TableNames.GooglePlayRtdnEvents);
+        rtdn.HasKey(item => item.Id);
+        rtdn.Property(item => item.Provider).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayRtdnProviderMaxLength);
+        rtdn.Property(item => item.PubSubMessageId).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayRtdnMessageIdMaxLength);
+        rtdn.Property(item => item.PubSubSubscription).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayRtdnSubscriptionMaxLength);
+        rtdn.Property(item => item.PackageName).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayRtdnPackageNameMaxLength);
+        rtdn.Property(item => item.NotificationKind).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayRtdnNotificationKindMaxLength);
+        rtdn.Property(item => item.PurchaseTokenFingerprint).HasMaxLength(EntityConstants.Lengths.GooglePlayPurchaseTokenFingerprintLength);
+        rtdn.Property(item => item.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayRtdnStatusMaxLength);
+        rtdn.Property(item => item.ReceivedAtUtc).IsRequired();
+        rtdn.Property(item => item.AttemptCount).IsRequired().HasDefaultValue(0);
+        rtdn.Property(item => item.SafeErrorCode).HasMaxLength(EntityConstants.Lengths.GooglePlaySafeResultCodeMaxLength);
+        rtdn.HasIndex(item => new { item.Provider, item.PubSubSubscription, item.PubSubMessageId }).IsUnique();
+        rtdn.HasIndex(item => new { item.Status, item.NextAttemptAtUtc });
+        rtdn.HasIndex(item => new { item.PurchaseTokenFingerprint, item.ReceivedAtUtc });
     }
 
     private static void ConfigureAccountAnonymizationPreflightFoundation(ModelBuilder modelBuilder)

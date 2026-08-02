@@ -8,4 +8,5 @@ public sealed class GooglePlayPurchaseClaimEntity
     public string ProductId { get; set; } = string.Empty;
     public DateTimeOffset CreatedAtUtc { get; set; }
     public DateTimeOffset LastSeenAtUtc { get; set; }
+    public GooglePlayPurchaseTokenSecretEntity? PurchaseTokenSecret { get; set; }
 }

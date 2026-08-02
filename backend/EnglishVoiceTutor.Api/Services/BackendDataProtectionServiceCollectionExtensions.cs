@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using EnglishVoiceTutor.Api.Options;
+using EnglishVoiceTutor.Api.Services.Billing;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace EnglishVoiceTutor.Api.Services;
@@ -18,6 +19,9 @@ public static class BackendDataProtectionServiceCollectionExtensions
         }
 
         services.AddSingleton(BackendDataProtectionProvider.Create(options));
+        services.AddSingleton<IGooglePlayPurchaseTokenProtectionService, GooglePlayPurchaseTokenProtectionService>();
+        services.AddScoped<GooglePlayPurchaseTokenSecretPersistenceService>();
+        services.AddScoped<GooglePlayRtdnEventPersistenceService>();
         return services;
     }
 }

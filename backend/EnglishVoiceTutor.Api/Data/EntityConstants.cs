@@ -25,6 +25,8 @@ public static class EntityConstants
         public const string DailyFreeLessonUsage = "daily_free_lesson_usage";
         public const string BillingEvents = "billing_events";
         public const string GooglePlayPurchaseClaims = "google_play_purchase_claims";
+        public const string GooglePlayPurchaseTokenSecrets = "google_play_purchase_token_secrets";
+        public const string GooglePlayRtdnEvents = "google_play_rtdn_events";
         public const string PaddleWebhookEvents = "paddle_webhook_events";
         public const string AdminActions = "admin_actions";
         public const string AdminUsers = "admin_users";
@@ -116,6 +118,14 @@ public static class EntityConstants
         public const int AccountAnonymizationStateMaxLength = 64;
         public const int AccountAnonymizationJsonMaxLength = 12000;
         public const int GooglePlayPurchaseTokenFingerprintLength = 64;
+        public const int GooglePlayProtectionFormatVersionMaxLength = 32;
+        public const int GooglePlaySafeResultCodeMaxLength = 128;
+        public const int GooglePlayRtdnProviderMaxLength = 32;
+        public const int GooglePlayRtdnMessageIdMaxLength = 256;
+        public const int GooglePlayRtdnSubscriptionMaxLength = 512;
+        public const int GooglePlayRtdnPackageNameMaxLength = 256;
+        public const int GooglePlayRtdnNotificationKindMaxLength = 64;
+        public const int GooglePlayRtdnStatusMaxLength = 32;
     }
 
     public static class Precision
