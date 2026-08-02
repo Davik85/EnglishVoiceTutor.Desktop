@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services.Billing;
 
-public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext dbContext, GooglePlayPurchaseClaimService claimService, ProviderSubscriptionPeriodPersistenceService periodService, IGooglePlayPurchaseTokenFingerprintService fingerprintService, IUtcClock utcClock, ILogger<GooglePlayVerifiedPurchasePersistenceService> logger) : IGooglePlayVerifiedPurchasePersistenceService
+public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext dbContext, GooglePlayPurchaseClaimService claimService, ProviderSubscriptionPeriodPersistenceService periodService, GooglePlayPurchaseTokenSecretPersistenceService tokenSecretService, IGooglePlayPurchaseTokenFingerprintService fingerprintService, IUtcClock utcClock, ILogger<GooglePlayVerifiedPurchasePersistenceService> logger) : IGooglePlayVerifiedPurchasePersistenceService
 {
     public async Task<GooglePlayVerifiedPurchasePersistenceResult> PersistAsync(GooglePlayVerifiedPurchasePersistenceRequest request, CancellationToken cancellationToken)
     {
-        if (request.UserId == Guid.Empty || string.IsNullOrWhiteSpace(request.PurchaseToken) || string.IsNullOrWhiteSpace(request.VerifiedPurchase.ProductId) || request.VerifiedPurchase.StartedAtUtc.Offset != TimeSpan.Zero || request.VerifiedPurchase.ExpiresAtUtc.Offset != TimeSpan.Zero || request.VerifiedPurchase.ExpiresAtUtc <= request.VerifiedPurchase.StartedAtUtc) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.InvalidInput);
+        if (request.UserId == Guid.Empty || string.IsNullOrWhiteSpace(request.PurchaseToken) || string.IsNullOrWhiteSpace(request.ProtectedPurchaseToken) || string.IsNullOrWhiteSpace(request.VerifiedPurchase.ProductId) || request.VerifiedPurchase.StartedAtUtc.Offset != TimeSpan.Zero || request.VerifiedPurchase.ExpiresAtUtc.Offset != TimeSpan.Zero || request.VerifiedPurchase.ExpiresAtUtc <= request.VerifiedPurchase.StartedAtUtc) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.InvalidInput);
         string fingerprint;
         try { fingerprint = fingerprintService.CreateFingerprint(request.PurchaseToken); } catch (ArgumentException) { return Result(GooglePlayVerifiedPurchasePersistenceResultCode.InvalidInput); }
         try
@@ -60,8 +60,20 @@ public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext db
 
         var period = await periodService.ApplyWithinTransactionAsync(new ProviderSubscriptionPeriodPersistenceRequest(request.UserId, subscription.Id, request.VerifiedPurchase.ProductId, request.VerifiedPurchase.StartedAtUtc, request.VerifiedPurchase.ExpiresAtUtc, false), cancellationToken);
         if (period.Code is ProviderSubscriptionPeriodPersistenceResultCode.InvalidInput or ProviderSubscriptionPeriodPersistenceResultCode.SubscriptionNotFound or ProviderSubscriptionPeriodPersistenceResultCode.SubscriptionOwnershipConflict or ProviderSubscriptionPeriodPersistenceResultCode.UnsupportedSubscription or ProviderSubscriptionPeriodPersistenceResultCode.TemporarilyUnavailable) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.ConsistencyConflict);
+        var secret = await tokenSecretService.CreateOrUpdateAsync(new GooglePlayPurchaseTokenSecretWriteRequest(existingClaim?.Id ?? (await dbContext.GooglePlayPurchaseClaims.SingleAsync(item => item.PurchaseTokenFingerprint == fingerprint, cancellationToken)).Id, fingerprint, request.ProtectedPurchaseToken, GooglePlayPurchaseTokenProtectionService.ProtectionFormatVersion, request.VerifiedPurchase.AcknowledgementState == GooglePlayPurchaseAcknowledgementState.Pending), cancellationToken);
+        if (secret.Code != GooglePlayPurchaseTokenSecretPersistenceResultCode.Stored) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.TemporarilyUnavailable);
         await transaction.CommitAsync(cancellationToken);
         return Result(period.Code == ProviderSubscriptionPeriodPersistenceResultCode.Applied ? GooglePlayVerifiedPurchasePersistenceResultCode.Applied : GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent);
+    }
+
+    public async Task UpdateAcknowledgementStateAsync(string purchaseToken, bool acknowledgementPending, string? safeResultCode, CancellationToken cancellationToken)
+    {
+        string fingerprint;
+        try { fingerprint = fingerprintService.CreateFingerprint(purchaseToken); }
+        catch (ArgumentException) { return; }
+        var secret = await tokenSecretService.FindByFingerprintAsync(fingerprint, cancellationToken);
+        if (secret is null) return;
+        await tokenSecretService.UpdateReconciliationMetadataAsync(secret.GooglePlayPurchaseClaimId, secret.LastProviderCheckAtUtc, secret.NextProviderCheckAtUtc, secret.ReconciliationAttemptCount, safeResultCode, secret.FinalRecheckUntilUtc, acknowledgementPending, cancellationToken);
     }
     private static GooglePlayVerifiedPurchasePersistenceResult Result(GooglePlayVerifiedPurchasePersistenceResultCode code) => new(code);
 }

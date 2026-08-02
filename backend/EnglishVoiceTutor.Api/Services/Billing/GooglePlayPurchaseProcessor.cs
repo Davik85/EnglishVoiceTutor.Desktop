@@ -3,6 +3,7 @@ namespace EnglishVoiceTutor.Api.Services.Billing;
 public sealed class GooglePlayPurchaseProcessor(
     IGooglePlayPurchaseVerifier verifier,
     IGooglePlayVerifiedPurchasePersistenceService persistenceService,
+    IGooglePlayPurchaseTokenProtectionService tokenProtectionService,
     IGooglePlaySubscriptionsV2Client subscriptionsClient,
     ILogger<GooglePlayPurchaseProcessor> logger) : IGooglePlayPurchaseProcessor
 {
@@ -23,9 +24,10 @@ public sealed class GooglePlayPurchaseProcessor(
 
         if (verification.VerifiedPurchase is null) return Result(GooglePlayPurchaseProcessingResultCode.TemporarilyUnavailable);
 
-        var persistence = await persistenceService.PersistAsync(
-            new GooglePlayVerifiedPurchasePersistenceRequest(userId, purchaseToken, verification.VerifiedPurchase),
-            cancellationToken);
+        string protectedPurchaseToken;
+        try { protectedPurchaseToken = tokenProtectionService.Protect(purchaseToken); }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested) { return Result(GooglePlayPurchaseProcessingResultCode.TemporarilyUnavailable); }
+        var persistence = await persistenceService.PersistAsync(new GooglePlayVerifiedPurchasePersistenceRequest(userId, purchaseToken, verification.VerifiedPurchase, protectedPurchaseToken), cancellationToken);
         if (persistence.Code is not GooglePlayVerifiedPurchasePersistenceResultCode.Applied and not GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent)
         {
             return Result(persistence.Code switch
@@ -39,6 +41,7 @@ public sealed class GooglePlayPurchaseProcessor(
 
         if (verification.VerifiedPurchase.AcknowledgementState == GooglePlayPurchaseAcknowledgementState.Acknowledged)
         {
+            await persistenceService.UpdateAcknowledgementStateAsync(purchaseToken, false, null, cancellationToken);
             return Result(GooglePlayPurchaseProcessingResultCode.Verified);
         }
 
@@ -49,15 +52,18 @@ public sealed class GooglePlayPurchaseProcessor(
                 verification.VerifiedPurchase.ProductId,
                 purchaseToken,
                 cancellationToken);
+            await persistenceService.UpdateAcknowledgementStateAsync(purchaseToken, false, null, cancellationToken);
             return Result(GooglePlayPurchaseProcessingResultCode.Verified);
         }
         catch (GooglePlaySubscriptionsV2ClientException exception) when (exception.Failure == GooglePlaySubscriptionsV2ClientFailure.TemporarilyUnavailable)
         {
+            await persistenceService.UpdateAcknowledgementStateAsync(purchaseToken, true, GooglePlayRtdnSafeErrorCodes.ProviderUnavailable, cancellationToken);
             logger.LogWarning("Google Play purchase acknowledgement requires retry. AuthenticatedUserResolved={AuthenticatedUserResolved}.", true);
             return Result(GooglePlayPurchaseProcessingResultCode.AcknowledgementPending);
         }
         catch (GooglePlaySubscriptionsV2ClientException exception) when (exception.Failure == GooglePlaySubscriptionsV2ClientFailure.InvalidPurchase)
         {
+            await persistenceService.UpdateAcknowledgementStateAsync(purchaseToken, true, GooglePlayRtdnSafeErrorCodes.ProviderRejected, cancellationToken);
             logger.LogWarning("Google Play purchase acknowledgement has a consistency failure requiring reconciliation. AuthenticatedUserResolved={AuthenticatedUserResolved}.", true);
             return Result(GooglePlayPurchaseProcessingResultCode.AcknowledgementInconsistent);
         }

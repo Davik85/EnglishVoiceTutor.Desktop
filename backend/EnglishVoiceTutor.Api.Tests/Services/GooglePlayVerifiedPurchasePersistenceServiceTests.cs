@@ -27,7 +27,47 @@ public sealed class GooglePlayVerifiedPurchasePersistenceServiceTests
         Assert.Equal(SubscriptionConstants.BillingProviders.GooglePlay, subscription.Provider);
         Assert.Equal(claim.PurchaseTokenFingerprint, subscription.ProviderSubscriptionId);
         Assert.Equal(subscription.Id, entitlement.SubscriptionId);
+        var secret = Assert.Single(db.GooglePlayPurchaseTokenSecrets);
+        Assert.Equal(claim.Id, secret.GooglePlayPurchaseClaimId);
+        Assert.NotEqual("raw-token", secret.ProtectedPurchaseToken);
+        Assert.True(secret.AcknowledgementPending);
         AssertNoPaymentsOrBillingEvents(db);
+    }
+
+    [Fact]
+    public async Task ExistingClaimWithoutSecretIsFilledAndReplayUpdatesOneSecretRow()
+    {
+        await using var db = CreateDb();
+        var userId = await AddUserAsync(db);
+        var fingerprint = Fingerprint("raw-token");
+        db.GooglePlayPurchaseClaims.Add(new GooglePlayPurchaseClaimEntity { Id = Guid.NewGuid(), UserId = userId, PurchaseTokenFingerprint = fingerprint, ProductId = "server-product", CreatedAtUtc = Start, LastSeenAtUtc = Start });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        await CreateService(db).PersistAsync(Request(userId), TestContext.Current.CancellationToken);
+        await CreateService(db).PersistAsync(Request(userId), TestContext.Current.CancellationToken);
+
+        Assert.Single(db.GooglePlayPurchaseClaims);
+        Assert.Single(db.GooglePlayPurchaseTokenSecrets);
+    }
+
+    [Fact]
+    public async Task AcknowledgementStateKeepsProtectedSecretForFailuresAndClearsAfterSuccess()
+    {
+        await using var db = CreateDb();
+        var userId = await AddUserAsync(db);
+        var service = CreateService(db);
+        await service.PersistAsync(Request(userId), TestContext.Current.CancellationToken);
+
+        await service.UpdateAcknowledgementStateAsync("raw-token", true, GooglePlayRtdnSafeErrorCodes.ProviderUnavailable, TestContext.Current.CancellationToken);
+        var secret = Assert.Single(db.GooglePlayPurchaseTokenSecrets);
+        Assert.True(secret.AcknowledgementPending);
+        Assert.Equal(GooglePlayRtdnSafeErrorCodes.ProviderUnavailable, secret.LastSafeResultCode);
+        await service.UpdateAcknowledgementStateAsync("raw-token", true, GooglePlayRtdnSafeErrorCodes.ProviderRejected, TestContext.Current.CancellationToken);
+        Assert.True(secret.AcknowledgementPending);
+        Assert.Equal(GooglePlayRtdnSafeErrorCodes.ProviderRejected, secret.LastSafeResultCode);
+        await service.UpdateAcknowledgementStateAsync("raw-token", false, null, TestContext.Current.CancellationToken);
+        Assert.False(secret.AcknowledgementPending);
+        Assert.Null(secret.LastSafeResultCode);
     }
 
     [Fact]
@@ -161,6 +201,7 @@ public sealed class GooglePlayVerifiedPurchasePersistenceServiceTests
         Assert.Equal(GooglePlayVerifiedPurchasePersistenceResultCode.OwnershipConflict, result.Code);
         Assert.DoesNotContain(owner.ToString(), result.ToString(), StringComparison.Ordinal);
         Assert.Equal(lastSeen, Assert.Single(db.GooglePlayPurchaseClaims).LastSeenAtUtc);
+        Assert.Equal(Assert.Single(db.GooglePlayPurchaseClaims).Id, Assert.Single(db.GooglePlayPurchaseTokenSecrets).GooglePlayPurchaseClaimId);
         AssertNoPaymentsOrBillingEvents(db);
     }
 
@@ -360,9 +401,9 @@ public sealed class GooglePlayVerifiedPurchasePersistenceServiceTests
     private static readonly DateTimeOffset Start = new(2026, 7, 27, 10, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset End = Start.AddDays(30);
 
-    private static GooglePlayVerifiedPurchasePersistenceRequest Request(Guid userId, string product = "server-product", string token = "raw-token", DateTimeOffset? start = null, DateTimeOffset? expiry = null, bool test = false, GooglePlayPurchaseAcknowledgementState acknowledgement = GooglePlayPurchaseAcknowledgementState.Pending) => new(userId, token, new GooglePlayVerifiedPurchase("com.example.test", product, start ?? Start, expiry ?? End, acknowledgement, test));
+    private static GooglePlayVerifiedPurchasePersistenceRequest Request(Guid userId, string product = "server-product", string token = "raw-token", DateTimeOffset? start = null, DateTimeOffset? expiry = null, bool test = false, GooglePlayPurchaseAcknowledgementState acknowledgement = GooglePlayPurchaseAcknowledgementState.Pending) => new(userId, token, new GooglePlayVerifiedPurchase("com.example.test", product, start ?? Start, expiry ?? End, acknowledgement, test), "protected-test-value");
     private static string Fingerprint(string token) => new GooglePlayPurchaseTokenFingerprintService().CreateFingerprint(token);
-    private static GooglePlayVerifiedPurchasePersistenceService CreateService(AppDbContext db, TestClock? clock = null) { var actualClock = clock ?? new TestClock(Start); var fingerprint = new GooglePlayPurchaseTokenFingerprintService(); var claim = new GooglePlayPurchaseClaimService(db, fingerprint, actualClock); var period = new ProviderSubscriptionPeriodPersistenceService(db, NullLogger<ProviderSubscriptionPeriodPersistenceService>.Instance); return new(db, claim, period, fingerprint, actualClock, NullLogger<GooglePlayVerifiedPurchasePersistenceService>.Instance); }
+    private static GooglePlayVerifiedPurchasePersistenceService CreateService(AppDbContext db, TestClock? clock = null) { var actualClock = clock ?? new TestClock(Start); var fingerprint = new GooglePlayPurchaseTokenFingerprintService(); var claim = new GooglePlayPurchaseClaimService(db, fingerprint, actualClock); var period = new ProviderSubscriptionPeriodPersistenceService(db, NullLogger<ProviderSubscriptionPeriodPersistenceService>.Instance); var secrets = new GooglePlayPurchaseTokenSecretPersistenceService(db, actualClock); return new(db, claim, period, secrets, fingerprint, actualClock, NullLogger<GooglePlayVerifiedPurchasePersistenceService>.Instance); }
     private static async Task<Guid> AddUserAsync(AppDbContext db) { var id = Guid.NewGuid(); db.Users.Add(new UserEntity { Id = id, Email = $"{id:N}@example.test", PasswordHash = "hash", Status = "active", CreatedAt = Start }); await db.SaveChangesAsync(TestContext.Current.CancellationToken); return id; }
     private static async Task<SubscriptionEntity> AddSubscriptionAsync(AppDbContext db, Guid userId, string providerSubscriptionId, string? product = "server-product", string provider = SubscriptionConstants.BillingProviders.GooglePlay, string planId = SubscriptionConstants.Plans.PremiumPlanId) { var subscription = new SubscriptionEntity { Id = Guid.NewGuid(), UserId = userId, PlanId = planId, Status = SubscriptionConstants.SubscriptionStatuses.Active, Provider = provider, ProviderSubscriptionId = providerSubscriptionId, ProviderProductId = product, StartedAt = Start, CreatedAt = Start, UpdatedAt = Start }; db.Subscriptions.Add(subscription); await db.SaveChangesAsync(TestContext.Current.CancellationToken); return subscription; }
     private static async Task<EntitlementEntity> AddEntitlementAsync(AppDbContext db, Guid userId, Guid? subscriptionId, DateTimeOffset? expiry) { var entitlement = new EntitlementEntity { Id = Guid.NewGuid(), UserId = userId, SubscriptionId = subscriptionId, PlanId = SubscriptionConstants.Plans.PremiumPlanId, EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType, Source = SubscriptionConstants.Entitlements.SourceProviderEvent, Status = SubscriptionConstants.Entitlements.StatusActive, StartsAtUtc = Start, ExpiresAtUtc = expiry, CreatedAt = Start, UpdatedAt = Start }; db.Entitlements.Add(entitlement); await db.SaveChangesAsync(TestContext.Current.CancellationToken); return entitlement; }

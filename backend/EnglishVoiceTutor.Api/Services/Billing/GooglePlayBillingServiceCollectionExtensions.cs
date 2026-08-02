@@ -16,6 +16,11 @@ public static class GooglePlayBillingServiceCollectionExtensions
             return services;
         }
 
+        if (!services.Any(descriptor => descriptor.ServiceType == typeof(IGooglePlayPurchaseTokenProtectionService)))
+        {
+            throw new InvalidOperationException("Google Play purchase processing requires Backend Data Protection.");
+        }
+
         services.AddScoped<IGooglePlayPurchaseVerifier, GooglePlayPurchaseVerifier>();
         services.AddScoped<IGooglePlaySubscriptionsV2Client, GooglePlaySubscriptionsV2Client>();
         services.AddSingleton<IGooglePlayAndroidPublisherServiceFactory, GooglePlayAndroidPublisherServiceFactory>();
