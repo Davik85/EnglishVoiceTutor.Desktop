@@ -22,7 +22,10 @@ public sealed record GooglePlayVerifiedPurchase(
     DateTimeOffset StartedAtUtc,
     DateTimeOffset ExpiresAtUtc,
     GooglePlayPurchaseAcknowledgementState AcknowledgementState,
-    bool IsTestPurchase);
+    bool IsTestPurchase)
+{
+    internal string? LinkedPurchaseToken { get; init; }
+}
 
 public sealed record GooglePlayPurchaseVerificationResult(
     GooglePlayPurchaseVerificationResultCode Code,

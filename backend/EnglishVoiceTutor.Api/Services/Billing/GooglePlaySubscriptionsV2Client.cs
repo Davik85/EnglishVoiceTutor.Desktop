@@ -14,7 +14,7 @@ public sealed class GooglePlaySubscriptionsV2Client(IGooglePlayAndroidPublisherS
             var response = await service.Purchases.Subscriptionsv2.Get(packageName, purchaseToken).ExecuteAsync(cancellationToken);
             if (response is null) return null;
             var lineItems = response.LineItems?
-                .Select(item => new GooglePlaySubscriptionLineItemSnapshot(item.ProductId, NormalizeTimestamp(item.ExpiryTimeDateTimeOffset)))
+                .Select(item => new GooglePlaySubscriptionLineItemSnapshot(item.ProductId, NormalizeTimestamp(item.ExpiryTimeDateTimeOffset), item.DeferredItemReplacement?.ProductId))
                 .ToArray()
                 ?? [];
             return new GooglePlaySubscriptionV2Snapshot(
@@ -23,7 +23,7 @@ public sealed class GooglePlaySubscriptionsV2Client(IGooglePlayAndroidPublisherS
                 lineItems,
                 MapAcknowledgementState(response.AcknowledgementState),
                 response.TestPurchase is not null,
-                !string.IsNullOrWhiteSpace(response.LinkedPurchaseToken));
+                string.IsNullOrWhiteSpace(response.LinkedPurchaseToken) ? null : response.LinkedPurchaseToken);
         }
         catch (OperationCanceledException)
         {

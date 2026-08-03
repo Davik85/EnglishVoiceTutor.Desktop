@@ -11,12 +11,29 @@ public sealed record GooglePlaySubscriptionV2Snapshot(
     DateTimeOffset? StartTimeUtc,
     IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot> LineItems,
     GooglePlayPurchaseAcknowledgementState? AcknowledgementState,
-    bool IsTestPurchase,
-    bool HasLinkedPurchaseToken);
+    bool IsTestPurchase)
+{
+    // The token is intentionally internal: public snapshots and their record string
+    // representation must never carry provider token material.
+    internal string? LinkedPurchaseToken { get; init; }
+
+    internal GooglePlaySubscriptionV2Snapshot(
+        string? subscriptionState,
+        DateTimeOffset? startTimeUtc,
+        IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot> lineItems,
+        GooglePlayPurchaseAcknowledgementState? acknowledgementState,
+        bool isTestPurchase,
+        string? linkedPurchaseToken)
+        : this(subscriptionState, startTimeUtc, lineItems, acknowledgementState, isTestPurchase)
+    {
+        LinkedPurchaseToken = linkedPurchaseToken;
+    }
+}
 
 public sealed record GooglePlaySubscriptionLineItemSnapshot(
     string? ProductId,
-    DateTimeOffset? ExpiryTimeUtc);
+    DateTimeOffset? ExpiryTimeUtc,
+    string? DeferredItemReplacementProductId = null);
 
 public enum GooglePlaySubscriptionsV2ClientFailure
 {

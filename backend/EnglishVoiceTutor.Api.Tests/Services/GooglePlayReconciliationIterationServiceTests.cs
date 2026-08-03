@@ -120,6 +120,25 @@ public sealed class GooglePlayReconciliationIterationServiceTests
     }
 
     [Fact]
+    public async Task SupersededSecretIsNotDueAndItsRtdnCompletesWithoutUnprotectingOrProcessing()
+    {
+        await using var db = CreateDb();
+        var secret = await AddSecretAsync(db, acknowledgementPending: true, next: null, attempts: 0, id: "superseded");
+        secret.SupersededAtUtc = Now;
+        db.GooglePlayRtdnEvents.Add(Event("superseded-event", secret.PurchaseTokenFingerprint, GooglePlayRtdnEventStatuses.Received, Now));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var processor = new RecordingProcessor(GooglePlayPurchaseProcessingResultCode.Verified);
+        var protection = new CountingProtection();
+
+        Assert.Empty(await new GooglePlayPurchaseTokenSecretPersistenceService(db, new TestClock()).GetDueReconciliationBatchAsync(Now, 3, 10, TestContext.Current.CancellationToken));
+        await CreateIteration(db, processor, protection: protection).RunOnceAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, processor.Calls);
+        Assert.Equal(0, protection.Calls);
+        Assert.Equal(GooglePlayRtdnEventStatuses.Processed, Assert.Single(db.GooglePlayRtdnEvents).Status);
+    }
+
+    [Fact]
     public async Task RtdnTemporaryPermanentMissingSecretAndUnprotectFailureAreSafe()
     {
         await using var db = CreateDb();
@@ -160,5 +179,6 @@ public sealed class GooglePlayReconciliationIterationServiceTests
     private sealed class TestClock : IUtcClock { public DateTimeOffset UtcNow => Now; }
     private sealed class FakeProtection : IGooglePlayPurchaseTokenProtectionService { public string Protect(string purchaseToken) => "protected"; public GooglePlayPurchaseTokenUnprotectResult TryUnprotect(string protectedPurchaseToken) => new(true, "raw-token"); }
     private sealed class FailedProtection : IGooglePlayPurchaseTokenProtectionService { public string Protect(string purchaseToken) => "protected"; public GooglePlayPurchaseTokenUnprotectResult TryUnprotect(string protectedPurchaseToken) => GooglePlayPurchaseTokenUnprotectResult.Failure; }
+    private sealed class CountingProtection : IGooglePlayPurchaseTokenProtectionService { public int Calls { get; private set; } public string Protect(string purchaseToken) => "protected"; public GooglePlayPurchaseTokenUnprotectResult TryUnprotect(string protectedPurchaseToken) { Calls++; return new(true, "raw-token"); } }
     private sealed class RecordingProcessor(params GooglePlayPurchaseProcessingResultCode[] results) : IGooglePlayPurchaseProcessor { private int index; public int Calls { get; private set; } public Task<GooglePlayPurchaseProcessingResult> ProcessAsync(Guid userId, string purchaseToken, CancellationToken cancellationToken) { Calls++; return Task.FromResult(new GooglePlayPurchaseProcessingResult(results[Math.Min(index++, results.Length - 1)])); } }
 }

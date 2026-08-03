@@ -1,4 +1,5 @@
 using EnglishVoiceTutor.Api.Options;
+using EnglishVoiceTutor.Api.Constants;
 using Microsoft.Extensions.Options;
 
 namespace EnglishVoiceTutor.Api.Services.Billing;
@@ -6,6 +7,7 @@ namespace EnglishVoiceTutor.Api.Services.Billing;
 public sealed class GooglePlayPurchaseVerifier(
     IGooglePlaySubscriptionsV2Client client,
     IOptions<GooglePlayBillingOptions> optionsAccessor,
+    IUtcClock utcClock,
     ILogger<GooglePlayPurchaseVerifier> logger) : IGooglePlayPurchaseVerifier
 {
     public async Task<GooglePlayPurchaseVerificationResult> VerifyAsync(Guid userId, string purchaseToken, CancellationToken cancellationToken)
@@ -20,7 +22,7 @@ public sealed class GooglePlayPurchaseVerifier(
         try
         {
             var snapshot = await client.GetAsync(options.PackageName, purchaseToken, cancellationToken);
-            var result = MapSnapshot(snapshot, options, userId);
+            var result = MapSnapshot(snapshot, options, userId, purchaseToken, utcClock.UtcNow);
             logger.LogInformation("Google Play subscriptions-v2 verification completed with safe result {ResultCode}.", result.Code);
             return result;
         }
@@ -43,9 +45,9 @@ public sealed class GooglePlayPurchaseVerifier(
         }
     }
 
-    private static GooglePlayPurchaseVerificationResult MapSnapshot(GooglePlaySubscriptionV2Snapshot? snapshot, GooglePlayBillingOptions options, Guid userId)
+    private static GooglePlayPurchaseVerificationResult MapSnapshot(GooglePlaySubscriptionV2Snapshot? snapshot, GooglePlayBillingOptions options, Guid userId, string purchaseToken, DateTimeOffset now)
     {
-        if (snapshot is null || snapshot.HasLinkedPurchaseToken) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+        if (snapshot is null) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
         if (string.Equals(snapshot.SubscriptionState, "SUBSCRIPTION_STATE_PENDING", StringComparison.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.Pending);
         if (!string.Equals(snapshot.SubscriptionState, "SUBSCRIPTION_STATE_ACTIVE", StringComparison.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.InvalidPurchase);
 
@@ -54,35 +56,47 @@ public sealed class GooglePlayPurchaseVerifier(
             return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
         }
 
-        var lineItems = snapshot.LineItems
-            .Where(item => !string.IsNullOrWhiteSpace(item.ProductId))
-            .ToArray();
-        if (lineItems.Length == 0 || lineItems.Any(item => item.ExpiryTimeUtc is null)) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
-
-        var productIds = lineItems.Select(item => item.ProductId!).Distinct(StringComparer.Ordinal).ToArray();
-        if (productIds.Length != 1 || !options.AllowedProductIds.Contains(productIds[0], StringComparer.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
+        var lineItems = snapshot.LineItems.ToArray();
+        if (lineItems.Length == 0 || lineItems.Any(item => string.IsNullOrWhiteSpace(item.ProductId))) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
         if (snapshot.IsTestPurchase && !IsAllowedTestPurchase(options, userId)) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
+        if (lineItems.Any(item => !options.AllowedProductIds.Contains(item.ProductId!, StringComparer.Ordinal))) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
 
-        var expiryTimes = lineItems
-            .Where(item => string.Equals(item.ProductId, productIds[0], StringComparison.Ordinal))
-            .Select(item => item.ExpiryTimeUtc!.Value)
-            .Distinct()
-            .ToArray();
-        if (expiryTimes.Length != 1) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+        var linkedToken = snapshot.LinkedPurchaseToken;
+        if (linkedToken is not null && (linkedToken.Length > SubscriptionConstants.Billing.GooglePlayPurchaseTokenMaximumLength || string.IsNullOrWhiteSpace(linkedToken) || linkedToken.Any(char.IsWhiteSpace))) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+        if (linkedToken is not null && string.Equals(linkedToken, purchaseToken, StringComparison.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+        var current = lineItems.Where(item => item.ExpiryTimeUtc is not null && item.ExpiryTimeUtc.Value > now).ToArray();
+        var historical = lineItems.Where(item => item.ExpiryTimeUtc is not null && item.ExpiryTimeUtc.Value <= now).ToArray();
+        var future = lineItems.Where(item => item.ExpiryTimeUtc is null).ToArray();
+        GooglePlaySubscriptionLineItemSnapshot selected;
+        if (linkedToken is null)
+        {
+            if (current.Length != 1 || historical.Length != 0 || future.Length != 0 || !string.IsNullOrWhiteSpace(current[0].DeferredItemReplacementProductId)) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+            selected = current[0];
+        }
+        else
+        {
+            if (current.Length != 1) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+            selected = current[0];
+            if (historical.Length == 0 && future.Length == 0 && string.IsNullOrWhiteSpace(selected.DeferredItemReplacementProductId)) { }
+            else if (historical.Length == 0 && future.Length == 1 && !string.IsNullOrWhiteSpace(selected.DeferredItemReplacementProductId) && string.Equals(selected.DeferredItemReplacementProductId, future[0].ProductId, StringComparison.Ordinal) && string.IsNullOrWhiteSpace(future[0].DeferredItemReplacementProductId))
+            { }
+            else if (historical.Length == 1 && future.Length == 0 && string.IsNullOrWhiteSpace(selected.DeferredItemReplacementProductId) && string.IsNullOrWhiteSpace(historical[0].DeferredItemReplacementProductId)) { }
+            else return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+        }
+        if (!options.AllowedProductIds.Contains(selected.ProductId!, StringComparer.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
 
         var startedAtUtc = snapshot.StartTimeUtc.Value.ToUniversalTime();
-        var expiresAtUtc = expiryTimes[0].ToUniversalTime();
+        var expiresAtUtc = selected.ExpiryTimeUtc!.Value.ToUniversalTime();
         if (expiresAtUtc <= startedAtUtc) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
 
-        return new GooglePlayPurchaseVerificationResult(
-            GooglePlayPurchaseVerificationResultCode.Verified,
-            new GooglePlayVerifiedPurchase(
+        var verifiedPurchase = new GooglePlayVerifiedPurchase(
                 options.PackageName,
-                productIds[0],
+                selected.ProductId!,
                 startedAtUtc,
                 expiresAtUtc,
                 snapshot.AcknowledgementState.Value,
-                snapshot.IsTestPurchase));
+                snapshot.IsTestPurchase) { LinkedPurchaseToken = linkedToken };
+        return new GooglePlayPurchaseVerificationResult(GooglePlayPurchaseVerificationResultCode.Verified, verifiedPurchase);
     }
 
     private static GooglePlayPurchaseVerificationResult Result(GooglePlayPurchaseVerificationResultCode code) => new(code);

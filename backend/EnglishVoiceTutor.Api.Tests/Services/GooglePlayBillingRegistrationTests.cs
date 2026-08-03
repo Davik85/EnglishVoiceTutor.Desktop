@@ -1,4 +1,5 @@
 using EnglishVoiceTutor.Api.Options;
+using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Billing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,13 +46,15 @@ public sealed class GooglePlayBillingRegistrationTests
     {
         var factory = new CountingFactory();
         var client = new GooglePlaySubscriptionsV2Client(factory);
-        var verifier = new GooglePlayPurchaseVerifier(client, Microsoft.Extensions.Options.Options.Create(new GooglePlayBillingOptions { Enabled = true, PackageName = "", AllowedProductIds = ["server-product"] }), Microsoft.Extensions.Logging.Abstractions.NullLogger<GooglePlayPurchaseVerifier>.Instance);
+        var verifier = new GooglePlayPurchaseVerifier(client, Microsoft.Extensions.Options.Options.Create(new GooglePlayBillingOptions { Enabled = true, PackageName = "", AllowedProductIds = ["server-product"] }), new TestClock(), Microsoft.Extensions.Logging.Abstractions.NullLogger<GooglePlayPurchaseVerifier>.Instance);
 
         var result = await verifier.VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
 
         Assert.Equal(GooglePlayPurchaseVerificationResultCode.NotConfigured, result.Code);
         Assert.Equal(0, factory.Calls);
     }
+
+    private sealed class TestClock : IUtcClock { public DateTimeOffset UtcNow => new(2026, 8, 3, 0, 0, 0, TimeSpan.Zero); }
 
     [Fact]
     public async Task FactoryCancellationPropagatesWithoutLoadingCredentials()

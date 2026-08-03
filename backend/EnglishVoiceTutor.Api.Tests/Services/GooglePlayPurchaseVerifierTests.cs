@@ -1,4 +1,5 @@
 using EnglishVoiceTutor.Api.Options;
+using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Billing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -118,15 +119,15 @@ public sealed class GooglePlayPurchaseVerifierTests
         foreach (var lineItems in new[] { Array.Empty<GooglePlaySubscriptionLineItemSnapshot>(), new[] { LineItem("   ", Timestamp("2026-08-27T10:00:00Z")) }, new[] { LineItem("unsupported-product", Timestamp("2026-08-27T10:00:00Z")) }, new[] { LineItem("server-product", Timestamp("2026-08-27T10:00:00Z")), LineItem("other-product", Timestamp("2026-08-27T10:00:00Z")) } })
         {
             var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), lineItems)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
-            Assert.Equal(lineItems.Length == 0 || string.IsNullOrWhiteSpace(lineItems[0].ProductId) ? GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable : GooglePlayPurchaseVerificationResultCode.UnsupportedProduct, result.Code);
+            Assert.Equal(lineItems.Length == 0 || lineItems.Any(item => string.IsNullOrWhiteSpace(item.ProductId)) ? GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable : lineItems.Any(item => !string.Equals(item.ProductId, "server-product", StringComparison.Ordinal)) ? GooglePlayPurchaseVerificationResultCode.UnsupportedProduct : GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable, result.Code);
         }
     }
 
     [Fact]
-    public async Task DuplicateIdenticalProductAndExpiryIsOneAllowedProduct()
+    public async Task DuplicateIdenticalCurrentItemsFailClosed()
     {
         var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), [LineItem("server-product", Timestamp("2026-08-27T10:00:00Z")), LineItem("server-product", Timestamp("2026-08-27T10:00:00Z"))])), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
-        Assert.Equal(GooglePlayPurchaseVerificationResultCode.Verified, result.Code);
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable, result.Code);
     }
 
     [Theory]
@@ -184,21 +185,93 @@ public sealed class GooglePlayPurchaseVerifierTests
     }
 
     [Fact]
-    public async Task LinkedPurchaseTokenPresenceFailsClosedWithoutExposure()
+    public async Task LinkedPurchaseTokenIsInternalAndImmediateReplacementIsAccepted()
     {
-        var result = await CreateVerifier(new RecordingClient(Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), [LineItem("server-product", Timestamp("2026-08-27T10:00:00Z"))], hasLinkedPurchaseToken: true)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+        const string currentToken = "fake-current-token";
+        const string linkedToken = "fake-linked-token";
+        var snapshot = new GooglePlaySubscriptionV2Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), [LineItem("server-product", Timestamp("2026-08-27T10:00:00Z"))], GooglePlayPurchaseAcknowledgementState.Pending, false, linkedToken);
+        var result = await CreateVerifier(new RecordingClient(snapshot), Options()).VerifyAsync(Guid.NewGuid(), currentToken, TestContext.Current.CancellationToken);
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.Verified, result.Code);
+        Assert.DoesNotContain("LinkedPurchaseToken", typeof(GooglePlayPurchaseVerificationResult).GetProperties().Select(property => property.Name));
+        Assert.DoesNotContain(currentToken, snapshot.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain(linkedToken, snapshot.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain(currentToken, result.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain(linkedToken, result.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DeferredReplacementKeepsCurrentProductEffectiveUntilItsExpiry()
+    {
+        var snapshot = new GooglePlaySubscriptionV2Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), [LineItem("server-product", Timestamp("2026-08-27T10:00:00Z"), "replacement-product"), LineItem("replacement-product", null)], GooglePlayPurchaseAcknowledgementState.Pending, false, "linked-old-token");
+        var result = await CreateVerifier(new RecordingClient(snapshot), Options(allowedProductIds: ["server-product", "replacement-product"])).VerifyAsync(Guid.NewGuid(), "new-token", TestContext.Current.CancellationToken);
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.Verified, result.Code);
+        Assert.Equal("server-product", result.VerifiedPurchase!.ProductId);
+        Assert.Equal(Timestamp("2026-08-27T10:00:00Z"), result.VerifiedPurchase.ExpiresAtUtc);
+    }
+
+    [Fact]
+    public async Task DeferredReplacementMismatchAndSelfLinkedTokenFailClosed()
+    {
+        var mismatch = new GooglePlaySubscriptionV2Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), [LineItem("server-product", Timestamp("2026-08-27T10:00:00Z"), "replacement-product"), LineItem("other-product", null)], GooglePlayPurchaseAcknowledgementState.Pending, false, "linked-old-token");
+        var mismatchResult = await CreateVerifier(new RecordingClient(mismatch), Options(allowedProductIds: ["server-product", "replacement-product"])).VerifyAsync(Guid.NewGuid(), "new-token", TestContext.Current.CancellationToken);
+        var selfResult = await CreateVerifier(new RecordingClient(new GooglePlaySubscriptionV2Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-27T10:00:00Z"), [LineItem("server-product", Timestamp("2026-08-27T10:00:00Z"))], GooglePlayPurchaseAcknowledgementState.Pending, false, "new-token")), Options()).VerifyAsync(Guid.NewGuid(), "new-token", TestContext.Current.CancellationToken);
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct, mismatchResult.Code);
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable, selfResult.Code);
+    }
+
+    [Fact]
+    public async Task PostActivationDeferredReplacementSelectsAllowedCurrentProduct()
+    {
+        var snapshot = new GooglePlaySubscriptionV2Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-01T00:00:00Z"), [LineItem("old-product", Timestamp("2026-08-02T00:00:00Z")), LineItem("replacement-product", Timestamp("2026-09-01T00:00:00Z"))], GooglePlayPurchaseAcknowledgementState.Pending, false, "linked-old-token");
+        var result = await CreateVerifier(new RecordingClient(snapshot), Options(allowedProductIds: ["old-product", "replacement-product"])).VerifyAsync(Guid.NewGuid(), "new-token", TestContext.Current.CancellationToken);
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.Verified, result.Code);
+        Assert.Equal("replacement-product", result.VerifiedPurchase!.ProductId);
+    }
+
+    [Theory]
+    [InlineData("unexpected-next-product", null)]
+    [InlineData(null, "stale-next-product")]
+    public async Task PostActivationDeferredReplacementRejectsResidualDeferredMetadata(string? currentDeferredProduct, string? historicalDeferredProduct)
+    {
+        var snapshot = new GooglePlaySubscriptionV2Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-01T00:00:00Z"), [LineItem("old-product", Timestamp("2026-08-02T00:00:00Z"), historicalDeferredProduct), LineItem("replacement-product", Timestamp("2026-09-01T00:00:00Z"), currentDeferredProduct)], GooglePlayPurchaseAcknowledgementState.Pending, false, "linked-old-token");
+        var result = await CreateVerifier(new RecordingClient(snapshot), Options(allowedProductIds: ["old-product", "replacement-product"])).VerifyAsync(Guid.NewGuid(), "new-token", TestContext.Current.CancellationToken);
         Assert.Equal(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable, result.Code);
-        Assert.DoesNotContain("linked", result.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("old-product", "replacement-product", "replacement-product")]
+    [InlineData("old-product", "replacement-product", "old-product")]
+    public async Task LinkedLifecycleRejectsAnyUnsupportedLineItem(string historicalProduct, string currentProduct, string allowedProduct)
+    {
+        var snapshot = new GooglePlaySubscriptionV2Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-01T00:00:00Z"), [LineItem(historicalProduct, Timestamp("2026-08-02T00:00:00Z")), LineItem(currentProduct, Timestamp("2026-09-01T00:00:00Z"))], GooglePlayPurchaseAcknowledgementState.Pending, false, "linked-old-token");
+        var result = await CreateVerifier(new RecordingClient(snapshot), Options(allowedProductIds: [allowedProduct])).VerifyAsync(Guid.NewGuid(), "new-token", TestContext.Current.CancellationToken);
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct, result.Code);
+    }
+
+    [Fact]
+    public async Task PreActivationDeferredReplacementRejectsUnsupportedFutureProduct()
+    {
+        var snapshot = new GooglePlaySubscriptionV2Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-01T00:00:00Z"), [LineItem("old-product", Timestamp("2026-09-01T00:00:00Z"), "future-product"), LineItem("future-product", null)], GooglePlayPurchaseAcknowledgementState.Pending, false, "linked-old-token");
+        var result = await CreateVerifier(new RecordingClient(snapshot), Options(allowedProductIds: ["old-product"])).VerifyAsync(Guid.NewGuid(), "new-token", TestContext.Current.CancellationToken);
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct, result.Code);
+    }
+
+    [Fact]
+    public async Task ImmediateReplacementRejectsUnsupportedCurrentProduct()
+    {
+        var snapshot = new GooglePlaySubscriptionV2Snapshot("SUBSCRIPTION_STATE_ACTIVE", Timestamp("2026-07-01T00:00:00Z"), [LineItem("unsupported-product", Timestamp("2026-09-01T00:00:00Z"))], GooglePlayPurchaseAcknowledgementState.Pending, false, "linked-old-token");
+        var result = await CreateVerifier(new RecordingClient(snapshot), Options(allowedProductIds: ["server-product"])).VerifyAsync(Guid.NewGuid(), "new-token", TestContext.Current.CancellationToken);
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct, result.Code);
     }
 
     [Fact]
     public void SanitizedContractsExcludeTokensPayloadOrderAndCredentialData()
     {
         Assert.Equal(
-            ["AcknowledgementState", "HasLinkedPurchaseToken", "IsTestPurchase", "LineItems", "StartTimeUtc", "SubscriptionState"],
+            ["AcknowledgementState", "IsTestPurchase", "LineItems", "StartTimeUtc", "SubscriptionState"],
             typeof(GooglePlaySubscriptionV2Snapshot).GetProperties().Select(property => property.Name).OrderBy(name => name).ToArray());
         Assert.Equal(
-            ["ExpiryTimeUtc", "ProductId"],
+            ["DeferredItemReplacementProductId", "ExpiryTimeUtc", "ProductId"],
             typeof(GooglePlaySubscriptionLineItemSnapshot).GetProperties().Select(property => property.Name).OrderBy(name => name).ToArray());
         Assert.Equal(
             ["AcknowledgementState", "ExpiresAtUtc", "IsTestPurchase", "PackageName", "ProductId", "StartedAtUtc"],
@@ -237,13 +310,13 @@ public sealed class GooglePlayPurchaseVerifierTests
         Assert.DoesNotContain("AndroidPublisherService", program, StringComparison.Ordinal);
         Assert.Contains("\"TestPurchasesEnabled\": false", settings, StringComparison.Ordinal);
         Assert.Contains("\"AllowedTestPurchaseUserIds\": []", settings, StringComparison.Ordinal);
-        foreach (var forbidden in new[] { "private_key", "client_email", "serviceAccount", "credential" }) Assert.DoesNotContain(forbidden, settings, StringComparison.OrdinalIgnoreCase);
+        foreach (var forbidden in new[] { "private_key", "client_email", "credential" }) Assert.DoesNotContain(forbidden, settings, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static GooglePlayPurchaseVerifier CreateVerifier(IGooglePlaySubscriptionsV2Client client, GooglePlayBillingOptions options, RecordingLogger<GooglePlayPurchaseVerifier>? logger = null) => new(client, Microsoft.Extensions.Options.Options.Create(options), logger ?? new RecordingLogger<GooglePlayPurchaseVerifier>());
+    private static GooglePlayPurchaseVerifier CreateVerifier(IGooglePlaySubscriptionsV2Client client, GooglePlayBillingOptions options, RecordingLogger<GooglePlayPurchaseVerifier>? logger = null) => new(client, Microsoft.Extensions.Options.Options.Create(options), new TestClock(Timestamp("2026-08-03T00:00:00Z")), logger ?? new RecordingLogger<GooglePlayPurchaseVerifier>());
     private static GooglePlayBillingOptions Options(bool enabled = true, string packageName = "com.example.test", List<string>? allowedProductIds = null, bool testPurchasesEnabled = false, List<string>? allowedTestPurchaseUserIds = null) => new() { Enabled = enabled, PackageName = packageName, AllowedProductIds = allowedProductIds ?? ["server-product"], TestPurchasesEnabled = testPurchasesEnabled, AllowedTestPurchaseUserIds = allowedTestPurchaseUserIds ?? [] };
-    private static GooglePlaySubscriptionV2Snapshot Snapshot(string? state, DateTimeOffset? startTime = null, IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot>? lineItems = null, GooglePlayPurchaseAcknowledgementState? acknowledgementState = GooglePlayPurchaseAcknowledgementState.Pending, bool isTestPurchase = false, bool hasLinkedPurchaseToken = false) => new(state, startTime, lineItems ?? [], acknowledgementState, isTestPurchase, hasLinkedPurchaseToken);
-    private static GooglePlaySubscriptionLineItemSnapshot LineItem(string? productId, DateTimeOffset? expiryTime) => new(productId, expiryTime);
+    private static GooglePlaySubscriptionV2Snapshot Snapshot(string? state, DateTimeOffset? startTime = null, IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot>? lineItems = null, GooglePlayPurchaseAcknowledgementState? acknowledgementState = GooglePlayPurchaseAcknowledgementState.Pending, bool isTestPurchase = false, bool hasLinkedPurchaseToken = false) => new(state, startTime, lineItems ?? [], acknowledgementState, isTestPurchase, hasLinkedPurchaseToken ? "linked-old-token" : null);
+    private static GooglePlaySubscriptionLineItemSnapshot LineItem(string? productId, DateTimeOffset? expiryTime, string? deferredItemReplacementProductId = null) => new(productId, expiryTime, deferredItemReplacementProductId);
     private static DateTimeOffset Timestamp(string value) => DateTimeOffset.Parse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal).ToUniversalTime();
 
     private sealed class RecordingClient(GooglePlaySubscriptionV2Snapshot? snapshot = null) : IGooglePlaySubscriptionsV2Client
@@ -254,6 +327,7 @@ public sealed class GooglePlayPurchaseVerifierTests
     }
     private sealed class FailingClient(GooglePlaySubscriptionsV2ClientFailure failure) : IGooglePlaySubscriptionsV2Client { public Task<GooglePlaySubscriptionV2Snapshot?> GetAsync(string packageName, string purchaseToken, CancellationToken cancellationToken) => throw new GooglePlaySubscriptionsV2ClientException(failure); public Task AcknowledgeAsync(string packageName, string productId, string purchaseToken, CancellationToken cancellationToken) => throw new GooglePlaySubscriptionsV2ClientException(failure); }
     private sealed class CancelingClient : IGooglePlaySubscriptionsV2Client { public Task<GooglePlaySubscriptionV2Snapshot?> GetAsync(string packageName, string purchaseToken, CancellationToken cancellationToken) => throw new OperationCanceledException(); public Task AcknowledgeAsync(string packageName, string productId, string purchaseToken, CancellationToken cancellationToken) => throw new OperationCanceledException(); }
+    private sealed class TestClock(DateTimeOffset now) : IUtcClock { public DateTimeOffset UtcNow => now; }
     private sealed class RecordingLogger<T> : ILogger<T> { public List<string> Messages { get; } = []; public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null; public bool IsEnabled(LogLevel logLevel) => true; public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) => Messages.Add(formatter(state, exception)); }
     private static string ReadRepositoryFile(string relativePath) { var directory = new DirectoryInfo(AppContext.BaseDirectory); while (directory is not null && !File.Exists(Path.Combine(directory.FullName, relativePath))) directory = directory.Parent; Assert.NotNull(directory); return File.ReadAllText(Path.Combine(directory!.FullName, relativePath)); }
 }

@@ -13,6 +13,7 @@ public sealed class GooglePlayPurchaseTokenSecretPersistenceService(AppDbContext
 {
     public Task<List<GooglePlayPurchaseTokenSecretEntity>> GetDueReconciliationBatchAsync(DateTimeOffset now, int maximumAttempts, int maximumCount, CancellationToken cancellationToken) =>
         dbContext.GooglePlayPurchaseTokenSecrets.Where(item =>
+                item.SupersededAtUtc == null &&
                 item.ReconciliationAttemptCount < maximumAttempts &&
                 ((item.AcknowledgementPending && (item.NextProviderCheckAtUtc == null || item.NextProviderCheckAtUtc <= now)) ||
                  (!item.AcknowledgementPending && item.NextProviderCheckAtUtc <= now && (item.FinalRecheckUntilUtc == null || item.FinalRecheckUntilUtc >= now))))

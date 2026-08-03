@@ -45,6 +45,7 @@ public sealed class GooglePlayReconciliationIterationService(
 
         var secret = await secretPersistence.FindByFingerprintAsync(item.PurchaseTokenFingerprint, cancellationToken);
         if (secret is null) { await RetryOrFailEventAsync(item, now, options, GooglePlayRtdnSafeErrorCodes.ProviderUnavailable, cancellationToken); return; }
+        if (secret.SupersededAtUtc is not null) { await eventPersistence.MarkProcessedAsync(item.Id, cancellationToken); return; }
         var claim = await dbContext.GooglePlayPurchaseClaims.SingleOrDefaultAsync(value => value.Id == secret.GooglePlayPurchaseClaimId, cancellationToken);
         if (claim is null || !await dbContext.Users.AnyAsync(user => user.Id == claim.UserId, cancellationToken)) { await eventPersistence.RecordPermanentFailureAsync(item.Id, GooglePlayRtdnSafeErrorCodes.ProviderRejected, cancellationToken); return; }
 
@@ -70,6 +71,7 @@ public sealed class GooglePlayReconciliationIterationService(
     {
         var secret = await dbContext.GooglePlayPurchaseTokenSecrets.SingleOrDefaultAsync(value => value.Id == secretId, cancellationToken);
         if (secret is null) return;
+        if (secret.SupersededAtUtc is not null) return;
         var claim = await dbContext.GooglePlayPurchaseClaims.SingleOrDefaultAsync(value => value.Id == secret.GooglePlayPurchaseClaimId, cancellationToken);
         if (claim is null || !await dbContext.Users.AnyAsync(user => user.Id == claim.UserId, cancellationToken)) { await secretPersistence.UpdateReconciliationMetadataAsync(secret.GooglePlayPurchaseClaimId, now, null, options.MaximumAttempts, GooglePlayRtdnSafeErrorCodes.ProviderRejected, null, false, cancellationToken); return; }
         GooglePlayPurchaseTokenUnprotectResult token;
