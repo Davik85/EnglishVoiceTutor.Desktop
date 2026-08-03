@@ -29,6 +29,12 @@ Migration `20260727045935_AddGooglePlayPurchaseClaims` was applied from the prio
 
 After application, ownership was changed to `lvt_app`, runtime read access was verified, and inherited `lvt_analytics_reader` access was explicitly revoked because this provider-ownership table contains UserId and purchase-token fingerprints. Backend and database health remained good; temporary SQL files were removed. The change is additive, and backend `.133` remains code-compatible with the empty table. It did not alter subscriptions, entitlements, payments, billing events, Paddle data, users, or existing billing tables.
 
+## 2026-08-03 Google Play RTDN and pending-refund migration record
+
+Starting migration `20260727045935_AddGooglePlayPurchaseClaims` advanced to ending migration `20260803052655_AddGooglePlayPendingRefundReviewFoundation` by applying `20260802154345_AddGooglePlayRtdnPersistenceFoundation` and `20260803052655_AddGooglePlayPendingRefundReviewFoundation`. A fresh backup was created first at `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260803_060304Z.dump` (7,754,175 bytes); `pg_restore --list` returned 293 lines. Reviewed temporary SQL was removed after use.
+
+The additive change created `google_play_purchase_token_secrets`, `google_play_rtdn_events`, and `google_play_pending_refund_reviews`. All three are owned by `lvt_app`, runtime table privileges were verified, and `lvt_analytics_reader` has no listed privileges. Each table was empty immediately after migration; database health returned HTTP 200. Backend deployment was separate; `.138` remains schema-compatible as the code rollback target. No existing billing table or entitlement/Paddle data was altered.
+
 ## Principles
 
 ### Code rollback and database rollback are separate

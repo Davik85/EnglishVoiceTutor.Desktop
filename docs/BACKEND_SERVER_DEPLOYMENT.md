@@ -1,13 +1,13 @@
 # Backend server deployment
 
-Review date: 2026-07-30.
+Review date: 2026-08-03.
 
 ## Current production backend
 
 Production backend is deployed and healthy.
 
-- Current release: `0.1.35-backend.138`
-- Previous rollback release: `0.1.35-backend.137`
+- Current release: `0.1.35-backend.139`
+- Previous rollback release: `0.1.35-backend.138`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -23,7 +23,13 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.138`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.137`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.139`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.138`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+
+## 2026-08-03 `.139` disabled Google Play foundation deployment verification
+
+Source commits `e9c09c5c8125d2bd16b0f9ed102eb8376cfa565c` (`Add Google Play pending refund review foundation`) and `91bd0830b7df7cfef1c1174985583c8b821c746e` (`Fix Google Play billing registration test setup`) passed the 215-test billing release gate. The standard `scripts/upload-backend-linux-release.ps1` flow used `-PackageFirst`, with a completed dry run before the real upload. Database migrations were applied separately after backup `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260803_060304Z.dump` (7,754,175 bytes; `pg_restore --list` returned 293 lines); they added the RTDN, protected-token, and pending-refund tables.
+
+The live `current` release is `.139` and `previous` is `.138`. The service is active/running, startup was normal and listening on `127.0.0.1:5001`, and public `/health` plus `/api/health/database` returned HTTP 200 after migration and deployment. Google Play Billing, RTDN, reconciliation, and pending-refund review remain disabled; this does not enable purchases or claim end-to-end provider validation.
 
 ## 2026-07-30 `.138` trial/manual Premium expiry deployment verification
 
