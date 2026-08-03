@@ -28,6 +28,8 @@ public sealed class GooglePlayBillingRegistrationTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
+        services.AddSingleton<IUtcClock, TestClock>();
+        services.AddSingleton<IGooglePlayPurchaseTokenProtectionService, TestPurchaseTokenProtectionService>();
         services.AddGooglePlayBilling(Configuration(("GooglePlayBilling:Enabled", "true"), ("GooglePlayBilling:PackageName", "")));
         var countingFactory = new CountingFactory();
         services.Replace(ServiceDescriptor.Singleton<IGooglePlayAndroidPublisherServiceFactory>(countingFactory));
@@ -65,6 +67,11 @@ public sealed class GooglePlayBillingRegistrationTests
     }
 
     private static IConfiguration Configuration(params (string Key, string Value)[] values) => new ConfigurationBuilder().AddInMemoryCollection(values.ToDictionary(value => value.Key, value => (string?)value.Value)).Build();
+    private sealed class TestPurchaseTokenProtectionService : IGooglePlayPurchaseTokenProtectionService
+    {
+        public string Protect(string purchaseToken) => purchaseToken;
+        public GooglePlayPurchaseTokenUnprotectResult TryUnprotect(string protectedPurchaseToken) => GooglePlayPurchaseTokenUnprotectResult.Failure;
+    }
     private sealed class CountingFactory : IGooglePlayAndroidPublisherServiceFactory { public int Calls { get; private set; } public Task<Google.Apis.AndroidPublisher.v3.AndroidPublisherService> CreateAsync(CancellationToken cancellationToken) { Calls++; throw new InvalidOperationException(); } }
     private sealed class CancelingFactory : IGooglePlayAndroidPublisherServiceFactory { public Task<Google.Apis.AndroidPublisher.v3.AndroidPublisherService> CreateAsync(CancellationToken cancellationToken) => throw new OperationCanceledException(); }
 }
