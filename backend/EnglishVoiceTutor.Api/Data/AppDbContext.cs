@@ -29,6 +29,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<GooglePlayPurchaseClaimEntity> GooglePlayPurchaseClaims => Set<GooglePlayPurchaseClaimEntity>();
     public DbSet<GooglePlayPurchaseTokenSecretEntity> GooglePlayPurchaseTokenSecrets => Set<GooglePlayPurchaseTokenSecretEntity>();
     public DbSet<GooglePlayRtdnEventEntity> GooglePlayRtdnEvents => Set<GooglePlayRtdnEventEntity>();
+    public DbSet<GooglePlayPendingRefundReviewEntity> GooglePlayPendingRefundReviews => Set<GooglePlayPendingRefundReviewEntity>();
     public DbSet<PaddleWebhookEventEntity> PaddleWebhookEvents => Set<PaddleWebhookEventEntity>();
     public DbSet<AdminActionEntity> AdminActions => Set<AdminActionEntity>();
     public DbSet<AdminUserEntity> AdminUsers => Set<AdminUserEntity>();
@@ -75,6 +76,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureBillingEvents(modelBuilder);
         ConfigureGooglePlayPurchaseClaims(modelBuilder);
         ConfigureGooglePlayRtdnPersistenceFoundation(modelBuilder);
+        ConfigureGooglePlayPendingRefundReviewFoundation(modelBuilder);
         ConfigurePaddleWebhookEvents(modelBuilder);
         ConfigureAdminActions(modelBuilder);
         ConfigureAdminRoleAssignmentPersistence(modelBuilder);
@@ -733,6 +735,27 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         rtdn.HasIndex(item => new { item.Provider, item.PubSubSubscription, item.PubSubMessageId }).IsUnique();
         rtdn.HasIndex(item => new { item.Status, item.NextAttemptAtUtc });
         rtdn.HasIndex(item => new { item.PurchaseTokenFingerprint, item.ReceivedAtUtc });
+    }
+
+    private static void ConfigureGooglePlayPendingRefundReviewFoundation(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<GooglePlayPendingRefundReviewEntity>();
+        entity.ToTable(EntityConstants.TableNames.GooglePlayPendingRefundReviews);
+        entity.HasKey(item => item.Id);
+        entity.Property(item => item.PubSubMessageId).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayRtdnMessageIdMaxLength);
+        entity.Property(item => item.PackageName).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayRtdnPackageNameMaxLength);
+        entity.Property(item => item.PendingRefundTokenFingerprint).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayPurchaseTokenFingerprintLength);
+        entity.Property(item => item.OrderIdFingerprint).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayPurchaseTokenFingerprintLength);
+        entity.Property(item => item.ProtectionFormatVersion).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayProtectionFormatVersionMaxLength);
+        entity.Property(item => item.NotificationVersion).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayPendingRefundVersionMaxLength);
+        entity.Property(item => item.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayRtdnStatusMaxLength);
+        entity.Property(item => item.LastSafeResultCode).HasMaxLength(EntityConstants.Lengths.GooglePlaySafeResultCodeMaxLength);
+        entity.Property(item => item.RefundPreference).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayPendingRefundPreferenceMaxLength);
+        entity.HasIndex(item => item.PubSubMessageId).IsUnique();
+        entity.HasIndex(item => item.PendingRefundTokenFingerprint).IsUnique();
+        entity.HasIndex(item => item.OrderIdFingerprint);
+        entity.HasIndex(item => new { item.Status, item.NextAttemptAtUtc });
+        entity.HasIndex(item => item.ProtectedPayloadDeleteAfterUtc);
     }
 
     private static void ConfigureAccountAnonymizationPreflightFoundation(ModelBuilder modelBuilder)

@@ -9,8 +9,8 @@ namespace EnglishVoiceTutor.Api.Services.Billing;
 
 public enum GooglePlayRtdnPushReceiptStatus { NoContent, Unauthorized, BadRequest, TemporarilyUnavailable }
 public sealed record GooglePlayRtdnPushReceiptResult(GooglePlayRtdnPushReceiptStatus Status);
-internal enum GooglePlayRtdnParseStatus { Valid, Invalid, PendingRefundRetry }
-internal sealed record GooglePlayRtdnParseResult(GooglePlayRtdnParseStatus Status, GooglePlayRtdnReceipt? Receipt);
+internal enum GooglePlayRtdnParseStatus { Valid, Invalid, PendingRefundRetry, PendingRefundValid }
+internal sealed record GooglePlayRtdnParseResult(GooglePlayRtdnParseStatus Status, GooglePlayRtdnReceipt? Receipt, GooglePlayPendingRefundReceipt? PendingRefundReceipt = null);
 
 public interface IGooglePlayRtdnPushReceiptService
 {
@@ -22,8 +22,14 @@ public sealed class GooglePlayRtdnPushReceiptService(
     IOptions<GooglePlayBillingOptions> billingOptionsAccessor,
     IGooglePlayPubSubOidcTokenValidator tokenValidator,
     GooglePlayRtdnEventPersistenceService persistenceService,
-    IGooglePlayPurchaseTokenFingerprintService fingerprintService) : IGooglePlayRtdnPushReceiptService
+    GooglePlayPendingRefundReviewPersistenceService pendingRefundPersistenceService,
+    IGooglePlayPurchaseTokenFingerprintService fingerprintService,
+    IGooglePlayPendingRefundFingerprintService pendingRefundFingerprintService,
+    IOptions<GooglePlayPendingRefundReviewOptions> pendingRefundOptionsAccessor,
+    IGooglePlayPendingRefundReviewProtectionService? pendingRefundProtection = null) : IGooglePlayRtdnPushReceiptService
 {
+    public GooglePlayRtdnPushReceiptService(IOptions<GooglePlayRtdnOptions> rtdnOptionsAccessor, IOptions<GooglePlayBillingOptions> billingOptionsAccessor, IGooglePlayPubSubOidcTokenValidator tokenValidator, GooglePlayRtdnEventPersistenceService persistenceService, IGooglePlayPurchaseTokenFingerprintService fingerprintService)
+        : this(rtdnOptionsAccessor, billingOptionsAccessor, tokenValidator, persistenceService, null!, fingerprintService, new GooglePlayPendingRefundFingerprintService(), Microsoft.Extensions.Options.Options.Create(new GooglePlayPendingRefundReviewOptions()), null) { }
     private const string Provider = "google_play";
 
     public async Task<GooglePlayRtdnPushReceiptResult> ReceiveAsync(IReadOnlyList<string?> authorizationValues, string body, CancellationToken cancellationToken)
@@ -34,9 +40,15 @@ public sealed class GooglePlayRtdnPushReceiptService(
             return new(GooglePlayRtdnPushReceiptStatus.Unauthorized);
         }
 
-        var parsed = Parse(body, rtdnOptionsAccessor.Value, billingOptionsAccessor.Value, fingerprintService);
+        var parsed = Parse(body, rtdnOptionsAccessor.Value, billingOptionsAccessor.Value, fingerprintService, pendingRefundFingerprintService, pendingRefundOptionsAccessor.Value, pendingRefundProtection);
         if (parsed.Status == GooglePlayRtdnParseStatus.Invalid) return new(GooglePlayRtdnPushReceiptStatus.BadRequest);
         if (parsed.Status == GooglePlayRtdnParseStatus.PendingRefundRetry) return new(GooglePlayRtdnPushReceiptStatus.TemporarilyUnavailable);
+        if (parsed.Status == GooglePlayRtdnParseStatus.PendingRefundValid)
+        {
+            if (pendingRefundPersistenceService is null) return new(GooglePlayRtdnPushReceiptStatus.TemporarilyUnavailable);
+            var pendingPersisted = await pendingRefundPersistenceService.RecordAsync(parsed.PendingRefundReceipt!, cancellationToken);
+            return pendingPersisted.Code is GooglePlayPendingRefundReceiptResultCode.Received or GooglePlayPendingRefundReceiptResultCode.Duplicate ? new(GooglePlayRtdnPushReceiptStatus.NoContent) : new(GooglePlayRtdnPushReceiptStatus.TemporarilyUnavailable);
+        }
 
         var persisted = await persistenceService.RecordReceiptAsync(parsed.Receipt!, cancellationToken);
         return persisted.Code switch
@@ -57,7 +69,7 @@ public sealed class GooglePlayRtdnPushReceiptService(
         return value[prefix.Length..];
     }
 
-    private static GooglePlayRtdnParseResult Parse(string body, GooglePlayRtdnOptions rtdnOptions, GooglePlayBillingOptions billingOptions, IGooglePlayPurchaseTokenFingerprintService fingerprintService)
+    private static GooglePlayRtdnParseResult Parse(string body, GooglePlayRtdnOptions rtdnOptions, GooglePlayBillingOptions billingOptions, IGooglePlayPurchaseTokenFingerprintService fingerprintService, IGooglePlayPendingRefundFingerprintService pendingFingerprintService, GooglePlayPendingRefundReviewOptions pendingOptions, IGooglePlayPendingRefundReviewProtectionService? pendingProtection)
     {
         try
         {
@@ -100,8 +112,13 @@ public sealed class GooglePlayRtdnPushReceiptService(
             }
             else if (kind.Item2 == "pendingRefundReviewNotification")
             {
-                if (!TryString(payload, "pendingRefundToken", out _)) return Invalid();
-                return new(GooglePlayRtdnParseStatus.PendingRefundRetry, null);
+                if (!TryString(payload, "pendingRefundToken", out var token)) return Invalid();
+                if (!pendingOptions.Enabled || pendingProtection is null) return new(GooglePlayRtdnParseStatus.PendingRefundRetry, null);
+                if (!TryString(payload, "version", out var version) || version.Length > EntityConstants.Lengths.GooglePlayPendingRefundVersionMaxLength || token.Any(char.IsWhiteSpace) || token.Length > 2048 || !TryString(payload, "orderId", out var orderId) || orderId.Length > 512 || !payload.TryGetProperty("refundReason", out var reasonElement) || !reasonElement.TryGetInt32(out var reason) || reason <= 0) return Invalid();
+                if (!TryEventTime(notificationRoot, out var eventTimeUtc)) return Invalid();
+                // Optional obfuscated identifiers are deliberately validated then discarded.
+                if ((payload.TryGetProperty("obfuscatedAccountId", out var account) && (account.ValueKind != JsonValueKind.String || (account.GetString()?.Length ?? 0) > 512)) || (payload.TryGetProperty("obfuscatedProfileId", out var profile) && (profile.ValueKind != JsonValueKind.String || (profile.GetString()?.Length ?? 0) > 512))) return Invalid();
+                try { return new(GooglePlayRtdnParseStatus.PendingRefundValid, null, new(messageId, packageName, pendingFingerprintService.CreatePendingRefundTokenFingerprint(token), pendingFingerprintService.CreateOrderIdFingerprint(orderId), pendingProtection.Protect(token, orderId), version, reason, eventTimeUtc, pendingOptions.RefundPreference, pendingOptions.SampleContentProvided!.Value, eventTimeUtc.AddDays(pendingOptions.TerminalProtectedPayloadRetentionDays))); } catch (Exception) { return new(GooglePlayRtdnParseStatus.PendingRefundRetry, null); }
             }
 
             DateTimeOffset? publishedAtUtc = null;
@@ -125,5 +142,10 @@ public sealed class GooglePlayRtdnPushReceiptService(
         if (!element.TryGetProperty(name, out var property) || property.ValueKind != JsonValueKind.String) return false;
         value = property.GetString()?.Trim() ?? string.Empty;
         return !string.IsNullOrWhiteSpace(value);
+    }
+    private static bool TryEventTime(JsonElement element, out DateTimeOffset value)
+    {
+        value = default;
+        return (TryString(element, "eventTimeMillis", out var millis) && long.TryParse(millis, out var number) && (value = DateTimeOffset.FromUnixTimeMilliseconds(number)) != default) || (TryString(element, "eventTime", out var time) && DateTimeOffset.TryParse(time, out value));
     }
 }

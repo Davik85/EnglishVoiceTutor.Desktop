@@ -20,6 +20,7 @@ public static class BackendDataProtectionServiceCollectionExtensions
 
         services.AddSingleton(BackendDataProtectionProvider.Create(options));
         services.AddSingleton<IGooglePlayPurchaseTokenProtectionService, GooglePlayPurchaseTokenProtectionService>();
+        services.AddSingleton<IGooglePlayPendingRefundReviewProtectionService, GooglePlayPendingRefundReviewProtectionService>();
         services.AddScoped<GooglePlayPurchaseTokenSecretPersistenceService>();
         services.AddScoped<GooglePlayRtdnEventPersistenceService>();
         return services;

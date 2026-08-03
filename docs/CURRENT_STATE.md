@@ -1,10 +1,10 @@
 # Current State
 
-Review date: 2026-08-02.
+Review date: 2026-08-03.
 
 ## Local Google Play RTDN and reconciliation foundation
 
-Authenticated Google Play RTDN receipt, protected purchase-token persistence, and linked-purchase-token replacement handling are implemented locally. Immediate and bounded deferred replacements are supported; unsupported multi-item/add-on shapes fail closed. A same-owner old linked claim remains an ownership record while its protected secret is superseded, and the reconciliation worker is disabled by default. Google Play, RTDN, and reconciliation remain disabled in production; `pendingRefundReviewNotification` intentionally returns HTTP 503 until protected pending-refund handling exists. Migration `20260802154345_AddGooglePlayRtdnPersistenceFoundation` exists locally but has not been applied to production. Production remains `0.1.35-backend.138`; no Google Cloud, Play Console, migration application, or deployment has occurred. Protected pending-refund processing remains a separate local prerequisite before production RTDN enablement.
+Authenticated Google Play RTDN receipt, protected purchase-token persistence, linked-purchase-token replacement handling, and the isolated protected pending-refund review pipeline are implemented locally. Pending-refund intake commits protected token/order material before Pub/Sub acknowledgement; only explicit `NEUTRAL` review is supported, no usage evidence is fabricated, and review never directly revokes or shortens Premium. Terminal protected payloads are cleared on success or after bounded retention. Migration `20260803052655_AddGooglePlayPendingRefundReviewFoundation` exists locally and has not been applied. Migration `20260802154345_AddGooglePlayRtdnPersistenceFoundation` also remains unapplied. SQL inspection, migration application, and deployment are manual owner steps following the project playbook. Production remains `0.1.35-backend.138`; Google Play, RTDN, reconciliation, and pending-refund review remain disabled, and no Google Cloud, Play Console, server, Mobile, Desktop, or Paddle change has occurred.
 
 ## 2026-07-30 production `.138` trial/manual Premium expiry correction
 

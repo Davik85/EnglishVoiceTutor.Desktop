@@ -1,8 +1,12 @@
 # Data Retention and Storage Policy (Draft)
 
-Review date: 2026-06-06.
+Review date: 2026-08-03.
 
 This is a technical product retention policy draft (not a legal policy).
+
+## Local Google Play pending-refund review material
+
+Pending-refund notifications persist only SHA-256 fingerprints plus a separately protected token/order payload; raw pending-refund tokens, order IDs, Pub/Sub bodies, and obfuscated account/profile identifiers are not stored. A successful review clears its protected payload immediately. Permanent failures retain protected payload only until the configured bounded terminal retention deadline, after which cleanup clears it while retaining safe audit metadata and fingerprints. Migration `20260803052655_AddGooglePlayPendingRefundReviewFoundation` exists locally and has not been applied; SQL inspection, migration application, and deployment are manual owner steps. This local module is disabled in production; production remains `0.1.35-backend.138`, with Google Play, RTDN, reconciliation, and pending-refund review disabled.
 
 ## Implemented persistence scope
 
