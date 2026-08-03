@@ -8,6 +8,7 @@ public sealed class BackendDataProtectionOptions
     public string KeyRingPath { get; set; } = string.Empty;
     public string CertificatePath { get; set; } = string.Empty;
     public string CertificatePassword { get; set; } = string.Empty;
+    public List<BackendDataProtectionCertificateOptions> UnprotectCertificates { get; set; } = [];
 
     public void ValidateForEnabledMode()
     {
@@ -30,5 +31,24 @@ public sealed class BackendDataProtectionOptions
         {
             throw new InvalidOperationException("Backend Data Protection requires a certificate password when enabled.");
         }
+
+        foreach (var certificate in UnprotectCertificates)
+        {
+            if (string.IsNullOrWhiteSpace(certificate.CertificatePath) || !Path.IsPathFullyQualified(certificate.CertificatePath))
+            {
+                throw new InvalidOperationException("Backend Data Protection requires absolute previous-certificate paths when enabled.");
+            }
+
+            if (string.IsNullOrWhiteSpace(certificate.CertificatePassword))
+            {
+                throw new InvalidOperationException("Backend Data Protection requires previous-certificate passwords when enabled.");
+            }
+        }
     }
+}
+
+public sealed class BackendDataProtectionCertificateOptions
+{
+    public string CertificatePath { get; set; } = string.Empty;
+    public string CertificatePassword { get; set; } = string.Empty;
 }

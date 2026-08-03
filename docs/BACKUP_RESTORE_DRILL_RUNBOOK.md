@@ -18,6 +18,14 @@ This runbook is for production-safe PostgreSQL backup creation, backup readabili
 - Backend package/upload scripts do not run EF migrations automatically. Database migrations remain explicit operator actions.
 - A pre-migration backup is required before future schema-dependent backend releases.
 
+## Data Protection recovery set and controlled verification
+
+When Backend Data Protection is separately approved and enabled, a recovery set must contain the PostgreSQL backup, the complete persistent Data Protection key ring, the active certificate with its private key, every previous certificate still needed to decrypt old keys, and the approved external source for their passwords/secrets. Keep this material outside versioned release directories and do not place any part of it in git, tickets, chat, or drill transcripts.
+
+Restore the PostgreSQL backup, then restore the complete matching key ring, then make the active and required previous certificates available through the approved secret source before starting a controlled verification environment. Do not automatically re-encrypt, delete, revoke, or rewrite key-ring files during recovery.
+
+The verification must prove that a known protected test fixture can be decrypted and must record only success or failure. It must never print decrypted purchase tokens, order IDs, passwords, certificate private-key details, protected payloads, or certificate contents. A controlled restore drill, including its paths, access model, backup destination/retention, and fixture custody, remains an operator decision.
+
 ## What Phase 4A covers
 
 Phase 4A provides an operator toolkit for:

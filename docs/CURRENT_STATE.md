@@ -6,6 +6,8 @@ Review date: 2026-08-03.
 
 Implementation commits `e9c09c5c8125d2bd16b0f9ed102eb8376cfa565c` and `91bd0830b7df7cfef1c1174985583c8b821c746e` are deployed in backend `0.1.35-backend.139`, with `.138` retained as rollback. Migrations `20260802154345_AddGooglePlayRtdnPersistenceFoundation` and `20260803052655_AddGooglePlayPendingRefundReviewFoundation` are applied. The additive tables `google_play_purchase_token_secrets`, `google_play_rtdn_events`, and `google_play_pending_refund_reviews` exist, are owned by `lvt_app`, have required runtime access, and have no listed `lvt_analytics_reader` privileges; all were empty immediately after migration. The protected RTDN, reconciliation, linked-purchase, and pending-refund foundations are deployed, but Google Play Billing, RTDN, reconciliation, and pending-refund review remain disabled. No Google Cloud or Play Console configuration, Google Play record, Desktop/Mobile release, Website CMS/public-site publish, or intentional Paddle/trial/manual-Premium behavior change occurred.
 
+Backend Data Protection certificate-rotation support is implemented in source only. Production has no certificate provisioned, no persistent key ring provisioned, no Data Protection enablement, no Google credentials, and no Google Play processing.
+
 The standard `scripts/upload-backend-linux-release.ps1` `-PackageFirst` dry run and upload flow was used after a fresh readable PostgreSQL backup. `languagevoicetutor-backend.service` is active and running; startup was normal and listening on `127.0.0.1:5001`; public `/health` and `/api/health/database` returned HTTP 200 after both migration and deployment.
 
 ## 2026-07-30 production `.138` trial/manual Premium expiry correction

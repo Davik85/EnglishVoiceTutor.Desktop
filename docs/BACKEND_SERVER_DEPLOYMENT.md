@@ -6,6 +6,23 @@ Review date: 2026-08-03.
 
 Production backend is deployed and healthy.
 
+## Backend Data Protection certificate rotation (disabled and unprovisioned)
+
+`BackendDataProtection` remains disabled until a separate operator-approved enablement action. Rotation is also a separate operator-approved action; implementing this support does not authorize either action and does not enable Google Play processing.
+
+Configure only these environment variable names through the approved secret/configuration mechanism, never in a committed release configuration:
+
+- `BackendDataProtection__Enabled`
+- `BackendDataProtection__KeyRingPath`
+- `BackendDataProtection__CertificatePath`
+- `BackendDataProtection__CertificatePassword`
+- `BackendDataProtection__UnprotectCertificates__<index>__CertificatePath`
+- `BackendDataProtection__UnprotectCertificates__<index>__CertificatePassword`
+
+The active certificate protects newly created Data Protection keys. `UnprotectCertificates` contains zero or more older certificates used only to decrypt existing key-ring entries. During a certificate rotation, the old certificate must remain available as a previous certificate until all protected material that depends on it is no longer required. Removing it before that point prevents decryption of those older keys.
+
+The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Final server paths, ownership, groups, and permissions require owner approval and are intentionally not defined here. Do not place certificate values or passwords in committed `appsettings.json` files.
+
 - Current release: `0.1.35-backend.139`
 - Previous rollback release: `0.1.35-backend.138`
 - Production URL: `https://api.languagevoicetutor.com`
