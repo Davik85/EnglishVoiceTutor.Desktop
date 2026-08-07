@@ -7,8 +7,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services.Billing;
 
-public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext dbContext, GooglePlayPurchaseClaimService claimService, ProviderSubscriptionPeriodPersistenceService periodService, GooglePlayPurchaseTokenSecretPersistenceService tokenSecretService, IGooglePlayPurchaseTokenFingerprintService fingerprintService, IUtcClock utcClock, ILogger<GooglePlayVerifiedPurchasePersistenceService> logger) : IGooglePlayVerifiedPurchasePersistenceService
+public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext dbContext, GooglePlayPurchaseClaimService claimService, GooglePlayPurchaseTokenSecretPersistenceService tokenSecretService, IGooglePlayPurchaseTokenFingerprintService fingerprintService, IUtcClock utcClock, ILogger<GooglePlayVerifiedPurchasePersistenceService> logger) : IGooglePlayVerifiedPurchasePersistenceService
 {
+    private const string VerifiedPeriodReason = "provider_scoped_verified_period";
+    private const string OnHoldReason = "google_play_on_hold";
+    private const string PausedReason = "google_play_paused";
+    private const string ExpiredReason = "google_play_expired";
+    private const string RevokedReason = "google_play_revoked";
+
     public async Task<GooglePlayVerifiedPurchasePersistenceResult> PersistAsync(GooglePlayVerifiedPurchasePersistenceRequest request, CancellationToken cancellationToken)
     {
         if (request.UserId == Guid.Empty || string.IsNullOrWhiteSpace(request.PurchaseToken) || string.IsNullOrWhiteSpace(request.ProtectedPurchaseToken) || string.IsNullOrWhiteSpace(request.VerifiedPurchase.ProductId) || request.VerifiedPurchase.StartedAtUtc.Offset != TimeSpan.Zero || request.VerifiedPurchase.ExpiresAtUtc.Offset != TimeSpan.Zero || request.VerifiedPurchase.ExpiresAtUtc <= request.VerifiedPurchase.StartedAtUtc) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.InvalidInput);
@@ -73,6 +79,12 @@ public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext db
         {
             return Result(GooglePlayVerifiedPurchasePersistenceResultCode.ConsistencyConflict);
         }
+        if (subscription is not null
+            && IsEntitlementRetainingLifecycle(request.VerifiedPurchase, utcClock.UtcNow)
+            && await ExactEntitlements(subscription).AnyAsync(item => item.Status == SubscriptionConstants.Entitlements.StatusRevoked, cancellationToken))
+        {
+            return Result(GooglePlayVerifiedPurchasePersistenceResultCode.ConsistencyConflict);
+        }
 
         var claim = await claimService.ClaimWithinTransactionAsync(request.UserId, fingerprint, request.VerifiedPurchase.ProductId, cancellationToken);
         if (claim.Code == GooglePlayPurchaseClaimResultCode.OwnershipConflict) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.OwnershipConflict);
@@ -97,8 +109,7 @@ public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext db
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        var period = await periodService.ApplyWithinTransactionAsync(new ProviderSubscriptionPeriodPersistenceRequest(request.UserId, subscription.Id, request.VerifiedPurchase.ProductId, request.VerifiedPurchase.StartedAtUtc, request.VerifiedPurchase.ExpiresAtUtc, false), cancellationToken);
-        if (period.Code is ProviderSubscriptionPeriodPersistenceResultCode.InvalidInput or ProviderSubscriptionPeriodPersistenceResultCode.SubscriptionNotFound or ProviderSubscriptionPeriodPersistenceResultCode.SubscriptionOwnershipConflict or ProviderSubscriptionPeriodPersistenceResultCode.UnsupportedSubscription or ProviderSubscriptionPeriodPersistenceResultCode.TemporarilyUnavailable) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.ConsistencyConflict);
+        var lifecycleChanged = await ApplyLifecycleWithinTransactionAsync(subscription, request.VerifiedPurchase, cancellationToken);
         var secret = await tokenSecretService.CreateOrUpdateAsync(new GooglePlayPurchaseTokenSecretWriteRequest(existingClaim?.Id ?? (await dbContext.GooglePlayPurchaseClaims.SingleAsync(item => item.PurchaseTokenFingerprint == fingerprint, cancellationToken)).Id, fingerprint, request.ProtectedPurchaseToken, GooglePlayPurchaseTokenProtectionService.ProtectionFormatVersion, request.VerifiedPurchase.AcknowledgementState == GooglePlayPurchaseAcknowledgementState.Pending), cancellationToken);
         if (secret.Code != GooglePlayPurchaseTokenSecretPersistenceResultCode.Stored) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.TemporarilyUnavailable);
         if (linkedClaim is not null)
@@ -124,7 +135,162 @@ public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext db
             await dbContext.SaveChangesAsync(cancellationToken);
         }
         await transaction.CommitAsync(cancellationToken);
-        return Result(period.Code == ProviderSubscriptionPeriodPersistenceResultCode.Applied ? GooglePlayVerifiedPurchasePersistenceResultCode.Applied : GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent);
+        return Result(lifecycleChanged ? GooglePlayVerifiedPurchasePersistenceResultCode.Applied : GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent);
+    }
+
+    private async Task<bool> ApplyLifecycleWithinTransactionAsync(
+        SubscriptionEntity subscription,
+        GooglePlayVerifiedPurchase purchase,
+        CancellationToken cancellationToken)
+    {
+        var now = utcClock.UtcNow;
+        return purchase.LifecycleState switch
+        {
+            GooglePlaySubscriptionLifecycleState.Active => await RetainExactEntitlementAsync(subscription, purchase, SubscriptionConstants.SubscriptionStatuses.Active, false, null, cancellationToken),
+            GooglePlaySubscriptionLifecycleState.InGracePeriod => await RetainExactEntitlementAsync(subscription, purchase, SubscriptionConstants.SubscriptionStatuses.PastDue, false, null, cancellationToken),
+            GooglePlaySubscriptionLifecycleState.Canceled when purchase.ExpiresAtUtc > now => await RetainExactEntitlementAsync(subscription, purchase, SubscriptionConstants.SubscriptionStatuses.Canceled, true, purchase.ExpiresAtUtc, cancellationToken, useExactExpiry: true),
+            GooglePlaySubscriptionLifecycleState.Canceled => await SuspendExactEntitlementsAsync(subscription, SubscriptionConstants.SubscriptionStatuses.Expired, SubscriptionConstants.Entitlements.StatusExpired, ExpiredReason, purchase.ExpiresAtUtc, cancellationToken),
+            GooglePlaySubscriptionLifecycleState.OnHold => await SuspendExactEntitlementsAsync(subscription, SubscriptionConstants.SubscriptionStatuses.PastDue, SubscriptionConstants.Entitlements.StatusInactive, OnHoldReason, null, cancellationToken),
+            GooglePlaySubscriptionLifecycleState.Paused => await SuspendExactEntitlementsAsync(subscription, SubscriptionConstants.SubscriptionStatuses.Paused, SubscriptionConstants.Entitlements.StatusInactive, PausedReason, null, cancellationToken),
+            GooglePlaySubscriptionLifecycleState.Expired => await SuspendExactEntitlementsAsync(subscription, SubscriptionConstants.SubscriptionStatuses.Expired, SubscriptionConstants.Entitlements.StatusExpired, ExpiredReason, purchase.ExpiresAtUtc, cancellationToken),
+            GooglePlaySubscriptionLifecycleState.Revoked => await SuspendExactEntitlementsAsync(subscription, SubscriptionConstants.SubscriptionStatuses.Expired, SubscriptionConstants.Entitlements.StatusRevoked, RevokedReason, now, cancellationToken),
+            _ => false
+        };
+    }
+
+    private async Task<bool> RetainExactEntitlementAsync(
+        SubscriptionEntity subscription,
+        GooglePlayVerifiedPurchase purchase,
+        string subscriptionStatus,
+        bool cancelAtPeriodEnd,
+        DateTimeOffset? scheduledChangeEffectiveAtUtc,
+        CancellationToken cancellationToken,
+        bool useExactExpiry = false)
+    {
+        var now = utcClock.UtcNow;
+        var changed = false;
+        changed |= SetIfDifferent(subscription.Status, subscriptionStatus, value => subscription.Status = value);
+        changed |= SetIfDifferent(subscription.CancelAtPeriodEnd, cancelAtPeriodEnd, value => subscription.CancelAtPeriodEnd = value);
+        var scheduledAction = cancelAtPeriodEnd ? SubscriptionConstants.ScheduledChangeActions.Cancel : null;
+        changed |= SetIfDifferent(subscription.ScheduledChangeAction, scheduledAction, value => subscription.ScheduledChangeAction = value);
+        changed |= SetIfDifferent(subscription.ScheduledChangeEffectiveAtUtc, scheduledChangeEffectiveAtUtc, value => subscription.ScheduledChangeEffectiveAtUtc = value);
+
+        if (useExactExpiry || subscription.CurrentPeriodEndUtc is null || purchase.ExpiresAtUtc > subscription.CurrentPeriodEndUtc.Value)
+        {
+            changed |= SetIfDifferent(subscription.CurrentPeriodStartUtc, purchase.StartedAtUtc, value => subscription.CurrentPeriodStartUtc = value);
+            changed |= SetIfDifferent(subscription.CurrentPeriodEndUtc, purchase.ExpiresAtUtc, value => subscription.CurrentPeriodEndUtc = value);
+            if (useExactExpiry || subscription.ExpiresAt is null || purchase.ExpiresAtUtc > subscription.ExpiresAt.Value)
+                changed |= SetIfDifferent(subscription.ExpiresAt, purchase.ExpiresAtUtc, value => subscription.ExpiresAt = value);
+        }
+
+        var entitlements = await ExactEntitlements(subscription).ToListAsync(cancellationToken);
+        var entitlement = entitlements
+            .Where(item => item.Status != SubscriptionConstants.Entitlements.StatusRevoked)
+            .OrderByDescending(item => item.Status == SubscriptionConstants.Entitlements.StatusActive)
+            .ThenByDescending(item => item.UpdatedAt)
+            .FirstOrDefault();
+        if (entitlement is null && entitlements.Any(item => item.Status == SubscriptionConstants.Entitlements.StatusRevoked))
+        {
+            // A revoked token cannot restore itself. A future valid purchase must arrive
+            // under its own current/linked token and pass the normal ownership flow.
+        }
+        else if (entitlement is null)
+        {
+            dbContext.Entitlements.Add(new EntitlementEntity
+            {
+                Id = Guid.NewGuid(),
+                UserId = subscription.UserId,
+                SubscriptionId = subscription.Id,
+                PlanId = SubscriptionConstants.Plans.PremiumPlanId,
+                EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType,
+                Source = SubscriptionConstants.Entitlements.SourceProviderEvent,
+                Status = SubscriptionConstants.Entitlements.StatusActive,
+                StartsAtUtc = purchase.StartedAtUtc,
+                ExpiresAtUtc = purchase.ExpiresAtUtc,
+                Reason = VerifiedPeriodReason,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            changed = true;
+        }
+        else
+        {
+            changed |= SetIfDifferent(entitlement.Status, SubscriptionConstants.Entitlements.StatusActive, value => entitlement.Status = value);
+            if (purchase.StartedAtUtc < entitlement.StartsAtUtc)
+                changed |= SetIfDifferent(entitlement.StartsAtUtc, purchase.StartedAtUtc, value => entitlement.StartsAtUtc = value);
+            if (useExactExpiry || (entitlement.ExpiresAtUtc is not null && purchase.ExpiresAtUtc > entitlement.ExpiresAtUtc.Value))
+                changed |= SetIfDifferent(entitlement.ExpiresAtUtc, purchase.ExpiresAtUtc, value => entitlement.ExpiresAtUtc = value);
+            changed |= SetIfDifferent(entitlement.Reason, VerifiedPeriodReason, value => entitlement.Reason = value);
+            if (changed) entitlement.UpdatedAt = now;
+        }
+
+        if (changed)
+        {
+            subscription.ProviderProductId = purchase.ProductId;
+            subscription.UpdatedAt = now;
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        return changed;
+    }
+
+    private async Task<bool> SuspendExactEntitlementsAsync(
+        SubscriptionEntity subscription,
+        string subscriptionStatus,
+        string entitlementStatus,
+        string reason,
+        DateTimeOffset? entitlementExpiresAtUtc,
+        CancellationToken cancellationToken)
+    {
+        var now = utcClock.UtcNow;
+        var changed = false;
+        changed |= SetIfDifferent(subscription.Status, subscriptionStatus, value => subscription.Status = value);
+        if (subscriptionStatus == SubscriptionConstants.SubscriptionStatuses.Expired)
+        {
+            changed |= SetIfDifferent(subscription.CancelAtPeriodEnd, false, value => subscription.CancelAtPeriodEnd = value);
+            changed |= SetIfDifferent(subscription.ScheduledChangeAction, null, value => subscription.ScheduledChangeAction = value);
+            changed |= SetIfDifferent(subscription.ScheduledChangeEffectiveAtUtc, null, value => subscription.ScheduledChangeEffectiveAtUtc = value);
+        }
+
+        var entitlements = await ExactEntitlements(subscription).ToListAsync(cancellationToken);
+        var candidates = entitlementStatus switch
+        {
+            SubscriptionConstants.Entitlements.StatusRevoked => entitlements.Where(item => item.Status != SubscriptionConstants.Entitlements.StatusRevoked),
+            SubscriptionConstants.Entitlements.StatusExpired => entitlements.Where(item => item.Status is SubscriptionConstants.Entitlements.StatusActive or SubscriptionConstants.Entitlements.StatusInactive),
+            _ => entitlements.Where(item => item.Status == SubscriptionConstants.Entitlements.StatusActive)
+        };
+        foreach (var entitlement in candidates)
+        {
+            entitlement.Status = entitlementStatus;
+            entitlement.Reason = reason;
+            if (entitlementExpiresAtUtc.HasValue) entitlement.ExpiresAtUtc = entitlementExpiresAtUtc;
+            entitlement.UpdatedAt = now;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            subscription.UpdatedAt = now;
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        return changed;
+    }
+
+    private IQueryable<EntitlementEntity> ExactEntitlements(SubscriptionEntity subscription) => dbContext.Entitlements.Where(item =>
+        item.UserId == subscription.UserId
+        && item.SubscriptionId == subscription.Id
+        && item.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+        && item.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
+        && item.Source == SubscriptionConstants.Entitlements.SourceProviderEvent);
+
+    private static bool IsEntitlementRetainingLifecycle(GooglePlayVerifiedPurchase purchase, DateTimeOffset now) =>
+        (purchase.LifecycleState is GooglePlaySubscriptionLifecycleState.Active or GooglePlaySubscriptionLifecycleState.InGracePeriod)
+        || purchase.LifecycleState == GooglePlaySubscriptionLifecycleState.Canceled && purchase.ExpiresAtUtc > now;
+
+    private static bool SetIfDifferent<T>(T current, T next, Action<T> assign)
+    {
+        if (EqualityComparer<T>.Default.Equals(current, next)) return false;
+        assign(next);
+        return true;
     }
 
     public async Task UpdateAcknowledgementStateAsync(string purchaseToken, bool acknowledgementPending, string? safeResultCode, CancellationToken cancellationToken)

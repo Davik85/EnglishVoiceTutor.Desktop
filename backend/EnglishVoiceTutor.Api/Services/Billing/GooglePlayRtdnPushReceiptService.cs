@@ -104,6 +104,24 @@ public sealed class GooglePlayRtdnPushReceiptService(
 
             var kind = kinds[0];
             TryObject(notificationRoot, kind.Item2, out var payload);
+            var normalizedKind = kind.Item1;
+            if (kind.Item2 == "subscriptionNotification"
+                && payload.TryGetProperty("notificationType", out var subscriptionType)
+                && subscriptionType.TryGetInt32(out var subscriptionNotificationType)
+                && subscriptionNotificationType == 12)
+            {
+                normalizedKind = "subscription_revoked";
+            }
+            else if (kind.Item2 == "voidedPurchaseNotification"
+                && payload.TryGetProperty("productType", out var productType)
+                && productType.TryGetInt32(out var productTypeValue)
+                && productTypeValue == 1
+                && payload.TryGetProperty("refundType", out var refundType)
+                && refundType.TryGetInt32(out var refundTypeValue)
+                && refundTypeValue == 1)
+            {
+                normalizedKind = "voided_subscription_full_refund";
+            }
             string? fingerprint = null;
             if (kind.Item2 is "subscriptionNotification" or "oneTimeProductNotification" or "voidedPurchaseNotification")
             {
@@ -127,7 +145,7 @@ public sealed class GooglePlayRtdnPushReceiptService(
                 publishedAtUtc = parsedPublishedAt.ToUniversalTime();
             }
 
-            return new(GooglePlayRtdnParseStatus.Valid, new GooglePlayRtdnReceipt(Provider, messageId, subscription, packageName, kind.Item1, fingerprint, publishedAtUtc));
+            return new(GooglePlayRtdnParseStatus.Valid, new GooglePlayRtdnReceipt(Provider, messageId, subscription, packageName, normalizedKind, fingerprint, publishedAtUtc));
         }
         catch (JsonException) { return Invalid(); }
         catch (ArgumentException) { return Invalid(); }

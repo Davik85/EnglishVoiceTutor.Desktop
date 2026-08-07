@@ -108,6 +108,25 @@ public sealed class GooglePlayReconciliationIterationServiceTests
         Assert.Equal(GooglePlayRtdnEventStatuses.Processing, (await db.GooglePlayRtdnEvents.SingleAsync(item => item.PubSubMessageId == "fresh", TestContext.Current.CancellationToken)).Status);
     }
 
+    [Theory]
+    [InlineData("subscription_revoked", true)]
+    [InlineData("voided_subscription_full_refund", false)]
+    public async Task RtdnTriggersFreshProcessingWithOnlySubscriptionRevokedConfirmedAsRevocation(string notificationKind, bool expectedConfirmedRevocation)
+    {
+        await using var db = CreateDb();
+        var secret = await AddSecretAsync(db, acknowledgementPending: false, next: Now.AddDays(1), attempts: 0, id: notificationKind);
+        var item = Event(notificationKind, secret.PurchaseTokenFingerprint, GooglePlayRtdnEventStatuses.Received, Now);
+        item.NotificationKind = notificationKind;
+        db.GooglePlayRtdnEvents.Add(item);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var processor = new ContextRecordingProcessor();
+
+        await CreateIteration(db, processor).RunOnceAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(expectedConfirmedRevocation, Assert.Single(processor.Contexts).ProviderConfirmedRevocation);
+        Assert.Equal(GooglePlayRtdnEventStatuses.Processed, item.Status);
+    }
+
     [Fact]
     public async Task FutureAcknowledgementAndMaximumAttemptTokensAreNotProcessed()
     {
@@ -181,4 +200,14 @@ public sealed class GooglePlayReconciliationIterationServiceTests
     private sealed class FailedProtection : IGooglePlayPurchaseTokenProtectionService { public string Protect(string purchaseToken) => "protected"; public GooglePlayPurchaseTokenUnprotectResult TryUnprotect(string protectedPurchaseToken) => GooglePlayPurchaseTokenUnprotectResult.Failure; }
     private sealed class CountingProtection : IGooglePlayPurchaseTokenProtectionService { public int Calls { get; private set; } public string Protect(string purchaseToken) => "protected"; public GooglePlayPurchaseTokenUnprotectResult TryUnprotect(string protectedPurchaseToken) { Calls++; return new(true, "raw-token"); } }
     private sealed class RecordingProcessor(params GooglePlayPurchaseProcessingResultCode[] results) : IGooglePlayPurchaseProcessor { private int index; public int Calls { get; private set; } public Task<GooglePlayPurchaseProcessingResult> ProcessAsync(Guid userId, string purchaseToken, CancellationToken cancellationToken) { Calls++; return Task.FromResult(new GooglePlayPurchaseProcessingResult(results[Math.Min(index++, results.Length - 1)])); } }
+    private sealed class ContextRecordingProcessor : IGooglePlayPurchaseProcessor
+    {
+        public List<GooglePlayPurchaseProcessingContext> Contexts { get; } = [];
+        public Task<GooglePlayPurchaseProcessingResult> ProcessAsync(Guid userId, string purchaseToken, CancellationToken cancellationToken) => Task.FromResult(new GooglePlayPurchaseProcessingResult(GooglePlayPurchaseProcessingResultCode.Verified));
+        public Task<GooglePlayPurchaseProcessingResult> ProcessAsync(Guid userId, string purchaseToken, GooglePlayPurchaseProcessingContext context, CancellationToken cancellationToken)
+        {
+            Contexts.Add(context);
+            return Task.FromResult(new GooglePlayPurchaseProcessingResult(GooglePlayPurchaseProcessingResultCode.Verified));
+        }
+    }
 }

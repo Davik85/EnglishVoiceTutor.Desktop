@@ -140,7 +140,7 @@ public sealed class GooglePlayLinkedPurchaseLifecycleTests
     {
         var clock = new TestClock();
         var fingerprint = new GooglePlayPurchaseTokenFingerprintService();
-        return new(db, new GooglePlayPurchaseClaimService(db, fingerprint, clock), new ProviderSubscriptionPeriodPersistenceService(db, NullLogger<ProviderSubscriptionPeriodPersistenceService>.Instance), new GooglePlayPurchaseTokenSecretPersistenceService(db, clock), fingerprint, clock, NullLogger<GooglePlayVerifiedPurchasePersistenceService>.Instance);
+        return new(db, new GooglePlayPurchaseClaimService(db, fingerprint, clock), new GooglePlayPurchaseTokenSecretPersistenceService(db, clock), fingerprint, clock, NullLogger<GooglePlayVerifiedPurchasePersistenceService>.Instance);
     }
     private static async Task<Guid> AddUserAsync(AppDbContext db)
     {

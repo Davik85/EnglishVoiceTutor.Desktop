@@ -53,6 +53,37 @@ public sealed class GooglePlayRtdnPushReceiptServiceTests
     }
 
     [Fact]
+    public async Task SubscriptionRevokedNotificationStoresOnlySanitizedRevocationKind()
+    {
+        await using var db = CreateDb();
+        var response = await CreateService(db).ReceiveAsync(
+            ["Bearer valid-jwt"],
+            Envelope(new { packageName = PackageName, subscriptionNotification = new { version = "1.0", notificationType = 12, purchaseToken = PurchaseToken } }),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayRtdnPushReceiptStatus.NoContent, response.Status);
+        var stored = Assert.Single(db.GooglePlayRtdnEvents);
+        Assert.Equal("subscription_revoked", stored.NotificationKind);
+        AssertSafe(stored, response, PurchaseToken);
+    }
+
+    [Fact]
+    public async Task FullVoidedSubscriptionStoresOnlySanitizedRefundKind()
+    {
+        await using var db = CreateDb();
+        var response = await CreateService(db).ReceiveAsync(
+            ["Bearer valid-jwt"],
+            Envelope(new { packageName = PackageName, voidedPurchaseNotification = new { purchaseToken = PurchaseToken, orderId = "discarded-order", productType = 1, refundType = 1 } }),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayRtdnPushReceiptStatus.NoContent, response.Status);
+        var stored = Assert.Single(db.GooglePlayRtdnEvents);
+        Assert.Equal("voided_subscription_full_refund", stored.NotificationKind);
+        AssertSafe(stored, response, PurchaseToken);
+        Assert.DoesNotContain("discarded-order", JsonSerializer.Serialize(stored), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task PendingRefundWithTokenRemainsRetryableWithoutPersistence()
     {
         await using var db = CreateDb();

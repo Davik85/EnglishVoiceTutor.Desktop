@@ -16,13 +16,25 @@ public enum GooglePlayPurchaseAcknowledgementState
     Acknowledged
 }
 
+public enum GooglePlaySubscriptionLifecycleState
+{
+    Active,
+    InGracePeriod,
+    Canceled,
+    OnHold,
+    Paused,
+    Expired,
+    Revoked
+}
+
 public sealed record GooglePlayVerifiedPurchase(
     string PackageName,
     string ProductId,
     DateTimeOffset StartedAtUtc,
     DateTimeOffset ExpiresAtUtc,
     GooglePlayPurchaseAcknowledgementState AcknowledgementState,
-    bool IsTestPurchase)
+    bool IsTestPurchase,
+    GooglePlaySubscriptionLifecycleState LifecycleState = GooglePlaySubscriptionLifecycleState.Active)
 {
     internal string? LinkedPurchaseToken { get; init; }
 }

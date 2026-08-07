@@ -54,7 +54,12 @@ public sealed class GooglePlayReconciliationIterationService(
         catch (Exception) when (!cancellationToken.IsCancellationRequested) { token = GooglePlayPurchaseTokenUnprotectResult.Failure; }
         if (!token.Succeeded || string.IsNullOrWhiteSpace(token.PurchaseToken)) { await eventPersistence.RecordPermanentFailureAsync(item.Id, GooglePlayRtdnSafeErrorCodes.ProviderRejected, cancellationToken); return; }
 
-        var result = await purchaseProcessor.ProcessAsync(claim.UserId, token.PurchaseToken, cancellationToken);
+        var confirmedRevocation = item.NotificationKind == "subscription_revoked";
+        var result = await purchaseProcessor.ProcessAsync(
+            claim.UserId,
+            token.PurchaseToken,
+            new GooglePlayPurchaseProcessingContext(confirmedRevocation),
+            cancellationToken);
         if (result.Code == GooglePlayPurchaseProcessingResultCode.Verified) { await eventPersistence.MarkProcessedAsync(item.Id, cancellationToken); return; }
         if (result.Code is GooglePlayPurchaseProcessingResultCode.InvalidPurchase or GooglePlayPurchaseProcessingResultCode.UnsupportedProduct or GooglePlayPurchaseProcessingResultCode.OwnershipConflict or GooglePlayPurchaseProcessingResultCode.AcknowledgementInconsistent)
         { await eventPersistence.RecordPermanentFailureAsync(item.Id, GooglePlayRtdnSafeErrorCodes.ProviderRejected, cancellationToken); return; }

@@ -99,13 +99,27 @@ public sealed class GooglePlayPurchaseVerifierTests
     }
 
     [Theory]
-    [InlineData("SUBSCRIPTION_STATE_PAUSED")]
-    [InlineData("SUBSCRIPTION_STATE_IN_GRACE_PERIOD")]
-    [InlineData("SUBSCRIPTION_STATE_ON_HOLD")]
-    [InlineData("SUBSCRIPTION_STATE_CANCELED")]
-    [InlineData("SUBSCRIPTION_STATE_EXPIRED")]
+    [InlineData("SUBSCRIPTION_STATE_IN_GRACE_PERIOD", GooglePlaySubscriptionLifecycleState.InGracePeriod, "2026-08-27T10:00:00Z")]
+    [InlineData("SUBSCRIPTION_STATE_ON_HOLD", GooglePlaySubscriptionLifecycleState.OnHold, "2026-08-27T10:00:00Z")]
+    [InlineData("SUBSCRIPTION_STATE_PAUSED", GooglePlaySubscriptionLifecycleState.Paused, "2026-08-27T10:00:00Z")]
+    [InlineData("SUBSCRIPTION_STATE_CANCELED", GooglePlaySubscriptionLifecycleState.Canceled, "2026-08-27T10:00:00Z")]
+    [InlineData("SUBSCRIPTION_STATE_EXPIRED", GooglePlaySubscriptionLifecycleState.Expired, "2026-08-02T10:00:00Z")]
+    public async Task SupportedLifecycleStatesReturnSanitizedVerifiedMetadata(string state, GooglePlaySubscriptionLifecycleState expected, string expiry)
+    {
+        var result = await CreateVerifier(new RecordingClient(Snapshot(
+            state,
+            Timestamp("2026-07-27T10:00:00Z"),
+            [LineItem("server-product", Timestamp(expiry))])), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.Verified, result.Code);
+        Assert.Equal(expected, result.VerifiedPurchase!.LifecycleState);
+    }
+
+    [Theory]
     [InlineData("")]
-    public async Task UnsupportedLifecycleStatesFailClosed(string state)
+    [InlineData("SUBSCRIPTION_STATE_UNSPECIFIED")]
+    [InlineData("SUBSCRIPTION_STATE_PENDING_PURCHASE_CANCELED")]
+    public async Task UnknownOrNonEntitlingLifecycleStatesFailClosed(string state)
     {
         var result = await CreateVerifier(new RecordingClient(Snapshot(state)), Options()).VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
 
@@ -274,7 +288,7 @@ public sealed class GooglePlayPurchaseVerifierTests
             ["DeferredItemReplacementProductId", "ExpiryTimeUtc", "ProductId"],
             typeof(GooglePlaySubscriptionLineItemSnapshot).GetProperties().Select(property => property.Name).OrderBy(name => name).ToArray());
         Assert.Equal(
-            ["AcknowledgementState", "ExpiresAtUtc", "IsTestPurchase", "PackageName", "ProductId", "StartedAtUtc"],
+            ["AcknowledgementState", "ExpiresAtUtc", "IsTestPurchase", "LifecycleState", "PackageName", "ProductId", "StartedAtUtc"],
             typeof(GooglePlayVerifiedPurchase).GetProperties().Select(property => property.Name).OrderBy(name => name).ToArray());
     }
 

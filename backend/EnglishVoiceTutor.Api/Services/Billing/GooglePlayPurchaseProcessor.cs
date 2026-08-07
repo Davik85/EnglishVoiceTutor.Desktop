@@ -7,7 +7,10 @@ public sealed class GooglePlayPurchaseProcessor(
     IGooglePlaySubscriptionsV2Client subscriptionsClient,
     ILogger<GooglePlayPurchaseProcessor> logger) : IGooglePlayPurchaseProcessor
 {
-    public async Task<GooglePlayPurchaseProcessingResult> ProcessAsync(Guid userId, string purchaseToken, CancellationToken cancellationToken)
+    public Task<GooglePlayPurchaseProcessingResult> ProcessAsync(Guid userId, string purchaseToken, CancellationToken cancellationToken) =>
+        ProcessAsync(userId, purchaseToken, new GooglePlayPurchaseProcessingContext(), cancellationToken);
+
+    public async Task<GooglePlayPurchaseProcessingResult> ProcessAsync(Guid userId, string purchaseToken, GooglePlayPurchaseProcessingContext context, CancellationToken cancellationToken)
     {
         var verification = await verifier.VerifyAsync(userId, purchaseToken, cancellationToken);
         if (verification.Code != GooglePlayPurchaseVerificationResultCode.Verified)
@@ -23,23 +26,22 @@ public sealed class GooglePlayPurchaseProcessor(
         }
 
         if (verification.VerifiedPurchase is null) return Result(GooglePlayPurchaseProcessingResultCode.TemporarilyUnavailable);
+        var verifiedPurchase = context.ProviderConfirmedRevocation
+            && verification.VerifiedPurchase.LifecycleState == GooglePlaySubscriptionLifecycleState.Expired
+            ? verification.VerifiedPurchase with { LifecycleState = GooglePlaySubscriptionLifecycleState.Revoked }
+            : verification.VerifiedPurchase;
 
         string protectedPurchaseToken;
         try { protectedPurchaseToken = tokenProtectionService.Protect(purchaseToken); }
         catch (Exception) when (!cancellationToken.IsCancellationRequested) { return Result(GooglePlayPurchaseProcessingResultCode.TemporarilyUnavailable); }
-        var persistence = await persistenceService.PersistAsync(new GooglePlayVerifiedPurchasePersistenceRequest(userId, purchaseToken, verification.VerifiedPurchase, protectedPurchaseToken), cancellationToken);
+        var persistence = await persistenceService.PersistAsync(new GooglePlayVerifiedPurchasePersistenceRequest(userId, purchaseToken, verifiedPurchase, protectedPurchaseToken), cancellationToken);
         if (persistence.Code is not GooglePlayVerifiedPurchasePersistenceResultCode.Applied and not GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent)
         {
-            return Result(persistence.Code switch
-            {
-                GooglePlayVerifiedPurchasePersistenceResultCode.OwnershipConflict => GooglePlayPurchaseProcessingResultCode.OwnershipConflict,
-                GooglePlayVerifiedPurchasePersistenceResultCode.ProductMismatch or GooglePlayVerifiedPurchasePersistenceResultCode.ConsistencyConflict => GooglePlayPurchaseProcessingResultCode.InvalidPurchase,
-                GooglePlayVerifiedPurchasePersistenceResultCode.TestPurchaseNotSupported => GooglePlayPurchaseProcessingResultCode.UnsupportedProduct,
-                _ => GooglePlayPurchaseProcessingResultCode.TemporarilyUnavailable
-            });
+            return Result(MapPersistenceResult(persistence.Code));
         }
 
-        if (verification.VerifiedPurchase.AcknowledgementState == GooglePlayPurchaseAcknowledgementState.Acknowledged)
+        if (!RequiresAcknowledgement(verifiedPurchase.LifecycleState)
+            || verifiedPurchase.AcknowledgementState == GooglePlayPurchaseAcknowledgementState.Acknowledged)
         {
             await persistenceService.UpdateAcknowledgementStateAsync(purchaseToken, false, null, cancellationToken);
             return Result(GooglePlayPurchaseProcessingResultCode.Verified);
@@ -48,8 +50,8 @@ public sealed class GooglePlayPurchaseProcessor(
         try
         {
             await subscriptionsClient.AcknowledgeAsync(
-                verification.VerifiedPurchase.PackageName,
-                verification.VerifiedPurchase.ProductId,
+                verifiedPurchase.PackageName,
+                verifiedPurchase.ProductId,
                 purchaseToken,
                 cancellationToken);
             await persistenceService.UpdateAcknowledgementStateAsync(purchaseToken, false, null, cancellationToken);
@@ -77,6 +79,20 @@ public sealed class GooglePlayPurchaseProcessor(
             return Result(GooglePlayPurchaseProcessingResultCode.AcknowledgementPending);
         }
     }
+
+    private static GooglePlayPurchaseProcessingResultCode MapPersistenceResult(GooglePlayVerifiedPurchasePersistenceResultCode code) => code switch
+    {
+        GooglePlayVerifiedPurchasePersistenceResultCode.Applied or GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent => GooglePlayPurchaseProcessingResultCode.Verified,
+        GooglePlayVerifiedPurchasePersistenceResultCode.OwnershipConflict => GooglePlayPurchaseProcessingResultCode.OwnershipConflict,
+        GooglePlayVerifiedPurchasePersistenceResultCode.ProductMismatch or GooglePlayVerifiedPurchasePersistenceResultCode.ConsistencyConflict => GooglePlayPurchaseProcessingResultCode.InvalidPurchase,
+        GooglePlayVerifiedPurchasePersistenceResultCode.TestPurchaseNotSupported => GooglePlayPurchaseProcessingResultCode.UnsupportedProduct,
+        _ => GooglePlayPurchaseProcessingResultCode.TemporarilyUnavailable
+    };
+
+    private static bool RequiresAcknowledgement(GooglePlaySubscriptionLifecycleState lifecycleState) => lifecycleState is
+        GooglePlaySubscriptionLifecycleState.Active
+        or GooglePlaySubscriptionLifecycleState.InGracePeriod
+        or GooglePlaySubscriptionLifecycleState.Canceled;
 
     private static GooglePlayPurchaseProcessingResult Result(GooglePlayPurchaseProcessingResultCode code) => new(code);
 }

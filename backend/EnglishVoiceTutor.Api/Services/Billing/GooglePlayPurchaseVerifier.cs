@@ -49,7 +49,8 @@ public sealed class GooglePlayPurchaseVerifier(
     {
         if (snapshot is null) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
         if (string.Equals(snapshot.SubscriptionState, "SUBSCRIPTION_STATE_PENDING", StringComparison.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.Pending);
-        if (!string.Equals(snapshot.SubscriptionState, "SUBSCRIPTION_STATE_ACTIVE", StringComparison.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.InvalidPurchase);
+        var lifecycleState = MapLifecycleState(snapshot.SubscriptionState);
+        if (lifecycleState is null) return Result(GooglePlayPurchaseVerificationResultCode.InvalidPurchase);
 
         if (snapshot.StartTimeUtc is null || snapshot.AcknowledgementState is not GooglePlayPurchaseAcknowledgementState.Pending and not GooglePlayPurchaseAcknowledgementState.Acknowledged)
         {
@@ -67,27 +68,25 @@ public sealed class GooglePlayPurchaseVerifier(
         var current = lineItems.Where(item => item.ExpiryTimeUtc is not null && item.ExpiryTimeUtc.Value > now).ToArray();
         var historical = lineItems.Where(item => item.ExpiryTimeUtc is not null && item.ExpiryTimeUtc.Value <= now).ToArray();
         var future = lineItems.Where(item => item.ExpiryTimeUtc is null).ToArray();
-        GooglePlaySubscriptionLineItemSnapshot selected;
-        if (linkedToken is null)
+        GooglePlaySubscriptionLineItemSnapshot? selected;
+        if (lifecycleState is GooglePlaySubscriptionLifecycleState.Active or GooglePlaySubscriptionLifecycleState.InGracePeriod)
         {
-            if (current.Length != 1 || historical.Length != 0 || future.Length != 0 || !string.IsNullOrWhiteSpace(current[0].DeferredItemReplacementProductId)) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
-            selected = current[0];
+            selected = SelectEntitlementRetainingLineItem(linkedToken, current, historical, future);
         }
         else
         {
-            if (current.Length != 1) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
-            selected = current[0];
-            if (historical.Length == 0 && future.Length == 0 && string.IsNullOrWhiteSpace(selected.DeferredItemReplacementProductId)) { }
-            else if (historical.Length == 0 && future.Length == 1 && !string.IsNullOrWhiteSpace(selected.DeferredItemReplacementProductId) && string.Equals(selected.DeferredItemReplacementProductId, future[0].ProductId, StringComparison.Ordinal) && string.IsNullOrWhiteSpace(future[0].DeferredItemReplacementProductId))
-            { }
-            else if (historical.Length == 1 && future.Length == 0 && string.IsNullOrWhiteSpace(selected.DeferredItemReplacementProductId) && string.IsNullOrWhiteSpace(historical[0].DeferredItemReplacementProductId)) { }
-            else return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+            selected = SelectNonActiveLifecycleLineItem(linkedToken, current, historical, future);
         }
+        if (selected is null) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
         if (!options.AllowedProductIds.Contains(selected.ProductId!, StringComparer.Ordinal)) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
 
         var startedAtUtc = snapshot.StartTimeUtc.Value.ToUniversalTime();
         var expiresAtUtc = selected.ExpiryTimeUtc!.Value.ToUniversalTime();
         if (expiresAtUtc <= startedAtUtc) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+        if ((lifecycleState is GooglePlaySubscriptionLifecycleState.Active or GooglePlaySubscriptionLifecycleState.InGracePeriod) && expiresAtUtc <= now)
+            return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
+        if (lifecycleState == GooglePlaySubscriptionLifecycleState.Expired && expiresAtUtc > now)
+            return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
 
         var verifiedPurchase = new GooglePlayVerifiedPurchase(
                 options.PackageName,
@@ -95,9 +94,56 @@ public sealed class GooglePlayPurchaseVerifier(
                 startedAtUtc,
                 expiresAtUtc,
                 snapshot.AcknowledgementState.Value,
-                snapshot.IsTestPurchase) { LinkedPurchaseToken = linkedToken };
+                snapshot.IsTestPurchase,
+                lifecycleState.Value) { LinkedPurchaseToken = linkedToken };
         return new GooglePlayPurchaseVerificationResult(GooglePlayPurchaseVerificationResultCode.Verified, verifiedPurchase);
     }
+
+    private static GooglePlaySubscriptionLineItemSnapshot? SelectEntitlementRetainingLineItem(
+        string? linkedToken,
+        IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot> current,
+        IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot> historical,
+        IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot> future)
+    {
+        if (linkedToken is null)
+        {
+            return current.Count == 1 && historical.Count == 0 && future.Count == 0 && string.IsNullOrWhiteSpace(current[0].DeferredItemReplacementProductId)
+                ? current[0]
+                : null;
+        }
+
+        if (current.Count != 1) return null;
+        var selected = current[0];
+        if (historical.Count == 0 && future.Count == 0 && string.IsNullOrWhiteSpace(selected.DeferredItemReplacementProductId)) return selected;
+        if (historical.Count == 0 && future.Count == 1 && !string.IsNullOrWhiteSpace(selected.DeferredItemReplacementProductId) && string.Equals(selected.DeferredItemReplacementProductId, future[0].ProductId, StringComparison.Ordinal) && string.IsNullOrWhiteSpace(future[0].DeferredItemReplacementProductId)) return selected;
+        if (historical.Count == 1 && future.Count == 0 && string.IsNullOrWhiteSpace(selected.DeferredItemReplacementProductId) && string.IsNullOrWhiteSpace(historical[0].DeferredItemReplacementProductId)) return selected;
+        return null;
+    }
+
+    private static GooglePlaySubscriptionLineItemSnapshot? SelectNonActiveLifecycleLineItem(
+        string? linkedToken,
+        IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot> current,
+        IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot> historical,
+        IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot> future)
+    {
+        if (future.Count != 0) return null;
+        var dated = current.Concat(historical).OrderByDescending(item => item.ExpiryTimeUtc).ToArray();
+        if (dated.Length == 0 || dated.Any(item => !string.IsNullOrWhiteSpace(item.DeferredItemReplacementProductId))) return null;
+        if (dated.Length > 1 && linkedToken is null) return null;
+        if (dated.Length > 1 && dated[0].ExpiryTimeUtc == dated[1].ExpiryTimeUtc) return null;
+        return dated[0];
+    }
+
+    private static GooglePlaySubscriptionLifecycleState? MapLifecycleState(string? state) => state switch
+    {
+        "SUBSCRIPTION_STATE_ACTIVE" => GooglePlaySubscriptionLifecycleState.Active,
+        "SUBSCRIPTION_STATE_IN_GRACE_PERIOD" => GooglePlaySubscriptionLifecycleState.InGracePeriod,
+        "SUBSCRIPTION_STATE_CANCELED" => GooglePlaySubscriptionLifecycleState.Canceled,
+        "SUBSCRIPTION_STATE_ON_HOLD" => GooglePlaySubscriptionLifecycleState.OnHold,
+        "SUBSCRIPTION_STATE_PAUSED" => GooglePlaySubscriptionLifecycleState.Paused,
+        "SUBSCRIPTION_STATE_EXPIRED" => GooglePlaySubscriptionLifecycleState.Expired,
+        _ => null
+    };
 
     private static GooglePlayPurchaseVerificationResult Result(GooglePlayPurchaseVerificationResultCode code) => new(code);
 
