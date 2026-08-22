@@ -1,8 +1,16 @@
 # Current State
 
-Review date: 2026-08-03.
+Review date: 2026-08-22.
 
-## 2026-08-03 `.139` disabled Google Play RTDN, reconciliation, and pending-refund rollout
+## 2026-08-22 `.140` Website CMS ORRALEN design-contract deployment
+
+Live verification on 2026-08-22 confirmed production backend `0.1.35-backend.140`, rollback backend `0.1.35-backend.139`, an active `languagevoicetutor-backend.service`, HTTP 200 `Healthy` from `/health`, and HTTP 200 `Healthy` with `canConnect=true` from `/api/health/database`. Backend/Desktop repository `HEAD` and freshly fetched `origin/main` both resolved to `2df4316f8c51e01af1cefb94f9349e07ef5f484a`.
+
+Release `.140` adds the Website CMS contract and Admin support for independent `FooterTextColor`, so Header background, Header text, Footer background, Footer text, and Main text remain independently CMS-owned design values. This additive JSON/file contract expansion required no EF migration or database schema change. It did not enable Google Play Billing, RTDN, reconciliation, or pending-refund processing; did not change Paddle behavior; and did not change Desktop or Mobile runtime behavior. Backend deployment, Website CMS Publish, and static-site upload remain separate operations.
+
+The public website now presents ORRALEN as the operating/company/master brand and identifies the operating company as ORRALEN TECHNOLOGIES LTD, while Language Voice Tutor remains the current product/application name. This website work does not mean the Desktop or Mobile clients have completed a product-facing ORRALEN rebrand. Existing accounts, backend contracts and URLs, Premium entitlement architecture, History, Progress, billing-provider architecture, package/product/subscription identifiers, signing, and update continuity remain unchanged.
+
+## Historical 2026-08-03 `.139` disabled Google Play RTDN, reconciliation, and pending-refund rollout
 
 Implementation commits `e9c09c5c8125d2bd16b0f9ed102eb8376cfa565c` and `91bd0830b7df7cfef1c1174985583c8b821c746e` are deployed in backend `0.1.35-backend.139`, with `.138` retained as rollback. Migrations `20260802154345_AddGooglePlayRtdnPersistenceFoundation` and `20260803052655_AddGooglePlayPendingRefundReviewFoundation` are applied. The additive tables `google_play_purchase_token_secrets`, `google_play_rtdn_events`, and `google_play_pending_refund_reviews` exist, are owned by `lvt_app`, have required runtime access, and have no listed `lvt_analytics_reader` privileges; all were empty immediately after migration. The protected RTDN, reconciliation, linked-purchase, and pending-refund foundations are deployed, but Google Play Billing, RTDN, reconciliation, and pending-refund review remain disabled. No Google Cloud or Play Console configuration, Google Play record, Desktop/Mobile release, Website CMS/public-site publish, or intentional Paddle/trial/manual-Premium behavior change occurred.
 
@@ -10,9 +18,9 @@ Backend Data Protection certificate-rotation support is implemented in source on
 
 The standard `scripts/upload-backend-linux-release.ps1` `-PackageFirst` dry run and upload flow was used after a fresh readable PostgreSQL backup. `languagevoicetutor-backend.service` is active and running; startup was normal and listening on `127.0.0.1:5001`; public `/health` and `/api/health/database` returned HTTP 200 after both migration and deployment.
 
-## 2026-07-30 production `.138` trial/manual Premium expiry correction
+## Historical 2026-07-30 production `.138` trial/manual Premium expiry correction
 
-Production backend is `0.1.35-backend.138`, with `0.1.35-backend.137` retained as rollback. Source commit `fcba7a8d5a92e77da868b7857c7c5bd85d4f93bb` (`Fix trial and manual premium expiry calculation`) is deployed at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.138`; the previous release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.137`. `languagevoicetutor-backend.service` is active and running, and public `/health` plus `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`.
+For that deployment, production backend was `0.1.35-backend.138`, with `0.1.35-backend.137` retained as rollback. Source commit `fcba7a8d5a92e77da868b7857c7c5bd85d4f93bb` (`Fix trial and manual premium expiry calculation`) was deployed at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.138`; the previous release was `/opt/languagevoicetutor/backend/releases/0.1.35-backend.137`. `languagevoicetutor-backend.service` was active and running, and public `/health` plus `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`.
 
 This release restored the established Premium extension behavior; it did not introduce a new subscription timing system. Manual Premium grant creation now includes an active account trial stored in `TrialGrants` as well as applicable active Premium `Entitlements`. For a trial ending at `T1`, a new manual grant starts at `T1` and its duration is calculated from that delayed start. If an applicable Premium entitlement ends later than the trial, the later expiry remains the extension base. Expired, revoked, inactive, and other-user entitlements do not extend the grant.
 
@@ -125,7 +133,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.138`, with `.137` as rollback; the trial/manual Premium expiry correction and prior Website CMS legal-text limit deployment are production-verified. The execution migration and complete Admin confirmation/execution flow remain deployed and production-verified; the disabled Google Play claim-table migration remains applied and verified.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.140`, with `.139` as rollback. The `.140` Website CMS independent `FooterTextColor` contract required no EF migration and changed no billing or client runtime behavior. The historical `.139` disabled Google Play foundations, trial/manual Premium expiry correction, Website CMS legal-text limits, execution migration, and complete Admin confirmation/execution flow remain deployed; Google Play remains disabled.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: Windows Direct Release 1.3 is available through the manifest-driven `/releases/windows/direct/latest.json` flow, and the normal public download was verified. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Windows installer: current Windows direct public release is `1.3`, installer `LanguageVoiceTutorSetup-1.3.exe`; its verified update flow is manual-confirmation and does not silently auto-update. No backend deployment or migration occurred for this Windows release.
@@ -133,7 +141,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: pricing, subscription terms, terms, privacy, refunds, cancellation, support, seller/company details, AI/data disclosure, platform availability/status, and download pages are ready for owner/legal final review as product/legal drafts, not final legal advice.
 
-Remaining follow-ups after Windows Direct Release 1.1 publication:
+Remaining follow-ups after Windows Direct Release 1.3 publication:
 
 1. Code signing remains deferred and accepted as a known release risk / SmartScreen warning source for this release.
 2. Post-release monitoring and customer feedback triage remain ongoing.
@@ -155,7 +163,7 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-The current backend release is `0.1.35-backend.138`; `0.1.35-backend.137` is the previous rollback release. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`, and the disabled Google Play claim-table migration `20260727045935_AddGooglePlayPurchaseClaims` remains applied. Public backend and database health returned HTTP 200 `Healthy`, and the `.138` trial/manual Premium expiry correction was production-verified without a migration or production-data rewrite. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
+The current backend release is `0.1.35-backend.140`; `0.1.35-backend.139` is the previous rollback release. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`, and the disabled Google Play migrations remain applied. Public backend and database health returned HTTP 200 `Healthy`; `.140` required no migration, and the historical `.138` trial/manual Premium expiry correction remains production-verified without a migration or production-data rewrite. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
 
 Backend deployment uses:
 
@@ -223,7 +231,7 @@ The saved `CurrentLevel` is only the user's selected level and does not replace 
 
 ## 2026-07-13 authenticated voice scenario resolution production verification
 
-Backend `0.1.35-backend.115` was deployed and verified for this dated voice scenario structured-output fix; `0.1.35-backend.114` was the previous backend release for that deployment. This is historical context; production has since advanced to `0.1.35-backend.138`. Backend `0.1.35-backend.114` was already active before the `.115` deployment, so it must not be described as containing the `.115` structured-output fix. The `.115` deployment completed successfully through the existing `scripts/upload-backend-linux-release.ps1` flow, `languagevoicetutor-backend.service` was active, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or database schema change was required or run. Website and Windows installer files were not deployed.
+Backend `0.1.35-backend.115` was deployed and verified for this dated voice scenario structured-output fix; `0.1.35-backend.114` was the previous backend release for that deployment. This is historical context; production has since advanced to `0.1.35-backend.140`. Backend `0.1.35-backend.114` was already active before the `.115` deployment, so it must not be described as containing the `.115` structured-output fix. The `.115` deployment completed successfully through the existing `scripts/upload-backend-linux-release.ps1` flow, `languagevoicetutor-backend.service` was active, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or database schema change was required or run. Website and Windows installer files were not deployed.
 
 Backend `0.1.35-backend.115` fixes `POST /api/me/lesson-sessions/{sessionId}/voice-scenario-resolution` returning HTTP 502 when the provider returned a structured-output shape that was permitted by the old provider schema but rejected by backend validation. The provider schema now has one explicit result shape for each decision: `published_context`, `free_context`, `clarify`, and `unsafe`. The backend converts the nested provider result back into the existing flat public endpoint response, so the public route and Mobile request/response contract did not change. `free_context` remains a first-class result, runtime candidate IDs are still validated against the current CMS candidates for the lesson, production credential validation remains unchanged, and the automated tests did not use a live OpenAI call. No scenario titles, transcript phrases, CMS scenario IDs, or language-specific production examples were added.
 
@@ -258,6 +266,10 @@ Admin Activity first production slice is completed: the Admin Activity tab is vi
 ## Public website and Website CMS
 
 Public site: `https://languagevoicetutor.com`.
+
+The public website uses the ORRALEN operating/company/master brand and ORRALEN TECHNOLOGIES LTD legal identity. Language Voice Tutor remains the product/application name used by the existing Desktop and Mobile clients and by the homepage product cards. The canonical public logo path remains `site/public/assets/brand/lvt-logo.png`; its transparent canvas padding was removed without altering the artwork. Explicit newlines entered in the CMS footer copyright field are preserved in rendered public footer paragraphs. Desktop homepage sizing keeps the 88px header and compact logo allocation while allowing the normal page to fit desktop viewports without unnecessary horizontal or vertical overflow.
+
+The approved CMS palette is Header background `#F2E8D5`, Header text `#17324D`, Footer background `#1B2A3A`, Footer text `#EDE7DC`, with static supporting colors Language names `#102A43`, separators `#8A7557`, and footer links `#FFFFFF`. Live inspection on 2026-08-22 confirmed the logo, ORRALEN TECHNOLOGIES LTD footer identity, registered-office line, approved header colors, and approved footer background. It also found that the public CMS output currently emits Footer text `#FFFFFF`, not the approved `#EDE7DC`; correcting that value requires a separate authorized Website CMS edit and Publish and was not performed during this documentation sync. See [Website Paddle review readiness](WEBSITE_PADDLE_REVIEW_READINESS.md) for the detailed Website CMS/design boundary.
 
 The Website CMS exists in the Admin Shell under **Website**. It is intentionally simple and informational only; it is not a full CMS. Access is Super Admin / Bootstrap Admin protected. Content is JSON/file-based at `site/content/website-content.json`, and that JSON document contains both active and draft content. Public static site output is `site/public`.
 
@@ -348,13 +360,13 @@ The Download page is a structured Website CMS release page for the Desktop app, 
 
 Current public Download page layout: the existing Windows desktop app release hero remains. The left CTA card shows eyebrow `WINDOWS DESKTOP APP`, the CMS page title as the main heading, CMS body intro text, current version and installer size, the **Download for Windows** button, manifest status line, and SmartScreen/support notes. The right side shows four CMS-driven feature cards with screenshot images and accepted click-to-enlarge lightbox behavior. The footer follows the hero directly. There is no visible Technical release details block and no separate below-hero support card. `bodyMarkdown` is split visually: intro paragraphs render before version/button, SmartScreen/support-like notes render after manifest status, and obsolete “Current version details are loaded from the release manifest” text must not be shown as a public user-facing block.
 
-`download.js` reads `/releases/windows/direct/latest.json`; version and installer size are manifest-driven. Normal manifest-driven public download of Windows 1.2 was verified. The static/no-JavaScript fallback should point to the intended current installer, but its tracked HTML value was not changed or separately verified by this Windows release upload. The Download button must keep working if JavaScript or manifest loading fails by using the safe public installer fallback.
+`download.js` reads `/releases/windows/direct/latest.json`; version and installer size are manifest-driven. Historical verification confirmed the normal manifest-driven public download of Windows 1.2. The static/no-JavaScript fallback should point to the intended current installer, but its tracked HTML value was not changed or separately verified by that Windows release upload. The Download button must keep working if JavaScript or manifest loading fails by using the safe public installer fallback.
 
 Accepted visual state: the Download page background is lightened to be closer to the Home page tone, cards use a readable blue-tinted translucent panel treatment, the CTA layout order is accepted, and feature-card lightbox behavior is accepted. Future visual changes should be small and scoped to Download page CSS unless explicitly requested.
 
 ## Historical Windows Direct Release 1.0 publication record
 
-Windows Direct Release 1.0 was published on the public direct channel before the current `1.1` release. The release was built locally with Inno Setup, validated, uploaded to `/var/www/languagevoicetutor/releases/windows/direct`, verified on the server, verified over public HTTPS, verified on the website download page, and manually checked by downloading the installer from the public Download button.
+Windows Direct Release 1.0 was published on the public direct channel before the later `1.1`, `1.2`, and current `1.3` releases. The release was built locally with Inno Setup, validated, uploaded to `/var/www/languagevoicetutor/releases/windows/direct`, verified on the server, verified over public HTTPS, verified on the website download page, and manually checked by downloading the installer from the public Download button.
 
 Public release manifest values verified over HTTPS:
 
@@ -384,13 +396,15 @@ Publication verification completed:
 - Public download page showed Current version `1.0`, release details for channel `direct-public`, size `180.0 MB`, and SHA-256 `d6be93fbcd75536a0cd149bd8872c8327fc3131ede247b1db2b2d33d673680e1`.
 - Manual website check confirmed the Download button downloads the `1.0` installer.
 
-Historical scope boundary: the public release upload affected only Windows direct release files. It did not deploy backend code, run migrations, modify database state, change billing/Paddle/refund logic, upload website files, rebuild the installer, change secrets, or change installer binaries. That historical Windows release upload did not change the backend; the backend has since advanced and the current production backend is `0.1.35-backend.128`. Code signing remains deferred and accepted as a known release risk for this release; Windows SmartScreen warnings remain expected until a future signed installer is published. The next public direct version after `1.1` should be `1.2`; future public direct versions should continue as `1.2`, `1.3`, and so on.
+Historical scope boundary: the public release upload affected only Windows direct release files. It did not deploy backend code, run migrations, modify database state, change billing/Paddle/refund logic, upload website files, rebuild the installer, change secrets, or change installer binaries. That historical Windows release upload did not change the backend; the backend has since advanced and the current production backend is `0.1.35-backend.140`.
+
+Code signing remains deferred and accepted as a known release risk; Windows SmartScreen warnings remain expected until a future signed installer is published. Windows Direct 1.1 and 1.2 followed the historical 1.0 record, and 1.3 is the current public release.
 
 ## Windows direct release
 
 Manifest: `https://languagevoicetutor.com/releases/windows/direct/latest.json`.
 
-Current public direct release values:
+Historical public direct release values for Windows Direct 1.1:
 
 - `channel`: `direct-public`
 - `version`: `1.1`
@@ -400,7 +414,7 @@ Current public direct release values:
 - `updateMode`: `manual-confirmation`
 - `minimumSupportedVersion`: `1.1`
 
-The `1.1` Windows direct release has been built, uploaded, verified, and confirmed installed; the desktop displays version `1.1`. Backend deployment was not part of the desktop `1.1` release or the later static website upload; that desktop release did not change backend deployment; the current production backend is now healthy at `0.1.35-backend.128`, and no database migrations were added or run for either the `.112` summary extraction fix or the `.115` voice scenario structured-output validation fix. `minimumSupportedVersion` is intentionally `1.1` because `1.1` contains the desktop auth/session stability fix described below.
+For this historical record, the `1.1` Windows direct release was built, uploaded, verified, and confirmed installed; the desktop displayed version `1.1`. Backend deployment was not part of the desktop `1.1` release or the later static website upload; that desktop release did not change backend deployment. Production has since advanced to backend `0.1.35-backend.140`. No database migrations were added or run for either the `.112` summary extraction fix or the `.115` voice scenario structured-output validation fix. `minimumSupportedVersion` was intentionally `1.1` because `1.1` contains the desktop auth/session stability fix described below.
 
 
 ### Desktop auth/session fix in Windows Direct Release 1.1
@@ -487,15 +501,15 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 ### Current release point
 
-- Windows direct release: `1.2`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.2.exe`, production backend URL, `minimumSupportedVersion=1.2`, and manual-confirmation update mode. The tracked repository `site/public/releases/windows/direct/latest.json` was not changed by this docs update.
-- Backend release in tracked release docs: current production is `0.1.35-backend.138`, with `.137` as rollback; `/health` and `/api/health/database` are verified healthy. Backend .99/.108/.112 references are historical and not current production unless a section is explicitly documenting those older releases.
+- Windows direct release: `1.3`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.3.exe`, production backend URL, `minimumSupportedVersion=1.3`, and manual-confirmation update mode. The tracked repository `site/public/releases/windows/direct/latest.json` was not changed by this docs update.
+- Backend release in tracked release docs: current production is `0.1.35-backend.140`, with `.139` as rollback; `/health` and `/api/health/database` are verified healthy. Older backend references are historical and not current production unless a section is explicitly documenting those releases.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it survived backend service restart, matched the current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`, and contains lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2`. For `gpt-5.5`, backend requests must omit `temperature`.
 
 ### What is ready, partial, and blocked
 
 Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, verified persistent AI Models production storage, Website CMS draft/publish mechanics, and documented secret boundaries.
 
-Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.138`, with deploys, health checks, database health checks, and migrations kept as separate operations.
+Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.140`, with deploys, health checks, database health checks, and migrations kept as separate operations.
 
 Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, final website/legal/support/pricing approval, monitoring/privacy/release-readiness review, and explicit release decision after controlled tester feedback. Controlled Paddle live payment/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed, but they are not a broad launch decision; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 
@@ -625,6 +639,6 @@ All 26 active canonical lesson scenarios now contain authored `setupLocalization
 
 CMS draft editing remains permissive so incomplete localization work can be saved. Creating a new CMS publication now requires every active scenario to have complete non-English setup localizations: each required language needs a non-empty template, exact stable-context coverage with non-blank titles, and exactly the canonical setup-message placeholders. Legacy published snapshots without `setupLocalizations` remain readable for runtime and rollback. No database migration, deployment, CMS import, CMS publication, or production operation was performed for this change.
 
-The localization rollout is complete. Production backend `0.1.35-backend.138` is active with `.137` retained for rollback; CMS published version `51` is the valid runtime source (`CmsPublishedSnapshot`, `fallbackUsed=false`) with 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. Runtime responses own the additive `localizedSetup` projection. Authored `setupLocalizations` remain backend/CMS data; clients do not consume that authored field directly, and no migration was required.
+The localization rollout is complete. Production backend `0.1.35-backend.140` is active with `.139` retained for rollback; CMS published version `51` is the valid runtime source (`CmsPublishedSnapshot`, `fallbackUsed=false`) with 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. Runtime responses own the additive `localizedSetup` projection. Authored `setupLocalizations` remain backend/CMS data; clients do not consume that authored field directly, and no migration was required.
 
 The Admin CMS scenario editor exposes five full localized first-message textareas for French, German, Portuguese, Spanish, and Italian directly below the canonical English field. Each edits one complete `setupMessageTemplate` text block; messages are not split into Goal, situation, or instruction controls. Structured Save draft uses those visible fields, while Advanced JSON Save draft preserves the entered `DefinitionJson` as authoritative; the normal successful-save reload synchronizes visible fields from saved JSON. `contextVariantTitles` stay internal to Advanced JSON, draft save remains permissive, and publication validation requires complete exact coverage. The completed Desktop and Mobile clients consume only the response-owned `localizedSetup` projection.

@@ -1,12 +1,16 @@
 # Website Paddle review readiness
 
-Review date: 2026-06-28.
+Review date: 2026-08-22.
 
 ## Current public website status
 
 Public site: `https://languagevoicetutor.com`.
 
 The current generated public website is Paddle-review-polished and ready for final owner/legal review. This is not final legal advice and does not enable live Paddle.
+
+ORRALEN is the operating/company/master brand presented on the public website and legal/company surfaces, and the operating company is ORRALEN TECHNOLOGIES LTD. Language Voice Tutor remains the current product/application name: the homepage uses the ORRALEN logo and company footer while retaining the Language Voice Tutor Desktop/Mobile product cards and content. The clients have not yet completed a product-facing ORRALEN rebrand.
+
+The canonical logo asset remains `site/public/assets/brand/lvt-logo.png`. Transparent canvas padding was removed from that PNG without altering, recoloring, redrawing, sharpening, or otherwise changing the artwork. The desktop header remains 88px high, the logo uses the compact 132px brand allocation, and the normal desktop homepage flexes between the real header and footer heights without unnecessary horizontal or vertical overflow. Explicit newline characters entered in the CMS footer copyright field render as visible line breaks.
 
 Public generated pages include:
 
@@ -49,7 +53,9 @@ Flow:
 
 The normal-page editor is simplified to Page title, Body markdown, SEO title, and SEO description. Home remains structured because it has landing cards/assets. The Website **Design** section uses the same draft, Preview, and Publish flow for header background, header text, footer background, footer text, and main text colors. Footer text is independently represented by `FooterTextColor`; legacy Website CMS JSON without that property normalizes to the safe existing `#dce9f7` footer-text default. This additive JSON/file contract change requires a backend deployment but no database schema change or EF migration.
 
-The ORRALEN public header/footer palette remains owner-controlled through Website CMS rather than static CSS. After the supporting backend is deployed, the owner must set Header Background Color to `#F2E8D5`, Header Text Color to `#17324D`, Footer Background Color to `#1B2A3A`, and Footer Text Color to `#EDE7DC`, then use the normal reviewed Website CMS publish flow when ready. Static CSS owns only the approved language-name, separator, footer-link, and flag-border treatment.
+Backend `.140` deploys the independent `FooterTextColor` contract; no EF migration was required. The ORRALEN public header/footer palette remains owner-controlled through Website CMS rather than static CSS. Approved values are Header Background Color `#F2E8D5`, Header Text Color `#17324D`, Footer Background Color `#1B2A3A`, and Footer Text Color `#EDE7DC`. Static CSS owns only the approved Language names `#102A43`, separators `#8A7557`, footer links `#FFFFFF`, and dark flag-border/shadow treatment.
+
+Live public inspection on 2026-08-22 confirmed the ORRALEN logo, company/legal footer, registered-office line, header colors, and footer background. The live generated CMS style currently emits Footer text `#FFFFFF`; the approved Footer Text Color remains `#EDE7DC`. Aligning that one live CMS value requires a separate authorized Website CMS edit and Publish. This documentation update does not publish CMS content or deploy the static site.
 
 Markdown rendering supports headings, bold, italic, bullet lists, numbered lists, markdown links, plain safe URLs, plain emails, and bare domains such as `Paddle.com`. Unsafe schemes such as `javascript:`, `data:`, and `vbscript:` must remain rejected or escaped.
 

@@ -38,7 +38,7 @@ updateMode: manual-confirmation
 minimumSupportedVersion: 1.3
 ```
 
-This release passed local validation, upload dry run, and real upload; the public website download was verified. The in-app manual-confirmation update, installed application launch, and localized lesson setup were verified. This Windows-only upload performed no backend deployment or migration; current production backend is `0.1.35-backend.138` with `.137` rollback after a separate backend-only deployment.
+This release passed local validation, upload dry run, and real upload; the public website download was verified. The in-app manual-confirmation update, installed application launch, and localized lesson setup were verified. This Windows-only upload performed no backend deployment or migration; current production backend is `0.1.35-backend.140` with `.139` rollback after a separate backend-only deployment.
 
 Release/tester installed builds are server-only. The production backend URL for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`.
 
@@ -169,7 +169,7 @@ Required static fallback text:
 
 ## Release-readiness status and deferred items
 
-Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.138`, with `.137` rollback. Website Paddle-review polish is completed separately from this upload flow. Historical Paddle validation performed on `.108` remains evidence for that dated release, not a current backend claim. Chargeback remains implemented/test-covered but not live-chargeback-tested and partial refunds remain conservative/manual-review. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
+Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.140`, with `.139` rollback. Website Paddle-review polish is completed separately from this upload flow. Historical Paddle validation performed on `.108` remains evidence for that dated release, not a current backend claim. Chargeback remains implemented/test-covered but not live-chargeback-tested and partial refunds remain conservative/manual-review. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
 
 Do not state that the product is fully public production-ready. The current Windows release remains a public Windows direct release, not a full broad production-readiness claim, and not broad public production readiness.
 

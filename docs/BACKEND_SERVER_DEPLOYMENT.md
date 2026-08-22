@@ -1,6 +1,6 @@
 # Backend server deployment
 
-Review date: 2026-08-03.
+Review date: 2026-08-22.
 
 ## Current production backend
 
@@ -23,8 +23,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Final server paths, ownership, groups, and permissions require owner approval and are intentionally not defined here. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.139`
-- Previous rollback release: `0.1.35-backend.138`
+- Current release: `0.1.35-backend.140`
+- Previous rollback release: `0.1.35-backend.139`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -40,13 +40,19 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.139`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.138`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.140`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.139`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
-## 2026-08-03 `.139` disabled Google Play foundation deployment verification
+## 2026-08-22 `.140` Website CMS FooterTextColor deployment verification
+
+Live verification confirmed `current` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.140`, `previous` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.139`, `languagevoicetutor-backend.service` active, public `/health` HTTP 200 `Healthy`, and public `/api/health/database` HTTP 200 `Healthy` with `canConnect=true`.
+
+Release `.140` deploys the additive Website CMS/Admin design-contract support for independent `FooterTextColor`. Header background, Header text, Footer background, Footer text, and Main text remain Website CMS-owned values. No EF migration or schema change was required. The release did not publish Website CMS content or static-site files, enable Google Play, change Paddle behavior, or change Desktop/Mobile runtime behavior.
+
+## Historical 2026-08-03 `.139` disabled Google Play foundation deployment verification
 
 Source commits `e9c09c5c8125d2bd16b0f9ed102eb8376cfa565c` (`Add Google Play pending refund review foundation`) and `91bd0830b7df7cfef1c1174985583c8b821c746e` (`Fix Google Play billing registration test setup`) passed the 215-test billing release gate. The standard `scripts/upload-backend-linux-release.ps1` flow used `-PackageFirst`, with a completed dry run before the real upload. Database migrations were applied separately after backup `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260803_060304Z.dump` (7,754,175 bytes; `pg_restore --list` returned 293 lines); they added the RTDN, protected-token, and pending-refund tables.
 
-The live `current` release is `.139` and `previous` is `.138`. The service is active/running, startup was normal and listening on `127.0.0.1:5001`, and public `/health` plus `/api/health/database` returned HTTP 200 after migration and deployment. Google Play Billing, RTDN, reconciliation, and pending-refund review remain disabled; this does not enable purchases or claim end-to-end provider validation.
+For that deployment, the live `current` release was `.139` and `previous` was `.138`. The service was active/running, startup was normal and listening on `127.0.0.1:5001`, and public `/health` plus `/api/health/database` returned HTTP 200 after migration and deployment. Google Play Billing, RTDN, reconciliation, and pending-refund review remain disabled; this does not enable purchases or claim end-to-end provider validation.
 
 ## 2026-07-30 `.138` trial/manual Premium expiry deployment verification
 
@@ -290,10 +296,10 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.138`; verified rollback target `.137` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.140`; verified rollback target `.139` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
-- Windows installer: current public direct release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
+- Windows installer: current public direct release is `1.3`, installer `LanguageVoiceTutorSetup-1.3.exe`.
 - AI Models: persistent production storage is verified and survived restart with known-good `gpt-5.5` / `gpt-5.2` values.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: website legal/support/seller/AI/status pages are ready for owner/legal final review as drafts, not final legal advice.
