@@ -700,8 +700,8 @@ dd {
 
 .site-header__brand {
   flex: 0 0 auto !important;
-  width: 132px !important;
-  max-width: 132px !important;
+  width: 160px !important;
+  max-width: 160px !important;
   height: 88px !important;
   display: flex !important;
   align-items: center !important;
@@ -712,7 +712,7 @@ dd {
 .site-header img.site-header__logo-image {
   display: block !important;
   max-height: 82px !important;
-  max-width: 124px !important;
+  max-width: 152px !important;
   width: auto !important;
   height: auto !important;
   object-fit: contain !important;
@@ -827,13 +827,13 @@ dd {
 
   .site-header__brand {
     height: 72px !important;
-    width: 124px !important;
-    max-width: 124px !important;
+    width: 150px !important;
+    max-width: 150px !important;
   }
 
   .site-header img.site-header__logo-image {
     max-height: 72px !important;
-    max-width: 116px !important;
+    max-width: 140px !important;
   }
 
   .site-header__conversation-line {
