@@ -9,7 +9,10 @@ public sealed record WebsiteDesignContent(
     int BaseFontSizePx,
     int HeaderFontWeight,
     int ButtonBorderRadiusPx,
-    string CardTextStyle);
+    string CardTextStyle)
+{
+    public string? FooterTextColor { get; init; }
+}
 
 public sealed record WebsiteContentSet(
     Dictionary<string, Dictionary<string, string>> Pages,

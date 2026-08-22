@@ -14,6 +14,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
     private const string DefaultLogoPath = "assets/brand/lvt-logo.png";
+    private const string DefaultFooterTextColor = "#dce9f7";
     private const string PreviewPublicBaseHref = "https://languagevoicetutor.com/";
     private const string PublicSiteBaseUrl = "https://languagevoicetutor.com";
     private const string RequiredLanguageLine = "🇬🇧 English · 🇫🇷 French · 🇩🇪 German · 🇪🇸 Spanish · 🇮🇹 Italian · 🇵🇹 Portuguese";
@@ -679,7 +680,7 @@ Need help? Email support@languagevoicetutor.com.
         html.AppendLine("    <link rel=\"stylesheet\" href=\"styles.css\">");
         html.AppendLine("    <style>");
         html.Append(RenderPreviewBaseStyles());
-        html.AppendLine($"        :root {{ --footer-background: {d.FooterBackgroundColor}; --footer-text: {d.HeaderTextColor}; --text: {d.MainTextColor}; font-size: {d.BaseFontSizePx}px; }}");
+        html.AppendLine($"        :root {{ --header-background: {d.HeaderBackgroundColor}; --header-text: {d.HeaderTextColor}; --footer-background: {d.FooterBackgroundColor}; --footer-text: {d.FooterTextColor ?? DefaultFooterTextColor}; --text: {d.MainTextColor}; font-size: {d.BaseFontSizePx}px; }}");
         html.AppendLine($"        body {{ font-family: {d.MainFontFamily}; }}");
         html.AppendLine($"        .download-button, .app-panel__cue {{ border-radius: {d.ButtonBorderRadiusPx}px; }}");
         html.AppendLine($"        .site-header {{ background: {d.HeaderBackgroundColor}; color: {d.HeaderTextColor}; font-weight: {d.HeaderFontWeight}; }}");
@@ -882,9 +883,9 @@ window.addEventListener("DOMContentLoaded", () => {
         .site-header__logo-fallback { display: inline-flex; align-items: center; min-height: 48px; }
         .site-header__conversation-line { display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 8px; }
         .site-header__headline { margin: 0; color: inherit; font-weight: 750; }
-        .site-header__language { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-        .site-header__flag { display: inline-block; width: 22px; height: 15px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35); }
-        .site-header__separator { opacity: 0.72; }
+        .site-header__language { display: inline-flex; align-items: center; gap: 6px; color: #102A43; white-space: nowrap; }
+        .site-header__flag { display: inline-block; width: 22px; height: 15px; border: 1px solid rgba(23, 50, 77, 0.28); border-radius: 2px; object-fit: cover; box-shadow: 0 1px 2px rgba(23, 50, 77, 0.18); }
+        .site-header__separator { color: #8A7557; }
         .landing-page .landing-shell { display: grid; width: 100%; max-width: 100vw; flex: 1 1 auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: clamp(420px, calc(100svh - 176px), 760px); background: #07192c; overflow: hidden; }
         @supports (height: 100dvh) { .landing-page .landing-shell { min-height: clamp(420px, calc(100dvh - 176px), 760px); } }
         .landing-page .app-panel { position: relative; display: flex; min-width: 0; min-height: 100%; isolation: isolate; overflow: hidden; color: #ffffff; text-decoration: none; }
@@ -903,7 +904,7 @@ window.addEventListener("DOMContentLoaded", () => {
         .site-footer__links, .legal-nav { display: flex; flex-wrap: wrap; gap: 10px 18px; }
         .site-footer__links { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
         .site-footer__link-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px 18px; }
-        .site-footer a { color: var(--footer-link); font-weight: 700; text-decoration-color: rgba(255, 255, 255, 0.45); text-underline-offset: 4px; }
+        .site-footer a { color: #FFFFFF; font-weight: 700; text-decoration-color: rgba(255, 255, 255, 0.45); text-underline-offset: 4px; }
         .page-shell { width: min(920px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0; }
         .hero-card, .details-card, .support-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 16px 45px rgba(64, 49, 30, 0.08); }
         .hero-card { padding: clamp(28px, 5vw, 56px); }
@@ -1178,7 +1179,7 @@ You can change or withdraw your choices by using the choices interface when avai
         ["seller"] = Page("Seller / Company details","Seller and company details placeholders must be completed before Paddle live review.", new(){{"sellerNameLegalEntityPlaceholder","<LEGAL_SELLER_NAME>"},{"addressPlaceholder","<SELLER_ADDRESS>"},{"contactEmail","support@languagevoicetutor.com"},{"taxVatCompanyRegistrationPlaceholder","<TAX_VAT_COMPANY_REGISTRATION>"},{"paddleLiveReviewNote","Complete these placeholders before Paddle live review."}}),
         ["aiData"] = Page("AI / Data disclosure","Language Voice Tutor uses AI tutor features for language practice.", new(){{"aiTutorDisclosureText","The AI tutor generates practice responses and may be inaccurate."},{"voiceTranscriptionDisclosureText","Voice input may be transcribed for tutor interactions."},{"dataProcessingText","Practice data may be processed to provide lessons and feedback."},{"userControlDeletionText","Contact support for account and deletion requests."}}),
         ["status"] = Page("Platform availability / service status","Current platform availability and service status information.", new(){{"desktopAvailabilityText","Windows desktop is the current supported tester platform."},{"mobileComingSoonText","Android and iOS are coming soon."},{"serviceAvailabilityDisclaimer","Service availability may vary during testing and maintenance."},{"supportContactText","Contact support@languagevoicetutor.com for help."}})
-    }, new WebsiteDesignContent("#0d2b4c", "#0d2b4c", "#24201b", "#dce9f7", "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif", 16, 700, 999, "Normal"), DefaultMarketing());
+    }, new WebsiteDesignContent("#0d2b4c", "#0d2b4c", "#24201b", "#dce9f7", "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif", 16, 700, 999, "Normal") { FooterTextColor = DefaultFooterTextColor }, DefaultMarketing());
     private static Dictionary<string,string> Page(string title,string intro,Dictionary<string,string> extra){ extra["pageTitle"]=title; extra["introText"]=intro; if (!extra.ContainsKey("seoTitle")) extra["seoTitle"]=$"{title} | Language Voice Tutor"; extra["seoDescription"]=intro; return extra; }
     private static Dictionary<string,string> Legal(string title,string intro,Dictionary<string,string> extra){ var p=Page(title,intro,extra); p["effectiveDate"]="Effective date placeholder"; p["intro"]=intro; return p; }
     private static Dictionary<string, string> DownloadDefaults()
@@ -1241,7 +1242,7 @@ You can change or withdraw your choices by using the choices interface when avai
     private static string LimitText(string? value, int max, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim()[..Math.Min(value.Trim().Length, max)];
     private static string NormalizeHex(string? value, string fallback) => value is not null && HexColorRegex().IsMatch(value.Trim()) ? value.Trim() : fallback;
     private static string NormalizeFontFamily(string? value, string fallback) => value is not null && SafeFontRegex().IsMatch(value.Trim()) ? LimitText(value, 120, fallback) : fallback;
-    private static WebsiteDesignContent NormalizeDesign(WebsiteDesignContent? value, WebsiteDesignContent fallback) => value is null ? fallback : new WebsiteDesignContent(NormalizeHex(value.HeaderBackgroundColor, fallback.HeaderBackgroundColor), NormalizeHex(value.FooterBackgroundColor, fallback.FooterBackgroundColor), NormalizeHex(value.MainTextColor, fallback.MainTextColor), NormalizeHex(value.HeaderTextColor, fallback.HeaderTextColor), NormalizeFontFamily(value.MainFontFamily, fallback.MainFontFamily), Math.Clamp(value.BaseFontSizePx, 14, 22), AllowedFontWeights().Contains(value.HeaderFontWeight) ? value.HeaderFontWeight : fallback.HeaderFontWeight, Math.Clamp(value.ButtonBorderRadiusPx, 0, 32), LimitText(value.CardTextStyle, 80, fallback.CardTextStyle));
+    private static WebsiteDesignContent NormalizeDesign(WebsiteDesignContent? value, WebsiteDesignContent fallback) => value is null ? fallback : new WebsiteDesignContent(NormalizeHex(value.HeaderBackgroundColor, fallback.HeaderBackgroundColor), NormalizeHex(value.FooterBackgroundColor, fallback.FooterBackgroundColor), NormalizeHex(value.MainTextColor, fallback.MainTextColor), NormalizeHex(value.HeaderTextColor, fallback.HeaderTextColor), NormalizeFontFamily(value.MainFontFamily, fallback.MainFontFamily), Math.Clamp(value.BaseFontSizePx, 14, 22), AllowedFontWeights().Contains(value.HeaderFontWeight) ? value.HeaderFontWeight : fallback.HeaderFontWeight, Math.Clamp(value.ButtonBorderRadiusPx, 0, 32), LimitText(value.CardTextStyle, 80, fallback.CardTextStyle)) { FooterTextColor = NormalizeHex(value.FooterTextColor, fallback.FooterTextColor ?? DefaultFooterTextColor) };
     private static string NormalizeLogoPath(string? value, string fallback = "") { var t = value?.Trim() ?? ""; if (t.Length == 0) return fallback; if (Uri.TryCreate(t, UriKind.Absolute, out var uri)) return uri.Scheme == Uri.UriSchemeHttps ? t : fallback; return SafeRelativePathRegex().IsMatch(t) && !t.Contains("..", StringComparison.Ordinal) ? t : fallback; }
     private static HashSet<int> AllowedFontWeights() => [400, 500, 600, 700, 800];
     [GeneratedRegex("^#[0-9a-fA-F]{6}$")] private static partial Regex HexColorRegex();

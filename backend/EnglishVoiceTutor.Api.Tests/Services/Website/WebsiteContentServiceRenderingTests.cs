@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace EnglishVoiceTutor.Api.Tests.Services.Website;
 
@@ -501,6 +502,102 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Contains("preserveDownloadFeatureCardFields", adminJs);
         Assert.Contains("defaultDownloadFeatureCardValues", adminJs);
         Assert.Contains("JSON.stringify(websiteContentDraft)", adminJs);
+    }
+
+    [Fact]
+    public async Task DefaultAndLegacyWebsiteDesignUseSafeIndependentFooterTextColor()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var seeded = await service.GetAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("#dce9f7", seeded.Active.Design.FooterTextColor);
+        Assert.Equal("#dce9f7", seeded.Draft.Design.FooterTextColor);
+
+        var documentJson = JsonNode.Parse(JsonSerializer.Serialize(new WebsiteContentDocument(seeded.Active, seeded.Draft), JsonOptions))!.AsObject();
+        foreach (var contentKey in new[] { "active", "draft" })
+        {
+            var design = documentJson[contentKey]?["design"]?.AsObject() ?? throw new InvalidOperationException($"Missing {contentKey} design JSON.");
+            Assert.True(design.Remove("footerTextColor"));
+        }
+
+        await File.WriteAllTextAsync(fixture.StorageJsonPath, documentJson.ToJsonString(JsonOptions), TestContext.Current.CancellationToken);
+        var loaded = await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken);
+        var persistedJson = await File.ReadAllTextAsync(fixture.StorageJsonPath, TestContext.Current.CancellationToken);
+
+        Assert.Equal("#dce9f7", loaded.Active.Design.FooterTextColor);
+        Assert.Equal("#dce9f7", loaded.Draft.Design.FooterTextColor);
+        Assert.Contains("\"footerTextColor\": \"#dce9f7\"", persistedJson);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-a-color")]
+    public async Task BlankOrInvalidFooterTextColorNormalizesToSafeDefault(string footerTextColor)
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        content = content with { Design = content.Design with { FooterTextColor = footerTextColor } };
+
+        var saved = await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
+
+        Assert.Equal("#dce9f7", saved.Draft.Design.FooterTextColor);
+    }
+
+    [Fact]
+    public async Task FooterTextColorSurvivesDraftReloadAndRendersIndependentlyInPreviewAndPublish()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        content = content with
+        {
+            Design = content.Design with
+            {
+                HeaderTextColor = "#17324D",
+                FooterTextColor = "#EDE7DC"
+            }
+        };
+
+        var saved = await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
+        var reloaded = await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken);
+        var preview = await fixture.CreateService().PreviewAsync(new WebsitePreviewRequest(reloaded.Draft, "home"), TestContext.Current.CancellationToken);
+        var published = await fixture.CreateService().PublishAsync(TestContext.Current.CancellationToken);
+        var publishedHtml = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"), TestContext.Current.CancellationToken);
+
+        Assert.Equal("#EDE7DC", saved.Draft.Design.FooterTextColor);
+        Assert.Equal("#EDE7DC", reloaded.Draft.Design.FooterTextColor);
+        Assert.Contains("--header-text: #17324D", preview.Html);
+        Assert.Contains("--footer-text: #EDE7DC", preview.Html);
+        Assert.Contains("color: #17324D", preview.Html);
+        Assert.Equal("#EDE7DC", published.Active.Design.FooterTextColor);
+        Assert.Contains("--header-text: #17324D", publishedHtml);
+        Assert.Contains("--footer-text: #EDE7DC", publishedHtml);
+    }
+
+    [Fact]
+    public void AdminWebsiteDesignEditorAndPublicStylesExposeIndependentPaletteControlsAndDetails()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var adminJs = File.ReadAllText(Path.Combine(repositoryRoot, "backend", "EnglishVoiceTutor.Api", "wwwroot", "admin", "admin.js"));
+        var styles = File.ReadAllText(Path.Combine(repositoryRoot, "site", "public", "styles.css"));
+
+        Assert.Contains("[\"footerTextColor\", \"Footer text color\"]", adminJs);
+        Assert.Contains("websiteDesignColorFields", adminJs);
+        Assert.Contains("data-website-design-key", adminJs);
+        Assert.Contains("websiteContentDraft.design ||= {}", adminJs);
+        Assert.Contains("JSON.stringify(websiteContentDraft)", adminJs);
+        Assert.Contains("activeWebsiteSection === \"design\" ? \"home\"", adminJs);
+        Assert.Contains(".site-footer > p {\n    white-space: pre-line;\n}", styles);
+        Assert.Contains("color: #102A43", styles);
+        Assert.Contains("color: #8A7557", styles);
+        Assert.Contains("color: #FFFFFF", styles);
+        Assert.Contains("border: 1px solid rgba(23, 50, 77, 0.28)", styles);
+        Assert.Contains("box-shadow: 0 1px 2px rgba(23, 50, 77, 0.18)", styles);
+        Assert.DoesNotContain("#F2E8D5", styles, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#1B2A3A", styles, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#EDE7DC", styles, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

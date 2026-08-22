@@ -9,6 +9,8 @@
     --border: #ded2bf;
     --warning-background: #fff2cd;
     --warning-border: #e2b84f;
+    --header-background: #0d2b4c;
+    --header-text: #dce9f7;
     --footer-background: #0d2b4c;
     --footer-text: #dce9f7;
     --footer-link: #ffffff;
@@ -42,9 +44,8 @@ body.landing-page {
     display: flex;
     min-height: var(--site-header-min-height);
     align-items: center;
-    background: var(--footer-background, #0d2b4c);
-    background-color: #0d2b4c;
-    color: #ffffff;
+    background: var(--header-background, #0d2b4c);
+    color: var(--header-text, #dce9f7);
 }
 
 .site-header [hidden],
@@ -67,7 +68,7 @@ body.landing-page {
     display: inline-flex;
     flex: 0 0 auto;
     align-items: center;
-    color: #ffffff;
+    color: inherit;
     font-size: clamp(1.05rem, 1.5vw, 1.35rem);
     font-weight: 850;
     letter-spacing: 0.01em;
@@ -103,7 +104,7 @@ body.landing-page {
 .site-header__headline,
 .landing-page .site-header__headline {
     margin: 0;
-    color: var(--footer-text, #dce9f7);
+    color: inherit;
     font-size: clamp(0.98rem, 1.4vw, 1.18rem);
     font-weight: 750;
 }
@@ -119,7 +120,7 @@ body.landing-page {
     gap: 8px;
     margin: 0;
     padding: 0;
-    color: #ffffff;
+    color: #102A43;
     font-size: clamp(0.92rem, 1.2vw, 1.06rem);
     font-weight: 700;
     list-style: none;
@@ -137,7 +138,7 @@ body.landing-page {
 
 .site-header__separator,
 .landing-page .site-header__separator {
-    color: rgba(255, 255, 255, 0.72);
+    color: #8A7557;
 }
 
 .site-header__flag,
@@ -145,10 +146,11 @@ body.landing-page {
     display: inline-block;
     width: 24px;
     height: 16px;
+    border: 1px solid rgba(23, 50, 77, 0.28);
     border-radius: 2px;
     object-fit: cover;
     vertical-align: middle;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28);
+    box-shadow: 0 1px 2px rgba(23, 50, 77, 0.18);
 }
 
 .site-header__flag-fallback,
@@ -342,6 +344,14 @@ body.landing-page {
     margin: 0;
 }
 
+.site-footer > p {
+    white-space: pre-line;
+}
+
+.site-footer a {
+    color: #FFFFFF;
+}
+
 .landing-page .site-footer__links {
     display: flex;
     flex-direction: column;
@@ -357,7 +367,7 @@ body.landing-page {
 }
 
 .landing-page .site-footer a {
-    color: var(--footer-link);
+    color: #FFFFFF;
     font-weight: 700;
     text-decoration-color: rgba(255, 255, 255, 0.45);
     text-underline-offset: 4px;
@@ -670,9 +680,6 @@ dd {
   height: 88px !important;
   min-height: 88px !important;
   max-height: 88px !important;
-  background: var(--footer-background, #0d2b4c) !important;
-  background-color: #0d2b4c !important;
-  color: #ffffff !important;
   display: flex !important;
   align-items: center !important;
   overflow: hidden !important;
@@ -736,7 +743,6 @@ dd {
   align-items: center !important;
   margin: 0 !important;
   padding: 0 !important;
-  color: #ffffff !important;
   font-weight: 400 !important;
   line-height: 1 !important;
   white-space: nowrap !important;
@@ -750,7 +756,7 @@ dd {
   gap: 5px !important;
   margin: 0 !important;
   padding: 0 !important;
-  color: #ffffff !important;
+  color: #102A43 !important;
   line-height: 1 !important;
   white-space: nowrap !important;
   background: transparent !important;
@@ -774,18 +780,27 @@ dd {
   padding: 0 !important;
   background: transparent !important;
   background-color: transparent !important;
+  border: 1px solid rgba(23, 50, 77, 0.28) !important;
+  box-shadow: 0 1px 2px rgba(23, 50, 77, 0.18) !important;
+  outline: 0 !important;
+  border-radius: 2px !important;
+}
+
+.site-header__separator {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #8A7557 !important;
   border: 0 !important;
   box-shadow: none !important;
   outline: 0 !important;
-  border-radius: 0 !important;
+  padding: 0 !important;
 }
 
-.site-header__separator,
 .site-header__language-name,
 .site-header__flag-fallback {
   background: transparent !important;
   background-color: transparent !important;
-  color: #ffffff !important;
+  color: #102A43 !important;
   border: 0 !important;
   box-shadow: none !important;
   outline: 0 !important;
@@ -797,8 +812,6 @@ dd {
     height: auto !important;
     min-height: 88px !important;
     max-height: none !important;
-    background: var(--footer-background, #0d2b4c) !important;
-    background-color: #0d2b4c !important;
     overflow: visible !important;
   }
 
@@ -1146,7 +1159,7 @@ dd {
 }
 
 .download-page .site-footer a {
-    color: var(--footer-link);
+    color: #FFFFFF;
     font-weight: 700;
     text-decoration-color: rgba(255, 255, 255, 0.45);
     text-underline-offset: 4px;

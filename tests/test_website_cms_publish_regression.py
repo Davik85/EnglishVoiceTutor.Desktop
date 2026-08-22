@@ -2,6 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Website/WebsiteContentService.cs"
+ADMIN_JS = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js"
 
 
 def test_homepage_asset_fallbacks_use_existing_public_assets():
@@ -50,6 +51,7 @@ def test_public_website_polish_regressions_are_locked():
     source = SERVICE.read_text(encoding="utf-8")
     index_html = (ROOT / "site/public/index.html").read_text(encoding="utf-8")
     download_html = (ROOT / "site/public/download.html").read_text(encoding="utf-8")
+    styles = (ROOT / "site/public/styles.css").read_text(encoding="utf-8")
     manifest = (ROOT / "site/public/releases/windows/direct/latest.json").read_text(encoding="utf-8")
 
     assert "ReadStaticReleaseManifest(root)" in source
@@ -63,7 +65,16 @@ def test_public_website_polish_regressions_are_locked():
     assert "Learn step by step" in download_html
     assert "Practice real conversation" in download_html
     assert "Technical release details" in download_html
-    assert "assets/images/landing/windows-desktop.webp" in (ROOT / "site/public/styles.css").read_text(encoding="utf-8")
+    assert "assets/images/landing/windows-desktop.webp" in styles
+    assert ".site-footer > p {\n    white-space: pre-line;\n}" in styles
+    assert "color: #102A43" in styles
+    assert "color: #8A7557" in styles
+    assert "color: #FFFFFF" in styles
+    assert "border: 1px solid rgba(23, 50, 77, 0.28)" in styles
+    assert "box-shadow: 0 1px 2px rgba(23, 50, 77, 0.18)" in styles
+    assert "#F2E8D5" not in styles
+    assert "#1B2A3A" not in styles
+    assert "#EDE7DC" not in styles
     assert "Version</dt>\n                    <dd id=\"detail-version\">Unavailable</dd>" not in download_html
     assert "1.0" in manifest
     assert "1.0" in download_html
@@ -81,3 +92,15 @@ def test_public_website_polish_regressions_are_locked():
     assert 'href="seller.html"' in index_html
     assert 'href="ai-data.html"' in index_html
     assert 'href="status.html"' in index_html
+
+
+def test_website_design_editor_submits_independent_footer_text_color():
+    source = SERVICE.read_text(encoding="utf-8")
+    admin_js = ADMIN_JS.read_text(encoding="utf-8")
+
+    assert "FooterTextColor" in source
+    assert "--footer-text: {d.FooterTextColor ?? DefaultFooterTextColor}" in source
+    assert '["footerTextColor", "Footer text color"]' in admin_js
+    assert "data-website-design-key" in admin_js
+    assert "websiteContentDraft.design ||= {}" in admin_js
+    assert "body: JSON.stringify(websiteContentDraft)" in admin_js

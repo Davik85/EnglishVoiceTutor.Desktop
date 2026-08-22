@@ -47,7 +47,9 @@ Flow:
 3. **Preview** renders the selected page preview without publishing.
 4. **Publish / Make active** promotes draft/active content and renders static HTML files.
 
-The normal-page editor is simplified to Page title, Body markdown, SEO title, and SEO description. Home remains structured because it has landing cards/assets. Design is not treated as a normal Super Admin editing page.
+The normal-page editor is simplified to Page title, Body markdown, SEO title, and SEO description. Home remains structured because it has landing cards/assets. The Website **Design** section uses the same draft, Preview, and Publish flow for header background, header text, footer background, footer text, and main text colors. Footer text is independently represented by `FooterTextColor`; legacy Website CMS JSON without that property normalizes to the safe existing `#dce9f7` footer-text default. This additive JSON/file contract change requires a backend deployment but no database schema change or EF migration.
+
+The ORRALEN public header/footer palette remains owner-controlled through Website CMS rather than static CSS. After the supporting backend is deployed, the owner must set Header Background Color to `#F2E8D5`, Header Text Color to `#17324D`, Footer Background Color to `#1B2A3A`, and Footer Text Color to `#EDE7DC`, then use the normal reviewed Website CMS publish flow when ready. Static CSS owns only the approved language-name, separator, footer-link, and flag-border treatment.
 
 Markdown rendering supports headings, bold, italic, bullet lists, numbered lists, markdown links, plain safe URLs, plain emails, and bare domains such as `Paddle.com`. Unsafe schemes such as `javascript:`, `data:`, and `vbscript:` must remain rejected or escaped.
 
