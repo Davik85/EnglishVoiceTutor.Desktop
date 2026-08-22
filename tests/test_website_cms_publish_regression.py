@@ -94,6 +94,19 @@ def test_public_website_polish_regressions_are_locked():
     assert 'href="status.html"' in index_html
 
 
+def test_homepage_header_logo_sizing_and_overflow_breakpoint_are_locked():
+    styles = (ROOT / "site/public/styles.css").read_text(encoding="utf-8")
+
+    assert "width: 132px !important;" in styles
+    assert "max-height: 66px !important;" in styles
+    assert "max-width: 124px !important;" in styles
+    assert "@media (min-width: 901px) and (max-width: 1200px)" in styles
+    assert "flex-wrap: wrap !important;" in styles
+    assert "padding: 0 32px !important;" in styles
+    assert "height: 88px !important;" in styles
+    assert "object-fit: contain !important;" in styles
+
+
 def test_website_design_editor_submits_independent_footer_text_color():
     source = SERVICE.read_text(encoding="utf-8")
     admin_js = ADMIN_JS.read_text(encoding="utf-8")
