@@ -31,7 +31,7 @@ Inno Setup is the primary Windows direct-download installer foundation for Langu
 
 ## Current update status
 
-The public Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-1.4.exe`, uses `version: 1.4`, keeps `minimumSupportedVersion` at `1.4`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. Public download, manual-confirmation update, installed application launch, and the downloaded installer SHA-256 were verified. Future local builds are not public/live unless the live website manifest points to them.
+The public Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-1.5.exe`, uses `version: 1.5`, keeps `minimumSupportedVersion` at `1.5`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. The live manifest and independently downloaded installer SHA-256 were verified. Future local builds are not public/live unless the live website manifest points to them.
 
 The installed 1.1-to-1.2 update path was verified: the updated application launched and lessons worked. The same manual-confirmation update flow was verified on other devices; it remains SHA-256 protected and does not silently auto-update.
 

@@ -6,7 +6,7 @@ Review date: 2026-08-24.
 
 ORRALEN is already the public website operating/company/master brand and ORRALEN TECHNOLOGIES LTD is the operating company, while Language Voice Tutor remains the current product/application name. The existing Desktop and Mobile applications are not yet fully product-facing rebranded. Any coordinated client rebrand must begin with an inventory/audit and then receive separate approval before implementation.
 
-The bounded Desktop ORRALEN icon/shortcut branding slice is complete in Windows Direct Release 1.4: the application icon is ORRALEN-branded and shortcut icons use a version-specific installed icon path to avoid stale Windows Explorer cache results after upgrades. This did not rename Language Voice Tutor or change its stable AppId, accounts, backend, or update continuity. Any broader Desktop or Mobile product-facing rebrand remains future audited work.
+Windows Direct Release 1.4 completed the bounded Desktop ORRALEN icon/shortcut branding slice. Windows 1.5 completes the narrower icon-background artwork refinement while retaining the same version-specific installed shortcut path and upgrade cleanup. Neither release renamed Language Voice Tutor nor changed its stable AppId, accounts, backend, functionality, or update continuity. Any broader Desktop or Mobile product-facing rebrand remains future audited work.
 
 Desktop audit scope may include visible application branding, logo/icon assets, window/title/About surfaces, installer presentation and metadata, website/download presentation where applicable, updater/release presentation, and user-facing references to the old brand. Mobile audit scope may include visible app branding, launcher and in-app logo assets, user-facing product/brand strings, Google Play presentation after the account/app transfer is stable, and future iOS presentation when applicable. Store-facing developer/product naming is a separate reviewed step.
 
@@ -82,8 +82,8 @@ Public release boundary: the current product remains a public Windows direct rel
 
 - Backend: production healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.140`, with `.139` as rollback. The `.140` Website CMS independent `FooterTextColor` contract required no EF migration and changed no billing or client runtime behavior. CMS published version `51` remains the valid `CmsPublishedSnapshot` runtime source with `fallbackUsed=false`, 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. The execution and disabled Google Play migrations remain deployed, Google Play remains disabled, and the complete account-deletion workflow, CMS/Admin login security, and persistent role management remain production-verified.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
-- Download: Windows Direct 1.4 is available through the manifest-driven download flow, and the normal public download plus installer SHA-256 comparison were verified. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
-- Windows installer: current Windows direct public release is `1.4`, installer `LanguageVoiceTutorSetup-1.4.exe`; public download, in-app manual-confirmation update, installed-app launch, and localized setup behavior were manually verified against `https://api.languagevoicetutor.com`. The ORRALEN application-icon and version-specific shortcut-icon slice is complete, while code signing and broader Desktop/Mobile product-facing rebranding remain pending separate work.
+- Download: Windows Direct 1.5 is available through the manifest-driven download flow, and the public installer SHA-256 comparison was independently verified. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
+- Windows installer: current Windows direct public release is `1.5`, installer `LanguageVoiceTutorSetup-1.5.exe`; the icon-background artwork refinement is complete and the existing version-specific shortcut-icon mechanism remains unchanged. No backend or database action was part of this release. Code signing and broader Desktop/Mobile product-facing rebranding remain pending separate work.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: legal/support/seller/AI/status/download pages are ready for owner/legal final review as drafts, not final legal advice.
 
@@ -154,7 +154,7 @@ Final verification should confirm public pages do not contain placeholder IDs su
 - Footer has primary links: Privacy Policy, Terms of Use, Refund Policy, Cancellation, Support, Pricing.
 - Footer has secondary links: Seller / Company Details, AI & Data Disclosure, Service Status.
 - `seller.html`, `ai-data.html`, and `status.html` exist and are linked from the footer.
-- Verified normal downloads are manifest-driven from `/releases/windows/direct/latest.json` and return Windows 1.4. The static/no-JavaScript fallback should point to the intended current installer, but its tracked HTML value was not changed or separately verified by this Windows release upload.
+- Verified normal downloads are manifest-driven from `/releases/windows/direct/latest.json` and return Windows 1.5. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Privacy Policy default/static content now includes optional analytics/advertising cookie disclosure. The polished consent banner is controlled by Website CMS Marketing / SEO, and Google Analytics/Ads IDs are optional public configuration values that must be left empty unless intentionally configured; never commit real Google IDs or secrets.
 - Download non-JS fallback text remains: “Current Windows direct release is available through the Download for Windows button.” and “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
 
@@ -164,13 +164,13 @@ Current manifest: `https://languagevoicetutor.com/releases/windows/direct/latest
 
 Expected current values:
 
-- `version`: `1.4`
-- `installerFileName`: `LanguageVoiceTutorSetup-1.4.exe`
+- `version`: `1.5`
+- `installerFileName`: `LanguageVoiceTutorSetup-1.5.exe`
 - `backendBaseUrl`: `https://api.languagevoicetutor.com`
 - `updateMode`: `manual-confirmation`
-- `minimumSupportedVersion`: `1.4`
+- `minimumSupportedVersion`: `1.5`
 
-Windows Direct `1.4` has already been built, uploaded, verified, and confirmed installed. Do not re-upload or repackage it as a next step unless a new release is intentionally prepared. Direct installer code signing, SmartScreen/trust mitigation, monitoring, customer-feedback triage, legal/support/operational review, and broader readiness remain pending. Google Play enablement remains separate and disabled.
+Windows Direct `1.5` has already been built, uploaded, and publicly verified. Do not re-upload or repackage it as a next step unless a new release is intentionally prepared. Direct installer code signing, SmartScreen/trust mitigation, monitoring, customer-feedback triage, legal/support/operational review, and broader readiness remain pending. Google Play enablement remains separate and disabled.
 
 Historical `1.0` desktop release polish already included Contacts in Settings, Contacts localization for all release-ready UI languages, safe `https`/`mailto` contact links, fixed runtime Contacts localization refresh after interface-language changes, wrapping for long localized situation/subtopic and scenario card text, and the unfinished active-lesson Back confirmation guard matching Finish/End lesson behavior.
 

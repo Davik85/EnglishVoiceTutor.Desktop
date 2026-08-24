@@ -2,9 +2,21 @@
 
 Review date: 2026-08-24.
 
-## 2026-08-24 Windows Direct Release 1.4
+## 2026-08-24 Windows Direct Release 1.5
 
-Windows Direct Release `1.4` is the current verified public release on channel `direct-public`. The public manifest identifies `LanguageVoiceTutorSetup-1.4.exe`, `version: 1.4`, `minimumSupportedVersion: 1.4`, `backendBaseUrl: https://api.languagevoicetutor.com`, and `updateMode: manual-confirmation`. The exact public installer SHA-256 is `d7c8dec5495bc08ba426614f14033e1b9363daa8eb1de6d1130e450071de277c`; the installer was downloaded again over HTTPS after upload and its computed SHA-256 matched `installerSha256` in the public `latest.json`.
+Windows Direct Release `1.5` is the current verified public release on channel `direct-public`. The public manifest identifies `LanguageVoiceTutorSetup-1.5.exe`, `version: 1.5`, `minimumSupportedVersion: 1.5`, `backendBaseUrl: https://api.languagevoicetutor.com`, and `updateMode: manual-confirmation`. The exact public installer SHA-256 is `dea33ac29414d5956db52cec0dd703ecb12778e071c1e601dcf394f1def2e10b`; the installer is `188955887` bytes, and an independent public HTTPS download produced the same SHA-256.
+
+This was a Windows direct-release upload only. No backend deployment, EF migration, database change, Mobile release, Website CMS/public-site change, billing/authentication/lesson behavior change, or Google Play enablement occurred. Production backend remains `0.1.35-backend.140` with `0.1.35-backend.139` retained as rollback at `https://api.languagevoicetutor.com`; Google Play remains disabled.
+
+The only product-visible change from Windows 1.4 is a refinement to the ORRALEN Windows application icon artwork/background. Language Voice Tutor remains the product/application name, the stable Windows AppId remains `LanguageVoiceTutor.Desktop`, and application functionality, accounts, local-data identity, and update continuity remain unchanged. This is not a full product rename or wider Desktop/Mobile rebrand.
+
+The existing shortcut-icon cache mitigation remains unchanged: canonical `{app}\Assets\Branding\app-icon.ico` stays installed, Start Menu and common Desktop shortcuts use `{app}\Assets\Branding\app-icon-1.5.ico`, and upgrade cleanup removes only old `app-icon-*.ico` files under `Assets\Branding` without deleting canonical `app-icon.ico`.
+
+Code signing remains deferred. This is a public Windows direct release, not a full broad production-readiness claim. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
+
+## Historical 2026-08-24 Windows Direct Release 1.4
+
+Windows Direct Release `1.4` was the verified public release before 1.5. Its public manifest identified `LanguageVoiceTutorSetup-1.4.exe`, `version: 1.4`, `minimumSupportedVersion: 1.4`, `backendBaseUrl: https://api.languagevoicetutor.com`, and `updateMode: manual-confirmation`. The exact public installer SHA-256 was `d7c8dec5495bc08ba426614f14033e1b9363daa8eb1de6d1130e450071de277c`; the installer was downloaded again over HTTPS after upload and its computed SHA-256 matched `installerSha256` in the public `latest.json`.
 
 This was a Windows direct-release upload only. No backend deployment, EF migration, database change, Mobile release, Google Play enablement, Website CMS publish, or static website publish occurred. Production backend remains `0.1.35-backend.140` with `0.1.35-backend.139` retained as rollback at `https://api.languagevoicetutor.com`; Google Play remains disabled.
 
@@ -147,13 +159,13 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 - Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.140`, with `.139` as rollback. The `.140` Website CMS independent `FooterTextColor` contract required no EF migration and changed no billing or client runtime behavior. The historical `.139` disabled Google Play foundations, trial/manual Premium expiry correction, Website CMS legal-text limits, execution migration, and complete Admin confirmation/execution flow remain deployed; Google Play remains disabled.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
-- Download: Windows Direct Release 1.4 is available through the manifest-driven `/releases/windows/direct/latest.json` flow, and the normal public download plus installer SHA-256 comparison were verified. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
-- Windows installer: current Windows direct public release is `1.4`, installer `LanguageVoiceTutorSetup-1.4.exe`; its verified update flow is manual-confirmation and does not silently auto-update. No backend deployment or migration occurred for this Windows release.
+- Download: Windows Direct Release 1.5 is available through the manifest-driven `/releases/windows/direct/latest.json` flow, and the public installer SHA-256 comparison was independently verified.
+- Windows installer: current Windows direct public release is `1.5`, installer `LanguageVoiceTutorSetup-1.5.exe`; its update flow remains manual-confirmation and does not silently auto-update. No backend deployment, migration, or database change occurred for this Windows release.
 - AI Models: persistent production storage at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` is verified, survived a backend service restart, and contains the known-good `gpt-5.5` / `gpt-5.2` production setup.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: pricing, subscription terms, terms, privacy, refunds, cancellation, support, seller/company details, AI/data disclosure, platform availability/status, and download pages are ready for owner/legal final review as product/legal drafts, not final legal advice.
 
-Remaining follow-ups after Windows Direct Release 1.4 publication:
+Remaining follow-ups after Windows Direct Release 1.5 publication:
 
 1. Code signing remains deferred and accepted as a known release risk / SmartScreen warning source for this release.
 2. Post-release monitoring and customer feedback triage remain ongoing.
@@ -378,7 +390,7 @@ Accepted visual state: the Download page background is lightened to be closer to
 
 ## Historical Windows Direct Release 1.0 publication record
 
-Windows Direct Release 1.0 was published on the public direct channel before the later `1.1`, `1.2`, `1.3`, and current `1.4` releases. The release was built locally with Inno Setup, validated, uploaded to `/var/www/languagevoicetutor/releases/windows/direct`, verified on the server, verified over public HTTPS, verified on the website download page, and manually checked by downloading the installer from the public Download button.
+Windows Direct Release 1.0 was published on the public direct channel before the later `1.1`, `1.2`, `1.3`, `1.4`, and current `1.5` releases. The release was built locally with Inno Setup, validated, uploaded to `/var/www/languagevoicetutor/releases/windows/direct`, verified on the server, verified over public HTTPS, verified on the website download page, and manually checked by downloading the installer from the public Download button.
 
 Public release manifest values verified over HTTPS:
 
@@ -410,7 +422,7 @@ Publication verification completed:
 
 Historical scope boundary: the public release upload affected only Windows direct release files. It did not deploy backend code, run migrations, modify database state, change billing/Paddle/refund logic, upload website files, rebuild the installer, change secrets, or change installer binaries. That historical Windows release upload did not change the backend; the backend has since advanced and the current production backend is `0.1.35-backend.140`.
 
-Code signing remains deferred and accepted as a known release risk; Windows SmartScreen warnings remain expected until a future signed installer is published. Historical Windows Direct 1.1, 1.2, and 1.3 followed the 1.0 record; 1.4 is the current public release.
+Code signing remains deferred and accepted as a known release risk; Windows SmartScreen warnings remain expected until a future signed installer is published. Historical Windows Direct 1.1, 1.2, 1.3, and 1.4 followed the 1.0 record; 1.5 is the current public release.
 
 ## Windows direct release
 
@@ -513,7 +525,7 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 ### Current release point
 
-- Windows direct release: `1.4`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.4.exe`, production backend URL, `minimumSupportedVersion=1.4`, and manual-confirmation update mode. The exact public installer SHA-256 is `d7c8dec5495bc08ba426614f14033e1b9363daa8eb1de6d1130e450071de277c`.
+- Windows direct release: `1.5`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.5.exe`, production backend URL, `minimumSupportedVersion=1.5`, and manual-confirmation update mode. The exact public installer SHA-256 is `dea33ac29414d5956db52cec0dd703ecb12778e071c1e601dcf394f1def2e10b`.
 - Backend release in tracked release docs: current production is `0.1.35-backend.140`, with `.139` as rollback; `/health` and `/api/health/database` are verified healthy. Older backend references are historical and not current production unless a section is explicitly documenting those releases.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it survived backend service restart, matched the current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`, and contains lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2`. For `gpt-5.5`, backend requests must omit `temperature`.
 

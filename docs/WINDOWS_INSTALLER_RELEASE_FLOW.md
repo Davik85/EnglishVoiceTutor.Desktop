@@ -34,9 +34,9 @@ Inno Setup is the primary Windows direct-download installer track for Language V
 
 ## Current validated release
 
-The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` points to `LanguageVoiceTutorSetup-1.4.exe` with `version` and `minimumSupportedVersion` set to `1.4`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, and `updateMode` set to `manual-confirmation`. Public download, in-app manual-confirmation update, installed application launch, and the downloaded installer SHA-256 were verified. This was a Windows upload only and performed no backend deployment or migration; current production backend is `0.1.35-backend.140` with `.139` rollback after a separate backend-only deployment. Treat this as a controlled direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
+The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` points to `LanguageVoiceTutorSetup-1.5.exe` with `version` and `minimumSupportedVersion` set to `1.5`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, and `updateMode` set to `manual-confirmation`. The live manifest and independently downloaded installer SHA-256 were verified. This was a Windows upload only and performed no backend deployment, migration, or database change; current production backend is `0.1.35-backend.140` with `.139` rollback after a separate backend-only deployment. Treat this as a controlled direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
 
-Windows Direct Release 1.4 is published on the public direct channel. This is not a claim that every operational area is broad-production-ready. Code signing remains deferred, so SmartScreen warnings are still expected until a signed installer is published.
+Windows Direct Release 1.5 is published on the public direct channel. Its only product-visible change from 1.4 is the refined ORRALEN icon artwork/background; product identity and installer behavior remain unchanged. This is not a claim that every operational area is broad-production-ready. Code signing remains deferred, so SmartScreen warnings are still expected until a signed installer is published.
 
 ## Decision
 
@@ -148,7 +148,7 @@ Compare the downloaded installer hash with `checksums.sha256` and the `installer
 
 ## Code signing readiness
 
-Code signing remains a planned release-hardening step, not an implemented packaging behavior. Windows Direct Release 1.4 remains unsigned under a documented owner-accepted exception, so SmartScreen/trust friction is a known release risk. For a future signed direct release, the final Inno Setup installer should be signed and signature verification must be added before upload. See `docs/WINDOWS_CODE_SIGNING_READINESS.md` for the current planning audit, non-secret handling rules, future signing/verification placement, and certificate option comparison.
+Code signing remains a planned release-hardening step, not an implemented packaging behavior. Windows Direct Release 1.5 remains unsigned under a documented owner-accepted exception, so SmartScreen/trust friction is a known release risk. For a future signed direct release, the final Inno Setup installer should be signed and signature verification must be added before upload. See `docs/WINDOWS_CODE_SIGNING_READINESS.md` for the current planning audit, non-secret handling rules, future signing/verification placement, and certificate option comparison.
 
 ## Security notes
 

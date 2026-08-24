@@ -30,16 +30,17 @@ Current public direct release values (verified 2026-08-24):
 
 ```text
 channel: direct-public
-version: 1.4
-installerFileName: LanguageVoiceTutorSetup-1.4.exe
-installerRelativeUrl: LanguageVoiceTutorSetup-1.4.exe
-installerSha256: d7c8dec5495bc08ba426614f14033e1b9363daa8eb1de6d1130e450071de277c
+version: 1.5
+installerFileName: LanguageVoiceTutorSetup-1.5.exe
+installerRelativeUrl: LanguageVoiceTutorSetup-1.5.exe
+installerSha256: dea33ac29414d5956db52cec0dd703ecb12778e071c1e601dcf394f1def2e10b
+installerSizeBytes: 188955887
 backendBaseUrl: https://api.languagevoicetutor.com
 updateMode: manual-confirmation
-minimumSupportedVersion: 1.4
+minimumSupportedVersion: 1.5
 ```
 
-This release passed local validation, upload dry run, and real upload; the public website download was verified. The installer was downloaded again over HTTPS and its SHA-256 matched the public manifest. The in-app manual-confirmation update and installed application launch were verified. This Windows-only upload performed no backend deployment or migration; current production backend is `0.1.35-backend.140` with `.139` rollback after a separate backend-only deployment.
+This release passed local validation and real upload. The live manifest was fetched with cache busting, and the installer was downloaded independently over HTTPS; its SHA-256 matched the public manifest. This Windows-only upload performed no backend deployment, migration, or database change; current production backend is `0.1.35-backend.140` with `.139` rollback after a separate backend-only deployment.
 
 Release/tester installed builds are server-only. The production backend URL for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`.
 
@@ -113,11 +114,11 @@ $manifest.checksums.sha256
 
 Confirm:
 
-- `version` is `1.4` or the intended newly uploaded direct version;
-- `installerFileName` is `LanguageVoiceTutorSetup-1.4.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.4.exe`, or both match the intended installer;
+- `version` is `1.5` or the intended newly uploaded direct version;
+- `installerFileName` is `LanguageVoiceTutorSetup-1.5.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.5.exe`, or both match the intended installer;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
 - `updateMode` is `manual-confirmation`;
-- `minimumSupportedVersion` is `1.4` for this uploaded direct release;
+- `minimumSupportedVersion` is `1.5` for this uploaded direct release;
 - `installerSha256` and `checksums.sha256` are present and agree with the uploaded installer hash.
 
 ## Installer download verification
