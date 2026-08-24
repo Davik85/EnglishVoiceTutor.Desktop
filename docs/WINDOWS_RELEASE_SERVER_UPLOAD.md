@@ -1,6 +1,6 @@
 # Windows release server upload
 
-Review date: 2026-07-28.
+Review date: 2026-08-24.
 
 ## Source of truth for current versions
 
@@ -26,19 +26,20 @@ Windows direct release manifest:
 https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
 
-Current public direct release values (verified 2026-07-28):
+Current public direct release values (verified 2026-08-24):
 
 ```text
 channel: direct-public
-version: 1.3
-installerFileName: LanguageVoiceTutorSetup-1.3.exe
-installerRelativeUrl: LanguageVoiceTutorSetup-1.3.exe
+version: 1.4
+installerFileName: LanguageVoiceTutorSetup-1.4.exe
+installerRelativeUrl: LanguageVoiceTutorSetup-1.4.exe
+installerSha256: d7c8dec5495bc08ba426614f14033e1b9363daa8eb1de6d1130e450071de277c
 backendBaseUrl: https://api.languagevoicetutor.com
 updateMode: manual-confirmation
-minimumSupportedVersion: 1.3
+minimumSupportedVersion: 1.4
 ```
 
-This release passed local validation, upload dry run, and real upload; the public website download was verified. The in-app manual-confirmation update, installed application launch, and localized lesson setup were verified. This Windows-only upload performed no backend deployment or migration; current production backend is `0.1.35-backend.140` with `.139` rollback after a separate backend-only deployment.
+This release passed local validation, upload dry run, and real upload; the public website download was verified. The installer was downloaded again over HTTPS and its SHA-256 matched the public manifest. The in-app manual-confirmation update and installed application launch were verified. This Windows-only upload performed no backend deployment or migration; current production backend is `0.1.35-backend.140` with `.139` rollback after a separate backend-only deployment.
 
 Release/tester installed builds are server-only. The production backend URL for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`.
 
@@ -112,11 +113,11 @@ $manifest.checksums.sha256
 
 Confirm:
 
-- `version` is `1.2` or the intended newly uploaded direct version;
-- `installerFileName` is `LanguageVoiceTutorSetup-1.3.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.3.exe`, or both match the intended installer;
+- `version` is `1.4` or the intended newly uploaded direct version;
+- `installerFileName` is `LanguageVoiceTutorSetup-1.4.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.4.exe`, or both match the intended installer;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
 - `updateMode` is `manual-confirmation`;
-- `minimumSupportedVersion` is `1.2` for this uploaded direct release;
+- `minimumSupportedVersion` is `1.4` for this uploaded direct release;
 - `installerSha256` and `checksums.sha256` are present and agree with the uploaded installer hash.
 
 ## Installer download verification
@@ -192,7 +193,7 @@ Current production facts after backend `0.1.35-backend.83` and before any real l
 - Static website nginx root is `/var/www/languagevoicetutor/site`. The parent `/var/www/languagevoicetutor` is not the nginx static-site root and must not be used as the static website upload target.
 - Public Paddle config is `/var/www/languagevoicetutor/site/paddle.public.json`; public Paddle checkout page is `/var/www/languagevoicetutor/site/pay.html`.
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
-- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.2`; direct `latest.json` remains active with manual-confirmation update mode.
+- At that historical 2026-06-30 checkpoint, active Windows delivery was Direct EXE/Inno and the direct public release was `1.2`; Store/MSIX was discontinued and the direct `latest.json` used manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
 - Controlled live payment, webhook delivery, Premium entitlement activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed. Paid-launch readiness remains incomplete until final release-readiness review and remaining non-billing blockers are closed; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 

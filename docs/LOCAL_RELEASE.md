@@ -68,11 +68,11 @@ powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-relea
 
 Optional upload to a static HTTPS server folder is documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). The upload helper supports `-DryRun` and never runs automatically; backend deployment, database migrations, the download website, and update UI remain separate work. A local installer is public/live only after the Windows direct release files are uploaded and live `latest.json` is verified over HTTPS.
 
-Copy the installer to another Windows device or clean VM, install it, choose a custom directory during smoke testing, launch the app, and verify backend connection, login/account, backend history, and the core lesson flow. Also verify the Settings footer displays the installed version, for example `Version: v0.1.0`; testers should report this value when filing bugs.
+Copy the installer to another Windows device or clean VM, install it, choose a custom directory during smoke testing, launch the app, and verify backend connection, login/account, backend history, and the core lesson flow. Also verify the Settings footer displays the installed version, for example `Version: v<release-version>`; testers should report this value when filing bugs.
 
 ## Generated release artifacts
 
-Latest verified status (not a local-artifact claim): Windows Direct 1.3 passed public download, in-app manual-confirmation update, installed application launch, and localized lesson setup verification; it is the current public release.
+Latest verified status (not a local-artifact claim): Windows Direct 1.4 passed public download, in-app manual-confirmation update, installed application launch, and public installer SHA-256 verification; it is the current public release.
 
 `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, installers, packages, and other files under `artifacts/` are generated outputs. Validate them locally and upload through the Windows direct release flow when intended, but do not commit them.
 

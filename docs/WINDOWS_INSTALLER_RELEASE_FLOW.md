@@ -3,7 +3,7 @@
 > Release direction note: this Inno Setup flow remains valid for controlled direct Windows releases until the owner explicitly changes the release flow. Microsoft Store/MSIX was evaluated and discontinued for now. Future Windows trust/signing work should focus on a code signing certificate for the direct EXE/Inno installer. Do not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior for this future-direction note.
 
 
-Review date: 2026-07-28.
+Review date: 2026-08-24.
 
 ## Source of truth for current versions
 
@@ -34,9 +34,9 @@ Inno Setup is the primary Windows direct-download installer track for Language V
 
 ## Current validated release
 
-The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` points to `LanguageVoiceTutorSetup-1.3.exe` with `version` and `minimumSupportedVersion` set to `1.3`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, and `updateMode` set to `manual-confirmation`. Public download, in-app manual-confirmation update, installed application launch, and localized lesson setup were verified. This was a Windows upload only and performed no backend deployment or migration; current production backend is `0.1.35-backend.140` with `.139` rollback after a separate backend-only deployment. Treat this as a controlled direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
+The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` points to `LanguageVoiceTutorSetup-1.4.exe` with `version` and `minimumSupportedVersion` set to `1.4`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, and `updateMode` set to `manual-confirmation`. Public download, in-app manual-confirmation update, installed application launch, and the downloaded installer SHA-256 were verified. This was a Windows upload only and performed no backend deployment or migration; current production backend is `0.1.35-backend.140` with `.139` rollback after a separate backend-only deployment. Treat this as a controlled direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
 
-Windows Direct Release 1.3 is published on the public direct channel. This is not a claim that every operational area is broad-production-ready. Code signing remains deferred, so SmartScreen warnings are still expected until a signed installer is published.
+Windows Direct Release 1.4 is published on the public direct channel. This is not a claim that every operational area is broad-production-ready. Code signing remains deferred, so SmartScreen warnings are still expected until a signed installer is published.
 
 ## Decision
 
@@ -70,6 +70,8 @@ The Inno Setup installer:
 - installs published app files only from `artifacts\publish\win-x64-inno`;
 - does not package local app data, local auth session files, local settings, lesson history, backend environment files, or secrets;
 - preserves user app data by default during update/reinstall.
+
+The canonical installed application icon remains `{app}\Assets\Branding\app-icon.ico` for application and installer metadata. The installer also copies that source icon to `{app}\Assets\Branding\app-icon-{AppVersion}.ico`, and both Start Menu and common Desktop shortcuts reference the version-specific path. Before installing the current version, upgrade cleanup removes only old `app-icon-*.ico` files under `{app}\Assets\Branding`; it does not delete canonical `app-icon.ico`. Changing the shortcut icon path between releases avoids depending on Windows Explorer noticing changed icon contents at a previously cached path.
 
 Because the default installation directory is under Program Files, the installer requires administrator privileges. Standard uninstall removes installed application files and shortcuts. It should not delete user settings, session/account state, cache, or backend account data by default because those are outside the install directory and/or owned by the backend.
 
@@ -146,7 +148,7 @@ Compare the downloaded installer hash with `checksums.sha256` and the `installer
 
 ## Code signing readiness
 
-Code signing remains a planned release-hardening step, not an implemented packaging behavior. Windows Direct Release 1.1 remains unsigned under a documented owner-accepted exception, so SmartScreen/trust friction is a known release risk. For a future signed direct release, the final Inno Setup installer should be signed and signature verification must be added before upload. See `docs/WINDOWS_CODE_SIGNING_READINESS.md` for the current planning audit, non-secret handling rules, future signing/verification placement, and certificate option comparison.
+Code signing remains a planned release-hardening step, not an implemented packaging behavior. Windows Direct Release 1.4 remains unsigned under a documented owner-accepted exception, so SmartScreen/trust friction is a known release risk. For a future signed direct release, the final Inno Setup installer should be signed and signature verification must be added before upload. See `docs/WINDOWS_CODE_SIGNING_READINESS.md` for the current planning audit, non-secret handling rules, future signing/verification placement, and certificate option comparison.
 
 ## Security notes
 

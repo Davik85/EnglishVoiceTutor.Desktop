@@ -1,10 +1,12 @@
 # Next Steps
 
-Review date: 2026-08-22.
+Review date: 2026-08-24.
 
 ## Coordinated ORRALEN client rebrand — future audited work
 
 ORRALEN is already the public website operating/company/master brand and ORRALEN TECHNOLOGIES LTD is the operating company, while Language Voice Tutor remains the current product/application name. The existing Desktop and Mobile applications are not yet fully product-facing rebranded. Any coordinated client rebrand must begin with an inventory/audit and then receive separate approval before implementation.
+
+The bounded Desktop ORRALEN icon/shortcut branding slice is complete in Windows Direct Release 1.4: the application icon is ORRALEN-branded and shortcut icons use a version-specific installed icon path to avoid stale Windows Explorer cache results after upgrades. This did not rename Language Voice Tutor or change its stable AppId, accounts, backend, or update continuity. Any broader Desktop or Mobile product-facing rebrand remains future audited work.
 
 Desktop audit scope may include visible application branding, logo/icon assets, window/title/About surfaces, installer presentation and metadata, website/download presentation where applicable, updater/release presentation, and user-facing references to the old brand. Mobile audit scope may include visible app branding, launcher and in-app logo assets, user-facing product/brand strings, Google Play presentation after the account/app transfer is stable, and future iOS presentation when applicable. Store-facing developer/product naming is a separate reviewed step.
 
@@ -80,8 +82,8 @@ Public release boundary: the current product remains a public Windows direct rel
 
 - Backend: production healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.140`, with `.139` as rollback. The `.140` Website CMS independent `FooterTextColor` contract required no EF migration and changed no billing or client runtime behavior. CMS published version `51` remains the valid `CmsPublishedSnapshot` runtime source with `fallbackUsed=false`, 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. The execution and disabled Google Play migrations remain deployed, Google Play remains disabled, and the complete account-deletion workflow, CMS/Admin login security, and persistent role management remain production-verified.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
-- Download: Windows Direct 1.3 is available through the manifest-driven download flow, and the normal public download was verified. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
-- Windows installer: current Windows direct public release is `1.3`, installer `LanguageVoiceTutorSetup-1.3.exe`; public download, in-app manual-confirmation update, installed-app launch, and localized setup behavior were manually verified against `https://api.languagevoicetutor.com`. Non-English new lessons use the backend template with only the user display name rendered; blank-name greeting, stable-ID localized context-title resolution, English canonical behavior, invalid-backend packaged fallback, and unchanged open lessons were verified.
+- Download: Windows Direct 1.4 is available through the manifest-driven download flow, and the normal public download plus installer SHA-256 comparison were verified. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
+- Windows installer: current Windows direct public release is `1.4`, installer `LanguageVoiceTutorSetup-1.4.exe`; public download, in-app manual-confirmation update, installed-app launch, and localized setup behavior were manually verified against `https://api.languagevoicetutor.com`. The ORRALEN application-icon and version-specific shortcut-icon slice is complete, while code signing and broader Desktop/Mobile product-facing rebranding remain pending separate work.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: legal/support/seller/AI/status/download pages are ready for owner/legal final review as drafts, not final legal advice.
 
@@ -152,7 +154,7 @@ Final verification should confirm public pages do not contain placeholder IDs su
 - Footer has primary links: Privacy Policy, Terms of Use, Refund Policy, Cancellation, Support, Pricing.
 - Footer has secondary links: Seller / Company Details, AI & Data Disclosure, Service Status.
 - `seller.html`, `ai-data.html`, and `status.html` exist and are linked from the footer.
-- Verified normal downloads are manifest-driven from `/releases/windows/direct/latest.json` and return Windows 1.2. The static/no-JavaScript fallback should point to the intended current installer, but its tracked HTML value was not changed or separately verified by this Windows release upload.
+- Verified normal downloads are manifest-driven from `/releases/windows/direct/latest.json` and return Windows 1.4. The static/no-JavaScript fallback should point to the intended current installer, but its tracked HTML value was not changed or separately verified by this Windows release upload.
 - Privacy Policy default/static content now includes optional analytics/advertising cookie disclosure. The polished consent banner is controlled by Website CMS Marketing / SEO, and Google Analytics/Ads IDs are optional public configuration values that must be left empty unless intentionally configured; never commit real Google IDs or secrets.
 - Download non-JS fallback text remains: “Current Windows direct release is available through the Download for Windows button.” and “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
 
@@ -162,13 +164,13 @@ Current manifest: `https://languagevoicetutor.com/releases/windows/direct/latest
 
 Expected current values:
 
-- `version`: `1.2`
-- Historical 1.2 `installerFileName`: `LanguageVoiceTutorSetup-1.2.exe`
+- `version`: `1.4`
+- `installerFileName`: `LanguageVoiceTutorSetup-1.4.exe`
 - `backendBaseUrl`: `https://api.languagevoicetutor.com`
 - `updateMode`: `manual-confirmation`
-- `minimumSupportedVersion`: `1.2`
+- `minimumSupportedVersion`: `1.4`
 
-Windows Direct `1.2` has already been built, uploaded, verified, and confirmed installed. Do not re-upload or repackage it as a next step unless a new release is intentionally prepared. Code signing, SmartScreen/trust mitigation, monitoring, customer-feedback triage, legal/support/operational review, broader readiness, and unverified persistence checks remain.
+Windows Direct `1.4` has already been built, uploaded, verified, and confirmed installed. Do not re-upload or repackage it as a next step unless a new release is intentionally prepared. Direct installer code signing, SmartScreen/trust mitigation, monitoring, customer-feedback triage, legal/support/operational review, and broader readiness remain pending. Google Play enablement remains separate and disabled.
 
 Historical `1.0` desktop release polish already included Contacts in Settings, Contacts localization for all release-ready UI languages, safe `https`/`mailto` contact links, fixed runtime Contacts localization refresh after interface-language changes, wrapping for long localized situation/subtopic and scenario card text, and the unfinished active-lesson Back confirmation guard matching Finish/End lesson behavior.
 
@@ -262,7 +264,7 @@ Historical 2026-07-02 production facts after backend `0.1.35-backend.108` and th
 - Static website nginx root is `/var/www/languagevoicetutor/site`. The parent `/var/www/languagevoicetutor` is not the nginx static-site root and must not be used as the static website upload target.
 - Public Paddle config is `/var/www/languagevoicetutor/site/paddle.public.json`; public Paddle checkout page is `/var/www/languagevoicetutor/site/pay.html`.
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
-- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.2`; direct `latest.json` remains active with manual-confirmation update mode.
+- At that historical 2026-07-02 checkpoint, active Windows delivery was Direct EXE/Inno and the direct public release was `1.2`; Store/MSIX was discontinued and the direct `latest.json` used manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
 - 2026-07-02 controlled validation completed: real live payment Complete for Language Voice Tutor Pro at 14.99 EUR via Google Pay; live checkout transaction creation, `subscription.created`, `subscription.activated`, `transaction.completed`, payment persistence, subscription snapshot processing, reconciliation, entitlement activation (`ActivatedCount=1`, `BlockedCount=0`, `FailedCount=0`), and desktop Premium visibility were verified without exposing raw provider payloads or secrets. Earlier failed payment attempts were processed without Premium activation (`ActivatedCount=0` / `AlreadySkippedCount=1`). One PostgreSQL serialization conflict during subscription snapshot processing retried successfully and ended with `FailedCount=0`. Desktop cancel-renewal was verified: auto-renewal became inactive while Premium remained active until `8/2/2026`. Full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred and not a current blocker.
 - Controlled live payment, webhook delivery, payment persistence, subscription snapshot processing, entitlement activation, desktop Premium visibility, and desktop cancel-renewal behavior were completed and documented on 2026-07-02. Paddle full-refund Premium revocation is production-verified on backend `0.1.35-backend.108` using the already stored live `adjustment.updated` event; automatic future handling should use delivered `adjustment.created` / `adjustment.updated` notifications, with the operator reprocess command reserved for already-stored/legacy events only. Chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred and not a current blocker; broad public paid launch remains pending final release-readiness review and remaining release blockers.
@@ -363,7 +365,7 @@ In production backend `0.1.35-backend.108`, full Paddle refunds are treated as a
 
 Normal cancel-renewal behavior is unchanged: scheduled cancellation keeps Premium through the paid period end. Partial refunds are conservative in this slice: the event is safely recorded/processed for review and Premium is left unchanged unless the adjustment is full or a chargeback. Provider history is preserved; payment and subscription records are not deleted, and refund processing does not fake Paddle webhook events or expose raw provider payloads, webhook signatures, tokens, cookies, secrets, API keys, or full card/payment data in Admin Activity evidence.
 
-Full-refund Premium revocation is production-verified on current production backend `0.1.35-backend.108`: the operator reprocess of stored provider event `evt_01kwhgmvh1v9k8ve70gvnfeskm` returned `Result=Revoked`, `RevokedCount=1`, and `BlockReason=(null)`; Admin User Lookup confirmed Free/no Premium/no Trial; Admin Activity showed `paddle_full_refund_premium_revoke` succeeded for the refunded user. Broad public paid launch is no longer blocked by full-refund revoke, but remains pending final release-readiness review and non-billing blockers. Expanded customer portal/subscription management is deferred and is not a current blocker. Direct installer code signing remains pending.
+Full-refund Premium revocation was production-verified on backend `0.1.35-backend.108` during the historical 2026-07-02 validation: the operator reprocess of stored provider event `evt_01kwhgmvh1v9k8ve70gvnfeskm` returned `Result=Revoked`, `RevokedCount=1`, and `BlockReason=(null)`; Admin User Lookup confirmed Free/no Premium/no Trial; Admin Activity showed `paddle_full_refund_premium_revoke` succeeded for the refunded user. Broad public paid launch is no longer blocked by full-refund revoke, but remains pending final release-readiness review and non-billing blockers. Expanded customer portal/subscription management is deferred and is not a current blocker. Direct installer code signing remains pending.
 
 ## Paddle full-refund recovery next step
 

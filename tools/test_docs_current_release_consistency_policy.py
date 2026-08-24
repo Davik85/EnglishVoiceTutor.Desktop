@@ -20,14 +20,14 @@ DOCS = [
 ]
 
 REQUIRED_BY_DOCUMENT = {
-    "README.md": ["Windows Direct Release 1.3", "0.1.35-backend.140", "does not silently auto-update"],
-    "docs/CURRENT_STATE.md": ["Windows Direct Release 1.3", "LanguageVoiceTutorSetup-1.3.exe", "0.1.35-backend.140", "Google Play remains disabled", "no backend deployment or migration occurred"],
-    "docs/NEXT_STEPS.md": ["current Windows direct public release is `1.3`", "LanguageVoiceTutorSetup-1.3.exe", "endpoint remains disabled"],
-    "docs/TESTER_RELEASE.md": ["Windows Direct Release 1.3", "LanguageVoiceTutorSetup-1.3.exe", "0.1.35-backend.140"],
-    "docs/WINDOWS_INSTALLER_RELEASE_FLOW.md": ["LanguageVoiceTutorSetup-1.3.exe", "0.1.35-backend.140", "manual-confirmation"],
-    "docs/WINDOWS_INSTALLER_UPDATE_FLOW.md": ["LanguageVoiceTutorSetup-1.3.exe", "version: 1.3", "does not silently auto-update"],
-    "docs/WINDOWS_RELEASE_SERVER_UPLOAD.md": ["version: 1.3", "LanguageVoiceTutorSetup-1.3.exe", "no backend deployment or migration"],
-    "docs/LOCAL_RELEASE.md": ["$ReleaseVersion = \"<release-version>\"", "Windows Direct 1.3 passed"],
+    "README.md": ["current verified public direct build is `1.4`", "LanguageVoiceTutorSetup-1.4.exe", "0.1.35-backend.140", "does not silently auto-update"],
+    "docs/CURRENT_STATE.md": ["Windows Direct Release 1.4", "LanguageVoiceTutorSetup-1.4.exe", "d7c8dec5495bc08ba426614f14033e1b9363daa8eb1de6d1130e450071de277c", "0.1.35-backend.140", "Google Play remains disabled", "No backend deployment, EF migration, database change"],
+    "docs/NEXT_STEPS.md": ["current Windows direct public release is `1.4`", "LanguageVoiceTutorSetup-1.4.exe", "endpoint remains disabled", "version-specific shortcut-icon"],
+    "docs/TESTER_RELEASE.md": ["Windows Direct Release 1.4", "LanguageVoiceTutorSetup-1.4.exe", "0.1.35-backend.140"],
+    "docs/WINDOWS_INSTALLER_RELEASE_FLOW.md": ["LanguageVoiceTutorSetup-1.4.exe", "0.1.35-backend.140", "manual-confirmation", "app-icon-{AppVersion}.ico"],
+    "docs/WINDOWS_INSTALLER_UPDATE_FLOW.md": ["LanguageVoiceTutorSetup-1.4.exe", "version: 1.4", "does not silently auto-update"],
+    "docs/WINDOWS_RELEASE_SERVER_UPLOAD.md": ["version: 1.4", "LanguageVoiceTutorSetup-1.4.exe", "no backend deployment or migration"],
+    "docs/LOCAL_RELEASE.md": ["$ReleaseVersion = \"<release-version>\"", "Windows Direct 1.4 passed"],
 }
 
 REQUIRED_SHARED = ["https://api.languagevoicetutor.com", "server-only", "Check for updates", "SHA-256", "does not silently auto-update"]
@@ -35,11 +35,11 @@ REQUIRED_SHARED = ["https://api.languagevoicetutor.com", "server-only", "Check f
 FORBIDDEN_PATTERNS = [
     (re.compile(r"(?:current|live|active|deployed and healthy)[^\n]*0\.1\.35-backend\.27", re.I), "old backend current wording"),
     (re.compile(r"0\.1\.36-tester\.17[^\n]*(?:current|live|active|latest)", re.I), "old tester current wording"),
-    (re.compile(r"(?:current|active|latest verified|last verified public snapshot|current verified manifest baseline)[^\n]*(?:Windows Direct (?:Release )?1\.[012]|version[:= ]+1\.[012]|LanguageVoiceTutorSetup-1\.[012]\.exe)", re.I), "old Windows release current wording"),
-    (re.compile(r"Current public Windows Direct\s+`?1\.[012]`?", re.I), "old Windows current wording"),
+    (re.compile(r"(?:current|active|latest verified|last verified public snapshot|current verified manifest baseline)[^\n]*(?:Windows Direct (?:Release )?1\.[0-3]|version[:= ]+1\.[0-3]|LanguageVoiceTutorSetup-1\.[0-3]\.exe)", re.I), "old Windows release current wording"),
+    (re.compile(r"Current public Windows Direct\s+`?1\.[0-3]`?", re.I), "old Windows current wording"),
     (re.compile(r"(?:current|active|production backend)[^\n]*0\.1\.35-backend\.99", re.I), "old backend current wording"),
     (re.compile(r"Google Play (?:is )?enabled", re.I), "Google Play enabled wording"),
-    (re.compile(r"Windows (?:Direct )?1\.3[^\n]*(?:backend deployment|migration).*(?:required|performed)", re.I), "Windows 1.3 backend or migration claim"),
+    (re.compile(r"Windows (?:Direct )?1\.4[^\n]*(?:backend deployment|migration).*(?:required|performed)", re.I), "Windows 1.4 backend or migration claim"),
     (re.compile(r"update UI (?:is )?not implemented", re.I), "stale update UI not implemented wording"),
     (re.compile(r"automatic update UX is not implemented", re.I), "stale automatic update UX wording"),
     (re.compile(r"current app does not (?:check|fetch|read).*latest\.json", re.I | re.S), "stale app does not read manifest wording"),
@@ -73,7 +73,7 @@ def main() -> int:
     command_playbook = read(COMMAND_PLAYBOOK)
     smoke_gate = read(SMOKE_GATE)
     for needle in [
-        "LanguageVoiceTutorSetup-1.3.exe",
+        "LanguageVoiceTutorSetup-1.4.exe",
         "-ServerHost lvt-server",
         "-ServerUser deploy",
         "-RemotePath /var/www/languagevoicetutor/releases/windows/direct",

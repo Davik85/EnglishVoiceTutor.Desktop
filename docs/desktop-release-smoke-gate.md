@@ -1,6 +1,6 @@
 # Desktop Release Smoke Gate
 
-Step: 5B desktop release gate, updated 2026-06-02 for accepted Welcome screen polish and Lesson Chat window auto-sizing checks.
+Step: 5B desktop release gate, updated 2026-08-24 for the current Windows direct release workflow and shortcut-icon verification.
 
 ## Purpose
 
@@ -14,7 +14,7 @@ Current audited release-blocking localization issues have been addressed for the
 
 ## Backend URL profile check
 
-Normal local desktop builds default to `http://localhost:5000`. The primary Inno direct/release package defaults to `https://api.languagevoicetutor.com` through the `DesktopBackendBaseUrl` MSBuild property passed by `scripts/package-windows-inno-release.ps1`; the script prints the Backend URL used. Empty saved settings use the current build default, saved legacy localhost settings can migrate to the deployed API only in those tester/release builds, and custom Backend URL values remain preserved. Settings/Diagnostics must still show the current Backend URL.
+Normal local Debug desktop builds default to `http://localhost:5000`. The primary Inno direct/release package uses `https://api.languagevoicetutor.com` through the `DesktopBackendBaseUrl` MSBuild property passed by `scripts/package-windows-inno-release.ps1`; the script prints the Backend URL used. Normal packaged Release Settings do not expose Diagnostics or Backend URL editing. Localhost and custom Backend URL testing remain DEBUG/developer-only.
 
 Validate packaged release metadata with:
 
@@ -22,7 +22,7 @@ Validate packaged release metadata with:
 powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
 ```
 
-The backend remains the server-side source of truth, the desktop must not contain OpenAI keys or call OpenAI directly, remaining billing operations and broader paid-launch approval remain deferred, and Windows Direct Release 1.1 is already published; continue using this gate for future direct-release safety checks and update/reinstall validation.
+The backend remains the server-side source of truth, the desktop must not contain OpenAI keys or call OpenAI directly, remaining billing operations and broader paid-launch approval remain deferred, and Windows Direct Release 1.4 is the current verified public Windows release; continue using this gate for future direct-release safety checks and update/reinstall validation.
 
 ## When to run this gate
 
@@ -46,10 +46,11 @@ The current accepted desktop direct distribution flow is:
 
 ```powershell
 cd C:\dev\EnglishVoiceTutor.Desktop
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0
+$ReleaseVersion = "<release-version>"
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version $ReleaseVersion
 ```
 
-4. Confirm the package script prints `Packaged backend URL: https://api.languagevoicetutor.com` unless a deliberate `-BackendBaseUrl` override is being tested.
+4. Confirm the package script prints `Packaged backend URL: https://api.languagevoicetutor.com`.
 5. Validate the server-ready direct-release folder:
 
 ```powershell
@@ -77,7 +78,8 @@ artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe
 
 7. Copy/send the installer to another Windows device or clean VM.
 8. Install and launch the app.
-9. Verify backend connection, login/account, backend history, accepted core lesson flow, active lesson guard, and remote active lesson release.
+9. Verify the Start Menu and common Desktop shortcuts both use `{app}\Assets\Branding\app-icon-<release-version>.ico`, while canonical `{app}\Assets\Branding\app-icon.ico` remains installed.
+10. Verify backend connection, login/account, backend history, accepted core lesson flow, active lesson guard, and remote active lesson release.
 
 Manual `dotnet publish` commands are lower-level implementation detail only. The ZIP package remains an emergency/developer fallback, not the main tester handoff flow.
 
@@ -110,7 +112,7 @@ Expected result:
 - Lesson content audit passes.
 - Interface localization audit passes.
 - Desktop backend-boundary audit passes.
-- The automated helper does not require the backend to be running, does not require Python, does not require `OPENAI_API_KEY`, does not require secrets, and does not test live lesson actions.
+- The automated helper does not require the backend to be running, `OPENAI_API_KEY`, secrets, or live lesson actions. It does require Python because the current gate runs Python policy tests.
 
 ## Backend checks
 
@@ -131,7 +133,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_desktop_release_gate.ps1 -Inc
 Expected result:
 
 - migrations can be listed;
-- latest confirmed EF migration is `20260604121000_AddCmsDraftSaveAuditMetadata`;
+- the migration list is reviewed against the current repository and intended database state without relying on a fixed historical migration name;
 - database update applies no unexpected migrations for the current local database;
 - `has-pending-model-changes` reports no pending model changes.
 
@@ -169,7 +171,7 @@ Manual desktop checks are split into two different scopes. Do not mix the expect
 
 These checks are resilience-only. The desktop app is backend-driven, so a stopped or unreachable backend is not a functional lesson-test environment.
 
-- Stop the backend or set Backend URL to a known invalid local URL.
+- Stop the backend or, in a local Debug build only, set Backend URL to a known invalid local URL.
 - Start the desktop app while the backend is not running or not reachable.
 - Confirm the app does not crash.
 - Open Settings.
@@ -188,13 +190,9 @@ With backend off, lesson/AI actions should not crash and should show a friendly 
 
 Start the local backend in Development before these checks. Full functional lesson flow requires backend APIs for login, history, AI, voice/TTS/STT, translation, hints, feedback, summary, subscription/access checks, and active lesson guard.
 
-- Start desktop app.
-- Open Settings and save the Backend URL for the running backend.
-- Check Diagnostics visibility behavior:
-  - Diagnostics visible in Debug if expected.
-  - Diagnostics hidden in packaged Release by default unless `EVT_DESKTOP_DIAGNOSTICS=1` is set locally before launch.
-  - `EVT_DESKTOP_DIAGNOSTICS=1` is not committed.
-  - Diagnostics and copied output continue masking secrets, tokens, API keys, environment variables, lesson messages, audio paths, and lesson history content.
+- Start the desktop app.
+- For a local Debug build, open Settings and save the Backend URL for the running backend; Diagnostics may be visible for developer testing and copied output must continue masking secrets, tokens, API keys, environment variables, lesson messages, audio paths, and lesson history content.
+- For a normal packaged Release build, confirm Settings exposes neither Diagnostics nor Backend URL editing and the packaged backend remains `https://api.languagevoicetutor.com`.
 - Check Study language list remains exactly:
   - English
   - French
