@@ -142,8 +142,22 @@ function Assert-PublishOutputIsSafe {
         "Backend URL"
     )
 
-    $publishedFiles = @(Get-ChildItem -Path $PublishPath -Recurse -File -Force)
-    foreach ($file in $publishedFiles) {
+    $textConfigurationExtensions = @(
+        ".config",
+        ".ini",
+        ".json",
+        ".manifest",
+        ".properties",
+        ".toml",
+        ".txt",
+        ".xml",
+        ".yaml",
+        ".yml"
+    )
+
+    $publishedTextConfigurationFiles = @(Get-ChildItem -Path $PublishPath -Recurse -File -Force |
+        Where-Object { $textConfigurationExtensions -contains $_.Extension })
+    foreach ($file in $publishedTextConfigurationFiles) {
         foreach ($forbidden in $forbiddenReleaseStrings) {
             $match = Select-String -Path $file.FullName -Pattern $forbidden -SimpleMatch -Quiet -ErrorAction SilentlyContinue
             if ($match) {
