@@ -775,8 +775,14 @@ def main() -> None:
         flags=re.MULTILINE,
     )
     permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName") and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute", "AdminRoleAssignmentAssignRoute", "AdminRoleAssignmentDisableAdminRoute", "AdminRoleAssignmentEnableAdminRoute", "AdminRoleAssignmentProvisionAdminUserRoute", "AdminRoleAssignmentBootstrapFirstOwnerRoute", "AdminRbacCutoverStatusRoute"}}
-    if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 37:
-        raise AssertionError(f"Exactly thirty-seven Admin endpoints must remain permission-policy migrated, including the POST-only Admin-created account-deletion request endpoint. Found: {sorted(permission_migrated)}")
+    if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 39:
+        raise AssertionError(f"Exactly thirty-nine Admin endpoints must remain permission-policy migrated, including the POST-only Admin-created account-deletion request and setup-localization preview/import endpoints. Found: {sorted(permission_migrated)}")
+    setup_localizations_preview_authorization = ("GET", "AdminDevCmsStaticJsonV1SetupLocalizationsImportPreviewRoute", "CmsContentReadPermissionPolicyName")
+    if setup_localizations_preview_authorization not in permission_migrated:
+        raise AssertionError("Setup-localization import preview must remain GET-only with CmsContentReadPermissionPolicyName.")
+    setup_localizations_import_authorization = ("POST", "AdminDevCmsStaticJsonV1SetupLocalizationsImportRoute", "CmsDraftSavePermissionPolicyName")
+    if setup_localizations_import_authorization not in permission_migrated:
+        raise AssertionError("Setup-localization import must remain POST-only with CmsDraftSavePermissionPolicyName.")
     if ("GET", "AdminActivityRoute", "AuditLogViewPermissionPolicyName") not in permission_migrated:
         raise AssertionError("Admin Activity must remain a GET-only permission-policy endpoint with AuditLogViewPermissionPolicyName.")
     if any(route == "AdminActivityRoute" and method != "GET" for method, route, _ in permission_migrated):
