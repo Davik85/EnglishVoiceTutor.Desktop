@@ -73,7 +73,7 @@ def test_prompt_builder_assembles_cms_prompt_templates_from_runtime_request() ->
     require_contains(builder, "CmsContentConstants.PromptTemplateKeys.LessonResponseRules", "CMS response rules key assembly")
     require_contains(backend_request, "public IReadOnlyDictionary<string, string> PromptTemplates", "backend runtime prompt templates request")
     require_contains(desktop_request, "public IReadOnlyDictionary<string, string> PromptTemplates", "desktop runtime prompt templates request")
-    require_contains(runtime_endpoint, "scenario.Lesson.PromptTemplates = result.Content.PromptTemplates", "runtime endpoint CMS prompt propagation")
+    require_contains(runtime_endpoint, "responseScenario.PromptTemplates = result.Content.PromptTemplates", "runtime endpoint CMS prompt propagation")
     require_contains(desktop_viewmodel, "PromptTemplates = lessonScenario.PromptTemplates", "desktop request CMS prompt propagation")
 
 
