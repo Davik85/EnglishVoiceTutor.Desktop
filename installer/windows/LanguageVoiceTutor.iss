@@ -8,6 +8,7 @@
 #define PublishDir "..\..\artifacts\publish\win-x64-inno"
 #define AppIconFile "..\..\Assets\Branding\app-icon.ico"
 #define InstalledAppIconFile "{app}\Assets\Branding\app-icon.ico"
+#define InstalledShortcutIconFile "{app}\Assets\Branding\app-icon-" + AppVersion + ".ico"
 
 [Setup]
 AppId=LanguageVoiceTutor.Desktop
@@ -39,9 +40,11 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#AppIconFile}"; DestDir: "{app}\Assets\Branding"; Flags: ignoreversion
+Source: "{#AppIconFile}"; DestDir: "{app}\Assets\Branding"; DestName: "app-icon-{#AppVersion}.ico"; Flags: ignoreversion
 
 [InstallDelete]
 Type: files; Name: "{commondesktop}\Language Voice Tutor.lnk"
+Type: files; Name: "{app}\Assets\Branding\app-icon-*.ico"
 Type: files; Name: "{app}\EnglishVoiceTutor.Desktop.exe"
 Type: files; Name: "{app}\EnglishVoiceTutor.Desktop.dll"
 Type: files; Name: "{app}\EnglishVoiceTutor.Desktop.deps.json"
@@ -49,8 +52,8 @@ Type: files; Name: "{app}\EnglishVoiceTutor.Desktop.runtimeconfig.json"
 Type: files; Name: "{app}\EnglishVoiceTutor.Desktop.pdb"
 
 [Icons]
-Name: "{group}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{#InstalledAppIconFile}"
-Name: "{commondesktop}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{#InstalledAppIconFile}"
+Name: "{group}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{#InstalledShortcutIconFile}"
+Name: "{commondesktop}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{#InstalledShortcutIconFile}"
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "Launch Language Voice Tutor"; Flags: nowait postinstall skipifsilent
