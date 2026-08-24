@@ -174,6 +174,7 @@ def main() -> None:
         "AdminSelfReadPermissionPolicyName", "AdminCapabilitiesReadPermissionPolicyName", "ProductStatisticsReadPermissionPolicyName",
         "UserLookupPermissionPolicyName", "UserOverviewPermissionPolicyName", "ManualPremiumGrantPermissionPolicyName", "AccountAnonymizationExecutePermissionPolicyName", "ManualPremiumRevokePermissionPolicyName", "AuditLogViewPermissionPolicyName", "AuditLogViewPermissionPolicyName",
         "FreeLessonResetPermissionPolicyName", "BillingCancelRenewalPermissionPolicyName",
+        "CmsContentReadPermissionPolicyName", "CmsDraftSavePermissionPolicyName",
         "CmsContentReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName",
         "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName",
         "CmsDraftSavePermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName",
@@ -188,7 +189,7 @@ def main() -> None:
         if policy != "AdminRoleManagementPermissionPolicyName"
     ]
     if existing_endpoint_authorizations != expected_permission_authorizations:
-        raise AssertionError(f"Exactly thirty-seven endpoints may use permission policies, including the POST-only Admin-created account-deletion request endpoint. Got: {existing_endpoint_authorizations}")
+        raise AssertionError(f"Exactly thirty-nine endpoints may use permission policies, including the setup-localization preview/import endpoints and the POST-only Admin-created account-deletion request endpoint. Got: {existing_endpoint_authorizations}")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminActivityRoute, GetAdminActivityAsync)", "intentional read-only Admin Activity endpoint")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminUserAuditActionsRoute, GetTargetUserAuditActionsAsync)", "existing target-user Audit Log endpoint remains present")
     if re.search(r"app\.Map(Post|Put|Patch|Delete)\(ApiConstants\.AdminActivityRoute", admin_endpoints):

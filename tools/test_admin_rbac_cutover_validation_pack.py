@@ -164,8 +164,15 @@ def main() -> None:
         policy for policy in permission_authorizations
         if policy != "AdminRoleManagementPermissionPolicyName"
     ])
-    if admin_permission_count != 37:
-        raise AssertionError(f"AdminPermission endpoint count must remain exactly 37, including the POST-only Admin-created account-deletion request endpoint; got {admin_permission_count}.")
+    if admin_permission_count != 39:
+        raise AssertionError(f"AdminPermission endpoint count must remain exactly 39, including the setup-localization preview/import endpoints and the POST-only Admin-created account-deletion request endpoint; got {admin_permission_count}.")
+
+    setup_localizations_preview_pattern = r"MapGet\(ApiConstants\.AdminDevCmsStaticJsonV1SetupLocalizationsImportPreviewRoute,.*?RequireAuthorization\(AdminAuthorizationConstants\.CmsContentReadPermissionPolicyName\)"
+    if not re.search(setup_localizations_preview_pattern, admin_endpoints, re.DOTALL):
+        raise AssertionError("Setup-localizations import preview must remain GET-only with CmsContentReadPermissionPolicyName.")
+    setup_localizations_import_pattern = r"MapPost\(ApiConstants\.AdminDevCmsStaticJsonV1SetupLocalizationsImportRoute,.*?RequireAuthorization\(AdminAuthorizationConstants\.CmsDraftSavePermissionPolicyName\)"
+    if not re.search(setup_localizations_import_pattern, admin_endpoints, re.DOTALL):
+        raise AssertionError("Setup-localizations import must remain POST-only with CmsDraftSavePermissionPolicyName.")
 
     admin_activity_pattern = r"MapGet\(ApiConstants\.AdminActivityRoute,.*?RequireAuthorization\(AdminAuthorizationConstants\.AuditLogViewPermissionPolicyName\)"
     if not re.search(admin_activity_pattern, admin_endpoints, re.DOTALL):

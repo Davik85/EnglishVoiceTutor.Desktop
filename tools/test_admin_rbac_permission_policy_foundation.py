@@ -182,6 +182,20 @@ MIGRATED_ENDPOINTS = [
         "policy_constant": "BillingCancelRenewalPermissionPolicyName",
     },
     {
+        "action_key": "admin.cms.setup_localizations.import_preview",
+        "method": "GET",
+        "route_constant": "AdminDevCmsStaticJsonV1SetupLocalizationsImportPreviewRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.setup_localizations.import",
+        "method": "POST",
+        "route_constant": "AdminDevCmsStaticJsonV1SetupLocalizationsImportRoute",
+        "permission_constant": "CmsContentWriteDraft",
+        "policy_constant": "CmsDraftSavePermissionPolicyName",
+    },
+    {
         "action_key": "admin.cms.published_status.read",
         "method": "GET",
         "route_constant": "AdminDevCmsPublishedContentStatusRoute",
@@ -607,9 +621,9 @@ def main() -> None:
         )
         for endpoint in FEEDBACK_REPORT_ENDPOINTS
     ]
-    if len(migrated_authorizations) != 44 or set(migrated_authorizations) != set(expected_migrations):
+    if len(migrated_authorizations) != 46 or set(migrated_authorizations) != set(expected_migrations):
         raise AssertionError(
-            f"Exactly forty-four Admin endpoints must use AdminPermission:* policies, including the Admin-created account-deletion request and seven feedback-report/account-anonymization endpoints. Got: {migrated_authorizations}"
+            f"Exactly forty-six Admin endpoints must use AdminPermission:* policies, including the setup-localization preview/import endpoints, the Admin-created account-deletion request, and seven feedback-report/account-anonymization endpoints. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:
