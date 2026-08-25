@@ -1,6 +1,6 @@
 # Historical tester release workflow
 
-Review date: 2026-08-24.
+Review date: 2026-08-25.
 
 ## Source of truth for current versions
 
@@ -35,9 +35,9 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Historical tester status and current direct release
 
-The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-1.5.exe` with `version` set to `1.5`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `1.5`, and `updateMode` set to `manual-confirmation`.
+The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` points to `LanguageVoiceTutorSetup-1.6.exe` with `version` and `minimumSupportedVersion` set to `1.6`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, and `updateMode` set to `manual-confirmation`. The published manifest records SHA-256 `9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3` and size `188959874` bytes; no independent second public-download SHA verification is claimed for 1.6.
 
-Windows Direct Release 1.5 is now published on the public direct channel. The live manifest and independently downloaded installer SHA-256 were verified; no backend deployment, migration, or database change was part of this Windows upload. Historical tester-release notes in this document are retained only as history; they are not the current active release state. This does not mean every operational area is fully public production-ready.
+Windows Direct Release 1.6 is published on the public direct channel. The manual-confirmation update from installed 1.5 to 1.6 completed successfully; no broader installed-app functional smoke is claimed from that update. Historical tester-release notes in this document are retained only as history; they are not the current active release state. This does not mean every operational area is fully public production-ready.
 
 ## Release artifact boundary
 
@@ -45,7 +45,7 @@ Windows Direct Release 1.5 is now published on the public direct channel. The li
 
 ## Historical backend notes
 
-Historical tester-era backend snapshot notes are retained only for context. Current production backend for the Windows Direct Release 1.5 documentation state is `0.1.35-backend.140`, with `.139` rollback; verify the live value from the server symlink before calling it current.
+Historical tester-era backend snapshot notes are retained only for context. Current production backend for the Windows Direct Release 1.6 documentation state is `0.1.35-backend.141`, with `.140` rollback; verify the live value from the server symlink before calling it current.
 
 `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
@@ -57,7 +57,7 @@ Release Settings must not show a Diagnostics tab. Release Settings must not show
 
 ## Historical verified tester behavior
 
-The historical tester build verified these behaviors; these are historical tester observations, while the current active release is Windows Direct Release 1.5:
+The historical tester build verified these behaviors; these are historical tester observations, while the current active release is Windows Direct Release 1.6:
 
 - registration and login from installed builds against `https://api.languagevoicetutor.com`;
 - registration on another device;

@@ -1,6 +1,6 @@
 # Windows release server upload
 
-Review date: 2026-08-24.
+Review date: 2026-08-25.
 
 ## Source of truth for current versions
 
@@ -26,21 +26,21 @@ Windows direct release manifest:
 https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
 
-Current public direct release values (verified 2026-08-24):
+Current public direct release values (verified 2026-08-25):
 
 ```text
 channel: direct-public
-version: 1.5
-installerFileName: LanguageVoiceTutorSetup-1.5.exe
-installerRelativeUrl: LanguageVoiceTutorSetup-1.5.exe
-installerSha256: dea33ac29414d5956db52cec0dd703ecb12778e071c1e601dcf394f1def2e10b
-installerSizeBytes: 188955887
+version: 1.6
+installerFileName: LanguageVoiceTutorSetup-1.6.exe
+installerRelativeUrl: LanguageVoiceTutorSetup-1.6.exe
+installerSha256: 9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3
+installerSizeBytes: 188959874
 backendBaseUrl: https://api.languagevoicetutor.com
 updateMode: manual-confirmation
-minimumSupportedVersion: 1.5
+minimumSupportedVersion: 1.6
 ```
 
-This release passed local validation and real upload. The live manifest was fetched with cache busting, and the installer was downloaded independently over HTTPS; its SHA-256 matched the public manifest. This Windows-only upload performed no backend deployment, migration, or database change; current production backend is `0.1.35-backend.140` with `.139` rollback after a separate backend-only deployment.
+This release passed the real upload and the live manifest was fetched with cache busting. The published manifest SHA-256 and size above are verified facts; no independent second public-download SHA verification is claimed for 1.6. The successful 1.5 -> 1.6 manual-confirmation update is verified without a broader installed-app functional-smoke claim. Current production backend is `0.1.35-backend.141` with `.140` rollback after a separate backend-only deployment; `.141` required no migration or schema change.
 
 Release/tester installed builds are server-only. The production backend URL for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`.
 
@@ -114,11 +114,11 @@ $manifest.checksums.sha256
 
 Confirm:
 
-- `version` is `1.5` or the intended newly uploaded direct version;
-- `installerFileName` is `LanguageVoiceTutorSetup-1.5.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.5.exe`, or both match the intended installer;
+- `version` is `1.6` or the intended newly uploaded direct version;
+- `installerFileName` is `LanguageVoiceTutorSetup-1.6.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.6.exe`, or both match the intended installer;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
 - `updateMode` is `manual-confirmation`;
-- `minimumSupportedVersion` is `1.5` for this uploaded direct release;
+- `minimumSupportedVersion` is `1.6` for this uploaded direct release;
 - `installerSha256` and `checksums.sha256` are present and agree with the uploaded installer hash.
 
 ## Installer download verification
@@ -171,7 +171,7 @@ Required static fallback text:
 
 ## Release-readiness status and deferred items
 
-Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.140`, with `.139` rollback. Website Paddle-review polish is completed separately from this upload flow. Historical Paddle validation performed on `.108` remains evidence for that dated release, not a current backend claim. Chargeback remains implemented/test-covered but not live-chargeback-tested and partial refunds remain conservative/manual-review. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
+Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.141`, with `.140` rollback. Website Paddle-review polish is completed separately from this upload flow. Historical Paddle validation performed on `.108` remains evidence for that dated release, not a current backend claim. Chargeback remains implemented/test-covered but not live-chargeback-tested and partial refunds remain conservative/manual-review. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
 
 Do not state that the product is fully public production-ready. The current Windows release remains a public Windows direct release, not a full broad production-readiness claim, and not broad public production readiness.
 

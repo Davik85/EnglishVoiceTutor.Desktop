@@ -20,14 +20,14 @@ DOCS = [
 ]
 
 REQUIRED_BY_DOCUMENT = {
-    "README.md": ["current verified public direct build is `1.5`", "LanguageVoiceTutorSetup-1.5.exe", "dea33ac29414d5956db52cec0dd703ecb12778e071c1e601dcf394f1def2e10b", "0.1.35-backend.140", "does not silently auto-update"],
-    "docs/CURRENT_STATE.md": ["Windows Direct Release 1.5", "LanguageVoiceTutorSetup-1.5.exe", "dea33ac29414d5956db52cec0dd703ecb12778e071c1e601dcf394f1def2e10b", "0.1.35-backend.140", "Google Play remains disabled", "No backend deployment, EF migration, database change"],
-    "docs/NEXT_STEPS.md": ["current Windows direct public release is `1.5`", "LanguageVoiceTutorSetup-1.5.exe", "endpoint remains disabled", "version-specific shortcut-icon"],
-    "docs/TESTER_RELEASE.md": ["Windows Direct Release 1.5", "LanguageVoiceTutorSetup-1.5.exe", "0.1.35-backend.140"],
-    "docs/WINDOWS_INSTALLER_RELEASE_FLOW.md": ["LanguageVoiceTutorSetup-1.5.exe", "0.1.35-backend.140", "manual-confirmation", "app-icon-{AppVersion}.ico"],
-    "docs/WINDOWS_INSTALLER_UPDATE_FLOW.md": ["LanguageVoiceTutorSetup-1.5.exe", "version: 1.5", "does not silently auto-update"],
-    "docs/WINDOWS_RELEASE_SERVER_UPLOAD.md": ["version: 1.5", "LanguageVoiceTutorSetup-1.5.exe", "dea33ac29414d5956db52cec0dd703ecb12778e071c1e601dcf394f1def2e10b", "no backend deployment, migration, or database change"],
-    "docs/LOCAL_RELEASE.md": ["$ReleaseVersion = \"<release-version>\"", "Windows Direct 1.5 passed"],
+    "README.md": ["current verified public direct build is `1.6`", "LanguageVoiceTutorSetup-1.6.exe", "9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3", "0.1.35-backend.141", "does not silently auto-update"],
+    "docs/CURRENT_STATE.md": ["Windows Direct Release 1.6", "LanguageVoiceTutorSetup-1.6.exe", "9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3", "0.1.35-backend.141", "Google Play remains disabled", "No EF migration or database schema change"],
+    "docs/NEXT_STEPS.md": ["current Windows direct public release is `1.6`", "LanguageVoiceTutorSetup-1.6.exe", "endpoint remains disabled", "version-specific shortcut-icon"],
+    "docs/TESTER_RELEASE.md": ["Windows Direct Release 1.6", "LanguageVoiceTutorSetup-1.6.exe", "0.1.35-backend.141"],
+    "docs/WINDOWS_INSTALLER_RELEASE_FLOW.md": ["LanguageVoiceTutorSetup-1.6.exe", "0.1.35-backend.141", "manual-confirmation", "app-icon-{AppVersion}.ico"],
+    "docs/WINDOWS_INSTALLER_UPDATE_FLOW.md": ["LanguageVoiceTutorSetup-1.6.exe", "version: 1.6", "does not silently auto-update"],
+    "docs/WINDOWS_RELEASE_SERVER_UPLOAD.md": ["version: 1.6", "LanguageVoiceTutorSetup-1.6.exe", "9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3", "no independent second public-download SHA verification is claimed for 1.6"],
+    "docs/LOCAL_RELEASE.md": ["$ReleaseVersion = \"<release-version>\"", "Windows Direct 1.6 is the current public release"],
 }
 
 REQUIRED_SHARED = ["https://api.languagevoicetutor.com", "server-only", "Check for updates", "SHA-256", "does not silently auto-update"]
@@ -35,8 +35,8 @@ REQUIRED_SHARED = ["https://api.languagevoicetutor.com", "server-only", "Check f
 FORBIDDEN_PATTERNS = [
     (re.compile(r"(?:current|live|active|deployed and healthy)[^\n]*0\.1\.35-backend\.27", re.I), "old backend current wording"),
     (re.compile(r"0\.1\.36-tester\.17[^\n]*(?:current|live|active|latest)", re.I), "old tester current wording"),
-    (re.compile(r"(?:current|active|latest verified|last verified public snapshot|current verified manifest baseline)[^\n]*(?:Windows Direct (?:Release )?1\.[0-4]|version[:= ]+1\.[0-4]|LanguageVoiceTutorSetup-1\.[0-4]\.exe)", re.I), "old Windows release current wording"),
-    (re.compile(r"Current public Windows Direct\s+`?1\.[0-4]`?", re.I), "old Windows current wording"),
+    (re.compile(r"(?:current|active|latest verified|last verified public snapshot|current verified manifest baseline)[^\n]*(?:Windows Direct (?:Release )?1\.[0-5]|version[:= ]+1\.[0-5]|LanguageVoiceTutorSetup-1\.[0-5]\.exe)", re.I), "old Windows release current wording"),
+    (re.compile(r"Current public Windows Direct\s+`?1\.[0-5]`?", re.I), "old Windows current wording"),
     (re.compile(r"(?:current|active|production backend)[^\n]*0\.1\.35-backend\.99", re.I), "old backend current wording"),
     (re.compile(r"Google Play (?:is )?enabled", re.I), "Google Play enabled wording"),
     (re.compile(r"Windows (?:Direct )?1\.5[^\n]*(?:backend deployment|migration).*(?:required|performed)", re.I), "Windows 1.5 backend or migration claim"),
@@ -73,7 +73,7 @@ def main() -> int:
     command_playbook = read(COMMAND_PLAYBOOK)
     smoke_gate = read(SMOKE_GATE)
     for needle in [
-        "LanguageVoiceTutorSetup-1.5.exe",
+        "LanguageVoiceTutorSetup-1.6.exe",
         "-ServerHost lvt-server",
         "-ServerUser deploy",
         "-RemotePath /var/www/languagevoicetutor/releases/windows/direct",

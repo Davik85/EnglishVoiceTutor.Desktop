@@ -1,6 +1,6 @@
 # Backend server deployment
 
-Review date: 2026-08-22.
+Review date: 2026-08-25.
 
 ## Current production backend
 
@@ -23,8 +23,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Final server paths, ownership, groups, and permissions require owner approval and are intentionally not defined here. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.140`
-- Previous rollback release: `0.1.35-backend.139`
+- Current release: `0.1.35-backend.141`
+- Previous rollback release: `0.1.35-backend.140`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -40,9 +40,17 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.140`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.139`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.141`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.140`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
-## 2026-08-22 `.140` Website CMS FooterTextColor deployment verification
+## 2026-08-25 `.141` legacy product-limit removal deployment verification
+
+Live verification confirmed `current` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.141`, `previous` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.140`, `languagevoicetutor-backend.service` active, public `/health` HTTP 200 `Healthy`, and public `/api/health/database` HTTP 200 `Healthy` with `canConnect=true`.
+
+Approved source commit `5c8e973a0c2ea3f24186c30bf743a77d8d776e57` (`Remove legacy free usage limits`) was deployed through the standard repository backend package -> dry-run -> upload flow. Release `.141` removed the obsolete `free_dev` / `FreeLimits` enforcement/status contract and its per-operation product quotas while preserving usage telemetry and daily counters. Free remains one free lesson per day; an allowed Free lesson, Trial, and Premium/Pro have no separate chat, hint, STT/transcription, TTS, feedback, or estimated-cost product quota. Technical ASP.NET rate limiting remains separate infrastructure protection.
+
+No EF migration or database schema change was required. The deployment did not publish Website CMS content or static website files, release Desktop or Mobile, enable Google Play, or change Paddle, billing, authentication, Admin RBAC, CMS, account lifecycle, or entitlement architecture. Google Play remains disabled.
+
+## Historical 2026-08-22 `.140` Website CMS FooterTextColor deployment verification
 
 Live verification confirmed `current` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.140`, `previous` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.139`, `languagevoicetutor-backend.service` active, public `/health` HTTP 200 `Healthy`, and public `/api/health/database` HTTP 200 `Healthy` with `canConnect=true`.
 
@@ -296,10 +304,10 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.140`; verified rollback target `.139` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.141`; verified rollback target `.140` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
-- Windows installer: current public direct release is `1.3`, installer `LanguageVoiceTutorSetup-1.3.exe`.
+- Windows installer: current public direct release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`.
 - AI Models: persistent production storage is verified and survived restart with known-good `gpt-5.5` / `gpt-5.2` values.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: website legal/support/seller/AI/status pages are ready for owner/legal final review as drafts, not final legal advice.

@@ -31,9 +31,9 @@ Inno Setup is the primary Windows direct-download installer foundation for Langu
 
 ## Current update status
 
-The public Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-1.5.exe`, uses `version: 1.5`, keeps `minimumSupportedVersion` at `1.5`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. The live manifest and independently downloaded installer SHA-256 were verified. Future local builds are not public/live unless the live website manifest points to them.
+The public Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-1.6.exe`, uses `version: 1.6`, keeps `minimumSupportedVersion` at `1.6`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. The published manifest records installer SHA-256 `9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3` and size `188959874` bytes; no independent second public-download SHA verification is claimed for 1.6. Future local builds are not public/live unless the live website manifest points to them.
 
-The installed 1.1-to-1.2 update path was verified: the updated application launched and lessons worked. The same manual-confirmation update flow was verified on other devices; it remains SHA-256 protected and does not silently auto-update.
+The installed 1.1-to-1.2 update path was historically verified: the updated application launched and lessons worked. The manual-confirmation update from installed 1.5 to 1.6 also completed successfully, but no broader installed-app functional smoke is claimed for that update. The flow remains SHA-256 protected and does not silently auto-update.
 
 The desktop release UX has a simple user-facing **Check for updates** button in Settings. The old technical update dashboard in Diagnostics is not part of release UX. Release Settings must not expose Diagnostics or Backend URL editing.
 

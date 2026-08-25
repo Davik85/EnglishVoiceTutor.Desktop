@@ -6,7 +6,7 @@ This is a technical product retention policy draft (not a legal policy).
 
 ## Deployed disabled Google Play pending-refund review material
 
-Pending-refund notifications persist only SHA-256 fingerprints plus a separately protected token/order payload; raw pending-refund tokens, order IDs, Pub/Sub bodies, and obfuscated account/profile identifiers are not stored. A successful review clears its protected payload immediately. Permanent failures retain protected payload only until the configured bounded terminal retention deadline, after which cleanup clears it while retaining safe audit metadata and fingerprints. The schema is deployed through `20260803052655_AddGooglePlayPendingRefundReviewFoundation`, but runtime processing remains disabled; production is `0.1.35-backend.139`, with Google Play Billing, RTDN, reconciliation, and pending-refund review disabled.
+Pending-refund notifications persist only SHA-256 fingerprints plus a separately protected token/order payload; raw pending-refund tokens, order IDs, Pub/Sub bodies, and obfuscated account/profile identifiers are not stored. A successful review clears its protected payload immediately. Permanent failures retain protected payload only until the configured bounded terminal retention deadline, after which cleanup clears it while retaining safe audit metadata and fingerprints. The schema was deployed in historical `0.1.35-backend.139` through `20260803052655_AddGooglePlayPendingRefundReviewFoundation` and remains present in current production `0.1.35-backend.141`; Google Play Billing, RTDN, reconciliation, and pending-refund review remain disabled.
 
 ## Implemented persistence scope
 

@@ -1,6 +1,6 @@
 # Desktop Release Smoke Gate
 
-Step: 5B desktop release gate, updated 2026-08-24 for the current Windows direct release workflow and shortcut-icon verification.
+Step: 5B desktop release gate, updated 2026-08-25 for the current Windows direct release workflow and shortcut-icon verification.
 
 ## Purpose
 
@@ -22,7 +22,7 @@ Validate packaged release metadata with:
 powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
 ```
 
-The backend remains the server-side source of truth, the desktop must not contain OpenAI keys or call OpenAI directly, remaining billing operations and broader paid-launch approval remain deferred, and Windows Direct Release 1.5 is the current verified public Windows release; continue using this gate for future direct-release safety checks and update/reinstall validation.
+The backend remains the server-side source of truth, the desktop must not contain OpenAI keys or call OpenAI directly, remaining billing operations and broader paid-launch approval remain deferred, and Windows Direct Release 1.6 is the current verified public Windows release; continue using this gate for future direct-release safety checks and update/reinstall validation.
 
 ## When to run this gate
 
