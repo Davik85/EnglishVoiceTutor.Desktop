@@ -54,11 +54,6 @@ Backend persistence foundation (PostgreSQL + EF Core) is implemented for:
 - Full prompts are not persisted as lesson history.
 - Real provider secrets/API keys are not persisted in source control.
 
-## Development free-limit note
-
-- Development can run diagnostics-only free-limit mode (`FreeLimits:EnforcementEnabled=false`).
-- In this mode, counters still increment while lesson actions are not blocked.
-
 ## Future work (not implemented)
 
 - Production-wide auth enforcement for all runtime endpoints.

@@ -1,28 +1,22 @@
-using EnglishVoiceTutor.Api.Contracts.Usage;
-
 namespace EnglishVoiceTutor.Api.Services;
 
 public enum LessonSessionReplyResultStatus
 {
-    NotImplemented,
-    FreeLimitExceeded
+    NotImplemented
 }
 
 public sealed class LessonSessionReplyResult
 {
     private LessonSessionReplyResult(
         LessonSessionReplyResultStatus status,
-        LessonSessionReplyUnavailableResponse? unavailableResponse,
-        FreeLimitExceededResponse? freeLimitExceededResponse)
+        LessonSessionReplyUnavailableResponse unavailableResponse)
     {
         Status = status;
         UnavailableResponse = unavailableResponse;
-        FreeLimitExceededResponse = freeLimitExceededResponse;
     }
 
     public LessonSessionReplyResultStatus Status { get; }
-    public LessonSessionReplyUnavailableResponse? UnavailableResponse { get; }
-    public FreeLimitExceededResponse? FreeLimitExceededResponse { get; }
+    public LessonSessionReplyUnavailableResponse UnavailableResponse { get; }
 
     public static LessonSessionReplyResult NotImplemented(Guid sessionId)
     {
@@ -31,16 +25,7 @@ public sealed class LessonSessionReplyResult
             new LessonSessionReplyUnavailableResponse
             {
                 SessionId = sessionId
-            },
-            null);
-    }
-
-    public static LessonSessionReplyResult FreeLimitExceeded(FreeLimitExceededResponse response)
-    {
-        return new LessonSessionReplyResult(
-            LessonSessionReplyResultStatus.FreeLimitExceeded,
-            null,
-            response);
+            });
     }
 }
 

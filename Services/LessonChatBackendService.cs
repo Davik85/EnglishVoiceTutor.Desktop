@@ -108,7 +108,6 @@ public sealed class LessonChatBackendService
             using var httpRequest = await CreateAuthenticatedJsonRequestAsync(HttpMethod.Post, BackendConstants.LessonChatReplyEndpoint, request, cancellationToken);
             using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
-            await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.ChatReplyFreeLimitMessage, cancellationToken);
             await ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(response, cancellationToken);
             response.EnsureSuccessStatusCode();
 
@@ -170,7 +169,6 @@ public sealed class LessonChatBackendService
         using var httpRequest = await CreateAuthenticatedJsonRequestAsync(HttpMethod.Post, BackendConstants.LessonChatHintEndpoint, request, cancellationToken);
         using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
-        await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.HintFreeLimitMessage, cancellationToken);
         await ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(response, cancellationToken);
         response.EnsureSuccessStatusCode();
 
@@ -233,7 +231,6 @@ public sealed class LessonChatBackendService
         transcriptionRequest.Content = formContent;
         using var response = await httpClient.SendAsync(transcriptionRequest, cancellationToken);
 
-        await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.TranscriptionFreeLimitMessage, cancellationToken);
         await ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(response, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
@@ -295,7 +292,6 @@ public sealed class LessonChatBackendService
                 }, cancellationToken);
             using var response = await httpClient.SendAsync(speechRequest, cancellationToken);
 
-            await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.BotVoiceFreeLimitMessage, cancellationToken);
             await ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(response, cancellationToken);
             response.EnsureSuccessStatusCode();
 
@@ -518,27 +514,4 @@ public sealed class LessonChatBackendService
         }
     }
 
-    private static async Task ThrowFreeLimitExceededExceptionIfNeededAsync(
-        HttpResponseMessage response,
-        string defaultUserMessage,
-        CancellationToken cancellationToken)
-    {
-        if (response.StatusCode != HttpStatusCode.TooManyRequests)
-        {
-            return;
-        }
-
-        var payload = await response.Content.ReadFromJsonAsync<FreeLimitExceededResponse>(JsonOptions, cancellationToken);
-        var operation = payload?.Operation ?? string.Empty;
-        var limitType = payload?.LimitType ?? string.Empty;
-        var used = payload?.Used ?? 0;
-        var limit = payload?.Limit ?? 0;
-        var remaining = payload?.Remaining ?? 0;
-        var studyLanguage = payload?.StudyLanguage ?? string.Empty;
-        var userMessage = used > 0 && limit > 0
-            ? $"{defaultUserMessage.TrimEnd('.')} ({used}/{limit})."
-            : defaultUserMessage;
-
-        throw new FreeLimitExceededException(operation, limitType, used, limit, remaining, studyLanguage, userMessage);
-    }
 }

@@ -5,6 +5,7 @@ public sealed record BackendUxLocalizedText(
     string CouldNotConnect,
     string ActionNeedsBackend,
     string BackendReturnedError,
+    string BackendRequestThrottled,
     string BackendValidationError,
     string BackendRequestTimedOut,
     string BackendUnexpectedResponse,

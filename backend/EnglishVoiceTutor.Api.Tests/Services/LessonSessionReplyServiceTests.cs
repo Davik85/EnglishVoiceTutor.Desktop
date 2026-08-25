@@ -1,11 +1,9 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.LessonSessions;
-using EnglishVoiceTutor.Api.Contracts.Usage;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Auth;
-using EnglishVoiceTutor.Api.Services.Usage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -76,42 +74,11 @@ public sealed class LessonSessionReplyServiceTests
 
         Assert.Equal(LessonSessionReplyResultStatus.NotImplemented, result.Status);
         Assert.NotNull(result.UnavailableResponse);
-        Assert.Null(result.FreeLimitExceededResponse);
         Assert.Equal(session.Id, result.UnavailableResponse!.SessionId);
         Assert.Equal(LessonSessionReplyUnavailableResponse.ErrorCodeValue, result.UnavailableResponse.Error);
         Assert.Equal(LessonSessionReplyUnavailableResponse.ErrorCodeValue, result.UnavailableResponse.ErrorCode);
         Assert.Equal(LessonSessionReplyUnavailableResponse.ErrorCodeValue, result.UnavailableResponse.Code);
         Assert.Equal(LessonSessionReplyUnavailableResponse.UserMessage, result.UnavailableResponse.Message);
-    }
-
-    [Fact]
-    public async Task FreeLimitExceededReturnsRateLimitResult()
-    {
-        await using var dbContext = CreateDbContext();
-        var userId = Guid.NewGuid();
-        var session = await SeedSessionAsync(dbContext, userId, LessonSessionConstants.ActiveStatus);
-        var limitResponse = new FreeLimitExceededResponse
-        {
-            Error = "limit_reached",
-            Operation = UsageConstants.Operations.LessonChatReply,
-            PlanId = "free",
-            LimitType = "chat_replies",
-            Used = 20,
-            Limit = 20,
-            Remaining = 0,
-            UsageDate = new DateOnly(2026, 7, 8),
-            StudyLanguage = session.StudyLanguage,
-            CheckedAtUtc = DateTimeOffset.UtcNow,
-            Source = "authenticated"
-        };
-
-        var service = CreateService(dbContext, userId, new FakeFreeLimitGuardService(limitResponse));
-
-        var result = await service.CreateReplyAsync(session.Id, new LessonSessionReplyRequest("hello"), CancellationToken.None);
-
-        Assert.Equal(LessonSessionReplyResultStatus.FreeLimitExceeded, result.Status);
-        Assert.Same(limitResponse, result.FreeLimitExceededResponse);
-        Assert.Null(result.UnavailableResponse);
     }
 
     [Fact]
@@ -130,13 +97,11 @@ public sealed class LessonSessionReplyServiceTests
 
     private static LessonSessionReplyService CreateService(
         AppDbContext dbContext,
-        Guid userId,
-        IFreeLimitGuardService? freeLimitGuardService = null)
+        Guid userId)
     {
         return new LessonSessionReplyService(
             dbContext,
             new FakeRequestUserResolver(userId),
-            freeLimitGuardService ?? new FakeFreeLimitGuardService(),
             NullLogger<LessonSessionReplyService>.Instance);
     }
 
@@ -192,20 +157,5 @@ public sealed class LessonSessionReplyServiceTests
     private sealed class FakeRequestUserResolver(Guid userId) : IRequestUserResolver
     {
         public ResolvedRequestUser ResolveCurrentUser() => new(userId, RequestUserResolver.AuthenticatedSource);
-    }
-
-    private sealed class FakeFreeLimitGuardService(FreeLimitExceededResponse? response = null) : IFreeLimitGuardService
-    {
-        public Task<FreeLimitExceededResponse?> CheckChatReplyLimitAsync(string? studyLanguage, CancellationToken cancellationToken) =>
-            Task.FromResult(response);
-
-        public Task<FreeLimitExceededResponse?> CheckHintLimitAsync(string? studyLanguage, CancellationToken cancellationToken) =>
-            Task.FromResult<FreeLimitExceededResponse?>(null);
-
-        public Task<FreeLimitExceededResponse?> CheckTranscriptionLimitAsync(string? studyLanguage, CancellationToken cancellationToken) =>
-            Task.FromResult<FreeLimitExceededResponse?>(null);
-
-        public Task<FreeLimitExceededResponse?> CheckTtsLimitAsync(string? studyLanguage, CancellationToken cancellationToken) =>
-            Task.FromResult<FreeLimitExceededResponse?>(null);
     }
 }

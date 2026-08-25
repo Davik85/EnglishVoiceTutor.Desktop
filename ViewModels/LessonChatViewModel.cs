@@ -1108,16 +1108,12 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 UserInput = string.Empty;
             }
         }
-        catch (FreeLimitExceededException exception)
-        {
-            MarkBackendAvailable();
-            StatusMessage = exception.UserFacingMessage;
-            Debug.WriteLine($"Voice transcription free limit reached; recording state will be reset. Operation={exception.Operation}; LimitType={exception.LimitType}; Used={exception.Used}; Limit={exception.Limit}.");
-        }
         catch (AudioTranscriptionBackendException exception)
         {
             MarkBackendAvailable();
-            StatusMessage = localizedText.TranscriptionFailedMessage;
+            StatusMessage = exception.StatusCode is HttpStatusCode.TooManyRequests
+                ? BackendUxText.BackendRequestThrottled
+                : localizedText.TranscriptionFailedMessage;
             Debug.WriteLine($"Voice transcription backend failure; recording state will be reset. StatusCode={exception.StatusCode}.");
         }
         catch (LessonSessionEndedElsewhereException)
@@ -4611,12 +4607,6 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             MarkBackendAvailable();
             StatusMessage = string.Empty;
         }
-        catch (FreeLimitExceededException exception)
-        {
-            MarkBackendAvailable();
-            CurrentHintText = exception.UserFacingMessage;
-            StatusMessage = string.Empty;
-        }
         catch (Exception exception)
         {
             ApplyBackendOperationFailure("lesson_hint", exception);
@@ -4650,13 +4640,6 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         {
             ConversationHintText = await BuildLessonHintTextAsync(ConversationLatestUserText);
             MarkBackendAvailable();
-            IsConversationHintVisible = true;
-            StatusMessage = string.Empty;
-        }
-        catch (FreeLimitExceededException exception)
-        {
-            MarkBackendAvailable();
-            ConversationHintText = exception.UserFacingMessage;
             IsConversationHintVisible = true;
             StatusMessage = string.Empty;
         }
@@ -5943,6 +5926,11 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
 
         if (exception is HttpRequestException httpRequestException)
         {
+            if (httpRequestException.StatusCode is HttpStatusCode.TooManyRequests)
+            {
+                return BackendUxText.BackendRequestThrottled;
+            }
+
             if (httpRequestException.StatusCode is HttpStatusCode.BadRequest)
             {
                 return BackendUxText.BackendValidationError;

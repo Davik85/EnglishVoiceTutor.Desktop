@@ -2,7 +2,6 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.LessonSessions;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Services.Auth;
-using EnglishVoiceTutor.Api.Services.Usage;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services;
@@ -10,7 +9,6 @@ namespace EnglishVoiceTutor.Api.Services;
 public sealed class LessonSessionReplyService(
     AppDbContext dbContext,
     IRequestUserResolver requestUserResolver,
-    IFreeLimitGuardService freeLimitGuardService,
     ILogger<LessonSessionReplyService> logger) : ILessonSessionReplyService
 {
     public async Task<LessonSessionReplyResult> CreateReplyAsync(
@@ -36,12 +34,6 @@ public sealed class LessonSessionReplyService(
         if (!LessonSessionConstants.IsActiveStatus(session.Status))
         {
             throw new LessonSessionEndedElsewhereException(session.Id, session.Status);
-        }
-
-        var limitExceeded = await freeLimitGuardService.CheckChatReplyLimitAsync(session.StudyLanguage, cancellationToken);
-        if (limitExceeded is not null)
-        {
-            return LessonSessionReplyResult.FreeLimitExceeded(limitExceeded);
         }
 
         logger.LogInformation(

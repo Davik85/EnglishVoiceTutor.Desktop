@@ -28,17 +28,9 @@ Review date: 2026-06-15.
 - `GET /api/dev/lesson-history/{sessionId}`
 - `GET /api/dev/usage-events`
 - `GET /api/dev/daily-usage-counters`
-- `GET /api/dev/free-limit-status`
 - `GET /api/dev/feedback-results`
 
 Dev endpoints remain available for local diagnostics.
-
-## Free-limit mode
-
-**Development-only + Validated**
-- Diagnostics-only mode in Development: `FreeLimits:EnforcementEnabled=false`.
-- Counters and diagnostics remain active.
-- Lesson Chat / Hint / STT / TTS are not blocked in this mode.
 
 ## Device tracking
 

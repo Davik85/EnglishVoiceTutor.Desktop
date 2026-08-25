@@ -51,7 +51,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(defaultConnectionString);
 });
 
-builder.Services.Configure<FreeLimitOptions>(builder.Configuration.GetSection(FreeLimitOptions.SectionName));
 builder.Services.Configure<SubscriptionEnforcementOptions>(
     builder.Configuration.GetSection(SubscriptionEnforcementOptions.SectionName));
 builder.Services.Configure<CmsContentOptions>(
@@ -202,8 +201,6 @@ builder.Services.AddSingleton<IUtcClock, UtcClock>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 builder.Services.AddScoped<UsageStudyLanguageNormalizer>();
 builder.Services.AddScoped<IUsageEventService, UsageEventService>();
-builder.Services.AddScoped<IFreeLimitStatusService, FreeLimitStatusService>();
-builder.Services.AddScoped<IFreeLimitGuardService, FreeLimitGuardService>();
 builder.Services.AddScoped<IPasswordHasher<EnglishVoiceTutor.Api.Data.Entities.UserEntity>, PasswordHasher<EnglishVoiceTutor.Api.Data.Entities.UserEntity>>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -434,7 +431,6 @@ app.MapGet(ApiConstants.MeProgressRoute, HandleGetProgressAsync).RequireAuthoriz
 app.MapGet(ApiConstants.MeAchievementsRoute, HandleGetAchievementsAsync).RequireAuthorization();
 app.MapGet(ApiConstants.DevUsageEventsRoute, HandleGetDevUsageEventsAsync);
 app.MapGet(ApiConstants.DevDailyUsageCountersRoute, HandleGetDevDailyUsageCountersAsync);
-app.MapGet(ApiConstants.DevFreeLimitStatusRoute, HandleGetDevFreeLimitStatusAsync);
 app.MapGet(ApiConstants.DevFeedbackResultsRoute, HandleGetDevFeedbackResultsAsync);
 var realtimeVoiceEndpoint = app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 if (rateLimitingEnabled)
@@ -1080,9 +1076,6 @@ static async Task<IResult> HandleCreateLessonSessionReplyAsync(
         var result = await lessonSessionReplyService.CreateReplyAsync(sessionId, request, cancellationToken);
         return result.Status switch
         {
-            LessonSessionReplyResultStatus.FreeLimitExceeded => Results.Json(
-                result.FreeLimitExceededResponse!,
-                statusCode: StatusCodes.Status429TooManyRequests),
             LessonSessionReplyResultStatus.NotImplemented => Results.Json(
                 result.UnavailableResponse!,
                 statusCode: StatusCodes.Status409Conflict),
@@ -1236,31 +1229,6 @@ static async Task<IResult> HandleGetDevDailyUsageCountersAsync(
         {
             Status = ApiConstants.UnhealthyStatus,
             Message = "Daily usage counters are unavailable because storage is not reachable.",
-            CheckedAtUtc = DateTimeOffset.UtcNow
-        }, statusCode: StatusCodes.Status503ServiceUnavailable);
-    }
-}
-
-static async Task<IResult> HandleGetDevFreeLimitStatusAsync(
-    string? studyLanguage,
-    IFreeLimitStatusService freeLimitStatusService,
-    ILoggerFactory loggerFactory,
-    CancellationToken cancellationToken)
-{
-    var logger = loggerFactory.CreateLogger("DevFreeLimitStatusEndpoint");
-
-    try
-    {
-        var response = await freeLimitStatusService.GetDevFreeLimitStatusAsync(studyLanguage, cancellationToken);
-        return Results.Ok(response);
-    }
-    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
-    {
-        logger.LogWarning(exception, "Dev free limit status GET failed because storage is unavailable.");
-        return Results.Json(new ErrorResponse
-        {
-            Status = ApiConstants.UnhealthyStatus,
-            Message = "Free limit status is unavailable because storage is not reachable.",
             CheckedAtUtc = DateTimeOffset.UtcNow
         }, statusCode: StatusCodes.Status503ServiceUnavailable);
     }
@@ -1466,7 +1434,6 @@ static async Task<IResult> HandleLessonChatReplyAsync(
     LessonChatRequest request,
     ILessonChatService lessonChatService,
     ILessonSessionService lessonSessionService,
-    IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -1488,19 +1455,9 @@ static async Task<IResult> HandleLessonChatReplyAsync(
         });
     }
 
-    var targetLanguageName = string.IsNullOrWhiteSpace(request.TargetLanguageName)
-        ? StudyLanguageCatalog.English.EnglishName
-        : request.TargetLanguageName;
-
     try
     {
         await EnsureRequestBackendSessionIsActiveAsync(request.BackendSessionId, lessonSessionService, cancellationToken);
-
-        var limitExceeded = await freeLimitGuardService.CheckChatReplyLimitAsync(targetLanguageName, cancellationToken);
-        if (limitExceeded is not null)
-        {
-            return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
-        }
 
         request.RequestPurpose = "typed_lesson_chat";
         var response = await lessonChatService.CreateReplyAsync(request, cancellationToken);
@@ -1574,7 +1531,6 @@ static async Task<IResult> HandleLessonChatHintAsync(
     LessonChatRequest request,
     ILessonHintService lessonHintService,
     ILessonSessionService lessonSessionService,
-    IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -1596,19 +1552,9 @@ static async Task<IResult> HandleLessonChatHintAsync(
         });
     }
 
-    var targetLanguageName = string.IsNullOrWhiteSpace(request.TargetLanguageName)
-        ? StudyLanguageCatalog.English.EnglishName
-        : request.TargetLanguageName;
-
     try
     {
         await EnsureRequestBackendSessionIsActiveAsync(request.BackendSessionId, lessonSessionService, cancellationToken);
-
-        var limitExceeded = await freeLimitGuardService.CheckHintLimitAsync(targetLanguageName, cancellationToken);
-        if (limitExceeded is not null)
-        {
-            return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
-        }
 
         var response = await lessonHintService.CreateHintAsync(request, cancellationToken);
 
@@ -1625,7 +1571,6 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
     LessonChatRequest request,
     ILessonChatService lessonChatService,
     ILessonSessionService lessonSessionService,
-    IFreeLimitGuardService freeLimitGuardService,
     AppDbContext dbContext,
     IRequestUserResolver requestUserResolver,
     ILoggerFactory loggerFactory,
@@ -1681,7 +1626,6 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
     HttpRequest request,
     AudioTranscriptionService audioTranscriptionService,
     ILessonSessionService lessonSessionService,
-    IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -1731,12 +1675,6 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
         }
 
         await EnsureRequestBackendSessionIsActiveAsync(backendSessionId, lessonSessionService, cancellationToken);
-
-        var limitExceeded = await freeLimitGuardService.CheckTranscriptionLimitAsync(targetLanguage.EnglishName, cancellationToken);
-        if (limitExceeded is not null)
-        {
-            return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
-        }
 
         var response = await audioTranscriptionService.TranscribeAsync(audioFile, targetLanguage, transcriptionContext, cancellationToken);
         var transcriptionLength = response.Text?.Length ?? 0;
@@ -1979,7 +1917,6 @@ static async Task<IResult> HandleAudioSpeechStreamAsync(
     AudioSpeechRequest request,
     AudioSpeechService audioSpeechService,
     ILessonSessionService lessonSessionService,
-    IFreeLimitGuardService freeLimitGuardService,
     HttpContext httpContext,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
@@ -1998,19 +1935,9 @@ static async Task<IResult> HandleAudioSpeechStreamAsync(
         ? OpenAiConstants.PcmContentType
         : OpenAiConstants.WavContentType;
 
-    var targetLanguageName = string.IsNullOrWhiteSpace(request.TargetLanguageName)
-        ? StudyLanguageCatalog.English.EnglishName
-        : request.TargetLanguageName;
-
     try
     {
         await EnsureRequestBackendSessionIsActiveAsync(request.BackendSessionId, lessonSessionService, cancellationToken);
-
-        var limitExceeded = await freeLimitGuardService.CheckTtsLimitAsync(targetLanguageName, cancellationToken);
-        if (limitExceeded is not null)
-        {
-            return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
-        }
 
         var metrics = await audioSpeechService.StreamSpeechAsync(request.Text, response.Body, request.Purpose, cancellationToken);
         logger.LogInformation(
@@ -2085,7 +2012,6 @@ static async Task<IResult> HandleAudioSpeechAsync(
     AudioSpeechRequest request,
     AudioSpeechService audioSpeechService,
     ILessonSessionService lessonSessionService,
-    IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -2098,19 +2024,9 @@ static async Task<IResult> HandleAudioSpeechAsync(
     }
 
     var logger = loggerFactory.CreateLogger("AudioSpeechEndpoint");
-    var targetLanguageName = string.IsNullOrWhiteSpace(request.TargetLanguageName)
-        ? StudyLanguageCatalog.English.EnglishName
-        : request.TargetLanguageName;
-
     try
     {
         await EnsureRequestBackendSessionIsActiveAsync(request.BackendSessionId, lessonSessionService, cancellationToken);
-
-        var limitExceeded = await freeLimitGuardService.CheckTtsLimitAsync(targetLanguageName, cancellationToken);
-        if (limitExceeded is not null)
-        {
-            return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
-        }
 
         logger.LogInformation(
             "Audio speech endpoint request accepted. Endpoint={Endpoint}; Model={Model}; Purpose={Purpose}; SpeechVoice={SpeechVoice}; SpeechSpeed={SpeechSpeed}; HasInstructions={HasInstructions}; InstructionsLength={InstructionsLength}; InputLength={InputLength}; TargetLanguageId={TargetLanguageId}; TargetLanguageCode={TargetLanguageCode}.",
