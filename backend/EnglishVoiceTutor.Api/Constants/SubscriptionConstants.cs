@@ -163,6 +163,8 @@ public static class SubscriptionConstants
         public const string FullRefundRevokedReason = "paddle_full_refund";
         public const string ChargebackRevokedReason = "paddle_chargeback";
         public const string PartialRefundManualReviewMessage = "Partial Paddle refund recorded for manual review; Premium unchanged.";
+        public const string PaddleSubscriptionOwnershipNotFoundMessage = "Exact Paddle subscription ownership was not found; Premium unchanged.";
+        public const string PaddleEntitlementOwnershipNotProvenMessage = "Legacy provider entitlement ownership could not be proven; Premium unchanged for manual review.";
     }
 
 
@@ -181,6 +183,8 @@ public static class SubscriptionConstants
     public static class Billing
     {
         public const int GooglePlayPurchaseTokenMaximumLength = 4096;
+        public const string GooglePlayPremiumProductId = "premium";
+        public const string GooglePlayPremiumBasePlanId = "monthly";
         public const string GooglePlayPurchaseVerificationUnavailableMessage = "Google Play purchase verification is not available yet.";
         public const string GooglePlayPurchaseVerificationTemporarilyUnavailableMessage = "Google Play purchase verification is temporarily unavailable.";
         public const string GooglePlayPurchaseTokenRequiredMessage = "Purchase token is required.";

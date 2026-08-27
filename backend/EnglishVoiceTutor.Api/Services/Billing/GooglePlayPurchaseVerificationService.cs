@@ -42,6 +42,7 @@ public sealed class GooglePlayPurchaseVerificationService(
         GooglePlayPurchaseProcessingResultCode.Verified => Ok("verified", "Purchase verified.", true),
         GooglePlayPurchaseProcessingResultCode.AcknowledgementPending => Unavailable("acknowledgement_pending", "Purchase verification is pending acknowledgement.", true),
         GooglePlayPurchaseProcessingResultCode.AcknowledgementInconsistent => Ok("invalid_purchase", "Purchase could not be verified.", true),
+        GooglePlayPurchaseProcessingResultCode.TrialDeferralPending or GooglePlayPurchaseProcessingResultCode.TrialDeferralAmbiguous => Ok("pending", "Purchase is pending.", true),
         GooglePlayPurchaseProcessingResultCode.NotConfigured => Unavailable("not_configured", SubscriptionConstants.Billing.GooglePlayPurchaseVerificationUnavailableMessage),
         GooglePlayPurchaseProcessingResultCode.TemporarilyUnavailable => Unavailable("temporarily_unavailable", SubscriptionConstants.Billing.GooglePlayPurchaseVerificationTemporarilyUnavailableMessage),
         GooglePlayPurchaseProcessingResultCode.Pending => Ok("pending", "Purchase is pending.", true),

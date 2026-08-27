@@ -5,7 +5,8 @@ public sealed class GooglePlayPurchaseProcessor(
     IGooglePlayVerifiedPurchasePersistenceService persistenceService,
     IGooglePlayPurchaseTokenProtectionService tokenProtectionService,
     IGooglePlaySubscriptionsV2Client subscriptionsClient,
-    ILogger<GooglePlayPurchaseProcessor> logger) : IGooglePlayPurchaseProcessor
+    ILogger<GooglePlayPurchaseProcessor> logger,
+    IGooglePlayTrialDeferralService? trialDeferralService = null) : IGooglePlayPurchaseProcessor
 {
     public Task<GooglePlayPurchaseProcessingResult> ProcessAsync(Guid userId, string purchaseToken, CancellationToken cancellationToken) =>
         ProcessAsync(userId, purchaseToken, new GooglePlayPurchaseProcessingContext(), cancellationToken);
@@ -44,7 +45,7 @@ public sealed class GooglePlayPurchaseProcessor(
             || verifiedPurchase.AcknowledgementState == GooglePlayPurchaseAcknowledgementState.Acknowledged)
         {
             await persistenceService.UpdateAcknowledgementStateAsync(purchaseToken, false, null, cancellationToken);
-            return Result(GooglePlayPurchaseProcessingResultCode.Verified);
+            return await ProcessTrialDeferralAsync(userId, purchaseToken, protectedPurchaseToken, cancellationToken);
         }
 
         try
@@ -55,7 +56,7 @@ public sealed class GooglePlayPurchaseProcessor(
                 purchaseToken,
                 cancellationToken);
             await persistenceService.UpdateAcknowledgementStateAsync(purchaseToken, false, null, cancellationToken);
-            return Result(GooglePlayPurchaseProcessingResultCode.Verified);
+            return await ProcessTrialDeferralAsync(userId, purchaseToken, protectedPurchaseToken, cancellationToken);
         }
         catch (GooglePlaySubscriptionsV2ClientException exception) when (exception.Failure == GooglePlaySubscriptionsV2ClientFailure.TemporarilyUnavailable)
         {
@@ -93,6 +94,31 @@ public sealed class GooglePlayPurchaseProcessor(
         GooglePlaySubscriptionLifecycleState.Active
         or GooglePlaySubscriptionLifecycleState.InGracePeriod
         or GooglePlaySubscriptionLifecycleState.Canceled;
+
+    private async Task<GooglePlayPurchaseProcessingResult> ProcessTrialDeferralAsync(
+        Guid userId,
+        string purchaseToken,
+        string protectedPurchaseToken,
+        CancellationToken cancellationToken)
+    {
+        if (trialDeferralService is null) return Result(GooglePlayPurchaseProcessingResultCode.Verified);
+        try
+        {
+            var deferral = await trialDeferralService.ProcessAsync(userId, purchaseToken, protectedPurchaseToken, cancellationToken);
+            return Result(deferral.Code switch
+            {
+                GooglePlayTrialDeferralResultCode.NotRequired or GooglePlayTrialDeferralResultCode.Completed => GooglePlayPurchaseProcessingResultCode.Verified,
+                GooglePlayTrialDeferralResultCode.Pending => GooglePlayPurchaseProcessingResultCode.TrialDeferralPending,
+                _ => GooglePlayPurchaseProcessingResultCode.TrialDeferralAmbiguous
+            });
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception)
+        {
+            logger.LogWarning("Google Play trial deferral requires retry. ResultCode={ResultCode}.", GooglePlayTrialDeferralSafeErrorCodes.PersistenceUnavailable);
+            return Result(GooglePlayPurchaseProcessingResultCode.TrialDeferralPending);
+        }
+    }
 
     private static GooglePlayPurchaseProcessingResult Result(GooglePlayPurchaseProcessingResultCode code) => new(code);
 }

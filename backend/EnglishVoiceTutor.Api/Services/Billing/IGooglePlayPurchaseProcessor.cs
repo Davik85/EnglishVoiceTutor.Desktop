@@ -18,6 +18,8 @@ public enum GooglePlayPurchaseProcessingResultCode
     Verified,
     AcknowledgementPending,
     AcknowledgementInconsistent,
+    TrialDeferralPending,
+    TrialDeferralAmbiguous,
     Pending,
     InvalidPurchase,
     UnsupportedProduct,

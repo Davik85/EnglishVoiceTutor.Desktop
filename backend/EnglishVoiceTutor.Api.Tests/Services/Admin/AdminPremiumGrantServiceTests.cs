@@ -44,6 +44,51 @@ public sealed class AdminPremiumGrantServiceTests
     }
 
     [Fact]
+    public async Task ActiveProviderPremiumIsTheStartForManualPremium()
+    {
+        await using var db = CreateDb();
+        var adminUserId = await AddUserAsync(db);
+        var targetUserId = await AddUserAsync(db);
+        var providerExpiry = DateTimeOffset.UtcNow.AddDays(30);
+        await AddEntitlementAsync(
+            db,
+            targetUserId,
+            providerExpiry,
+            SubscriptionConstants.Entitlements.StatusActive,
+            SubscriptionConstants.Entitlements.SourceProviderEvent);
+
+        var result = await GrantAsync(db, adminUserId, targetUserId, 10);
+
+        Assert.NotNull(result.Response);
+        Assert.Equal(providerExpiry, result.Response.StartsAtUtc);
+        Assert.Equal(providerExpiry.AddDays(10), result.Response.ExpiresAtUtc);
+    }
+
+    [Fact]
+    public async Task ContiguousScheduledManualPremiumRemainsInTheCoverageTail()
+    {
+        await using var db = CreateDb();
+        var adminUserId = await AddUserAsync(db);
+        var targetUserId = await AddUserAsync(db);
+        var now = DateTimeOffset.UtcNow;
+        var currentEnd = now.AddDays(5);
+        var scheduledEnd = currentEnd.AddDays(10);
+        await AddEntitlementAsync(db, targetUserId, currentEnd, SubscriptionConstants.Entitlements.StatusActive);
+        await AddEntitlementAsync(
+            db,
+            targetUserId,
+            scheduledEnd,
+            SubscriptionConstants.Entitlements.StatusActive,
+            startsAtUtc: currentEnd);
+
+        var result = await GrantAsync(db, adminUserId, targetUserId, 3);
+
+        Assert.NotNull(result.Response);
+        Assert.Equal(scheduledEnd, result.Response.StartsAtUtc);
+        Assert.Equal(scheduledEnd.AddDays(3), result.Response.ExpiresAtUtc);
+    }
+
+    [Fact]
     public async Task InapplicableEntitlementsDoNotAffectTheGrantStart()
     {
         await using var db = CreateDb();
@@ -94,7 +139,9 @@ public sealed class AdminPremiumGrantServiceTests
         AppDbContext db,
         Guid userId,
         DateTimeOffset expiresAtUtc,
-        string status)
+        string status,
+        string source = SubscriptionConstants.Entitlements.SourceManualAdmin,
+        DateTimeOffset? startsAtUtc = null)
     {
         var now = DateTimeOffset.UtcNow;
         db.Entitlements.Add(new EntitlementEntity
@@ -103,9 +150,9 @@ public sealed class AdminPremiumGrantServiceTests
             UserId = userId,
             PlanId = SubscriptionConstants.Plans.PremiumPlanId,
             EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType,
-            Source = SubscriptionConstants.Entitlements.SourceManualAdmin,
+            Source = source,
             Status = status,
-            StartsAtUtc = now.AddDays(-1),
+            StartsAtUtc = startsAtUtc ?? now.AddDays(-1),
             ExpiresAtUtc = expiresAtUtc,
             CreatedAt = now,
             UpdatedAt = now

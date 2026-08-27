@@ -104,6 +104,53 @@ public sealed class PaddleAdjustmentReprocessServiceTests
         Assert.Equal(SubscriptionConstants.Entitlements.StatusExpired, (await dbContext.Entitlements.SingleAsync(e => e.Id == fixture.EntitlementId, TestContext.Current.CancellationToken)).Status);
     }
 
+    [Theory]
+    [InlineData("refund")]
+    [InlineData("chargeback")]
+    public async Task AdjustmentRevokesOnlyExactPaddleSubscriptionAndPreservesOtherCoverage(string action)
+    {
+        await using var dbContext = CreateDbContext();
+        var fixture = await SeedFullRefundAsync(dbContext, SubscriptionConstants.BillingEventStatuses.Processed, action: action);
+        var now = DateTimeOffset.UtcNow;
+        var googleSubscriptionId = Guid.NewGuid();
+        var otherPaddleSubscriptionId = Guid.NewGuid();
+        var googleEntitlement = CreateEntitlement(fixture.UserId, googleSubscriptionId, now);
+        var otherPaddleEntitlement = CreateEntitlement(fixture.UserId, otherPaddleSubscriptionId, now);
+        var manualEntitlement = CreateEntitlement(fixture.UserId, null, now, SubscriptionConstants.Entitlements.SourceManualAdmin);
+        var trialEntitlement = CreateEntitlement(fixture.UserId, null, now, SubscriptionConstants.Entitlements.SourceTrial);
+        dbContext.Subscriptions.AddRange(
+            new SubscriptionEntity { Id = googleSubscriptionId, UserId = fixture.UserId, PlanId = SubscriptionConstants.Plans.PremiumPlanId, Status = SubscriptionConstants.SubscriptionStatuses.Active, Provider = SubscriptionConstants.BillingProviders.GooglePlay, ProviderSubscriptionId = "google_test", StartedAt = now, CreatedAt = now, UpdatedAt = now },
+            new SubscriptionEntity { Id = otherPaddleSubscriptionId, UserId = fixture.UserId, PlanId = SubscriptionConstants.Plans.PremiumPlanId, Status = SubscriptionConstants.SubscriptionStatuses.Active, Provider = SubscriptionConstants.BillingProviders.Paddle, ProviderSubscriptionId = "sub_other", StartedAt = now, CreatedAt = now, UpdatedAt = now });
+        dbContext.Entitlements.AddRange(googleEntitlement, otherPaddleEntitlement, manualEntitlement, trialEntitlement);
+        dbContext.TrialGrants.Add(new TrialGrantEntity { Id = Guid.NewGuid(), UserId = fixture.UserId, GrantedAtUtc = now.AddDays(-1), ExpiresAtUtc = now.AddDays(7), SourcePlatform = "test", Status = SubscriptionConstants.Entitlements.StatusActive, CreatedAt = now });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await CreateService(dbContext).ReprocessProviderEventAsync(fixture.ProviderEventId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(PaddleAdjustmentReprocessResults.Revoked, result.Result);
+        Assert.Equal(SubscriptionConstants.Entitlements.StatusExpired, (await dbContext.Entitlements.FindAsync([fixture.EntitlementId], TestContext.Current.CancellationToken))!.Status);
+        Assert.All(new[] { googleEntitlement, otherPaddleEntitlement, manualEntitlement, trialEntitlement }, entitlement => Assert.Equal(SubscriptionConstants.Entitlements.StatusActive, entitlement.Status));
+        Assert.Equal(SubscriptionConstants.Entitlements.StatusActive, Assert.Single(dbContext.TrialGrants).Status);
+    }
+
+    [Fact]
+    public async Task LegacyUnscopedProviderEntitlementFailsClosedDuringAdjustment()
+    {
+        await using var dbContext = CreateDbContext();
+        var fixture = await SeedFullRefundAsync(dbContext, SubscriptionConstants.BillingEventStatuses.Processed);
+        var entitlement = await dbContext.Entitlements.SingleAsync(
+            candidate => candidate.Id == fixture.EntitlementId,
+            TestContext.Current.CancellationToken);
+        entitlement.SubscriptionId = null;
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await CreateService(dbContext).ReprocessProviderEventAsync(fixture.ProviderEventId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(PaddleAdjustmentReprocessResults.Blocked, result.Result);
+        Assert.Equal(SubscriptionConstants.Entitlements.StatusActive, entitlement.Status);
+        Assert.Equal(SubscriptionConstants.BillingEventStatuses.ReconciliationBlocked, Assert.Single(dbContext.BillingEvents).Status);
+    }
+
     [Fact]
     public async Task AlreadyRevokedEntitlementIsIdempotent()
     {
@@ -169,8 +216,21 @@ public sealed class PaddleAdjustmentReprocessServiceTests
         dbContext.Entitlements.Add(new EntitlementEntity { Id = entitlementId, UserId = userId, SubscriptionId = subscriptionId, PlanId = SubscriptionConstants.Plans.PremiumPlanId, EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType, Source = SubscriptionConstants.Entitlements.SourceProviderEvent, Status = SubscriptionConstants.Entitlements.StatusActive, StartsAtUtc = now.AddDays(-1), ExpiresAtUtc = now.AddDays(30), CreatedAt = now.AddDays(-1), UpdatedAt = now.AddDays(-1) });
         dbContext.BillingEvents.Add(new BillingEventEntity { Id = Guid.NewGuid(), BillingProvider = SubscriptionConstants.BillingProviders.Paddle, EventType = eventType, ProviderEventId = providerEventId, ReceivedAtUtc = now.AddMinutes(-10), ProcessedAtUtc = now.AddMinutes(-5), Status = eventStatus, ErrorMessage = "old state", SafeMetadataJson = CreateMetadata(userId, action, "approved", adjustmentType, adjustmentAmountMinor, 1000, includeInternalUserId: includeInternalUserId) });
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
-        return new Fixture(userId, entitlementId, providerEventId);
+        return new Fixture(userId, subscriptionId, entitlementId, providerEventId);
     }
+
+    private static EntitlementEntity CreateEntitlement(
+        Guid userId,
+        Guid? subscriptionId,
+        DateTimeOffset now,
+        string source = SubscriptionConstants.Entitlements.SourceProviderEvent) => new()
+    {
+        Id = Guid.NewGuid(), UserId = userId, SubscriptionId = subscriptionId,
+        PlanId = SubscriptionConstants.Plans.PremiumPlanId,
+        EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType,
+        Source = source, Status = SubscriptionConstants.Entitlements.StatusActive,
+        StartsAtUtc = now.AddDays(-1), ExpiresAtUtc = now.AddDays(30), CreatedAt = now, UpdatedAt = now
+    };
 
     private static string CreateMetadata(Guid userId, string action, string status, string type, long adjustmentAmountMinor, long amountMinor, bool includeForbidden = false, bool includeInternalUserId = true) => JsonSerializer.Serialize(new Dictionary<string, object?>
     {
@@ -191,5 +251,5 @@ public sealed class PaddleAdjustmentReprocessServiceTests
     });
 
     private static AppDbContext CreateDbContext() => new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning)).Options);
-    private sealed record Fixture(Guid UserId, Guid EntitlementId, string ProviderEventId);
+    private sealed record Fixture(Guid UserId, Guid SubscriptionId, Guid EntitlementId, string ProviderEventId);
 }

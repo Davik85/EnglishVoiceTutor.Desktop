@@ -23,6 +23,7 @@ public static class GooglePlayBillingServiceCollectionExtensions
 
         services.AddScoped<IGooglePlayPurchaseVerifier, GooglePlayPurchaseVerifier>();
         services.AddScoped<IGooglePlaySubscriptionsV2Client, GooglePlaySubscriptionsV2Client>();
+        services.AddScoped<IGooglePlayTrialDeferralService, GooglePlayTrialDeferralService>();
         services.AddSingleton<IGooglePlayAndroidPublisherServiceFactory, GooglePlayAndroidPublisherServiceFactory>();
         return services;
     }

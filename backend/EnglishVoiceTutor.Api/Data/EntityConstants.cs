@@ -28,6 +28,7 @@ public static class EntityConstants
         public const string GooglePlayPurchaseTokenSecrets = "google_play_purchase_token_secrets";
         public const string GooglePlayRtdnEvents = "google_play_rtdn_events";
         public const string GooglePlayPendingRefundReviews = "google_play_pending_refund_reviews";
+        public const string GooglePlayInitialPremiumDeferrals = "google_play_initial_premium_deferrals";
         public const string PaddleWebhookEvents = "paddle_webhook_events";
         public const string AdminActions = "admin_actions";
         public const string AdminUsers = "admin_users";
@@ -129,6 +130,7 @@ public static class EntityConstants
         public const int GooglePlayRtdnStatusMaxLength = 32;
         public const int GooglePlayPendingRefundVersionMaxLength = 64;
         public const int GooglePlayPendingRefundPreferenceMaxLength = 32;
+        public const int GooglePlayTrialDeferralEtagMaxLength = 1024;
     }
 
     public static class Precision

@@ -3,6 +3,7 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Services;
+using EnglishVoiceTutor.Api.Services.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services.Billing;
@@ -109,9 +110,29 @@ public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext db
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
+        var persistedClaim = existingClaim ?? await dbContext.GooglePlayPurchaseClaims.SingleAsync(item => item.PurchaseTokenFingerprint == fingerprint, cancellationToken);
+        PremiumCoverageWindow? existingCoverage = null;
+        if (request.VerifiedPurchase.InitialPremiumDeferralEvidence is not null
+            && !await dbContext.GooglePlayInitialPremiumDeferrals.AnyAsync(
+                item => item.GooglePlayPurchaseClaimId == persistedClaim.Id,
+                cancellationToken))
+        {
+            existingCoverage = await PremiumCoverageTimeline.CalculateAsync(
+                dbContext,
+                request.UserId,
+                request.VerifiedPurchase.StartedAtUtc,
+                cancellationToken);
+        }
+
         var lifecycleChanged = await ApplyLifecycleWithinTransactionAsync(subscription, request.VerifiedPurchase, cancellationToken);
-        var secret = await tokenSecretService.CreateOrUpdateAsync(new GooglePlayPurchaseTokenSecretWriteRequest(existingClaim?.Id ?? (await dbContext.GooglePlayPurchaseClaims.SingleAsync(item => item.PurchaseTokenFingerprint == fingerprint, cancellationToken)).Id, fingerprint, request.ProtectedPurchaseToken, GooglePlayPurchaseTokenProtectionService.ProtectionFormatVersion, request.VerifiedPurchase.AcknowledgementState == GooglePlayPurchaseAcknowledgementState.Pending), cancellationToken);
+        var secret = await tokenSecretService.CreateOrUpdateAsync(new GooglePlayPurchaseTokenSecretWriteRequest(persistedClaim.Id, fingerprint, request.ProtectedPurchaseToken, GooglePlayPurchaseTokenProtectionService.ProtectionFormatVersion, request.VerifiedPurchase.AcknowledgementState == GooglePlayPurchaseAcknowledgementState.Pending), cancellationToken);
         if (secret.Code != GooglePlayPurchaseTokenSecretPersistenceResultCode.Stored) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.TemporarilyUnavailable);
+        await CaptureInitialPremiumDeferralPlanWithinTransactionAsync(
+            request.UserId,
+            persistedClaim.Id,
+            request.VerifiedPurchase,
+            existingCoverage,
+            cancellationToken);
         if (linkedClaim is not null)
         {
             var now = utcClock.UtcNow;
@@ -136,6 +157,48 @@ public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext db
         }
         await transaction.CommitAsync(cancellationToken);
         return Result(lifecycleChanged ? GooglePlayVerifiedPurchasePersistenceResultCode.Applied : GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent);
+    }
+
+    private async Task CaptureInitialPremiumDeferralPlanWithinTransactionAsync(
+        Guid userId,
+        Guid claimId,
+        GooglePlayVerifiedPurchase purchase,
+        PremiumCoverageWindow? existingCoverage,
+        CancellationToken cancellationToken)
+    {
+        if (purchase.InitialPremiumDeferralEvidence is null
+            || existingCoverage is not { HasCoverage: true, StartsAtUtc: not null, EndsAtUtc: not null }
+            || await dbContext.GooglePlayInitialPremiumDeferrals.AnyAsync(
+                item => item.GooglePlayPurchaseClaimId == claimId,
+                cancellationToken))
+        {
+            return;
+        }
+
+        var requiredDuration = existingCoverage.Value.EndsAtUtc.Value - purchase.StartedAtUtc;
+        if (requiredDuration <= TimeSpan.Zero) return;
+        var approvedDuration = requiredDuration < TimeSpan.FromDays(1) ? TimeSpan.FromDays(1) : requiredDuration;
+        if (approvedDuration > TimeSpan.FromDays(365)) return;
+        var now = utcClock.UtcNow;
+        dbContext.GooglePlayInitialPremiumDeferrals.Add(new GooglePlayInitialPremiumDeferralEntity
+        {
+            Id = Guid.NewGuid(),
+            GooglePlayPurchaseClaimId = claimId,
+            UserId = userId,
+            PackageName = purchase.PackageName,
+            ProductId = purchase.ProductId,
+            ProviderPurchaseStartedAtUtc = purchase.StartedAtUtc,
+            BaselineProviderExpiryUtc = purchase.ExpiresAtUtc,
+            ExistingCoverageStartsAtUtc = existingCoverage.Value.StartsAtUtc.Value,
+            ExistingCoverageTailUtc = existingCoverage.Value.EndsAtUtc.Value,
+            IsLicenseTestPurchase = purchase.InitialPremiumDeferralEvidence.IsLicenseTestPurchase,
+            ApprovedDeferDurationTicks = approvedDuration.Ticks,
+            TargetProviderExpiryUtc = purchase.ExpiresAtUtc.Add(approvedDuration),
+            Status = GooglePlayTrialDeferralStatuses.Pending,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<bool> ApplyLifecycleWithinTransactionAsync(

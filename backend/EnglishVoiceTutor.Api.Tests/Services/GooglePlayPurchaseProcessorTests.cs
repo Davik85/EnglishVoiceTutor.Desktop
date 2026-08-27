@@ -137,6 +137,42 @@ public sealed class GooglePlayPurchaseProcessorTests
         Assert.Equal(1, client.Calls);
     }
 
+    [Fact]
+    public async Task TrialDeferralRunsOnlyAfterAcknowledgementCompletes()
+    {
+        var sequence = new List<string>();
+        var processor = new GooglePlayPurchaseProcessor(
+            new Verifier(sequence, GooglePlayPurchaseVerificationResultCode.Verified, false),
+            new Persistence(sequence, GooglePlayVerifiedPurchasePersistenceResultCode.Applied),
+            new Protector(),
+            new Client(sequence, null),
+            NullLogger<GooglePlayPurchaseProcessor>.Instance,
+            new Deferral(sequence, GooglePlayTrialDeferralResultCode.Completed));
+
+        var result = await processor.ProcessAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayPurchaseProcessingResultCode.Verified, result.Code);
+        Assert.Equal(["verify", "persist", "acknowledge", "defer"], sequence);
+    }
+
+    [Fact]
+    public async Task AcknowledgementOutageNeverIssuesTrialDeferral()
+    {
+        var sequence = new List<string>();
+        var processor = new GooglePlayPurchaseProcessor(
+            new Verifier(sequence, GooglePlayPurchaseVerificationResultCode.Verified, false),
+            new Persistence(sequence, GooglePlayVerifiedPurchasePersistenceResultCode.Applied),
+            new Protector(),
+            new Client(sequence, GooglePlaySubscriptionsV2ClientFailure.TemporarilyUnavailable),
+            NullLogger<GooglePlayPurchaseProcessor>.Instance,
+            new Deferral(sequence, GooglePlayTrialDeferralResultCode.Completed));
+
+        var result = await processor.ProcessAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayPurchaseProcessingResultCode.AcknowledgementPending, result.Code);
+        Assert.Equal(["verify", "persist", "acknowledge"], sequence);
+    }
+
     private static GooglePlayPurchaseProcessor Create(List<string> sequence, GooglePlayPurchaseVerificationResultCode verificationCode = GooglePlayPurchaseVerificationResultCode.Verified, GooglePlayVerifiedPurchasePersistenceResultCode persistenceCode = GooglePlayVerifiedPurchasePersistenceResultCode.Applied, bool acknowledged = false, GooglePlaySubscriptionsV2ClientFailure? acknowledgementFailure = null) => new(new Verifier(sequence, verificationCode, acknowledged), new Persistence(sequence, persistenceCode), new Protector(), new Client(sequence, acknowledgementFailure), NullLogger<GooglePlayPurchaseProcessor>.Instance);
     private static IConfiguration Configuration(params (string Key, string Value)[] values) => new ConfigurationBuilder().AddInMemoryCollection(values.ToDictionary(value => value.Key, value => (string?)value.Value)).Build();
     private static GooglePlayVerifiedPurchase Purchase(bool acknowledged = false) => new("com.example.test", "server-product", DateTimeOffset.Parse("2026-07-27T10:00:00Z"), DateTimeOffset.Parse("2026-08-27T10:00:00Z"), acknowledged ? GooglePlayPurchaseAcknowledgementState.Acknowledged : GooglePlayPurchaseAcknowledgementState.Pending, false);
@@ -149,4 +185,5 @@ public sealed class GooglePlayPurchaseProcessorTests
     private sealed class AcknowledgementPersistence(List<string> sequence) : IGooglePlayVerifiedPurchasePersistenceService { public List<(bool Pending, string? Code)> AcknowledgementUpdates { get; } = []; public Task<GooglePlayVerifiedPurchasePersistenceResult> PersistAsync(GooglePlayVerifiedPurchasePersistenceRequest request, CancellationToken cancellationToken) { sequence.Add("persist"); return Task.FromResult(new GooglePlayVerifiedPurchasePersistenceResult(GooglePlayVerifiedPurchasePersistenceResultCode.Applied)); } public Task UpdateAcknowledgementStateAsync(string purchaseToken, bool acknowledgementPending, string? safeResultCode, CancellationToken cancellationToken) { AcknowledgementUpdates.Add((acknowledgementPending, safeResultCode)); return Task.CompletedTask; } }
     private sealed class CancelingClient(List<string> sequence) : IGooglePlaySubscriptionsV2Client { public int Calls { get; private set; } public Task<GooglePlaySubscriptionV2Snapshot?> GetAsync(string packageName, string purchaseToken, CancellationToken cancellationToken) => throw new NotSupportedException(); public Task AcknowledgeAsync(string packageName, string productId, string purchaseToken, CancellationToken cancellationToken) { Calls++; sequence.Add("acknowledge"); throw new OperationCanceledException(); } }
     private sealed class RetryingClient(List<string> sequence) : IGooglePlaySubscriptionsV2Client { public int Calls { get; private set; } public Task<GooglePlaySubscriptionV2Snapshot?> GetAsync(string packageName, string purchaseToken, CancellationToken cancellationToken) => throw new NotSupportedException(); public Task AcknowledgeAsync(string packageName, string productId, string purchaseToken, CancellationToken cancellationToken) { sequence.Add("acknowledge"); if (++Calls == 1) throw new GooglePlaySubscriptionsV2ClientException(GooglePlaySubscriptionsV2ClientFailure.TemporarilyUnavailable); return Task.CompletedTask; } }
+    private sealed class Deferral(List<string> sequence, GooglePlayTrialDeferralResultCode code) : IGooglePlayTrialDeferralService { public Task<GooglePlayTrialDeferralResult> ProcessAsync(Guid userId, string purchaseToken, string protectedPurchaseToken, CancellationToken cancellationToken) { sequence.Add("defer"); return Task.FromResult(new GooglePlayTrialDeferralResult(code)); } }
 }

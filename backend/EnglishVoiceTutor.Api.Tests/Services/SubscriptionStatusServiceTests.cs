@@ -377,6 +377,83 @@ public sealed class SubscriptionStatusServiceTests
         Assert.False(db.ChangeTracker.HasChanges());
     }
 
+    [Fact]
+    public async Task ManualThenManualReturnsEndOfContinuousChain()
+    {
+        await using var db = CreateDb();
+        var userId = await AddUserAsync(db);
+        var firstEnd = Now.AddDays(10);
+        var finalEnd = firstEnd.AddDays(20);
+        await AddEntitlementAsync(db, userId, null, firstEnd, source: SubscriptionConstants.Entitlements.SourceManualAdmin);
+        await AddEntitlementAsync(db, userId, null, finalEnd, startsAt: firstEnd, source: SubscriptionConstants.Entitlements.SourceManualAdmin);
+
+        var status = await GetStatusAsync(db, userId);
+
+        Assert.Equal(finalEnd, status.PremiumEndsAtUtc);
+        Assert.Equal(finalEnd, status.PremiumCoverageEndsAtUtc);
+    }
+
+    [Fact]
+    public async Task ProviderThenManualReturnsManualTailWithoutHidingProviderMetadata()
+    {
+        await using var db = CreateDb();
+        var userId = await AddUserAsync(db);
+        var providerEnd = Now.AddDays(10);
+        var finalEnd = providerEnd.AddDays(20);
+        var paddle = await AddSubscriptionAsync(db, userId, SubscriptionConstants.BillingProviders.Paddle, providerEnd);
+        await AddEntitlementAsync(db, userId, paddle.Id, providerEnd);
+        await AddEntitlementAsync(db, userId, null, finalEnd, startsAt: providerEnd, source: SubscriptionConstants.Entitlements.SourceManualAdmin);
+
+        var status = await GetStatusAsync(db, userId);
+
+        Assert.Equal(SubscriptionConstants.BillingProviders.Paddle, status.BillingProvider);
+        Assert.Equal(finalEnd, status.PremiumEndsAtUtc);
+        Assert.Equal(finalEnd, status.PremiumCoverageEndsAtUtc);
+    }
+
+    [Theory]
+    [InlineData(SubscriptionConstants.BillingProviders.Paddle)]
+    [InlineData(SubscriptionConstants.BillingProviders.GooglePlay)]
+    public async Task TrialScheduledManualAndProviderReturnFinalContinuousProviderExpiry(string provider)
+    {
+        await using var db = CreateDb();
+        var userId = await AddUserAsync(db);
+        var trialEnd = Now.AddDays(5);
+        var manualEnd = trialEnd.AddDays(10);
+        var providerEnd = manualEnd.AddDays(30);
+        await AddTrialAsync(db, userId, trialEnd);
+        await AddEntitlementAsync(db, userId, null, manualEnd, startsAt: trialEnd, source: SubscriptionConstants.Entitlements.SourceManualAdmin);
+        var subscription = await AddSubscriptionAsync(db, userId, provider, providerEnd);
+        await AddEntitlementAsync(db, userId, subscription.Id, providerEnd, startsAt: manualEnd);
+
+        var status = await GetStatusAsync(db, userId);
+
+        Assert.Equal(providerEnd, status.PremiumEndsAtUtc);
+        Assert.Equal(providerEnd, status.PremiumCoverageEndsAtUtc);
+    }
+
+    [Theory]
+    [InlineData(SubscriptionConstants.BillingProviders.Paddle, SubscriptionConstants.BillingProviders.GooglePlay)]
+    [InlineData(SubscriptionConstants.BillingProviders.GooglePlay, SubscriptionConstants.BillingProviders.Paddle)]
+    public async Task ShorterOtherProviderCannotHideLongerProviderAndManualCoverage(string longerProvider, string shorterProvider)
+    {
+        await using var db = CreateDb();
+        var userId = await AddUserAsync(db);
+        var longerEnd = Now.AddDays(20);
+        var manualEnd = longerEnd.AddDays(10);
+        var longer = await AddSubscriptionAsync(db, userId, longerProvider, longerEnd);
+        var shorter = await AddSubscriptionAsync(db, userId, shorterProvider, Now.AddDays(5), updatedAt: Now.AddDays(1));
+        await AddEntitlementAsync(db, userId, longer.Id, longerEnd);
+        await AddEntitlementAsync(db, userId, shorter.Id, Now.AddDays(5));
+        await AddEntitlementAsync(db, userId, null, manualEnd, startsAt: longerEnd, source: SubscriptionConstants.Entitlements.SourceManualAdmin);
+
+        var status = await GetStatusAsync(db, userId);
+
+        Assert.Equal(longerProvider, status.BillingProvider);
+        Assert.Equal(manualEnd, status.PremiumEndsAtUtc);
+        Assert.Equal(manualEnd, status.PremiumCoverageEndsAtUtc);
+    }
+
     private static async Task<EnglishVoiceTutor.Api.Contracts.Subscription.SubscriptionStatusResponse> GetStatusAsync(AppDbContext db, Guid userId) =>
         await new SubscriptionStatusService(db, Microsoft.Extensions.Options.Options.Create(new SubscriptionEnforcementOptions())).GetStatusAsync(userId, "test", TestContext.Current.CancellationToken);
 

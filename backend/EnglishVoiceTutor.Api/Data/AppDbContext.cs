@@ -30,6 +30,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<GooglePlayPurchaseTokenSecretEntity> GooglePlayPurchaseTokenSecrets => Set<GooglePlayPurchaseTokenSecretEntity>();
     public DbSet<GooglePlayRtdnEventEntity> GooglePlayRtdnEvents => Set<GooglePlayRtdnEventEntity>();
     public DbSet<GooglePlayPendingRefundReviewEntity> GooglePlayPendingRefundReviews => Set<GooglePlayPendingRefundReviewEntity>();
+    public DbSet<GooglePlayInitialPremiumDeferralEntity> GooglePlayInitialPremiumDeferrals => Set<GooglePlayInitialPremiumDeferralEntity>();
     public DbSet<PaddleWebhookEventEntity> PaddleWebhookEvents => Set<PaddleWebhookEventEntity>();
     public DbSet<AdminActionEntity> AdminActions => Set<AdminActionEntity>();
     public DbSet<AdminUserEntity> AdminUsers => Set<AdminUserEntity>();
@@ -77,6 +78,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureGooglePlayPurchaseClaims(modelBuilder);
         ConfigureGooglePlayRtdnPersistenceFoundation(modelBuilder);
         ConfigureGooglePlayPendingRefundReviewFoundation(modelBuilder);
+        ConfigureGooglePlayInitialPremiumDeferrals(modelBuilder);
         ConfigurePaddleWebhookEvents(modelBuilder);
         ConfigureAdminActions(modelBuilder);
         ConfigureAdminRoleAssignmentPersistence(modelBuilder);
@@ -756,6 +758,23 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.HasIndex(item => item.OrderIdFingerprint);
         entity.HasIndex(item => new { item.Status, item.NextAttemptAtUtc });
         entity.HasIndex(item => item.ProtectedPayloadDeleteAfterUtc);
+    }
+
+    private static void ConfigureGooglePlayInitialPremiumDeferrals(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<GooglePlayInitialPremiumDeferralEntity>();
+        entity.ToTable(EntityConstants.TableNames.GooglePlayInitialPremiumDeferrals);
+        entity.HasKey(item => item.Id);
+        entity.Property(item => item.PackageName).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayRtdnPackageNameMaxLength);
+        entity.Property(item => item.ProductId).IsRequired().HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
+        entity.Property(item => item.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.GooglePlayRtdnStatusMaxLength);
+        entity.Property(item => item.CommandEtag).HasMaxLength(EntityConstants.Lengths.GooglePlayTrialDeferralEtagMaxLength);
+        entity.Property(item => item.LastSafeErrorCode).HasMaxLength(EntityConstants.Lengths.GooglePlaySafeResultCodeMaxLength);
+        entity.Property(item => item.AttemptCount).IsRequired().HasDefaultValue(0);
+        entity.Property(item => item.ConcurrencyRevision).IsConcurrencyToken();
+        entity.HasIndex(item => item.GooglePlayPurchaseClaimId).IsUnique();
+        entity.HasIndex(item => new { item.Status, item.NextAttemptAtUtc });
+        entity.HasIndex(item => item.UserId);
     }
 
     private static void ConfigureAccountAnonymizationPreflightFoundation(ModelBuilder modelBuilder)

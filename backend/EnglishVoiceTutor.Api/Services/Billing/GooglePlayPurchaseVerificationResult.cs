@@ -37,6 +37,7 @@ public sealed record GooglePlayVerifiedPurchase(
     GooglePlaySubscriptionLifecycleState LifecycleState = GooglePlaySubscriptionLifecycleState.Active)
 {
     internal string? LinkedPurchaseToken { get; init; }
+    internal GooglePlayInitialPremiumDeferralEvidence? InitialPremiumDeferralEvidence { get; init; }
 }
 
 public sealed record GooglePlayPurchaseVerificationResult(

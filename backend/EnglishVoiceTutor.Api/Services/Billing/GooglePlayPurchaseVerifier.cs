@@ -59,7 +59,8 @@ public sealed class GooglePlayPurchaseVerifier(
 
         var lineItems = snapshot.LineItems.ToArray();
         if (lineItems.Length == 0 || lineItems.Any(item => string.IsNullOrWhiteSpace(item.ProductId))) return Result(GooglePlayPurchaseVerificationResultCode.TemporarilyUnavailable);
-        if (snapshot.IsTestPurchase && !IsAllowedTestPurchase(options, userId)) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
+        var isAllowedTestPurchase = snapshot.IsTestPurchase && IsAllowedTestPurchase(options, userId);
+        if (snapshot.IsTestPurchase && !isAllowedTestPurchase) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
         if (lineItems.Any(item => !options.AllowedProductIds.Contains(item.ProductId!, StringComparer.Ordinal))) return Result(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct);
 
         var linkedToken = snapshot.LinkedPurchaseToken;
@@ -95,7 +96,16 @@ public sealed class GooglePlayPurchaseVerifier(
                 expiresAtUtc,
                 snapshot.AcknowledgementState.Value,
                 snapshot.IsTestPurchase,
-                lifecycleState.Value) { LinkedPurchaseToken = linkedToken };
+                lifecycleState.Value)
+        {
+            LinkedPurchaseToken = linkedToken,
+            InitialPremiumDeferralEvidence = GooglePlayTrialDeferralEligibility.Select(
+                snapshot,
+                selected,
+                startedAtUtc,
+                expiresAtUtc,
+                isAllowedTestPurchase)
+        };
         return new GooglePlayPurchaseVerificationResult(GooglePlayPurchaseVerificationResultCode.Verified, verifiedPurchase);
     }
 

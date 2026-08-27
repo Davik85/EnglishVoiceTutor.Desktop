@@ -284,7 +284,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
                 && entitlement.Status == SubscriptionConstants.Entitlements.StatusActive
                 && entitlement.StartsAtUtc <= nowUtc
                 && (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > nowUtc)
-                && (entitlement.SubscriptionId == null || entitlement.SubscriptionId == subscription.Id))
+                && entitlement.SubscriptionId == subscription.Id)
             .ToListAsync(cancellationToken);
 
         var expiredCount = 0;
@@ -297,7 +297,6 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
                 continue;
             }
 
-            entitlement.SubscriptionId ??= subscription.Id;
             entitlement.ExpiresAtUtc = requestedExpiresAtUtc;
             entitlement.Reason = CreateEntitlementExpiryReason(billingEvent);
             entitlement.UpdatedAt = nowUtc;

@@ -60,8 +60,8 @@ public sealed class GooglePlayReconciliationIterationService(
             token.PurchaseToken,
             new GooglePlayPurchaseProcessingContext(confirmedRevocation),
             cancellationToken);
-        if (result.Code == GooglePlayPurchaseProcessingResultCode.Verified) { await eventPersistence.MarkProcessedAsync(item.Id, cancellationToken); return; }
-        if (result.Code is GooglePlayPurchaseProcessingResultCode.InvalidPurchase or GooglePlayPurchaseProcessingResultCode.UnsupportedProduct or GooglePlayPurchaseProcessingResultCode.OwnershipConflict or GooglePlayPurchaseProcessingResultCode.AcknowledgementInconsistent)
+        if (result.Code is GooglePlayPurchaseProcessingResultCode.Verified or GooglePlayPurchaseProcessingResultCode.TrialDeferralPending) { await eventPersistence.MarkProcessedAsync(item.Id, cancellationToken); return; }
+        if (result.Code is GooglePlayPurchaseProcessingResultCode.InvalidPurchase or GooglePlayPurchaseProcessingResultCode.UnsupportedProduct or GooglePlayPurchaseProcessingResultCode.OwnershipConflict or GooglePlayPurchaseProcessingResultCode.AcknowledgementInconsistent or GooglePlayPurchaseProcessingResultCode.TrialDeferralAmbiguous)
         { await eventPersistence.RecordPermanentFailureAsync(item.Id, GooglePlayRtdnSafeErrorCodes.ProviderRejected, cancellationToken); return; }
         await RetryOrFailEventAsync(item, now, options, result.Code == GooglePlayPurchaseProcessingResultCode.AcknowledgementPending ? GooglePlayRtdnSafeErrorCodes.ProviderUnavailable : GooglePlayRtdnSafeErrorCodes.ProviderUnavailable, cancellationToken);
     }
@@ -85,6 +85,12 @@ public sealed class GooglePlayReconciliationIterationService(
         if (!token.Succeeded || string.IsNullOrWhiteSpace(token.PurchaseToken)) { await secretPersistence.UpdateReconciliationMetadataAsync(secret.GooglePlayPurchaseClaimId, now, null, options.MaximumAttempts, GooglePlayRtdnSafeErrorCodes.ProviderRejected, null, false, cancellationToken); return; }
         var result = await purchaseProcessor.ProcessAsync(claim.UserId, token.PurchaseToken, cancellationToken);
         if (result.Code == GooglePlayPurchaseProcessingResultCode.Verified) { await secretPersistence.UpdateReconciliationMetadataAsync(secret.GooglePlayPurchaseClaimId, now, null, 0, null, secret.FinalRecheckUntilUtc, false, cancellationToken); return; }
+        if (result.Code == GooglePlayPurchaseProcessingResultCode.TrialDeferralPending) return;
+        if (result.Code == GooglePlayPurchaseProcessingResultCode.TrialDeferralAmbiguous)
+        {
+            await secretPersistence.UpdateReconciliationMetadataAsync(secret.GooglePlayPurchaseClaimId, now, null, options.MaximumAttempts, GooglePlayTrialDeferralSafeErrorCodes.ProviderStateDiverged, secret.FinalRecheckUntilUtc, false, cancellationToken);
+            return;
+        }
         var permanent = result.Code is GooglePlayPurchaseProcessingResultCode.InvalidPurchase or GooglePlayPurchaseProcessingResultCode.UnsupportedProduct or GooglePlayPurchaseProcessingResultCode.OwnershipConflict or GooglePlayPurchaseProcessingResultCode.AcknowledgementInconsistent;
         var attempts = Math.Min(options.MaximumAttempts, secret.ReconciliationAttemptCount + 1);
         var acknowledgementPending = !permanent && result.Code == GooglePlayPurchaseProcessingResultCode.AcknowledgementPending;

@@ -1,3 +1,4 @@
+using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Billing;
@@ -76,6 +77,54 @@ public sealed class GooglePlayPurchaseVerifierTests
         Assert.Equal(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct, wrongUser.Code);
         Assert.Equal(GooglePlayPurchaseVerificationResultCode.Verified, allowed.Code);
         Assert.True(allowed.VerifiedPurchase!.IsTestPurchase);
+    }
+
+    [Fact]
+    public async Task AllowlistedLicenseTesterGetsAcceleratedDeferralEvidenceOnlyThroughExistingTestControls()
+    {
+        var userId = Guid.NewGuid();
+        var snapshot = Snapshot(
+            "SUBSCRIPTION_STATE_ACTIVE",
+            Timestamp("2026-08-03T00:00:00Z"),
+            [EligibleMonthlyLineItem("premium", Timestamp("2026-08-03T00:05:00Z"))],
+            GooglePlayPurchaseAcknowledgementState.Acknowledged,
+            isTestPurchase: true) with { Etag = "test-etag" };
+
+        var allowed = await CreateVerifier(
+            new RecordingClient(snapshot),
+            Options(
+                allowedProductIds: ["premium"],
+                testPurchasesEnabled: true,
+                allowedTestPurchaseUserIds: [userId.ToString("D")]))
+            .VerifyAsync(userId, "fake-token", TestContext.Current.CancellationToken);
+        var wrongUser = await CreateVerifier(
+            new RecordingClient(snapshot),
+            Options(
+                allowedProductIds: ["premium"],
+                testPurchasesEnabled: true,
+                allowedTestPurchaseUserIds: [Guid.NewGuid().ToString("D")]))
+            .VerifyAsync(userId, "fake-token", TestContext.Current.CancellationToken);
+
+        Assert.True(allowed.VerifiedPurchase!.InitialPremiumDeferralEvidence!.IsLicenseTestPurchase);
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.UnsupportedProduct, wrongUser.Code);
+    }
+
+    [Fact]
+    public async Task ProductionAcceleratedPeriodCannotReceiveLicenseTestDeferralEvidence()
+    {
+        var snapshot = Snapshot(
+            "SUBSCRIPTION_STATE_ACTIVE",
+            Timestamp("2026-08-03T00:00:00Z"),
+            [EligibleMonthlyLineItem("premium", Timestamp("2026-08-03T00:05:00Z"))],
+            GooglePlayPurchaseAcknowledgementState.Acknowledged) with { Etag = "production-etag" };
+
+        var result = await CreateVerifier(
+            new RecordingClient(snapshot),
+            Options(allowedProductIds: ["premium"], testPurchasesEnabled: true, allowedTestPurchaseUserIds: [Guid.NewGuid().ToString("D")]))
+            .VerifyAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayPurchaseVerificationResultCode.Verified, result.Code);
+        Assert.Null(result.VerifiedPurchase!.InitialPremiumDeferralEvidence);
     }
 
     [Fact]
@@ -331,6 +380,14 @@ public sealed class GooglePlayPurchaseVerifierTests
     private static GooglePlayBillingOptions Options(bool enabled = true, string packageName = "com.example.test", List<string>? allowedProductIds = null, bool testPurchasesEnabled = false, List<string>? allowedTestPurchaseUserIds = null) => new() { Enabled = enabled, PackageName = packageName, AllowedProductIds = allowedProductIds ?? ["server-product"], TestPurchasesEnabled = testPurchasesEnabled, AllowedTestPurchaseUserIds = allowedTestPurchaseUserIds ?? [] };
     private static GooglePlaySubscriptionV2Snapshot Snapshot(string? state, DateTimeOffset? startTime = null, IReadOnlyList<GooglePlaySubscriptionLineItemSnapshot>? lineItems = null, GooglePlayPurchaseAcknowledgementState? acknowledgementState = GooglePlayPurchaseAcknowledgementState.Pending, bool isTestPurchase = false, bool hasLinkedPurchaseToken = false) => new(state, startTime, lineItems ?? [], acknowledgementState, isTestPurchase, hasLinkedPurchaseToken ? "linked-old-token" : null);
     private static GooglePlaySubscriptionLineItemSnapshot LineItem(string? productId, DateTimeOffset? expiryTime, string? deferredItemReplacementProductId = null) => new(productId, expiryTime, deferredItemReplacementProductId);
+    private static GooglePlaySubscriptionLineItemSnapshot EligibleMonthlyLineItem(string productId, DateTimeOffset expiryTime) => new(productId, expiryTime)
+    {
+        HasAutoRenewingPlan = true,
+        AutoRenewEnabled = true,
+        BasePlanId = SubscriptionConstants.Billing.GooglePlayPremiumBasePlanId,
+        OfferPhase = GooglePlaySubscriptionOfferPhase.BasePrice,
+        HasLatestSuccessfulOrderId = true
+    };
     private static DateTimeOffset Timestamp(string value) => DateTimeOffset.Parse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal).ToUniversalTime();
 
     private sealed class RecordingClient(GooglePlaySubscriptionV2Snapshot? snapshot = null) : IGooglePlaySubscriptionsV2Client

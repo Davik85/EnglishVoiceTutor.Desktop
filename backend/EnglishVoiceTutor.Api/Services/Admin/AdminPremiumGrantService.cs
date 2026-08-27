@@ -3,6 +3,7 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Admin;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Api.Services.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services.Admin;
@@ -62,26 +63,12 @@ public sealed class AdminPremiumGrantService(
         }
 
         var now = DateTimeOffset.UtcNow;
-        var latestActivePremiumExpiry = await dbContext.Entitlements
-            .AsNoTracking()
-            .Where(entitlement => entitlement.UserId == targetUserId)
-            .Where(entitlement => entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType)
-            .Where(entitlement => entitlement.Status == SubscriptionConstants.Entitlements.StatusActive)
-            .Where(entitlement => entitlement.ExpiresAtUtc > now)
-            .MaxAsync(entitlement => (DateTimeOffset?)entitlement.ExpiresAtUtc, cancellationToken);
-
-        var latestActiveTrialExpiry = await dbContext.TrialGrants
-            .AsNoTracking()
-            .Where(trial => trial.UserId == targetUserId)
-            .Where(trial => trial.Status == SubscriptionConstants.Entitlements.StatusActive)
-            .Where(trial => trial.GrantedAtUtc <= now)
-            .Where(trial => trial.ExpiresAtUtc > now)
-            .MaxAsync(trial => (DateTimeOffset?)trial.ExpiresAtUtc, cancellationToken);
-
-        var startsAtUtc = latestActivePremiumExpiry is not null
-            && (latestActiveTrialExpiry is null || latestActivePremiumExpiry.Value >= latestActiveTrialExpiry.Value)
-                ? latestActivePremiumExpiry.Value
-                : latestActiveTrialExpiry ?? now;
+        var existingCoverage = await PremiumCoverageTimeline.CalculateAsync(
+            dbContext,
+            targetUserId,
+            now,
+            cancellationToken);
+        var startsAtUtc = existingCoverage.EndsAtUtc ?? now;
         var expiresAtUtc = startsAtUtc.AddDays(request.DurationDays);
 
         var entitlement = new EntitlementEntity

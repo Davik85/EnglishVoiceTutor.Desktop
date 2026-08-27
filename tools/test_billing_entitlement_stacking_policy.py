@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ACTIVATION_SERVICE = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "Billing" / "BillingEventEntitlementActivationService.cs"
+PREMIUM_TIMELINE = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "Subscriptions" / "PremiumCoverageTimeline.cs"
 SUBSCRIPTION_STATUS_SERVICE = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "Subscriptions" / "SubscriptionStatusService.cs"
 ADMIN_LOOKUP_SERVICE = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "Admin" / "AdminUserLookupService.cs"
 
@@ -23,6 +24,7 @@ def assert_not_contains(text: str, needle: str, label: str) -> None:
 
 def main() -> None:
     activation = read(ACTIVATION_SERVICE)
+    timeline = read(PREMIUM_TIMELINE)
     status = read(SUBSCRIPTION_STATUS_SERVICE)
     admin = read(ADMIN_LOOKUP_SERVICE)
 
@@ -42,29 +44,39 @@ def main() -> None:
         "paid duration preservation when access is delayed",
     )
     assert_contains(
-        activation,
+        timeline,
         "dbContext.TrialGrants",
         "active trial_grants consideration",
     )
     assert_contains(
-        activation,
-        "trial.GrantedAtUtc <= nowUtc",
+        timeline,
+        "trial.GrantedAtUtc <= referenceTimeUtc",
         "trial grant must already be active before stacking",
     )
     assert_contains(
-        activation,
-        "trial.ExpiresAtUtc > nowUtc",
+        timeline,
+        "trial.ExpiresAtUtc > referenceTimeUtc",
         "trial grant must still be active before stacking",
     )
     assert_contains(
         activation,
         "FindCurrentOrScheduledProviderEventEntitlementAsync",
-        "current or future provider_event lookup to avoid overlapping provider entitlements",
+        "current or future exact Paddle provider_event lookup",
     )
     assert_contains(
         activation,
-        "existingProviderEventEntitlement.ExpiresAtUtc.Value",
-        "provider extension starts after existing provider entitlement expiry",
+        "entitlement.SubscriptionId == subscriptionId",
+        "provider entitlement mutation is scoped to the exact Paddle subscription",
+    )
+    assert_contains(
+        activation,
+        "SubscriptionId = paddleSubscription.Id",
+        "new Paddle entitlement records exact subscription ownership",
+    )
+    assert_contains(
+        activation,
+        "PremiumCoverageTimeline.CalculateAsync",
+        "provider-neutral continuous Premium tail calculation",
     )
     assert_not_contains(
         activation,

@@ -54,7 +54,9 @@ public sealed class PaddleAdjustmentReprocessService : IPaddleAdjustmentReproces
         var fullRefundDetected = IsFullRefund(metadata);
         var chargebackDetected = IsChargeback(metadata);
         var resolution = await ResolveUserAsync(metadata, cancellationToken);
-        var entitlementCandidatesCount = resolution.UserId is null ? 0 : await CountActiveProviderPremiumAsync(resolution.UserId.Value, cancellationToken);
+        var entitlementCandidatesCount = resolution.UserId is null
+            ? 0
+            : await CountExactPaddlePremiumAsync(metadata, resolution.UserId.Value, cancellationToken);
 
         if (!fullRefundDetected && !chargebackDetected)
         {
@@ -66,13 +68,6 @@ public sealed class PaddleAdjustmentReprocessService : IPaddleAdjustmentReproces
         if (resolution.UserId is null)
         {
             var result = CreateResult(PaddleAdjustmentReprocessResults.Blocked, "user_not_safely_resolved", billingEvent.EventType, normalizedProviderEventId, metadata, resolution.Source, resolution.UserId, entitlementCandidatesCount, 0);
-            LogResult(result);
-            return result;
-        }
-
-        if (entitlementCandidatesCount == 0)
-        {
-            var result = CreateResult(PaddleAdjustmentReprocessResults.AlreadyRevoked, null, billingEvent.EventType, normalizedProviderEventId, metadata, resolution.Source, resolution.UserId, entitlementCandidatesCount, 0);
             LogResult(result);
             return result;
         }
@@ -112,16 +107,69 @@ public sealed class PaddleAdjustmentReprocessService : IPaddleAdjustmentReproces
         return final;
     }
 
-    private async Task<int> CountActiveProviderPremiumAsync(Guid userId, CancellationToken cancellationToken)
+    private async Task<int> CountExactPaddlePremiumAsync(SafeMetadata metadata, Guid userId, CancellationToken cancellationToken)
     {
+        var subscriptionId = await ResolvePaddleSubscriptionIdAsync(metadata, userId, cancellationToken);
+        if (!subscriptionId.HasValue)
+        {
+            return 0;
+        }
+
         var nowUtc = DateTimeOffset.UtcNow;
         return await dbContext.Entitlements.CountAsync(entitlement => entitlement.UserId == userId
+            && entitlement.SubscriptionId == subscriptionId.Value
             && entitlement.PlanId == SubscriptionConstants.Plans.PremiumPlanId
             && entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
             && entitlement.Source == SubscriptionConstants.Entitlements.SourceProviderEvent
             && entitlement.Status == SubscriptionConstants.Entitlements.StatusActive
             && entitlement.StartsAtUtc <= nowUtc
             && (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > nowUtc), cancellationToken);
+    }
+
+    private async Task<Guid?> ResolvePaddleSubscriptionIdAsync(SafeMetadata metadata, Guid userId, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(metadata.PaddleTransactionId))
+        {
+            var payment = await dbContext.Payments.AsNoTracking().SingleOrDefaultAsync(
+                candidate => candidate.Provider == SubscriptionConstants.BillingProviders.Paddle
+                    && candidate.ProviderPaymentId == metadata.PaddleTransactionId,
+                cancellationToken);
+            if (payment is not null)
+            {
+                if (payment.UserId != userId
+                    || (!string.IsNullOrWhiteSpace(metadata.PaddleSubscriptionId)
+                        && !string.Equals(payment.ProviderSubscriptionId, metadata.PaddleSubscriptionId, StringComparison.Ordinal)))
+                {
+                    return null;
+                }
+
+                if (payment.SubscriptionId.HasValue)
+                {
+                    return await dbContext.Subscriptions.AsNoTracking()
+                        .Where(subscription => subscription.Id == payment.SubscriptionId.Value
+                            && subscription.UserId == userId
+                            && subscription.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+                            && subscription.Provider == SubscriptionConstants.BillingProviders.Paddle
+                            && (string.IsNullOrWhiteSpace(metadata.PaddleSubscriptionId)
+                                || subscription.ProviderSubscriptionId == metadata.PaddleSubscriptionId))
+                        .Select(subscription => (Guid?)subscription.Id)
+                        .SingleOrDefaultAsync(cancellationToken);
+                }
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(metadata.PaddleSubscriptionId))
+        {
+            return null;
+        }
+
+        return await dbContext.Subscriptions.AsNoTracking()
+            .Where(subscription => subscription.UserId == userId
+                && subscription.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+                && subscription.Provider == SubscriptionConstants.BillingProviders.Paddle
+                && subscription.ProviderSubscriptionId == metadata.PaddleSubscriptionId)
+            .Select(subscription => (Guid?)subscription.Id)
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     private async Task<UserResolution> ResolveUserAsync(SafeMetadata metadata, CancellationToken cancellationToken)

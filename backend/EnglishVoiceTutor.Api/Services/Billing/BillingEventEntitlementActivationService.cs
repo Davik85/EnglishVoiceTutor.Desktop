@@ -4,6 +4,7 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Options;
+using EnglishVoiceTutor.Api.Services.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -312,16 +313,28 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             return ActivationEventOutcome.Blocked();
         }
 
-        var entitlement = await FindCurrentOrScheduledProviderEventEntitlementAsync(
+        var paddleSubscription = await FindPaddleSubscriptionAsync(
             validation.InternalUserId!.Value,
-            nowUtc,
+            validation.PaddleSubscriptionId!,
             cancellationToken);
+        if (paddleSubscription is null)
+        {
+            MarkBlocked(billingEvent, nowUtc, SubscriptionConstants.BillingEventActivation.PaddleSubscriptionOwnershipNotFoundMessage);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return ActivationEventOutcome.Blocked();
+        }
 
         var schedule = await CalculateStackedProviderEntitlementScheduleAsync(
-            validation.InternalUserId.Value,
+            validation.InternalUserId!.Value,
             validation.BillingPeriodStartsAtUtc,
             validation.BillingPeriodEndsAtUtc!.Value,
-            entitlement,
+            nowUtc,
+            cancellationToken);
+        var entitlement = await FindCurrentOrScheduledProviderEventEntitlementAsync(
+            validation.InternalUserId.Value,
+            paddleSubscription.Id,
+            schedule.StartsAtUtc,
             nowUtc,
             cancellationToken);
 
@@ -335,7 +348,7 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
                 Id = Guid.NewGuid(),
                 UserId = validation.InternalUserId.Value,
                 PlanId = SubscriptionConstants.Plans.PremiumPlanId,
-                SubscriptionId = null,
+                SubscriptionId = paddleSubscription.Id,
                 EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType,
                 Source = SubscriptionConstants.Entitlements.SourceProviderEvent,
                 Status = SubscriptionConstants.Entitlements.StatusActive,
@@ -436,8 +449,18 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             return ActivationEventOutcome.Blocked();
         }
 
+        var paddleSubscription = await ResolveAdjustmentPaddleSubscriptionAsync(metadata, userId.Value, cancellationToken);
+        if (paddleSubscription is null)
+        {
+            MarkBlocked(billingEvent, nowUtc, SubscriptionConstants.BillingEventActivation.PaddleSubscriptionOwnershipNotFoundMessage);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            LogAdjustmentDiagnostics(billingEvent, metadata, resolution.Source, userId, isFullRefund, isChargeback, "blocked", SubscriptionConstants.BillingEventActivation.PaddleSubscriptionOwnershipNotFoundMessage, 0, 0);
+            return ActivationEventOutcome.Blocked();
+        }
+
         var entitlements = await dbContext.Entitlements
             .Where(entitlement => entitlement.UserId == userId.Value
+                && entitlement.SubscriptionId == paddleSubscription.Id
                 && entitlement.PlanId == SubscriptionConstants.Plans.PremiumPlanId
                 && entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
                 && entitlement.Source == SubscriptionConstants.Entitlements.SourceProviderEvent
@@ -445,6 +468,27 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
                 && entitlement.StartsAtUtc <= nowUtc
                 && (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > nowUtc))
             .ToListAsync(cancellationToken);
+
+        if (entitlements.Count == 0)
+        {
+            var ambiguousLegacyEntitlementExists = await dbContext.Entitlements.AnyAsync(
+                entitlement => entitlement.UserId == userId.Value
+                    && entitlement.SubscriptionId == null
+                    && entitlement.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+                    && entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
+                    && entitlement.Source == SubscriptionConstants.Entitlements.SourceProviderEvent
+                    && entitlement.Status == SubscriptionConstants.Entitlements.StatusActive
+                    && entitlement.StartsAtUtc <= nowUtc
+                    && (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > nowUtc),
+                cancellationToken);
+            if (ambiguousLegacyEntitlementExists)
+            {
+                MarkBlocked(billingEvent, nowUtc, SubscriptionConstants.BillingEventActivation.PaddleEntitlementOwnershipNotProvenMessage);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                LogAdjustmentDiagnostics(billingEvent, metadata, resolution.Source, userId, isFullRefund, isChargeback, "blocked", SubscriptionConstants.BillingEventActivation.PaddleEntitlementOwnershipNotProvenMessage, 0, 0);
+                return ActivationEventOutcome.Blocked();
+            }
+        }
 
         var reason = isChargeback
             ? SubscriptionConstants.BillingEventActivation.ChargebackRevokedReason
@@ -548,6 +592,61 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         return new AdjustmentUserResolution(null, "none");
     }
 
+    private async Task<SubscriptionEntity?> ResolveAdjustmentPaddleSubscriptionAsync(
+        BillingEventActivationSafeMetadata metadata,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(metadata.PaddleTransactionId))
+        {
+            var payment = await dbContext.Payments
+                .AsNoTracking()
+                .SingleOrDefaultAsync(candidate => candidate.Provider == SubscriptionConstants.BillingProviders.Paddle
+                    && candidate.ProviderPaymentId == metadata.PaddleTransactionId, cancellationToken);
+            if (payment is not null)
+            {
+                if (payment.UserId != userId
+                    || (!string.IsNullOrWhiteSpace(metadata.PaddleSubscriptionId)
+                        && !string.Equals(payment.ProviderSubscriptionId, metadata.PaddleSubscriptionId, StringComparison.Ordinal)))
+                {
+                    return null;
+                }
+
+                if (payment.SubscriptionId.HasValue)
+                {
+                    return await dbContext.Subscriptions.SingleOrDefaultAsync(
+                        subscription => subscription.Id == payment.SubscriptionId.Value
+                            && subscription.UserId == userId
+                            && subscription.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+                            && subscription.Provider == SubscriptionConstants.BillingProviders.Paddle
+                            && (string.IsNullOrWhiteSpace(metadata.PaddleSubscriptionId)
+                                || subscription.ProviderSubscriptionId == metadata.PaddleSubscriptionId),
+                        cancellationToken);
+                }
+
+                if (!string.IsNullOrWhiteSpace(payment.ProviderSubscriptionId))
+                {
+                    return await FindPaddleSubscriptionAsync(userId, payment.ProviderSubscriptionId, cancellationToken);
+                }
+            }
+        }
+
+        return string.IsNullOrWhiteSpace(metadata.PaddleSubscriptionId)
+            ? null
+            : await FindPaddleSubscriptionAsync(userId, metadata.PaddleSubscriptionId, cancellationToken);
+    }
+
+    private Task<SubscriptionEntity?> FindPaddleSubscriptionAsync(
+        Guid userId,
+        string providerSubscriptionId,
+        CancellationToken cancellationToken) =>
+        dbContext.Subscriptions.SingleOrDefaultAsync(
+            subscription => subscription.UserId == userId
+                && subscription.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+                && subscription.Provider == SubscriptionConstants.BillingProviders.Paddle
+                && subscription.ProviderSubscriptionId == providerSubscriptionId,
+            cancellationToken);
+
     private void LogAdjustmentDiagnostics(
         BillingEventEntity billingEvent,
         BillingEventActivationSafeMetadata metadata,
@@ -628,6 +727,11 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             return ActivationValidationResult.Invalid(SubscriptionConstants.BillingEventActivation.MissingBillingPeriodEndMessage);
         }
 
+        if (string.IsNullOrWhiteSpace(metadata.PaddleSubscriptionId))
+        {
+            return ActivationValidationResult.Invalid(SubscriptionConstants.BillingEventActivation.PaddleSubscriptionOwnershipNotFoundMessage);
+        }
+
         if (metadata.BillingPeriodEndsAtUtc.Value <= nowUtc)
         {
             return ActivationValidationResult.Invalid(SubscriptionConstants.BillingEventActivation.BillingPeriodEndNotFutureMessage);
@@ -641,6 +745,7 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
 
         return ActivationValidationResult.Valid(
             internalUserId,
+            metadata.PaddleSubscriptionId,
             metadata.BillingPeriodStartsAtUtc,
             metadata.BillingPeriodEndsAtUtc.Value);
     }
@@ -735,65 +840,40 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         Guid userId,
         DateTimeOffset? billingPeriodStartsAtUtc,
         DateTimeOffset billingPeriodEndsAtUtc,
-        EntitlementEntity? existingProviderEventEntitlement,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken)
     {
         var providerPaidPeriodStartsAtUtc = billingPeriodStartsAtUtc ?? nowUtc;
         var providerPaidDuration = billingPeriodEndsAtUtc - providerPaidPeriodStartsAtUtc;
-        var latestActiveAccessEndUtc = await FindLatestActiveAccessEndAsync(userId, nowUtc, cancellationToken);
-        var stackStartsAtUtc = latestActiveAccessEndUtc is null
+        var existingCoverage = await PremiumCoverageTimeline.CalculateAsync(
+            dbContext,
+            userId,
+            nowUtc,
+            cancellationToken);
+        var stackStartsAtUtc = existingCoverage.EndsAtUtc is null
             ? MaxDateTimeOffset(providerPaidPeriodStartsAtUtc, nowUtc)!.Value
-            : MaxDateTimeOffset(nowUtc, latestActiveAccessEndUtc)!.Value;
-
-        if (existingProviderEventEntitlement?.ExpiresAtUtc is not null)
-        {
-            stackStartsAtUtc = MaxDateTimeOffset(stackStartsAtUtc, existingProviderEventEntitlement.ExpiresAtUtc.Value)!.Value;
-        }
+            : MaxDateTimeOffset(nowUtc, existingCoverage.EndsAtUtc)!.Value;
 
         return new ProviderEntitlementSchedule(
             stackStartsAtUtc,
             stackStartsAtUtc.Add(providerPaidDuration));
     }
 
-    private async Task<DateTimeOffset?> FindLatestActiveAccessEndAsync(
-        Guid userId,
-        DateTimeOffset nowUtc,
-        CancellationToken cancellationToken)
-    {
-        var latestTrialGrantEndUtc = await dbContext.TrialGrants
-            .AsNoTracking()
-            .Where(trial => trial.UserId == userId
-                && trial.Status == SubscriptionConstants.Entitlements.StatusActive
-                && trial.GrantedAtUtc <= nowUtc
-                && trial.ExpiresAtUtc > nowUtc)
-            .MaxAsync(trial => (DateTimeOffset?)trial.ExpiresAtUtc, cancellationToken);
-
-        var latestPremiumEntitlementEndUtc = await dbContext.Entitlements
-            .AsNoTracking()
-            .Where(entitlement => entitlement.UserId == userId
-                && entitlement.PlanId == SubscriptionConstants.Plans.PremiumPlanId
-                && entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
-                && entitlement.Status == SubscriptionConstants.Entitlements.StatusActive
-                && entitlement.StartsAtUtc <= nowUtc
-                && entitlement.ExpiresAtUtc.HasValue
-                && entitlement.ExpiresAtUtc.Value > nowUtc)
-            .MaxAsync(entitlement => entitlement.ExpiresAtUtc, cancellationToken);
-
-        return MaxDateTimeOffset(latestTrialGrantEndUtc, latestPremiumEntitlementEndUtc);
-    }
-
     private Task<EntitlementEntity?> FindCurrentOrScheduledProviderEventEntitlementAsync(
         Guid userId,
+        Guid subscriptionId,
+        DateTimeOffset continuousTailUtc,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken)
     {
         return dbContext.Entitlements
             .Where(entitlement => entitlement.UserId == userId
+                && entitlement.SubscriptionId == subscriptionId
                 && entitlement.PlanId == SubscriptionConstants.Plans.PremiumPlanId
                 && entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
                 && entitlement.Source == SubscriptionConstants.Entitlements.SourceProviderEvent
                 && entitlement.Status == SubscriptionConstants.Entitlements.StatusActive
+                && entitlement.StartsAtUtc <= continuousTailUtc
                 && (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > nowUtc))
             .OrderByDescending(entitlement => entitlement.ExpiresAtUtc == null)
             .ThenByDescending(entitlement => entitlement.ExpiresAtUtc)
@@ -898,17 +978,19 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
     private sealed record ActivationValidationResult(
         bool IsValid,
         Guid? InternalUserId,
+        string? PaddleSubscriptionId,
         DateTimeOffset? BillingPeriodStartsAtUtc,
         DateTimeOffset? BillingPeriodEndsAtUtc,
         string? ErrorMessage)
     {
         public static ActivationValidationResult Valid(
             Guid internalUserId,
+            string paddleSubscriptionId,
             DateTimeOffset? billingPeriodStartsAtUtc,
             DateTimeOffset billingPeriodEndsAtUtc) =>
-            new(true, internalUserId, billingPeriodStartsAtUtc, billingPeriodEndsAtUtc, null);
+            new(true, internalUserId, paddleSubscriptionId, billingPeriodStartsAtUtc, billingPeriodEndsAtUtc, null);
 
         public static ActivationValidationResult Invalid(string errorMessage) =>
-            new(false, null, null, null, errorMessage);
+            new(false, null, null, null, null, errorMessage);
     }
 }
