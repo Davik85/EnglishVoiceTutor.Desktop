@@ -188,6 +188,7 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
             billingPeriodStartsAtUtc = subscriptionSnapshot.BillingPeriod.StartsAtUtc,
             billingPeriodEndsAtUtc = subscriptionSnapshot.BillingPeriod.EndsAtUtc,
             cancelAtPeriodEnd = subscriptionSnapshot.CancelAtPeriodEnd,
+            scheduledChangeSnapshotComplete = subscriptionSnapshot.ScheduledChangeSnapshotComplete,
             scheduledChangeAction = subscriptionSnapshot.ScheduledChangeAction,
             scheduledChangeEffectiveAtUtc = subscriptionSnapshot.ScheduledChangeEffectiveAtUtc,
             effectiveAtUtc = subscriptionSnapshot.EffectiveAtUtc,
@@ -319,7 +320,8 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
                 price.PriceId,
                 price.ProductId,
                 billingPeriod,
-                GetBoolean(data, "cancel_at_period_end") ?? string.Equals(scheduledChange.Action, SubscriptionConstants.ScheduledChangeActions.Cancel, StringComparison.OrdinalIgnoreCase),
+                string.Equals(scheduledChange.Action, SubscriptionConstants.ScheduledChangeActions.Cancel, StringComparison.OrdinalIgnoreCase),
+                scheduledChange.SnapshotComplete,
                 scheduledChange.Action,
                 scheduledChange.EffectiveAtUtc,
                 FirstDateTimeOffset(
@@ -347,15 +349,35 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
 
     private static ScheduledChangeMetadata ExtractScheduledChange(JsonElement data)
     {
-        if (!TryGetObject(data, "scheduled_change", out var scheduledChange))
+        if (!data.TryGetProperty("scheduled_change", out var scheduledChange))
         {
             return ScheduledChangeMetadata.Empty;
         }
 
-        return new ScheduledChangeMetadata(
-            GetString(scheduledChange, "action"),
-            TryParseDateTimeOffset(GetString(scheduledChange, "effective_at")));
+        if (scheduledChange.ValueKind == JsonValueKind.Null)
+        {
+            return ScheduledChangeMetadata.None;
+        }
+
+        if (scheduledChange.ValueKind != JsonValueKind.Object)
+        {
+            return ScheduledChangeMetadata.Empty;
+        }
+
+        var action = GetString(scheduledChange, "action")?.Trim().ToLowerInvariant();
+        var effectiveAtUtc = TryParseDateTimeOffset(GetString(scheduledChange, "effective_at"));
+        if (!IsSupportedScheduledChangeAction(action) || effectiveAtUtc is null)
+        {
+            return ScheduledChangeMetadata.Empty;
+        }
+
+        return new ScheduledChangeMetadata(true, action, effectiveAtUtc);
     }
+
+    private static bool IsSupportedScheduledChangeAction(string? action) =>
+        string.Equals(action, SubscriptionConstants.ScheduledChangeActions.Cancel, StringComparison.Ordinal)
+        || string.Equals(action, SubscriptionConstants.ScheduledChangeActions.Pause, StringComparison.Ordinal)
+        || string.Equals(action, SubscriptionConstants.ScheduledChangeActions.Resume, StringComparison.Ordinal);
 
     private static PriceMetadata ExtractPrice(JsonElement data)
     {
@@ -460,21 +482,6 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         return null;
     }
 
-    private static bool? GetBoolean(JsonElement element, string propertyName)
-    {
-        if (!element.TryGetProperty(propertyName, out var property))
-        {
-            return null;
-        }
-
-        return property.ValueKind switch
-        {
-            JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            _ => null
-        };
-    }
-
     private static DateTimeOffset? TryParseDateTimeOffset(string? value)
     {
         return DateTimeOffset.TryParse(value, out var parsed) ? parsed.ToUniversalTime() : null;
@@ -562,9 +569,10 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         public static BillingPeriodMetadata Empty { get; } = new(null, null);
     }
 
-    private sealed record ScheduledChangeMetadata(string? Action, DateTimeOffset? EffectiveAtUtc)
+    private sealed record ScheduledChangeMetadata(bool SnapshotComplete, string? Action, DateTimeOffset? EffectiveAtUtc)
     {
-        public static ScheduledChangeMetadata Empty { get; } = new(null, null);
+        public static ScheduledChangeMetadata Empty { get; } = new(false, null, null);
+        public static ScheduledChangeMetadata None { get; } = new(true, null, null);
     }
 
     private sealed record PriceMetadata(string? PriceId, string? ProductId)
@@ -602,6 +610,7 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         string? ProductId,
         BillingPeriodMetadata BillingPeriod,
         bool CancelAtPeriodEnd,
+        bool ScheduledChangeSnapshotComplete,
         string? ScheduledChangeAction,
         DateTimeOffset? ScheduledChangeEffectiveAtUtc,
         DateTimeOffset? EffectiveAtUtc)
@@ -611,6 +620,7 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
             null,
             null,
             BillingPeriodMetadata.Empty,
+            false,
             false,
             null,
             null,

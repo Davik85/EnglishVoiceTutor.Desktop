@@ -200,6 +200,11 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
             return SubscriptionSnapshotValidationResult.Invalid(SubscriptionConstants.SubscriptionLifecycleSnapshot.InvalidBillingEventMetadataMessage);
         }
 
+        if (metadata.ScheduledChangeSnapshotComplete != true)
+        {
+            return SubscriptionSnapshotValidationResult.Invalid(SubscriptionConstants.SubscriptionLifecycleSnapshot.IncompleteScheduledChangeSnapshotMessage);
+        }
+
         if (metadata.InternalUserId is null)
         {
             return SubscriptionSnapshotValidationResult.Invalid(SubscriptionConstants.SubscriptionLifecycleSnapshot.MissingInternalUserIdMessage);
@@ -233,6 +238,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
             metadata.BillingPeriodStartsAtUtc,
             metadata.BillingPeriodEndsAtUtc,
             metadata.CancelAtPeriodEnd,
+            metadata.ScheduledChangeSnapshotComplete.Value,
             FirstNonEmpty(metadata.ScheduledChangeAction),
             metadata.ScheduledChangeEffectiveAtUtc,
             metadata.EffectiveAtUtc,
@@ -258,9 +264,9 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         subscription.CurrentPeriodStartUtc = snapshot.BillingPeriodStartsAtUtc ?? subscription.CurrentPeriodStartUtc;
         subscription.CurrentPeriodEndUtc = snapshot.BillingPeriodEndsAtUtc ?? subscription.CurrentPeriodEndUtc;
         subscription.ExpiresAt = snapshot.BillingPeriodEndsAtUtc ?? subscription.ExpiresAt;
-        subscription.CancelAtPeriodEnd = subscription.CancelAtPeriodEnd || snapshot.CancelAtPeriodEnd || IsScheduledCancellation(snapshot.ScheduledChangeAction);
-        subscription.ScheduledChangeAction = snapshot.ScheduledChangeAction ?? subscription.ScheduledChangeAction;
-        subscription.ScheduledChangeEffectiveAtUtc = snapshot.ScheduledChangeEffectiveAtUtc ?? subscription.ScheduledChangeEffectiveAtUtc;
+        subscription.CancelAtPeriodEnd = snapshot.CancelAtPeriodEnd || IsScheduledCancellation(snapshot.ScheduledChangeAction);
+        subscription.ScheduledChangeAction = snapshot.ScheduledChangeAction;
+        subscription.ScheduledChangeEffectiveAtUtc = snapshot.ScheduledChangeEffectiveAtUtc;
         subscription.LastProviderEventId = snapshot.ProviderEventId;
         subscription.LastProviderEventType = snapshot.ProviderEventType;
         subscription.LastProviderEventOccurredAtUtc = snapshot.EventOccurredAtUtc;
@@ -542,6 +548,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         public DateTimeOffset? BillingPeriodStartsAtUtc { get; set; }
         public DateTimeOffset? BillingPeriodEndsAtUtc { get; set; }
         public bool CancelAtPeriodEnd { get; set; }
+        public bool? ScheduledChangeSnapshotComplete { get; set; }
         public string? ScheduledChangeAction { get; set; }
         public DateTimeOffset? ScheduledChangeEffectiveAtUtc { get; set; }
         public DateTimeOffset? EffectiveAtUtc { get; set; }
@@ -560,6 +567,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         DateTimeOffset? BillingPeriodStartsAtUtc,
         DateTimeOffset? BillingPeriodEndsAtUtc,
         bool CancelAtPeriodEnd,
+        bool ScheduledChangeSnapshotComplete,
         string? ScheduledChangeAction,
         DateTimeOffset? ScheduledChangeEffectiveAtUtc,
         DateTimeOffset? EffectiveAtUtc,
@@ -579,6 +587,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
             DateTimeOffset? billingPeriodStartsAtUtc,
             DateTimeOffset? billingPeriodEndsAtUtc,
             bool cancelAtPeriodEnd,
+            bool scheduledChangeSnapshotComplete,
             string? scheduledChangeAction,
             DateTimeOffset? scheduledChangeEffectiveAtUtc,
             DateTimeOffset? effectiveAtUtc,
@@ -597,6 +606,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
                 billingPeriodStartsAtUtc,
                 billingPeriodEndsAtUtc,
                 cancelAtPeriodEnd,
+                scheduledChangeSnapshotComplete,
                 scheduledChangeAction,
                 scheduledChangeEffectiveAtUtc,
                 effectiveAtUtc,
@@ -617,6 +627,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
                 SubscriptionConstants.SubscriptionStatuses.Unknown,
                 null,
                 null,
+                false,
                 false,
                 null,
                 null,

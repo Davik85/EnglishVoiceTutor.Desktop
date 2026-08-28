@@ -240,6 +240,7 @@ public sealed class BillingEventEntitlementActivationStackingTests
                 paddleSubscriptionId = "sub_test",
                 internalUserId = userId,
                 internalPlanId = SubscriptionConstants.Plans.PremiumPlanId,
+                scheduledChangeSnapshotComplete = true,
                 effectiveAtUtc = now,
                 occurredAtUtc = now
             })

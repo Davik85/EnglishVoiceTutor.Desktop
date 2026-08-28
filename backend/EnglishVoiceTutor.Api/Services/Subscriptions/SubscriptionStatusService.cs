@@ -1,3 +1,4 @@
+using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Subscription;
 using EnglishVoiceTutor.Api.Data;
@@ -12,6 +13,8 @@ public sealed class SubscriptionStatusService(
     AppDbContext dbContext,
     IOptions<SubscriptionEnforcementOptions> subscriptionEnforcementOptions) : ISubscriptionStatusService
 {
+    private static readonly JsonSerializerOptions MetadataJsonOptions = new(JsonSerializerDefaults.Web);
+
     public async Task<SubscriptionStatusResponse> GetStatusAsync(Guid userId, string source, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
@@ -98,9 +101,234 @@ public sealed class SubscriptionStatusService(
 
         response.FreeLessonRemainingToday = response.FreeLessonUsedToday ? 0 : SubscriptionConstants.FreeLessonsPerDay;
         ApplyRenewalSummary(response, effectiveSubscription is not null);
+        await ApplyGooglePlayPurchaseGateAsync(response, userId, cancellationToken);
         ApplyLearnerSubscriptionSummary(response, premiumEntitlement, response.TrialActive, response.TrialEndsAtUtc, futurePremiumEntitlements, now);
 
         return response;
+    }
+
+    private async Task ApplyGooglePlayPurchaseGateAsync(
+        SubscriptionStatusResponse response,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var subscriptions = await dbContext.Subscriptions
+            .AsNoTracking()
+            .Where(subscription =>
+                subscription.UserId == userId
+                && subscription.PlanId == SubscriptionConstants.Plans.PremiumPlanId)
+            .ToListAsync(cancellationToken);
+
+        var paddleProviderEventIds = subscriptions
+            .Where(subscription =>
+                IsProvider(subscription.Provider, SubscriptionConstants.BillingProviders.Paddle)
+                && !string.IsNullOrWhiteSpace(subscription.LastProviderEventId))
+            .Select(subscription => subscription.LastProviderEventId!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var paddleBillingEvents = paddleProviderEventIds.Count == 0
+            ? []
+            : await dbContext.BillingEvents
+                .AsNoTracking()
+                .Where(billingEvent =>
+                    billingEvent.BillingProvider == SubscriptionConstants.BillingProviders.Paddle
+                    && paddleProviderEventIds.Contains(billingEvent.ProviderEventId))
+                .ToListAsync(cancellationToken);
+        var paddleBillingEventsByProviderEventId = paddleBillingEvents
+            .ToDictionary(billingEvent => billingEvent.ProviderEventId, StringComparer.OrdinalIgnoreCase);
+
+        var renewalOwners = new List<SubscriptionEntity>();
+        var ownershipAmbiguous = false;
+
+        foreach (var subscription in subscriptions)
+        {
+            if (IsProvider(subscription.Provider, SubscriptionConstants.BillingProviders.None)
+                || IsProvider(subscription.Provider, SubscriptionConstants.BillingProviders.Manual)
+                || IsProvider(subscription.Provider, SubscriptionConstants.BillingProviders.InternalTrial))
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(subscription.Provider)
+                || string.IsNullOrWhiteSpace(subscription.ProviderSubscriptionId))
+            {
+                ownershipAmbiguous = true;
+                continue;
+            }
+
+            if (IsTerminalNonRenewingStatus(subscription.Status))
+            {
+                continue;
+            }
+
+            if (IsStatus(subscription.Status, SubscriptionConstants.SubscriptionStatuses.PastDue)
+                || IsStatus(subscription.Status, SubscriptionConstants.SubscriptionStatuses.Paused))
+            {
+                renewalOwners.Add(subscription);
+                continue;
+            }
+
+            var scheduledCancellation = subscription.CancelAtPeriodEnd
+                || IsScheduledCancellation(subscription.ScheduledChangeAction);
+            if (HasConflictingCancellationState(subscription, scheduledCancellation))
+            {
+                ownershipAmbiguous = true;
+                continue;
+            }
+
+            if (scheduledCancellation)
+            {
+                if (IsProvider(subscription.Provider, SubscriptionConstants.BillingProviders.Paddle)
+                    && (IsStatus(subscription.Status, SubscriptionConstants.SubscriptionStatuses.Active)
+                        || IsStatus(subscription.Status, SubscriptionConstants.SubscriptionStatuses.Trialing))
+                    && !string.IsNullOrWhiteSpace(subscription.LastProviderEventId)
+                    && paddleBillingEventsByProviderEventId.TryGetValue(subscription.LastProviderEventId, out var paddleBillingEvent)
+                    && HasAuthoritativeFuturePaddleScheduledCancellation(
+                        subscription,
+                        paddleBillingEvent,
+                        userId,
+                        response.CheckedAtUtc))
+                {
+                    continue;
+                }
+
+                ownershipAmbiguous = true;
+                continue;
+            }
+
+            if (IsRecoverableRenewalStatus(subscription.Status))
+            {
+                renewalOwners.Add(subscription);
+                continue;
+            }
+
+            ownershipAmbiguous = true;
+        }
+
+        if (ownershipAmbiguous)
+        {
+            response.GooglePlayPurchaseAllowed = false;
+            response.GooglePlayPurchaseBlockReasonCode = SubscriptionConstants.GooglePlayPurchaseGate.RenewalOwnershipAmbiguous;
+            response.GooglePlayPurchaseBlockingProvider = null;
+            return;
+        }
+
+        if (renewalOwners.Count > 1)
+        {
+            response.GooglePlayPurchaseAllowed = false;
+            response.GooglePlayPurchaseBlockReasonCode = SubscriptionConstants.GooglePlayPurchaseGate.MultipleExternalAutoRenewOwners;
+            response.GooglePlayPurchaseBlockingProvider = null;
+            return;
+        }
+
+        if (renewalOwners.Count == 1)
+        {
+            response.GooglePlayPurchaseAllowed = false;
+            response.GooglePlayPurchaseBlockReasonCode = SubscriptionConstants.GooglePlayPurchaseGate.ExternalAutoRenewActive;
+            response.GooglePlayPurchaseBlockingProvider = renewalOwners[0].Provider;
+            return;
+        }
+
+        response.GooglePlayPurchaseAllowed = true;
+        response.GooglePlayPurchaseBlockReasonCode = SubscriptionConstants.GooglePlayPurchaseGate.None;
+        response.GooglePlayPurchaseBlockingProvider = null;
+    }
+
+    private static bool IsRecoverableRenewalStatus(string? status) =>
+        IsStatus(status, SubscriptionConstants.SubscriptionStatuses.Active)
+        || IsStatus(status, SubscriptionConstants.SubscriptionStatuses.Trialing)
+        || IsStatus(status, SubscriptionConstants.SubscriptionStatuses.PastDue)
+        || IsStatus(status, SubscriptionConstants.SubscriptionStatuses.Paused);
+
+    private static bool IsTerminalNonRenewingStatus(string? status) =>
+        IsStatus(status, SubscriptionConstants.SubscriptionStatuses.Canceled)
+        || IsStatus(status, SubscriptionConstants.SubscriptionStatuses.Expired)
+        || IsStatus(status, SubscriptionConstants.SubscriptionStatuses.Chargeback);
+
+    private static bool HasConflictingCancellationState(
+        SubscriptionEntity subscription,
+        bool scheduledCancellation)
+    {
+        if (subscription.CancelAtPeriodEnd
+            && !string.IsNullOrWhiteSpace(subscription.ScheduledChangeAction)
+            && !IsScheduledCancellation(subscription.ScheduledChangeAction))
+        {
+            return true;
+        }
+
+        if (!scheduledCancellation)
+        {
+            return false;
+        }
+
+        return IsStatus(subscription.Status, SubscriptionConstants.SubscriptionStatuses.Paused)
+            || string.Equals(subscription.LastProviderEventType, SubscriptionConstants.BillingEventTypes.SubscriptionResumed, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(subscription.LastProviderEventType, SubscriptionConstants.BillingEventTypes.SubscriptionActivated, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool HasAuthoritativeFuturePaddleScheduledCancellation(
+        SubscriptionEntity subscription,
+        BillingEventEntity billingEvent,
+        Guid userId,
+        DateTimeOffset checkedAtUtc)
+    {
+        if (!IsProvider(billingEvent.BillingProvider, SubscriptionConstants.BillingProviders.Paddle)
+            || !string.Equals(billingEvent.Status, SubscriptionConstants.BillingEventStatuses.Processed, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(billingEvent.ProviderEventId, subscription.LastProviderEventId, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(billingEvent.EventType, subscription.LastProviderEventType, StringComparison.OrdinalIgnoreCase)
+            || subscription.ScheduledChangeEffectiveAtUtc is null
+            || subscription.ScheduledChangeEffectiveAtUtc <= checkedAtUtc
+            || !TryReadPaddleScheduledChangeMetadata(billingEvent.SafeMetadataJson, out var metadata))
+        {
+            return false;
+        }
+
+        return string.Equals(metadata.PaddleEventId, billingEvent.ProviderEventId, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(metadata.EventType, billingEvent.EventType, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(metadata.PaddleSubscriptionId, subscription.ProviderSubscriptionId, StringComparison.Ordinal)
+            && Guid.TryParse(metadata.InternalUserId, out var metadataUserId)
+            && metadataUserId == userId
+            && metadata.ScheduledChangeSnapshotComplete == true
+            && IsScheduledCancellation(metadata.ScheduledChangeAction)
+            && metadata.ScheduledChangeEffectiveAtUtc == subscription.ScheduledChangeEffectiveAtUtc;
+    }
+
+    private static bool TryReadPaddleScheduledChangeMetadata(
+        string? safeMetadataJson,
+        out PaddleScheduledChangeSafeMetadata metadata)
+    {
+        metadata = new PaddleScheduledChangeSafeMetadata();
+        if (string.IsNullOrWhiteSpace(safeMetadataJson))
+        {
+            return false;
+        }
+
+        try
+        {
+            var parsedMetadata = JsonSerializer.Deserialize<PaddleScheduledChangeSafeMetadata>(safeMetadataJson, MetadataJsonOptions);
+            if (parsedMetadata is null)
+            {
+                return false;
+            }
+
+            metadata = parsedMetadata;
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private sealed class PaddleScheduledChangeSafeMetadata
+    {
+        public string? PaddleEventId { get; set; }
+        public string? EventType { get; set; }
+        public string? PaddleSubscriptionId { get; set; }
+        public string? InternalUserId { get; set; }
+        public bool? ScheduledChangeSnapshotComplete { get; set; }
+        public string? ScheduledChangeAction { get; set; }
+        public DateTimeOffset? ScheduledChangeEffectiveAtUtc { get; set; }
     }
 
     private async Task<SubscriptionEntity?> FindEffectiveSubscriptionAsync(

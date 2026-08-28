@@ -112,6 +112,8 @@ public static class SubscriptionConstants
     public static class ScheduledChangeActions
     {
         public const string Cancel = "cancel";
+        public const string Pause = "pause";
+        public const string Resume = "resume";
     }
 
     public static class PaymentStatuses
@@ -175,6 +177,7 @@ public static class SubscriptionConstants
         public const string UserNotFoundMessage = "User not found for subscription lifecycle snapshot.";
         public const string MissingProviderSubscriptionIdMessage = "Missing provider subscription id for subscription lifecycle snapshot.";
         public const string InvalidBillingEventMetadataMessage = "Invalid billing event metadata for subscription lifecycle snapshot.";
+        public const string IncompleteScheduledChangeSnapshotMessage = "Paddle scheduled-change snapshot is incomplete; persisted renewal state was not changed.";
         public const string OlderProviderEventIgnoredMessage = "Older subscription lifecycle provider event ignored.";
         public const string UnexpectedProcessingErrorMessage = "Unexpected subscription lifecycle snapshot processing error.";
         public const string ExpiredProviderEventEntitlementReason = "Provider-event Premium entitlement expired by subscription lifecycle event.";
@@ -215,6 +218,14 @@ public static class SubscriptionConstants
         public const string DefaultCheckoutCurrency = "USD";
         public const string DefaultPremiumPlanId = Plans.PremiumPlanId;
         public const string CheckoutModeSubscription = "subscription";
+    }
+
+    public static class GooglePlayPurchaseGate
+    {
+        public const string None = "none";
+        public const string ExternalAutoRenewActive = "external_auto_renew_active";
+        public const string MultipleExternalAutoRenewOwners = "multiple_external_auto_renew_owners";
+        public const string RenewalOwnershipAmbiguous = "renewal_ownership_ambiguous";
     }
 
     public static class AdminActionTypes

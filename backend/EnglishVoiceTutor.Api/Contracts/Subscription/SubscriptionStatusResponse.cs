@@ -22,6 +22,9 @@ public sealed class SubscriptionStatusResponse
     public string RenewalStatus { get; set; } = SubscriptionConstants.RenewalStatuses.Unknown;
     public string NextRenewalState { get; set; } = SubscriptionConstants.NextRenewalStates.Unknown;
     public string CancellationExplanationCode { get; set; } = SubscriptionConstants.CancellationExplanationCodes.Unknown;
+    public bool GooglePlayPurchaseAllowed { get; set; }
+    public string GooglePlayPurchaseBlockReasonCode { get; set; } = SubscriptionConstants.GooglePlayPurchaseGate.RenewalOwnershipAmbiguous;
+    public string? GooglePlayPurchaseBlockingProvider { get; set; }
     public DateTimeOffset? PaidAccessUntilUtc { get; set; }
     public bool ProviderSubscriptionPresent { get; set; }
     public string? LastProviderEventId { get; set; }
