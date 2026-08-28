@@ -1,6 +1,6 @@
 # Migration rollback/remediation runbook
 
-Review date: 2026-06-23.
+Review date: 2026-08-28.
 
 Scope: Phase 4C operator-readiness documentation and dry-run command planning only. This runbook does not apply SQL, does not run EF migrations, does not restore over production, does not change backend runtime behavior, and does not change Desktop, Admin UI, CMS, billing, Paddle, packaging, upload, or deployment behavior.
 
@@ -34,6 +34,14 @@ After application, ownership was changed to `lvt_app`, runtime read access was v
 Starting migration `20260727045935_AddGooglePlayPurchaseClaims` advanced to ending migration `20260803052655_AddGooglePlayPendingRefundReviewFoundation` by applying `20260802154345_AddGooglePlayRtdnPersistenceFoundation` and `20260803052655_AddGooglePlayPendingRefundReviewFoundation`. A fresh backup was created first at `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260803_060304Z.dump` (7,754,175 bytes); `pg_restore --list` returned 293 lines. Reviewed temporary SQL was removed after use.
 
 The additive change created `google_play_purchase_token_secrets`, `google_play_rtdn_events`, and `google_play_pending_refund_reviews`. All three are owned by `lvt_app`, runtime table privileges were verified, and `lvt_analytics_reader` has no listed privileges. Each table was empty immediately after migration; database health returned HTTP 200. Backend deployment was separate; `.138` remains schema-compatible as the code rollback target. No existing billing table or entitlement/Paddle data was altered.
+
+## 2026-08-28 Google Play trial-deferral foundation migration and backend `.142` deployment record
+
+Production started at migration `20260803052655_AddGooglePlayPendingRefundReviewFoundation` and applied `20260827105749_AddGooglePlayTrialDeferralFoundation` using reviewed bounded SQL with SHA-256 `168C4D9EDACABD448E51A0326EA5E7A21DC50185FEBCF55ABBAEB178483A4BDD`. A fresh pre-migration PostgreSQL backup was created at `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260828_052137Z.dump` (8,012,168 bytes); `pg_restore --list` returned 315 lines. Temporary migration SQL was removed after application.
+
+The migration created only `public.google_play_initial_premium_deferrals`, its primary key, the unique `GooglePlayPurchaseClaimId` index, the `Status` + `NextAttemptAtUtc` index, the `UserId` index, and the EF migrations-history row. PostgreSQL truncated two overlong generated index identifiers to its normal identifier-length limit; all expected indexes exist. No existing application table or application data changed. The table owner is `lvt_app`, runtime access was verified, `lvt_analytics_reader` has no granted access, and the table was empty immediately after migration. Public database health remained HTTP 200.
+
+Backend `0.1.35-backend.142` from commit `c199dc6064c34f3b705eb4a56aed6aa6c684fb9c` was then deployed through the repository package -> upload dry-run -> real upload/restart flow, with `.141` retained as rollback. `languagevoicetutor-backend.service` is active and listening normally on `127.0.0.1:5001`; public `/health` and `/api/health/database` both returned HTTP 200. This migration/deployment record does not enable Google Play runtime, provider mutation, RTDN, reconciliation, or pending-refund processing.
 
 ## Principles
 

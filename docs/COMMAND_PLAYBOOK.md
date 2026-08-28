@@ -1,10 +1,10 @@
 # Command Playbook
 
-Review date: 2026-08-25.
+Review date: 2026-08-28.
 
 ## CMS setup-localization draft import
 
-Production closeout: backend `0.1.35-backend.141` is active (with `.140` retained as rollback), CMS published version `51` is active at runtime, and no migration was needed for the `.141` legacy product-limit cleanup or the historical `.140` Website CMS design-contract deployment. Runtime status is `CmsPublishedSnapshot` with `fallbackUsed=false`; the published content contains 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. The import procedure below remains for a future older draft only; it is not a pending production operation.
+Production closeout: backend `0.1.35-backend.142` is active (with `.141` retained as rollback), CMS published version `51` is active at runtime, and `.142` applied the additive `20260827105749_AddGooglePlayTrialDeferralFoundation` migration. The `.141` legacy product-limit cleanup and historical `.140` Website CMS design-contract deployment remain preserved. Runtime status is `CmsPublishedSnapshot` with `fallbackUsed=false`; the published content contains 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. The import procedure below remains for a future older draft only; it is not a pending production operation.
 
 ## Source of truth for current versions
 
@@ -379,7 +379,7 @@ Rollback remains disabling or removing the CMS runtime flags and restarting the 
 
 ## Current controlled tester handoff checks after CMS runtime milestone
 
-Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.141` and the live public direct Windows manifest points to `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`. The live manifest is verified; no independent second public-download SHA verification is claimed for 1.6. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
+Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.142` and the live public direct Windows manifest points to `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`. The live manifest is verified; no independent second public-download SHA verification is claimed for 1.6. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
 
 Verify the public direct release manifest before handoff:
 
