@@ -1,14 +1,16 @@
 # Backend server deployment
 
-Review date: 2026-08-25.
+Review date: 2026-08-28.
 
 ## Current production backend
 
 Production backend is deployed and healthy.
 
-## Backend Data Protection certificate rotation (disabled and unprovisioned)
+## Backend Data Protection provisioned production state and future certificate replacement
 
-`BackendDataProtection` remains disabled until a separate operator-approved enablement action. Rotation is also a separate operator-approved action; implementing this support does not authorize either action and does not enable Google Play processing.
+`BackendDataProtection` is enabled through the approved production secret/configuration mechanism. Its persistent key ring is `/var/lib/languagevoicetutor/backend/data-protection/key-ring`, and its active certificate is `/etc/languagevoicetutor/data-protection/certificates/active/backend-data-protection.pfx`; both are outside versioned backend release directories and the `current` symlink. The key-ring directory is `0700 deploy:deploy`, the active PFX is `0640 root:deploy`, and the certificate-password source is `0600 root:root`. Do not commit a certificate password, PFX contents, private key, or `backend.env` contents.
+
+The active PFX was verified with its configured password, has a valid private key, and has subject and issuer `CN = Language Voice Tutor Backend Data Protection`; its validity is 2026-08-28 09:53:05 GMT through 2031-08-27 09:53:05 GMT. A protected backup exists under `/var/backups/languagevoicetutor/data-protection`; `sha256sum` integrity verification and an isolated restore drill passed, including opening the restored PFX and validating its private key. The temporary restore-test directory was removed. A pre-change backup of `backend.env` was created before the settings change. After configuration, `languagevoicetutor-backend.service` restarted successfully, was active and listening on `127.0.0.1:5001`, public `/health` and `/api/health/database` returned HTTP 200 `Healthy` (`canConnect=true`), and startup logs showed no Data Protection/certificate/PFX/key-ring initialization errors. The persistent key ring currently contains no key XML because no protected Google Play token operation was intentionally triggered merely to create one; this is expected and is not a provisioning failure. This provisioning did not enable Google Play Billing, RTDN, reconciliation, or pending-refund processing; no Google credentials, Pub/Sub/RTDN production configuration, or Google Play purchase has been provisioned or attempted.
 
 Configure only these environment variable names through the approved secret/configuration mechanism, never in a committed release configuration:
 
@@ -19,12 +21,12 @@ Configure only these environment variable names through the approved secret/conf
 - `BackendDataProtection__UnprotectCertificates__<index>__CertificatePath`
 - `BackendDataProtection__UnprotectCertificates__<index>__CertificatePassword`
 
-The active certificate protects newly created Data Protection keys. `UnprotectCertificates` contains zero or more older certificates used only to decrypt existing key-ring entries. During a certificate rotation, the old certificate must remain available as a previous certificate until all protected material that depends on it is no longer required. Removing it before that point prevents decryption of those older keys.
+The active certificate protects newly created Data Protection keys. `UnprotectCertificates` contains zero or more older certificates used only to decrypt existing key-ring entries. No certificate replacement is currently being performed and no previous certificate is configured. During a future certificate rotation, the old certificate must remain available as a previous certificate until all protected material that depends on it is no longer required. Removing it before that point prevents decryption of those older keys.
 
-The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Final server paths, ownership, groups, and permissions require owner approval and are intentionally not defined here. Do not place certificate values or passwords in committed `appsettings.json` files.
+The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.141`
-- Previous rollback release: `0.1.35-backend.140`
+- Current release: `0.1.35-backend.142`
+- Previous rollback release: `0.1.35-backend.141`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -40,7 +42,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.141`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.140`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.142`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.141`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 ## 2026-08-25 `.141` legacy product-limit removal deployment verification
 
