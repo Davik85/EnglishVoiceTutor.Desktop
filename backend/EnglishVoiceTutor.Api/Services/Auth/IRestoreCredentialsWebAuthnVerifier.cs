@@ -25,7 +25,7 @@ public sealed class RestoreCredentialsWebAuthnVerifier(RestoreCredentialsOptions
 
     public CredentialCreateOptions CreateRegistrationOptions(Fido2User user, IReadOnlyList<PublicKeyCredentialDescriptor> excludedCredentials) => CreateFido2().RequestNewCredential(new RequestNewCredentialParams
     {
-        User = user, ExcludeCredentials = excludedCredentials, AuthenticatorSelection = new AuthenticatorSelection { ResidentKey = ResidentKeyRequirement.Required }, AttestationPreference = AttestationConveyancePreference.None
+        User = user, ExcludeCredentials = excludedCredentials, AuthenticatorSelection = new AuthenticatorSelection { ResidentKey = ResidentKeyRequirement.Required, UserVerification = UserVerificationRequirement.Discouraged }, AttestationPreference = AttestationConveyancePreference.None
     });
 
     public Task<RegisteredPublicKeyCredential> VerifyRegistrationAsync(AuthenticatorAttestationRawResponse response, CredentialCreateOptions originalOptions, IsCredentialIdUniqueToUserAsyncDelegate uniquenessCallback, CancellationToken cancellationToken) => CreateFido2().MakeNewCredentialAsync(new MakeNewCredentialParams { AttestationResponse = response, OriginalOptions = originalOptions, IsCredentialIdUniqueToUserCallback = uniquenessCallback }, cancellationToken);

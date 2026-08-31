@@ -1,5 +1,8 @@
+using System.Text.Json;
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Auth;
+using Fido2NetLib;
+using Fido2NetLib.Objects;
 
 namespace EnglishVoiceTutor.Api.Tests.Services;
 
@@ -19,6 +22,19 @@ public sealed class RestoreCredentialsOptionsTests
         Assert.Contains("https://example.test", configuration.Origins);
         Assert.Contains(ValidAndroidOrigin, configuration.Origins);
         Assert.Equal(2, configuration.Origins.Count);
+    }
+
+    [Fact]
+    public void RegistrationOptionsRequireResidentKeyAndDiscourageUserVerification()
+    {
+        var registration = new RestoreCredentialsWebAuthnVerifier(EnabledOptions("https://example.test")).CreateRegistrationOptions(
+            new Fido2User { Id = Guid.NewGuid().ToByteArray(), Name = "user@example.test", DisplayName = "User" }, []);
+
+        Assert.NotNull(registration.AuthenticatorSelection);
+        Assert.Equal(ResidentKeyRequirement.Required, registration.AuthenticatorSelection.ResidentKey);
+        Assert.Equal(UserVerificationRequirement.Discouraged, registration.AuthenticatorSelection.UserVerification);
+        var serialized = JsonSerializer.Serialize(registration, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.Contains("\"userVerification\":\"discouraged\"", serialized, StringComparison.Ordinal);
     }
 
     [Theory]
