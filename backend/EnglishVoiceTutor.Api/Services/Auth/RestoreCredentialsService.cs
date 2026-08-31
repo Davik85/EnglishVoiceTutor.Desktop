@@ -5,6 +5,7 @@ using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Options;
 using Fido2NetLib;
+using Fido2NetLib.Exceptions;
 using Fido2NetLib.Objects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -60,9 +61,19 @@ public sealed class RestoreCredentialsService(
             await dbContext.SaveChangesAsync(cancellationToken);
             return true;
         }
-        catch (Exception exception) when (exception is Fido2VerificationException or JsonException or ArgumentException)
+        catch (Fido2VerificationException exception)
         {
-            logger.LogInformation("Restore credential registration rejected. Result=InvalidCredential");
+            logger.LogInformation("Restore credential registration rejected. Result=InvalidCredential Reason={Reason}", ClassifyRegistrationFailure(exception));
+            return false;
+        }
+        catch (JsonException)
+        {
+            logger.LogInformation("Restore credential registration rejected. Result=InvalidCredential Reason={Reason}", "MalformedCredentialJson");
+            return false;
+        }
+        catch (ArgumentException)
+        {
+            logger.LogInformation("Restore credential registration rejected. Result=InvalidCredential Reason={Reason}", "InvalidCredentialArgument");
             return false;
         }
     }
@@ -101,6 +112,18 @@ public sealed class RestoreCredentialsService(
     }
 
     private bool IsAvailable() => options.Enabled;
+
+    private static string ClassifyRegistrationFailure(Fido2VerificationException exception)
+    {
+        if (exception.Code != Fido2ErrorCode.Unknown)
+        {
+            return exception.Code.ToString();
+        }
+
+        return exception.Message.StartsWith("Fully qualified origin ", StringComparison.Ordinal)
+            ? "OriginMismatch"
+            : "UnknownFido2Verification";
+    }
 
     private async Task<RestoreCredentialCeremonyResponse> PersistCeremonyAsync(Guid? userId, string type, object ceremonyOptions, CancellationToken cancellationToken)
     {

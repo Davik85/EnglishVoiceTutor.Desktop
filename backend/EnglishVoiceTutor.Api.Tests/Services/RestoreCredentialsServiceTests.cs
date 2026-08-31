@@ -6,16 +6,96 @@ using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
 using Fido2NetLib;
+using Fido2NetLib.Exceptions;
 using Fido2NetLib.Objects;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace EnglishVoiceTutor.Api.Tests.Services;
 
 public sealed class RestoreCredentialsServiceTests
 {
+    [Fact]
+    public async Task ClassifiedRegistrationRejectionDoesNotPersistCredentialOrLogRawExceptionText()
+    {
+        await using var db = CreateDb();
+        var user = new UserEntity { Id = Guid.NewGuid(), Email = "registration@example.test", PasswordHash = "hash", Status = "active", CreatedAt = DateTimeOffset.UtcNow };
+        db.Users.Add(user);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        const string sensitiveMessage = "Fully qualified origin https://sensitive.example.test is not equal to fully qualified original origin https://other.example.test";
+        var verifier = new RegistrationVerifier(new Fido2VerificationException(Fido2ErrorCode.InvalidAttestation, sensitiveMessage));
+        var logger = new RecordingLogger<RestoreCredentialsService>();
+        var service = CreateService(db, true, verifier, logger: logger);
+        var ceremony = await service.CreateRegistrationOptionsAsync(user.Id, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(ceremony);
+        Assert.False(await service.VerifyRegistrationAsync(user.Id, RegistrationRequest(ceremony!.CeremonyId), TestContext.Current.CancellationToken));
+        Assert.Empty(db.RestoreCredentials);
+        var output = Assert.Single(logger.Entries);
+        Assert.Equal("Restore credential registration rejected. Result=InvalidCredential Reason=InvalidAttestation", output.Message);
+        Assert.Null(output.Exception);
+        Assert.DoesNotContain(sensitiveMessage, output.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task UnknownOriginRegistrationRejectionUsesFixedOriginMismatchReason()
+    {
+        await using var db = CreateDb();
+        var user = new UserEntity { Id = Guid.NewGuid(), Email = "origin@example.test", PasswordHash = "hash", Status = "active", CreatedAt = DateTimeOffset.UtcNow };
+        db.Users.Add(user);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        const string sensitiveMessage = "Fully qualified origin https://sensitive.example.test is not equal to fully qualified original origin https://other.example.test";
+        var logger = new RecordingLogger<RestoreCredentialsService>();
+        var service = CreateService(db, true, new RegistrationVerifier(new Fido2VerificationException(Fido2ErrorCode.Unknown, sensitiveMessage)), logger: logger);
+        var ceremony = await service.CreateRegistrationOptionsAsync(user.Id, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(ceremony);
+        Assert.False(await service.VerifyRegistrationAsync(user.Id, RegistrationRequest(ceremony!.CeremonyId), TestContext.Current.CancellationToken));
+        Assert.Empty(db.RestoreCredentials);
+        Assert.Equal("Restore credential registration rejected. Result=InvalidCredential Reason=OriginMismatch", Assert.Single(logger.Entries).Message);
+    }
+
+    [Fact]
+    public async Task MalformedRegistrationCredentialJsonUsesFixedSafeReason()
+    {
+        await using var db = CreateDb();
+        var user = new UserEntity { Id = Guid.NewGuid(), Email = "json@example.test", PasswordHash = "hash", Status = "active", CreatedAt = DateTimeOffset.UtcNow };
+        db.Users.Add(user);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var logger = new RecordingLogger<RestoreCredentialsService>();
+        var service = CreateService(db, true, new RegistrationVerifier(new InvalidOperationException()), logger: logger);
+        var ceremony = await service.CreateRegistrationOptionsAsync(user.Id, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(ceremony);
+        var malformedRequest = new RestoreCredentialVerifyRequest { CeremonyId = ceremony!.CeremonyId, Credential = JsonDocument.Parse("{\"response\":\"not-an-object\"}").RootElement.Clone() };
+        Assert.False(await service.VerifyRegistrationAsync(user.Id, malformedRequest, TestContext.Current.CancellationToken));
+        Assert.Empty(db.RestoreCredentials);
+        Assert.Equal("Restore credential registration rejected. Result=InvalidCredential Reason=MalformedCredentialJson", Assert.Single(logger.Entries).Message);
+    }
+
+    [Fact]
+    public async Task RegistrationArgumentRejectionUsesFixedSafeReasonWithoutRawExceptionText()
+    {
+        await using var db = CreateDb();
+        var user = new UserEntity { Id = Guid.NewGuid(), Email = "argument@example.test", PasswordHash = "hash", Status = "active", CreatedAt = DateTimeOffset.UtcNow };
+        db.Users.Add(user);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        const string sensitiveMessage = "credential-id-sensitive-value";
+        var logger = new RecordingLogger<RestoreCredentialsService>();
+        var service = CreateService(db, true, new RegistrationVerifier(new ArgumentException(sensitiveMessage)), logger: logger);
+        var ceremony = await service.CreateRegistrationOptionsAsync(user.Id, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(ceremony);
+        Assert.False(await service.VerifyRegistrationAsync(user.Id, RegistrationRequest(ceremony!.CeremonyId), TestContext.Current.CancellationToken));
+        Assert.Empty(db.RestoreCredentials);
+        var output = Assert.Single(logger.Entries);
+        Assert.Equal("Restore credential registration rejected. Result=InvalidCredential Reason=InvalidCredentialArgument", output.Message);
+        Assert.DoesNotContain(sensitiveMessage, output.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task DisabledFeatureReturnsUnavailableWithoutPersistingCeremonies()
     {
@@ -105,7 +185,7 @@ public sealed class RestoreCredentialsServiceTests
         }
     }
 
-    private static RestoreCredentialsService CreateService(AppDbContext db, bool enabled, IRestoreCredentialsWebAuthnVerifier? verifier = null, IAuthService? authService = null) => new(db, authService ?? new NoopAuthService(), verifier ?? new NoopVerifier(), Microsoft.Extensions.Options.Options.Create(new RestoreCredentialsOptions { Enabled = enabled, RpId = "example.test", RpName = "Example", AllowedOrigins = ["https://example.test"] }), NullLogger<RestoreCredentialsService>.Instance);
+    private static RestoreCredentialsService CreateService(AppDbContext db, bool enabled, IRestoreCredentialsWebAuthnVerifier? verifier = null, IAuthService? authService = null, ILogger<RestoreCredentialsService>? logger = null) => new(db, authService ?? new NoopAuthService(), verifier ?? new NoopVerifier(), Microsoft.Extensions.Options.Options.Create(new RestoreCredentialsOptions { Enabled = enabled, RpId = "example.test", RpName = "Example", AllowedOrigins = ["https://example.test"] }), logger ?? NullLogger<RestoreCredentialsService>.Instance);
     private static AppDbContext CreateDb() => new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString("N")).Options);
     private static AuthService CreateAuthService(AppDbContext db) => new(db, new PasswordHasher<UserEntity>(), new JwtTokenService(Microsoft.Extensions.Options.Options.Create(new JwtOptions { Issuer = "test", Audience = "test", SigningKey = "12345678901234567890123456789012" })), Microsoft.Extensions.Options.Options.Create(new JwtOptions { Issuer = "test", Audience = "test", SigningKey = "12345678901234567890123456789012" }), new NoopTrialClaimService(), new NoopDevelopmentTestAccountService(), NullLogger<AuthService>.Instance);
     private static async Task<RestoreCredentialEntity> SeedUserAndCredentialAsync(AppDbContext db, string status)
@@ -120,11 +200,12 @@ public sealed class RestoreCredentialsServiceTests
         db.RestoreCredentialCeremonies.Add(ceremony); await db.SaveChangesAsync(TestContext.Current.CancellationToken); return ceremony;
     }
     private static RestoreCredentialVerifyRequest AssertionRequest(Guid ceremonyId, byte[] credentialId) => new() { CeremonyId = ceremonyId, Credential = JsonDocument.Parse($"{{\"id\":\"AQ\",\"rawId\":\"{Convert.ToBase64String(credentialId)}\",\"type\":\"public-key\",\"response\":{{\"authenticatorData\":\"AA\",\"clientDataJSON\":\"e30\",\"signature\":\"AA\"}}}}").RootElement.Clone() };
+    private static RestoreCredentialVerifyRequest RegistrationRequest(Guid ceremonyId) => new() { CeremonyId = ceremonyId, Credential = JsonDocument.Parse("{\"id\":\"AQ\",\"rawId\":\"AQ\",\"type\":\"public-key\",\"response\":{\"clientDataJSON\":\"e30\",\"attestationObject\":\"AA\"}}").RootElement.Clone() };
 
     private class NoopVerifier : IRestoreCredentialsWebAuthnVerifier
     {
-        public CredentialCreateOptions CreateRegistrationOptions(Fido2User user, IReadOnlyList<PublicKeyCredentialDescriptor> excludedCredentials) => throw new InvalidOperationException();
-        public Task<RegisteredPublicKeyCredential> VerifyRegistrationAsync(AuthenticatorAttestationRawResponse response, CredentialCreateOptions originalOptions, IsCredentialIdUniqueToUserAsyncDelegate uniquenessCallback, CancellationToken cancellationToken) => throw new InvalidOperationException();
+        public virtual CredentialCreateOptions CreateRegistrationOptions(Fido2User user, IReadOnlyList<PublicKeyCredentialDescriptor> excludedCredentials) => throw new InvalidOperationException();
+        public virtual Task<RegisteredPublicKeyCredential> VerifyRegistrationAsync(AuthenticatorAttestationRawResponse response, CredentialCreateOptions originalOptions, IsCredentialIdUniqueToUserAsyncDelegate uniquenessCallback, CancellationToken cancellationToken) => throw new InvalidOperationException();
         public AssertionOptions CreateAssertionOptions() => throw new InvalidOperationException();
         public virtual Task<VerifyAssertionResult> VerifyAssertionAsync(AuthenticatorAssertionRawResponse response, AssertionOptions originalOptions, byte[] publicKey, uint signatureCounter, IsUserHandleOwnerOfCredentialIdAsync ownershipCallback, CancellationToken cancellationToken) => throw new InvalidOperationException();
     }
@@ -137,6 +218,28 @@ public sealed class RestoreCredentialsServiceTests
             Assert.Equal(expectedCredentialId, response.RawId);
             return Task.FromResult(new VerifyAssertionResult { CredentialId = expectedCredentialId, SignCount = signCount });
         }
+    }
+
+    private sealed class RegistrationVerifier(Exception exception) : NoopVerifier
+    {
+        public override CredentialCreateOptions CreateRegistrationOptions(Fido2User user, IReadOnlyList<PublicKeyCredentialDescriptor> excludedCredentials) => new()
+        {
+            Challenge = [1],
+            Rp = new PublicKeyCredentialRpEntity("example.test", "Example"),
+            User = user,
+            PubKeyCredParams = []
+        };
+
+        public override Task<RegisteredPublicKeyCredential> VerifyRegistrationAsync(AuthenticatorAttestationRawResponse response, CredentialCreateOptions originalOptions, IsCredentialIdUniqueToUserAsyncDelegate uniquenessCallback, CancellationToken cancellationToken) => Task.FromException<RegisteredPublicKeyCredential>(exception);
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<(string Message, Exception? Exception)> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) => Entries.Add((formatter(state, exception), exception));
     }
 
     private sealed class NoopAuthService : IAuthService
