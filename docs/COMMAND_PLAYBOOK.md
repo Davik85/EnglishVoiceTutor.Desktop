@@ -444,6 +444,8 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\upload-static-site.ps1 `
   -RemotePath "/var/www/languagevoicetutor/site"
 ```
 
+`site/public/.well-known/assetlinks.json` is infrastructure-owned static content and the repository source for the Android Digital Asset Links association. Website CMS Publish owns only its explicit generated files and must preserve this file unchanged. The full `scripts/upload-static-site.ps1` command uploads the broader tracked static-site surface, so it must not be used merely to publish `assetlinks.json` when the live CMS-generated pages may be newer than the repository copies. The future assetlinks-only publication must instead use the established scoped per-file static-infrastructure deployment pattern to `/var/www/languagevoicetutor/site/.well-known/assetlinks.json`; that scoped publication has not occurred. Restore Credentials remains disabled and not deployed.
+
 Safe backend env verification must redact secrets and must use the existing env file, for example:
 
 ```bash

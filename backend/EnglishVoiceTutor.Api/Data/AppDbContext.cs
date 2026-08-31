@@ -39,6 +39,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<AdminAuthAuditEventEntity> AdminAuthAuditEvents => Set<AdminAuthAuditEventEntity>();
     public DbSet<PasswordResetTokenEntity> PasswordResetTokens => Set<PasswordResetTokenEntity>();
     public DbSet<UserRefreshTokenEntity> UserRefreshTokens => Set<UserRefreshTokenEntity>();
+    public DbSet<RestoreCredentialEntity> RestoreCredentials => Set<RestoreCredentialEntity>();
+    public DbSet<RestoreCredentialCeremonyEntity> RestoreCredentialCeremonies => Set<RestoreCredentialCeremonyEntity>();
     public DbSet<AccountAnonymizationOperationEntity> AccountAnonymizationOperations => Set<AccountAnonymizationOperationEntity>();
     public DbSet<AccountAnonymizationPolicySnapshotEntity> AccountAnonymizationPolicySnapshots => Set<AccountAnonymizationPolicySnapshotEntity>();
     public DbSet<ContentPackEntity> ContentPacks => Set<ContentPackEntity>();
@@ -85,6 +87,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureAdminAuthAuditEvents(modelBuilder);
         ConfigurePasswordResetTokens(modelBuilder);
         ConfigureUserRefreshTokens(modelBuilder);
+        ConfigureRestoreCredentials(modelBuilder);
         ConfigureAccountAnonymizationPreflightFoundation(modelBuilder);
         ConfigureCmsContent(modelBuilder);
     }
@@ -683,6 +686,33 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .WithMany(user => user.RefreshTokens)
             .HasForeignKey(token => token.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureRestoreCredentials(ModelBuilder modelBuilder)
+    {
+        var credential = modelBuilder.Entity<RestoreCredentialEntity>();
+        credential.ToTable(EntityConstants.TableNames.RestoreCredentials);
+        credential.HasKey(item => item.Id);
+        credential.Property(item => item.CredentialId).IsRequired();
+        credential.Property(item => item.UserHandle).IsRequired();
+        credential.Property(item => item.PublicKey).IsRequired();
+        credential.Property(item => item.CredentialKind).IsRequired().HasMaxLength(EntityConstants.Lengths.RestoreCredentialKindMaxLength);
+        credential.Property(item => item.CreatedAtUtc).IsRequired();
+        credential.HasIndex(item => item.CredentialId).IsUnique();
+        credential.HasIndex(item => item.UserId);
+        credential.HasOne(item => item.User).WithMany(user => user.RestoreCredentials).HasForeignKey(item => item.UserId).OnDelete(DeleteBehavior.Restrict);
+
+        var ceremony = modelBuilder.Entity<RestoreCredentialCeremonyEntity>();
+        ceremony.ToTable(EntityConstants.TableNames.RestoreCredentialCeremonies);
+        ceremony.HasKey(item => item.Id);
+        ceremony.Property(item => item.CeremonyType).IsRequired().HasMaxLength(EntityConstants.Lengths.RestoreCredentialKindMaxLength);
+        ceremony.Property(item => item.OptionsJson).IsRequired().HasMaxLength(EntityConstants.Lengths.RestoreCredentialOptionsJsonMaxLength);
+        ceremony.Property(item => item.CreatedAtUtc).IsRequired();
+        ceremony.Property(item => item.ExpiresAtUtc).IsRequired();
+        ceremony.Property(item => item.ConcurrencyRevision).IsConcurrencyToken();
+        ceremony.HasIndex(item => new { item.CeremonyType, item.ExpiresAtUtc });
+        ceremony.HasIndex(item => item.UserId);
+        ceremony.HasOne(item => item.User).WithMany(user => user.RestoreCredentialCeremonies).HasForeignKey(item => item.UserId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureGooglePlayPurchaseClaims(ModelBuilder modelBuilder)

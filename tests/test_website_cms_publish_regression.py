@@ -56,7 +56,7 @@ def test_public_website_polish_regressions_are_locked():
 
     assert "ReadStaticReleaseManifest(root)" in source
     assert "Language Voice Tutor for Windows" in source
-    assert "Technical release details" in source
+    assert "Technical release details" not in source
     assert "download-hero" in source
     assert "Language Voice Tutor for Windows" in download_html
     assert "Download for Windows" in download_html
@@ -64,7 +64,7 @@ def test_public_website_polish_regressions_are_locked():
     assert "Choose practical topics" in download_html
     assert "Learn step by step" in download_html
     assert "Practice real conversation" in download_html
-    assert "Technical release details" in download_html
+    assert "Technical release details" not in download_html
     assert "assets/images/landing/windows-desktop.webp" in styles
     assert ".site-footer > p {\n    white-space: pre-line;\n}" in styles
     assert "color: #102A43" in styles
@@ -76,6 +76,16 @@ def test_public_website_polish_regressions_are_locked():
     assert "#1B2A3A" not in styles
     assert "#EDE7DC" not in styles
     assert "Version</dt>\n                    <dd id=\"detail-version\">Unavailable</dd>" not in download_html
+    for removed_detail_id in (
+        'id="detail-version"',
+        'id="detail-installer"',
+        'id="detail-backend-base-url"',
+        'id="detail-minimum-supported-version"',
+        'id="detail-update-mode"',
+        'id="detail-size"',
+        'id="detail-sha"',
+    ):
+        assert removed_detail_id not in download_html
     assert "1.0" in manifest
     assert "1.0" in download_html
     assert "LanguageVoiceTutorSetup-1.0.exe" in download_html

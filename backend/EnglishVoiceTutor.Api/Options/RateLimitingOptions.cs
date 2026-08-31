@@ -35,6 +35,8 @@ public sealed class AuthRateLimitingOptions
     public const int DefaultPasswordResetConfirmWindowMinutes = 15;
     public const int DefaultSessionPerUserLimit = 60;
     public const int DefaultSessionWindowMinutes = 5;
+    public const int DefaultRestoreCredentialsPerIpLimit = 20;
+    public const int DefaultRestoreCredentialsWindowMinutes = 5;
 
     public int LoginPerIpLimit { get; set; } = DefaultLoginPerIpLimit;
     public int LoginPerEmailLimit { get; set; } = DefaultLoginPerEmailLimit;
@@ -50,6 +52,8 @@ public sealed class AuthRateLimitingOptions
     public int PasswordResetConfirmWindowMinutes { get; set; } = DefaultPasswordResetConfirmWindowMinutes;
     public int SessionPerUserLimit { get; set; } = DefaultSessionPerUserLimit;
     public int SessionWindowMinutes { get; set; } = DefaultSessionWindowMinutes;
+    public int RestoreCredentialsPerIpLimit { get; set; } = DefaultRestoreCredentialsPerIpLimit;
+    public int RestoreCredentialsWindowMinutes { get; set; } = DefaultRestoreCredentialsWindowMinutes;
 }
 
 public sealed class LessonRateLimitingOptions

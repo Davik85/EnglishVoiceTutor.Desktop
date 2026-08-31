@@ -1,0 +1,17 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.languagevoicetutor.mobile",
+      "sha256_cert_fingerprints": [
+        "F6:37:A9:B5:53:A0:B1:A5:13:4A:B0:4A:D8:2B:DE:14:3B:C3:8F:DE:67:D7:FD:9C:13:95:64:B1:84:65:8C:43",
+        "98:0C:28:73:3A:CA:91:C8:FD:BA:17:AB:F6:60:64:58:CE:E4:3A:69:99:7E:D8:DD:7A:BC:3A:80:6F:66:35:CB",
+        "E6:0A:F5:C9:C8:E2:BF:7F:5B:35:00:DE:1F:50:3E:16:FF:CC:72:26:61:10:45:A1:39:A2:FB:BD:D0:2C:5E:99"
+      ]
+    }
+  }
+]

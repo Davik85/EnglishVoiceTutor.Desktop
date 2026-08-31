@@ -36,6 +36,10 @@ public static class RateLimitingServiceCollectionExtensions
                 context,
                 GetOptions(context).Auth.SessionPerUserLimit,
                 GetOptions(context).Auth.SessionWindowMinutes));
+            options.AddPolicy(RateLimitingConstants.AuthRestoreCredentialsPolicyName, context => CreateFixedWindowPartition(
+                GetIpPartitionKey(context),
+                GetOptions(context).Auth.RestoreCredentialsPerIpLimit,
+                GetOptions(context).Auth.RestoreCredentialsWindowMinutes));
             options.AddPolicy(RateLimitingConstants.LessonChatReplyPolicyName, context => CreateLessonChatPartition(context));
             options.AddPolicy(RateLimitingConstants.LessonStartPolicyName, context => CreateUserOrIpPartition(
                 context,
@@ -236,6 +240,7 @@ public static class RateLimitingServiceCollectionExtensions
         ApiConstants.AuthRegisterRoute => RateLimitingConstants.AuthRegisterPolicyName,
         ApiConstants.AuthPasswordResetRequestRoute => RateLimitingConstants.AuthPasswordResetRequestPolicyName,
         ApiConstants.AuthPasswordResetConfirmRoute => RateLimitingConstants.AuthPasswordResetConfirmPolicyName,
+        ApiConstants.AuthRestoreCredentialsAssertionOptionsRoute or ApiConstants.AuthRestoreCredentialsAssertionVerifyRoute => RateLimitingConstants.AuthRestoreCredentialsPolicyName,
         ApiConstants.AuthRefreshRoute or ApiConstants.AuthRevokeRoute or ApiConstants.AuthMeRoute or ApiConstants.AuthChangePasswordRoute or ApiConstants.MeAccountDeletionRequestsRoute => RateLimitingConstants.AuthSessionPolicyName,
         ApiConstants.LessonChatReplyRoute => RateLimitingConstants.LessonChatReplyPolicyName,
         ApiConstants.LessonChatHintRoute => RateLimitingConstants.LessonHintPolicyName,
@@ -294,7 +299,7 @@ public static class RateLimitingServiceCollectionExtensions
         RateLimitingConstants.BillingCancelRenewalPolicyName => RateLimitingConstants.BillingCancelRenewalEndpointGroup,
         RateLimitingConstants.PaddleCheckoutLaunchPolicyName => RateLimitingConstants.PaddleCheckoutLaunchEndpointGroup,
         RateLimitingConstants.PaddleWebhookPolicyName => RateLimitingConstants.PaddleWebhookEndpointGroup,
-        RateLimitingConstants.AuthLoginPolicyName or RateLimitingConstants.AuthRegisterPolicyName or RateLimitingConstants.AuthPasswordResetRequestPolicyName or RateLimitingConstants.AuthPasswordResetConfirmPolicyName or RateLimitingConstants.AuthSessionPolicyName => RateLimitingConstants.AuthEndpointGroup,
+        RateLimitingConstants.AuthLoginPolicyName or RateLimitingConstants.AuthRegisterPolicyName or RateLimitingConstants.AuthPasswordResetRequestPolicyName or RateLimitingConstants.AuthPasswordResetConfirmPolicyName or RateLimitingConstants.AuthSessionPolicyName or RateLimitingConstants.AuthRestoreCredentialsPolicyName => RateLimitingConstants.AuthEndpointGroup,
         _ => RateLimitingConstants.UnknownEndpointGroup
     };
 
@@ -304,6 +309,7 @@ public static class RateLimitingServiceCollectionExtensions
         RateLimitingConstants.AuthRegisterPolicyName => RateLimitingConstants.RegisterMessage,
         RateLimitingConstants.AuthPasswordResetRequestPolicyName or RateLimitingConstants.AuthPasswordResetConfirmPolicyName => RateLimitingConstants.PasswordResetMessage,
         RateLimitingConstants.AuthSessionPolicyName => RateLimitingConstants.AuthSessionMessage,
+        RateLimitingConstants.AuthRestoreCredentialsPolicyName => RateLimitingConstants.AuthSessionMessage,
         RateLimitingConstants.LessonChatReplyPolicyName => RateLimitingConstants.LessonChatReplyMessage,
         RateLimitingConstants.LessonStartPolicyName => RateLimitingConstants.LessonStartMessage,
         RateLimitingConstants.LessonHintPolicyName => RateLimitingConstants.LessonHintMessage,

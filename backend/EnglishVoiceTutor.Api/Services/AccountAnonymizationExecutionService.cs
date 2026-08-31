@@ -83,6 +83,8 @@ public sealed class AccountAnonymizationExecutionService(AppDbContext dbContext)
         var reports = await dbContext.UserFeedbackReports.Include(item => item.Replies).Where(item => item.UserId == userId).ToListAsync(cancellationToken);
         var refresh = await dbContext.UserRefreshTokens.Where(item => item.UserId == userId).ToListAsync(cancellationToken);
         var reset = await dbContext.PasswordResetTokens.Where(item => item.UserId == userId).ToListAsync(cancellationToken);
+        var restoreCredentials = await dbContext.RestoreCredentials.Where(item => item.UserId == userId).ToListAsync(cancellationToken);
+        var restoreCeremonies = await dbContext.RestoreCredentialCeremonies.Where(item => item.UserId == userId).ToListAsync(cancellationToken);
         var profiles = await dbContext.UserProfiles.Where(item => item.UserId == userId).ToListAsync(cancellationToken);
         var settings = await dbContext.UserSettings.Where(item => item.UserId == userId).ToListAsync(cancellationToken);
         var devices = await dbContext.Devices.Where(item => item.UserId == userId).ToListAsync(cancellationToken);
@@ -92,7 +94,7 @@ public sealed class AccountAnonymizationExecutionService(AppDbContext dbContext)
         var trials = await dbContext.TrialGrants.Where(item => item.UserId == userId).ToListAsync(cancellationToken);
         var entitlements = await dbContext.Entitlements.Where(item => item.UserId == userId).ToListAsync(cancellationToken);
         dbContext.RemoveRange(feedback); dbContext.RemoveRange(summaries); dbContext.RemoveRange(messages); dbContext.RemoveRange(freeUsage); dbContext.RemoveRange(usages); dbContext.RemoveRange(sessions);
-        dbContext.RemoveRange(refresh); dbContext.RemoveRange(reset); dbContext.RemoveRange(profiles); dbContext.RemoveRange(settings); dbContext.RemoveRange(devices); dbContext.RemoveRange(counters); dbContext.RemoveRange(trials); dbContext.RemoveRange(entitlements);
+        dbContext.RemoveRange(refresh); dbContext.RemoveRange(reset); dbContext.RemoveRange(restoreCredentials); dbContext.RemoveRange(restoreCeremonies); dbContext.RemoveRange(profiles); dbContext.RemoveRange(settings); dbContext.RemoveRange(devices); dbContext.RemoveRange(counters); dbContext.RemoveRange(trials); dbContext.RemoveRange(entitlements);
         foreach (var item in reports)
         {
             item.Message = "[redacted]"; item.ReportedAiText = null;
@@ -105,14 +107,14 @@ public sealed class AccountAnonymizationExecutionService(AppDbContext dbContext)
         user.Status = "deleted";
         user.LastLoginAt = null;
         await dbContext.SaveChangesAsync(cancellationToken);
-        return new Dictionary<string, int> { ["lesson_sessions"] = sessions.Count, ["lesson_messages"] = messages.Count, ["feedback_results"] = feedback.Count, ["tokens"] = refresh.Count + reset.Count, ["entitlements"] = entitlements.Count, ["reports_redacted"] = reports.Count };
+        return new Dictionary<string, int> { ["lesson_sessions"] = sessions.Count, ["lesson_messages"] = messages.Count, ["feedback_results"] = feedback.Count, ["tokens"] = refresh.Count + reset.Count, ["restore_credentials"] = restoreCredentials.Count, ["entitlements"] = entitlements.Count, ["reports_redacted"] = reports.Count };
     }
 
     private async Task VerifyAsync(Guid userId, Guid operationId, Dictionary<string, int> counts, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users.AsNoTracking().SingleAsync(item => item.Id == userId, cancellationToken);
         var noAccess = user.Status == "deleted" && user.Email == $"deleted+{operationId:N}@deleted.invalid" && await dbContext.Users.CountAsync(item => item.Email == user.Email, cancellationToken) == 1;
-        var clean = !await dbContext.UserRefreshTokens.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.PasswordResetTokens.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.UserProfiles.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.UserSettings.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.Devices.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.LessonSessions.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.Entitlements.AnyAsync(item => item.UserId == userId, cancellationToken);
+        var clean = !await dbContext.UserRefreshTokens.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.PasswordResetTokens.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.RestoreCredentials.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.RestoreCredentialCeremonies.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.UserProfiles.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.UserSettings.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.Devices.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.LessonSessions.AnyAsync(item => item.UserId == userId, cancellationToken) && !await dbContext.Entitlements.AnyAsync(item => item.UserId == userId, cancellationToken);
         if (!noAccess || !clean) throw new InvalidOperationException("account_anonymization_verification_failed");
     }
 

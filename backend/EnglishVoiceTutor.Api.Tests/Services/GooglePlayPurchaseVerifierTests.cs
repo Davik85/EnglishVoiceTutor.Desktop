@@ -373,7 +373,8 @@ public sealed class GooglePlayPurchaseVerifierTests
         Assert.DoesNotContain("AndroidPublisherService", program, StringComparison.Ordinal);
         Assert.Contains("\"TestPurchasesEnabled\": false", settings, StringComparison.Ordinal);
         Assert.Contains("\"AllowedTestPurchaseUserIds\": []", settings, StringComparison.Ordinal);
-        foreach (var forbidden in new[] { "private_key", "client_email", "credential" }) Assert.DoesNotContain(forbidden, settings, StringComparison.OrdinalIgnoreCase);
+        foreach (var forbidden in new[] { "private_key", "client_email", "service_account", "GOOGLE_APPLICATION_CREDENTIALS" }) Assert.DoesNotContain(forbidden, settings, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("\"type\": \"service_account\"", settings, StringComparison.OrdinalIgnoreCase);
     }
 
     private static GooglePlayPurchaseVerifier CreateVerifier(IGooglePlaySubscriptionsV2Client client, GooglePlayBillingOptions options, RecordingLogger<GooglePlayPurchaseVerifier>? logger = null) => new(client, Microsoft.Extensions.Options.Options.Create(options), new TestClock(Timestamp("2026-08-03T00:00:00Z")), logger ?? new RecordingLogger<GooglePlayPurchaseVerifier>());

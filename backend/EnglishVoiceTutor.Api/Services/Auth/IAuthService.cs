@@ -10,6 +10,7 @@ public interface IAuthService
     Task RevokeRefreshTokenAsync(RevokeRefreshTokenRequest request, CancellationToken cancellationToken);
     Task<AuthUserDto?> GetCurrentUserAsync(Guid userId, CancellationToken cancellationToken);
     Task<ChangePasswordResult> ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken);
+    Task<AuthResponse?> IssueSessionForActiveUserAsync(Guid userId, CancellationToken cancellationToken);
 }
 
 public enum ChangePasswordResult

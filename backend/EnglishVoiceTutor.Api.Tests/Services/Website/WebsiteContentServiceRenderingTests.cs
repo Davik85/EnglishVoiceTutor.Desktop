@@ -244,7 +244,8 @@ Need help? Email support@languagevoicetutor.com.
         var flagAsset = Path.Combine(fixture.PublicSiteRoot, "assets", "flags", "gb.webp");
         var releaseManifest = Path.Combine(fixture.PublicSiteRoot, "releases", "windows", "direct", "latest.json");
         var installerArtifact = Path.Combine(fixture.PublicSiteRoot, "releases", "windows", "direct", "LanguageVoiceTutorSetup-1.0.exe");
-        foreach (var path in new[] { downloadAsset, landingAsset, brandAsset, flagAsset, releaseManifest, installerArtifact })
+        var assetLinksFile = Path.Combine(fixture.PublicSiteRoot, ".well-known", "assetlinks.json");
+        foreach (var path in new[] { downloadAsset, landingAsset, brandAsset, flagAsset, releaseManifest, installerArtifact, assetLinksFile })
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         }
@@ -253,8 +254,10 @@ Need help? Email support@languagevoicetutor.com.
         await File.WriteAllTextAsync(brandAsset, "brand", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(flagAsset, "flag", TestContext.Current.CancellationToken);
         const string releaseManifestSentinel = "{\"version\":\"1.0\",\"installerRelativeUrl\":\"LanguageVoiceTutorSetup-1.0.exe\",\"installerFileName\":\"LanguageVoiceTutorSetup-1.0.exe\",\"installerSizeBytes\":123}";
+        const string assetLinksSentinel = "[{\"relation\":[\"delegate_permission/common.get_login_creds\"],\"target\":{\"namespace\":\"android_app\",\"package_name\":\"com.example.sentinel\",\"sha256_cert_fingerprints\":[\"AA:BB\"]}}]";
         await File.WriteAllTextAsync(releaseManifest, releaseManifestSentinel, TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(installerArtifact, "installer", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(assetLinksFile, assetLinksSentinel, TestContext.Current.CancellationToken);
 
         var response = await service.PublishAsync(TestContext.Current.CancellationToken);
 
@@ -267,10 +270,13 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Equal("download screenshot", await File.ReadAllTextAsync(downloadAsset, TestContext.Current.CancellationToken));
         Assert.Equal(releaseManifestSentinel, await File.ReadAllTextAsync(releaseManifest, TestContext.Current.CancellationToken));
         Assert.Equal("installer", await File.ReadAllTextAsync(installerArtifact, TestContext.Current.CancellationToken));
+        Assert.True(File.Exists(assetLinksFile));
+        Assert.Equal(assetLinksSentinel, await File.ReadAllTextAsync(assetLinksFile, TestContext.Current.CancellationToken));
         var downloadHtml = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
         Assert.Contains("href=\"/releases/windows/direct/LanguageVoiceTutorSetup-1.0.exe\"", downloadHtml);
         Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine("assets", "images", "download"), StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine("releases", "windows", "direct"), StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine(".well-known", "assetlinks.json"), StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

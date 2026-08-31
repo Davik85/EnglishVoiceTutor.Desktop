@@ -24,4 +24,6 @@ public sealed class UserEntity
     public ICollection<AdminActionEntity> AdminActionsReceived { get; set; } = [];
     public ICollection<PasswordResetTokenEntity> PasswordResetTokens { get; set; } = [];
     public ICollection<UserRefreshTokenEntity> RefreshTokens { get; set; } = [];
+    public ICollection<RestoreCredentialEntity> RestoreCredentials { get; set; } = [];
+    public ICollection<RestoreCredentialCeremonyEntity> RestoreCredentialCeremonies { get; set; } = [];
 }

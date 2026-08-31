@@ -1,6 +1,10 @@
 # Current State
 
-Review date: 2026-08-30.
+Review date: 2026-08-31.
+
+## 2026-08-31 Restore Credentials backend foundation (local source only)
+
+Source now contains an additive, disabled-by-default Android Credential Manager Restore Credentials foundation: Fido2 4.0.1, server-managed restore public credentials, one-time PostgreSQL ceremony state, authenticated registration, discoverable/usernameless assertion routes, and issuance of the existing ordinary JWT/refresh-token response only after verified assertion. `AllowedOrigins` retains exact HTTPS origin allowlisting and also accepts only exact native Android `android:apk-key-hash:<base64url SHA-256 signing-certificate hash>` origins; the production backend origin value remains intentionally uncommitted and must be verified before enablement. The static-site source also now prepares `/.well-known/assetlinks.json` with the verified Play signing fingerprints for the Android association; it is infrastructure-owned content, not CMS-generated output, and Website CMS Publish must preserve it unchanged. It is not deployed and live HTTPS verification remains pending. The full static-site uploader must not be used only for its future publication if live CMS-generated pages are newer than source; the required future operation is a scoped single-file static-infrastructure deployment to `/var/www/languagevoicetutor/site/.well-known/assetlinks.json`. Migration `20260831080122_AddRestoreCredentialsFoundation` exists locally and has not been applied to production. Mobile v7 Restore Credentials integration exists locally but has not been uploaded or released through Google Play as a v7/versionCode 7 release. No production configuration, database migration, or backend deployment has occurred; Restore Credentials remains disabled in production until separately approved.
 
 ## 2026-08-29 / 2026-08-30 controlled Google Play validation and reconciliation checkpoint
 

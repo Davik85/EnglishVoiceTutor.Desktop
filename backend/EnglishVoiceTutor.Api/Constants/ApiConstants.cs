@@ -51,6 +51,10 @@ public static class ApiConstants
     public const string AuthChangePasswordRoute = "/api/auth/password/change";
     public const string AuthPasswordResetRequestRoute = "/api/auth/password-reset/request";
     public const string AuthPasswordResetConfirmRoute = "/api/auth/password-reset/confirm";
+    public const string AuthRestoreCredentialsRegistrationOptionsRoute = "/api/auth/restore-credentials/registration/options";
+    public const string AuthRestoreCredentialsRegistrationVerifyRoute = "/api/auth/restore-credentials/registration/verify";
+    public const string AuthRestoreCredentialsAssertionOptionsRoute = "/api/auth/restore-credentials/assertion/options";
+    public const string AuthRestoreCredentialsAssertionVerifyRoute = "/api/auth/restore-credentials/assertion/verify";
     public const string MeUserSettingsRoute = "/api/me/settings";
     public const string MeFeedbackReportsRoute = "/api/me/feedback-reports";
     public const string MeAccountDeletionRequestsRoute = "/api/me/account-deletion-requests";

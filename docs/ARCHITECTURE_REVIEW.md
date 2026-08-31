@@ -4,6 +4,10 @@ Review date: 2026-05-16.
 
 This review documents current architecture boundaries after the stabilization fixes. It recommends small future extractions only after behavior is pinned by smoke tests; it does not recommend a rewrite.
 
+## Restore Credentials backend foundation
+
+The backend has an additive disabled-by-default WebAuthn relying-party foundation for Android Restore Credentials. It is isolated in `Services/Auth/RestoreCredentialsService`, persists only public verification material and short-lived one-time ceremony options, and reuses `IAuthService` only after successful verification to issue the existing session shape. Restore credentials are explicitly system-managed `restore` records, not future user-managed passkeys, and are removed by account anonymization. Origin verification remains exact: configured HTTPS origins and structurally valid `android:apk-key-hash:<base64url SHA-256 signing-certificate hash>` origins are passed unchanged to Fido2; production Play App Signing fingerprints are configuration-only and must be verified before enablement. Mobile/Kotlin integration and deployment remain separate work.
+
 ## Current desktop architecture
 
 The desktop app is a WPF/MVVM application using CommunityToolkit.Mvvm. `MainViewModel` constructs long-lived services, owns current screen selection, and passes navigation callbacks into child ViewModels. Views are thin XAML/code-behind controls.

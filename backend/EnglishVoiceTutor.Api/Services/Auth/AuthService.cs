@@ -255,6 +255,19 @@ public sealed class AuthService(
         return ChangePasswordResult.Success;
     }
 
+    public async Task<AuthResponse?> IssueSessionForActiveUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users.AsTracking().Include(candidate => candidate.Profile)
+            .SingleOrDefaultAsync(candidate => candidate.Id == userId, cancellationToken);
+        if (user is null || !string.Equals(user.Status, AuthConstants.ActiveUserStatus, StringComparison.OrdinalIgnoreCase)) return null;
+
+        var now = DateTimeOffset.UtcNow;
+        user.LastLoginAt = now;
+        var refreshToken = IssueRefreshToken(user.Id, now);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return jwtTokenService.CreateAuthResponse(user, user.Profile?.DisplayName, user.CreatedAt, refreshToken.Token, refreshToken.ExpiresAtUtc);
+    }
+
     public async Task<AuthUserDto?> GetCurrentUserAsync(Guid userId, CancellationToken cancellationToken)
     {
         return await dbContext.Users

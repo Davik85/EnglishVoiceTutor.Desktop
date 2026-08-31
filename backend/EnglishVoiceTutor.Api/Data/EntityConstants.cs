@@ -37,6 +37,8 @@ public static class EntityConstants
         public const string AdminAuthAuditEvents = "admin_auth_audit_events";
         public const string PasswordResetTokens = "password_reset_tokens";
         public const string UserRefreshTokens = "user_refresh_tokens";
+        public const string RestoreCredentials = "restore_credentials";
+        public const string RestoreCredentialCeremonies = "restore_credential_ceremonies";
         public const string AccountAnonymizationOperations = "account_anonymization_operations";
         public const string AccountAnonymizationPolicySnapshots = "account_anonymization_policy_snapshots";
         public const string ContentPacks = "cms_content_packs";
@@ -54,6 +56,8 @@ public static class EntityConstants
         public const int EmailMaxLength = 320;
         public const int PasswordHashMaxLength = 512;
         public const int TokenHashMaxLength = 128;
+        public const int RestoreCredentialKindMaxLength = 32;
+        public const int RestoreCredentialOptionsJsonMaxLength = 32768;
         public const int StatusMaxLength = 64;
         public const int LanguageCodeMaxLength = 64;
         public const int DisplayNameMaxLength = 160;

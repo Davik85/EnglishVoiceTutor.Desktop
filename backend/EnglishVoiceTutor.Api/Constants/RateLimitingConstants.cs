@@ -34,6 +34,7 @@ public static class RateLimitingConstants
     public const string AuthPasswordResetRequestPolicyName = "auth-password-reset-request";
     public const string AuthPasswordResetConfirmPolicyName = "auth-password-reset-confirm";
     public const string AuthSessionPolicyName = "auth-session";
+    public const string AuthRestoreCredentialsPolicyName = "auth-restore-credentials";
     public const string LessonChatReplyPolicyName = "lesson-chat-reply";
     public const string LessonStartPolicyName = "lesson-start";
     public const string LessonHintPolicyName = "lesson-hint";

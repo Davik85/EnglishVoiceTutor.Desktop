@@ -37,11 +37,46 @@ public static class AuthEndpoints
         }
         var passwordResetRequestEndpoint = app.MapPost(ApiConstants.AuthPasswordResetRequestRoute, RequestPasswordResetAsync);
         var passwordResetConfirmEndpoint = app.MapPost(ApiConstants.AuthPasswordResetConfirmRoute, ConfirmPasswordResetAsync);
+        var restoreRegistrationOptionsEndpoint = app.MapPost(ApiConstants.AuthRestoreCredentialsRegistrationOptionsRoute, CreateRestoreRegistrationOptionsAsync).RequireAuthorization();
+        var restoreRegistrationVerifyEndpoint = app.MapPost(ApiConstants.AuthRestoreCredentialsRegistrationVerifyRoute, VerifyRestoreRegistrationAsync).RequireAuthorization();
+        var restoreAssertionOptionsEndpoint = app.MapPost(ApiConstants.AuthRestoreCredentialsAssertionOptionsRoute, CreateRestoreAssertionOptionsAsync);
+        var restoreAssertionVerifyEndpoint = app.MapPost(ApiConstants.AuthRestoreCredentialsAssertionVerifyRoute, VerifyRestoreAssertionAsync);
         if (rateLimitingEnabled)
         {
             passwordResetRequestEndpoint.RequireRateLimiting(RateLimitingConstants.AuthPasswordResetRequestPolicyName);
             passwordResetConfirmEndpoint.RequireRateLimiting(RateLimitingConstants.AuthPasswordResetConfirmPolicyName);
+            restoreRegistrationOptionsEndpoint.RequireRateLimiting(RateLimitingConstants.AuthSessionPolicyName);
+            restoreRegistrationVerifyEndpoint.RequireRateLimiting(RateLimitingConstants.AuthSessionPolicyName);
+            restoreAssertionOptionsEndpoint.RequireRateLimiting(RateLimitingConstants.AuthRestoreCredentialsPolicyName);
+            restoreAssertionVerifyEndpoint.RequireRateLimiting(RateLimitingConstants.AuthRestoreCredentialsPolicyName);
         }
+    }
+
+    private static async Task<IResult> CreateRestoreRegistrationOptionsAsync(ClaimsPrincipal principal, IRestoreCredentialsService restoreCredentialsService, CancellationToken cancellationToken)
+    {
+        var userId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!userId.HasValue) return Results.Unauthorized();
+        var result = await restoreCredentialsService.CreateRegistrationOptionsAsync(userId.Value, cancellationToken);
+        return result is null ? Results.StatusCode(StatusCodes.Status503ServiceUnavailable) : Results.Ok(result);
+    }
+
+    private static async Task<IResult> VerifyRestoreRegistrationAsync(RestoreCredentialVerifyRequest request, ClaimsPrincipal principal, IRestoreCredentialsService restoreCredentialsService, CancellationToken cancellationToken)
+    {
+        var userId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!userId.HasValue) return Results.Unauthorized();
+        return await restoreCredentialsService.VerifyRegistrationAsync(userId.Value, request, cancellationToken) ? Results.NoContent() : Results.BadRequest(new { error = "restore_credential_registration_rejected" });
+    }
+
+    private static async Task<IResult> CreateRestoreAssertionOptionsAsync(IRestoreCredentialsService restoreCredentialsService, CancellationToken cancellationToken)
+    {
+        var result = await restoreCredentialsService.CreateAssertionOptionsAsync(cancellationToken);
+        return result is null ? Results.StatusCode(StatusCodes.Status503ServiceUnavailable) : Results.Ok(result);
+    }
+
+    private static async Task<IResult> VerifyRestoreAssertionAsync(RestoreCredentialVerifyRequest request, IRestoreCredentialsService restoreCredentialsService, CancellationToken cancellationToken)
+    {
+        var result = await restoreCredentialsService.VerifyAssertionAsync(request, cancellationToken);
+        return result is null ? Results.Unauthorized() : Results.Ok(result);
     }
 
     private static async Task<IResult> RegisterAsync(
