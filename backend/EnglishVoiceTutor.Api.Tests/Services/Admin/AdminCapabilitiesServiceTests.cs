@@ -1,4 +1,5 @@
 using System.Text.Json;
+using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Admin;
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Admin;
@@ -11,6 +12,9 @@ namespace EnglishVoiceTutor.Api.Tests.Services.Admin;
 
 public sealed class AdminCapabilitiesServiceTests
 {
+    private static readonly string AdminJs = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../../EnglishVoiceTutor.Api/wwwroot/admin/admin.js"));
+    private static readonly string AdminIndex = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../../EnglishVoiceTutor.Api/wwwroot/admin/index.html"));
+
     [Fact]
     public void MissingBillingConfigReportsPaddleUnavailable()
     {
@@ -21,8 +25,97 @@ public sealed class AdminCapabilitiesServiceTests
         Assert.False(response.Capabilities.PaddleCheckoutAvailable);
         Assert.False(response.Capabilities.PaddleWebhooksAvailable);
         Assert.False(response.Capabilities.PaddleLiveConfigured);
-        Assert.False(response.Capabilities.BillingLivePaymentTestComplete);
+        Assert.True(response.Capabilities.BillingLivePaymentTestComplete);
         Assert.False(response.Capabilities.BillingPaidLaunchReleaseComplete);
+        Assert.False(response.Capabilities.MobileStoreEntitlementBridgeAvailable);
+    }
+
+    [Fact]
+    public void CompleteGooglePlayFoundationReportsMobileStoreBridgeWithoutExposingConfiguration()
+    {
+        const string packageName = "com.example.languagevoicetutor";
+        const string audience = "https://example.test/google-play/rtdn";
+        const string serviceAccountEmail = "google-play-rtdn@example.test";
+        const string subscription = "projects/example/subscriptions/google-play-rtdn";
+        var response = CreateService(
+            new BillingOptions(),
+            new PaddleBillingOptions(),
+            new PaddleWebhookOptions(),
+            new GooglePlayBillingOptions
+            {
+                Enabled = true,
+                PackageName = packageName,
+                AllowedProductIds = [SubscriptionConstants.Billing.GooglePlayPremiumProductId]
+            },
+            new GooglePlayRtdnOptions
+            {
+                Enabled = true,
+                ExpectedAudience = audience,
+                ExpectedServiceAccountEmail = serviceAccountEmail,
+                ExpectedPubSubSubscription = subscription
+            },
+            new GooglePlayReconciliationOptions { Enabled = true }).GetCapabilities();
+
+        Assert.True(response.Capabilities.MobileStoreEntitlementBridgeAvailable);
+        Assert.True(response.Capabilities.BillingLivePaymentTestComplete);
+        Assert.False(response.Capabilities.BillingPaidLaunchReleaseComplete);
+        Assert.False(response.Capabilities.BillingProviderConfigured);
+        Assert.False(response.Capabilities.PaddleCheckoutAvailable);
+
+        var json = JsonSerializer.Serialize(response);
+        Assert.DoesNotContain(packageName, json, StringComparison.Ordinal);
+        Assert.DoesNotContain(audience, json, StringComparison.Ordinal);
+        Assert.DoesNotContain(serviceAccountEmail, json, StringComparison.Ordinal);
+        Assert.DoesNotContain(subscription, json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IncompleteGooglePlayRtdnReportsMobileStoreBridgeUnavailable()
+    {
+        var response = CreateService(
+            new BillingOptions(),
+            new PaddleBillingOptions(),
+            new PaddleWebhookOptions(),
+            CompleteGooglePlayBilling(),
+            new GooglePlayRtdnOptions
+            {
+                Enabled = true,
+                ExpectedAudience = "https://example.test/google-play/rtdn",
+                ExpectedServiceAccountEmail = "google-play-rtdn@example.test"
+            },
+            new GooglePlayReconciliationOptions { Enabled = true }).GetCapabilities();
+
+        Assert.False(response.Capabilities.MobileStoreEntitlementBridgeAvailable);
+    }
+
+    [Fact]
+    public void DisabledGooglePlayReconciliationReportsMobileStoreBridgeUnavailable()
+    {
+        var response = CreateService(
+            new BillingOptions(),
+            new PaddleBillingOptions(),
+            new PaddleWebhookOptions(),
+            CompleteGooglePlayBilling(),
+            CompleteGooglePlayRtdn(),
+            new GooglePlayReconciliationOptions { Enabled = false }).GetCapabilities();
+
+        Assert.False(response.Capabilities.MobileStoreEntitlementBridgeAvailable);
+    }
+
+    [Fact]
+    public void AdminSystemCardRendersGooglePlayBridgeCapabilityDynamically()
+    {
+        Assert.Contains("Release / Capability Status", AdminIndex, StringComparison.Ordinal);
+        Assert.Contains("Mobile Store / Google Play", AdminIndex, StringComparison.Ordinal);
+        Assert.Contains("id=\"system-mobile-store-google-play-status\"", AdminIndex, StringComparison.Ordinal);
+        Assert.DoesNotContain("Future Sections / Deferred Scope", AdminIndex, StringComparison.Ordinal);
+        Assert.DoesNotContain("Mobile Store Bridge", AdminIndex, StringComparison.Ordinal);
+
+        Assert.Contains("Boolean(capabilities.mobileStoreEntitlementBridgeAvailable)", AdminJs, StringComparison.Ordinal);
+        Assert.Contains("renderMobileStoreGooglePlayStatus(capabilitiesPayload.capabilities || {})", AdminJs, StringComparison.Ordinal);
+        Assert.Contains("available ? \"AVAILABLE\" : \"DISABLED / INCOMPLETE\"", AdminJs, StringComparison.Ordinal);
+        Assert.Contains("checkoutAvailable && webhooksAvailable && paymentTestComplete && !paidLaunchComplete", AdminJs, StringComparison.Ordinal);
+        Assert.Contains("LIVE PAYMENT VERIFIED / PAID LAUNCH READINESS PENDING", AdminJs, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -55,7 +148,7 @@ public sealed class AdminCapabilitiesServiceTests
         Assert.True(response.Capabilities.PaddleLiveProductConfigured);
         Assert.True(response.Capabilities.PaddleExpectedCustomDataConfigured);
         Assert.True(response.Capabilities.PaddlePublicCheckoutPageConfigured);
-        Assert.False(response.Capabilities.BillingLivePaymentTestComplete);
+        Assert.True(response.Capabilities.BillingLivePaymentTestComplete);
         Assert.False(response.Capabilities.BillingPaidLaunchReleaseComplete);
 
         var json = JsonSerializer.Serialize(response);
@@ -68,7 +161,10 @@ public sealed class AdminCapabilitiesServiceTests
     private static AdminCapabilitiesService CreateService(
         BillingOptions billingOptions,
         PaddleBillingOptions paddleBillingOptions,
-        PaddleWebhookOptions paddleWebhookOptions)
+        PaddleWebhookOptions paddleWebhookOptions,
+        GooglePlayBillingOptions? googlePlayBillingOptions = null,
+        GooglePlayRtdnOptions? googlePlayRtdnOptions = null,
+        GooglePlayReconciliationOptions? googlePlayReconciliationOptions = null)
     {
         return new AdminCapabilitiesService(
             new TestWebHostEnvironment(),
@@ -76,8 +172,26 @@ public sealed class AdminCapabilitiesServiceTests
             Microsoft.Extensions.Options.Options.Create(billingOptions),
             Microsoft.Extensions.Options.Options.Create(paddleBillingOptions),
             Microsoft.Extensions.Options.Options.Create(paddleWebhookOptions),
+            Microsoft.Extensions.Options.Options.Create(googlePlayBillingOptions ?? new GooglePlayBillingOptions()),
+            Microsoft.Extensions.Options.Options.Create(googlePlayRtdnOptions ?? new GooglePlayRtdnOptions()),
+            Microsoft.Extensions.Options.Options.Create(googlePlayReconciliationOptions ?? new GooglePlayReconciliationOptions()),
             new ConfigurationBuilder().Build());
     }
+
+    private static GooglePlayBillingOptions CompleteGooglePlayBilling() => new()
+    {
+        Enabled = true,
+        PackageName = "com.example.languagevoicetutor",
+        AllowedProductIds = [SubscriptionConstants.Billing.GooglePlayPremiumProductId]
+    };
+
+    private static GooglePlayRtdnOptions CompleteGooglePlayRtdn() => new()
+    {
+        Enabled = true,
+        ExpectedAudience = "https://example.test/google-play/rtdn",
+        ExpectedServiceAccountEmail = "google-play-rtdn@example.test",
+        ExpectedPubSubSubscription = "projects/example/subscriptions/google-play-rtdn"
+    };
 
     private sealed class TestWebHostEnvironment : IWebHostEnvironment
     {

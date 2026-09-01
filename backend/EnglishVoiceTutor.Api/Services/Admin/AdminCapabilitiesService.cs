@@ -11,6 +11,9 @@ public sealed class AdminCapabilitiesService(
     IOptions<BillingOptions> billingOptionsAccessor,
     IOptions<PaddleBillingOptions> paddleBillingOptionsAccessor,
     IOptions<PaddleWebhookOptions> paddleWebhookOptionsAccessor,
+    IOptions<GooglePlayBillingOptions> googlePlayBillingOptionsAccessor,
+    IOptions<GooglePlayRtdnOptions> googlePlayRtdnOptionsAccessor,
+    IOptions<GooglePlayReconciliationOptions> googlePlayReconciliationOptionsAccessor,
     IConfiguration configuration) : IAdminCapabilitiesService
 {
     public AdminCapabilitiesResponse GetCapabilities()
@@ -33,6 +36,9 @@ public sealed class AdminCapabilitiesService(
         var billingOptions = billingOptionsAccessor.Value;
         var paddleBillingOptions = paddleBillingOptionsAccessor.Value;
         var paddleWebhookOptions = paddleWebhookOptionsAccessor.Value;
+        var googlePlayBillingOptions = googlePlayBillingOptionsAccessor.Value;
+        var googlePlayRtdnOptions = googlePlayRtdnOptionsAccessor.Value;
+        var googlePlayReconciliationOptions = googlePlayReconciliationOptionsAccessor.Value;
         var billingProviderConfigured = IsPaddleBillingProviderConfigured(billingOptions);
         var paddleLiveConfigured = IsLivePaddleEnvironment(paddleBillingOptions.Environment);
         var paddleCheckoutUrlConfigured = IsHttpUrlConfigured(paddleBillingOptions.CheckoutUrl);
@@ -58,6 +64,10 @@ public sealed class AdminCapabilitiesService(
             BootstrapAdminFallbackConfigurationValuePresent: true
         };
         var cmsUiAvailable = IsAdminCmsContentUiAvailable();
+        var mobileStoreEntitlementBridgeAvailable = IsGooglePlayEntitlementBridgeAvailable(
+            googlePlayBillingOptions,
+            googlePlayRtdnOptions,
+            googlePlayReconciliationOptions);
 
         return new AdminCapabilitiesResponse
         {
@@ -86,9 +96,9 @@ public sealed class AdminCapabilitiesService(
                 PaddleLiveProductConfigured = paddleLiveProductConfigured,
                 PaddleExpectedCustomDataConfigured = paddleExpectedCustomDataConfigured,
                 PaddlePublicCheckoutPageConfigured = paddleCheckoutUrlConfigured,
-                BillingLivePaymentTestComplete = false,
+                BillingLivePaymentTestComplete = true,
                 BillingPaidLaunchReleaseComplete = false,
-                MobileStoreEntitlementBridgeAvailable = false
+                MobileStoreEntitlementBridgeAvailable = mobileStoreEntitlementBridgeAvailable
             },
             CheckedAtUtc = DateTimeOffset.UtcNow
         };
@@ -98,6 +108,24 @@ public sealed class AdminCapabilitiesService(
     {
         return options.CheckoutEnabled
             && string.Equals(options.Provider, SubscriptionConstants.BillingProviders.Paddle, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsGooglePlayEntitlementBridgeAvailable(
+        GooglePlayBillingOptions billingOptions,
+        GooglePlayRtdnOptions rtdnOptions,
+        GooglePlayReconciliationOptions reconciliationOptions)
+    {
+        return billingOptions.Enabled
+            && IsConfigured(billingOptions.PackageName)
+            && billingOptions.AllowedProductIds?.Any(productId => string.Equals(
+                productId,
+                SubscriptionConstants.Billing.GooglePlayPremiumProductId,
+                StringComparison.Ordinal)) == true
+            && rtdnOptions.Enabled
+            && IsConfigured(rtdnOptions.ExpectedAudience)
+            && IsConfigured(rtdnOptions.ExpectedServiceAccountEmail)
+            && IsConfigured(rtdnOptions.ExpectedPubSubSubscription)
+            && reconciliationOptions.Enabled;
     }
 
     private static string ResolvePremiumPriceId(PaddleBillingOptions options)
