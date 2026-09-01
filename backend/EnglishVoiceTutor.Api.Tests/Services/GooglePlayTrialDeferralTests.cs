@@ -271,6 +271,97 @@ public sealed class GooglePlayTrialDeferralTests
     }
 
     [Fact]
+    public async Task SuccessfulDeferWithTemporarilyUnusableRefreshRetriesGetOnly()
+    {
+        await using var db = CreateDb();
+        var clock = new TestClock(PurchaseStart);
+        var seeded = await SeedPlanAsync(db, clock, PurchaseStart.AddDays(5));
+        var target = BaselineExpiry.AddDays(5);
+        var temporarilyUnusable = Snapshot(target, "post-defer-etag") with
+        {
+            SubscriptionState = "SUBSCRIPTION_STATE_UNSPECIFIED"
+        };
+        var client = new ScriptedClient(
+            [Snapshot(BaselineExpiry, "post-ack-etag"), temporarilyUnusable],
+            new GooglePlaySubscriptionDeferResponseSnapshot([new(SubscriptionConstants.Billing.GooglePlayPremiumProductId, target)]));
+        var service = CreateDeferralService(db, clock, client);
+
+        var first = await service.ProcessAsync(seeded.UserId, seeded.Token, seeded.ProtectedToken, TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.Pending, first.Code);
+        var pendingPlan = Assert.Single(db.GooglePlayInitialPremiumDeferrals);
+        Assert.Equal(GooglePlayTrialDeferralStatuses.ProviderAppliedAwaitingRefresh, pendingPlan.Status);
+        Assert.Equal(target, pendingPlan.ProviderResponseExpiryUtc);
+        Assert.Null(pendingPlan.AuthoritativeProviderExpiryUtc);
+        Assert.Single(client.DeferCalls);
+
+        clock.UtcNow = clock.UtcNow.AddMinutes(2);
+        client.GetSteps.Enqueue(Snapshot(target, "converged-etag"));
+        var second = await service.ProcessAsync(seeded.UserId, seeded.Token, seeded.ProtectedToken, TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.Completed, second.Code);
+        Assert.Single(client.DeferCalls);
+        Assert.Equal(target, Assert.Single(db.Subscriptions).CurrentPeriodEndUtc);
+    }
+
+    [Fact]
+    public async Task FastCancellationAtExactTargetCompletesWithoutRestoringActiveLifecycle()
+    {
+        await using var db = CreateDb();
+        var clock = new TestClock(PurchaseStart);
+        var seeded = await SeedPlanAsync(db, clock, PurchaseStart.AddDays(5));
+        var target = BaselineExpiry.AddDays(5);
+        var canceled = Snapshot(target, "canceled-etag") with
+        {
+            SubscriptionState = "SUBSCRIPTION_STATE_CANCELED",
+            LineItems = [EligibleLineItem(target) with { AutoRenewEnabled = false }]
+        };
+        var client = new ScriptedClient(
+            [Snapshot(BaselineExpiry, "post-ack-etag"), canceled],
+            new GooglePlaySubscriptionDeferResponseSnapshot([new(SubscriptionConstants.Billing.GooglePlayPremiumProductId, target)]));
+
+        var result = await CreateDeferralService(db, clock, client).ProcessAsync(
+            seeded.UserId,
+            seeded.Token,
+            seeded.ProtectedToken,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.Completed, result.Code);
+        Assert.Single(client.DeferCalls);
+        var subscription = Assert.Single(db.Subscriptions);
+        Assert.Equal(SubscriptionConstants.SubscriptionStatuses.Canceled, subscription.Status);
+        Assert.True(subscription.CancelAtPeriodEnd);
+        Assert.Equal(SubscriptionConstants.ScheduledChangeActions.Cancel, subscription.ScheduledChangeAction);
+        Assert.Equal(target, subscription.ScheduledChangeEffectiveAtUtc);
+        var entitlement = Assert.Single(db.Entitlements);
+        Assert.Equal(SubscriptionConstants.Entitlements.StatusActive, entitlement.Status);
+        Assert.Equal(target, entitlement.ExpiresAtUtc);
+    }
+
+    [Fact]
+    public async Task SuccessfulDeferWithContradictoryAuthoritativeExpiryBecomesTerminal()
+    {
+        await using var db = CreateDb();
+        var clock = new TestClock(PurchaseStart);
+        var seeded = await SeedPlanAsync(db, clock, PurchaseStart.AddDays(5));
+        var target = BaselineExpiry.AddDays(5);
+        var client = new ScriptedClient(
+            [Snapshot(BaselineExpiry, "post-ack-etag"), Snapshot(target.AddDays(1), "contradictory-etag")],
+            new GooglePlaySubscriptionDeferResponseSnapshot([new(SubscriptionConstants.Billing.GooglePlayPremiumProductId, target)]));
+
+        var result = await CreateDeferralService(db, clock, client).ProcessAsync(
+            seeded.UserId,
+            seeded.Token,
+            seeded.ProtectedToken,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.AmbiguousTerminal, result.Code);
+        Assert.Single(client.DeferCalls);
+        Assert.Equal(GooglePlayTrialDeferralStatuses.AmbiguousTerminal, Assert.Single(db.GooglePlayInitialPremiumDeferrals).Status);
+        Assert.Equal(BaselineExpiry, Assert.Single(db.Subscriptions).CurrentPeriodEndUtc);
+    }
+
+    [Fact]
     public async Task LostDeferResponseConvergesFromTargetWithoutSecondMutation()
     {
         await using var db = CreateDb();
@@ -285,6 +376,74 @@ public sealed class GooglePlayTrialDeferralTests
         var result = await service.ProcessAsync(seeded.UserId, seeded.Token, seeded.ProtectedToken, TestContext.Current.CancellationToken);
 
         Assert.Equal(GooglePlayTrialDeferralResultCode.Completed, result.Code);
+        Assert.Single(client.DeferCalls);
+        Assert.Equal(target, Assert.Single(db.Subscriptions).CurrentPeriodEndUtc);
+    }
+
+    [Fact]
+    public async Task LostDeferResponseConvergesFromCanceledTargetWithoutSecondMutation()
+    {
+        await using var db = CreateDb();
+        var clock = new TestClock(PurchaseStart);
+        var seeded = await SeedPlanAsync(db, clock, PurchaseStart.AddDays(5));
+        var target = BaselineExpiry.AddDays(5);
+        var canceled = Snapshot(target, "canceled-target-etag") with
+        {
+            SubscriptionState = "SUBSCRIPTION_STATE_CANCELED",
+            LineItems = [EligibleLineItem(target) with { AutoRenewEnabled = false }]
+        };
+        var client = new ScriptedClient(
+            [Snapshot(BaselineExpiry, "command-etag"), canceled],
+            new GooglePlaySubscriptionsV2ClientException(GooglePlaySubscriptionsV2ClientFailure.ProviderOutcomeUnknown));
+
+        var result = await CreateDeferralService(db, clock, client).ProcessAsync(
+            seeded.UserId,
+            seeded.Token,
+            seeded.ProtectedToken,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.Completed, result.Code);
+        Assert.Single(client.DeferCalls);
+        var subscription = Assert.Single(db.Subscriptions);
+        Assert.Equal(SubscriptionConstants.SubscriptionStatuses.Canceled, subscription.Status);
+        Assert.True(subscription.CancelAtPeriodEnd);
+        Assert.Equal(SubscriptionConstants.ScheduledChangeActions.Cancel, subscription.ScheduledChangeAction);
+        Assert.Equal(target, subscription.ScheduledChangeEffectiveAtUtc);
+        var entitlement = Assert.Single(db.Entitlements);
+        Assert.Equal(SubscriptionConstants.Entitlements.StatusActive, entitlement.Status);
+        Assert.Equal(target, entitlement.ExpiresAtUtc);
+        var plan = Assert.Single(db.GooglePlayInitialPremiumDeferrals);
+        Assert.Equal(GooglePlayTrialDeferralStatuses.Completed, plan.Status);
+        Assert.Equal(target, plan.AuthoritativeProviderExpiryUtc);
+    }
+
+    [Fact]
+    public async Task LostDeferResponseWithTemporarilyUnusableTargetRetriesGetOnly()
+    {
+        await using var db = CreateDb();
+        var clock = new TestClock(PurchaseStart);
+        var seeded = await SeedPlanAsync(db, clock, PurchaseStart.AddDays(5));
+        var target = BaselineExpiry.AddDays(5);
+        var temporarilyUnusable = Snapshot(target, "unusable-target-etag") with
+        {
+            SubscriptionState = "SUBSCRIPTION_STATE_UNSPECIFIED"
+        };
+        var client = new ScriptedClient(
+            [Snapshot(BaselineExpiry, "command-etag"), temporarilyUnusable],
+            new GooglePlaySubscriptionsV2ClientException(GooglePlaySubscriptionsV2ClientFailure.ProviderOutcomeUnknown));
+        var service = CreateDeferralService(db, clock, client);
+
+        var first = await service.ProcessAsync(seeded.UserId, seeded.Token, seeded.ProtectedToken, TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.Pending, first.Code);
+        Assert.Equal(GooglePlayTrialDeferralStatuses.ProviderAppliedAwaitingRefresh, Assert.Single(db.GooglePlayInitialPremiumDeferrals).Status);
+        Assert.Single(client.DeferCalls);
+
+        clock.UtcNow = clock.UtcNow.AddMinutes(2);
+        client.GetSteps.Enqueue(Snapshot(target, "converged-target-etag"));
+        var second = await service.ProcessAsync(seeded.UserId, seeded.Token, seeded.ProtectedToken, TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.Completed, second.Code);
         Assert.Single(client.DeferCalls);
         Assert.Equal(target, Assert.Single(db.Subscriptions).CurrentPeriodEndUtc);
     }

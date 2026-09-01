@@ -91,18 +91,37 @@ public sealed class GooglePlayTrialDeferralService(
                 : await SchedulePendingAsync(plan, snapshotResult.SafeErrorCode, cancellationToken);
         }
 
-        if (!TryReadProviderState(snapshotResult.Snapshot, plan, out var expiry, out var currentEtag))
+        var assessment = AssessPostDeferSnapshot(snapshotResult.Snapshot, plan, utcClock.UtcNow);
+        if (assessment.Outcome == PostDeferSnapshotOutcome.Contradictory)
             return await MarkAmbiguousAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderStateDiverged, cancellationToken);
+        if (assessment.ExpiryUtc is null)
+            return await SchedulePendingAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderUnavailable, cancellationToken);
 
-        if (expiry == plan.TargetProviderExpiryUtc)
+        if (assessment.ExpiryUtc == plan.TargetProviderExpiryUtc)
         {
             plan.Status = GooglePlayTrialDeferralStatuses.ProviderAppliedAwaitingRefresh;
             plan.NextAttemptAtUtc = null;
             plan.UpdatedAtUtc = utcClock.UtcNow;
             plan.ConcurrencyRevision++;
             await dbContext.SaveChangesAsync(cancellationToken);
-            return await PersistAuthoritativeSnapshotAsync(plan, snapshotResult.Snapshot, purchaseToken, protectedPurchaseToken, cancellationToken);
+
+            if (assessment.Outcome == PostDeferSnapshotOutcome.Retryable)
+                return await SchedulePendingAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderUnavailable, cancellationToken);
+
+            return await PersistAuthoritativeSnapshotAsync(
+                plan,
+                snapshotResult.Snapshot,
+                assessment.LifecycleState!.Value,
+                purchaseToken,
+                protectedPurchaseToken,
+                cancellationToken);
         }
+
+        if (assessment.ExpiryUtc != plan.BaselineProviderExpiryUtc)
+            return await MarkAmbiguousAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderStateDiverged, cancellationToken);
+
+        if (!TryReadProviderState(snapshotResult.Snapshot, plan, out var expiry, out var currentEtag))
+            return await MarkAmbiguousAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderStateDiverged, cancellationToken);
 
         if (expiry != plan.BaselineProviderExpiryUtc
             || string.IsNullOrWhiteSpace(plan.CommandEtag)
@@ -185,8 +204,13 @@ public sealed class GooglePlayTrialDeferralService(
                 : await SchedulePendingAsync(plan, snapshotResult.SafeErrorCode, cancellationToken);
         }
 
-        if (!TryReadProviderState(snapshotResult.Snapshot, plan, out var expiry, out _))
+        var assessment = AssessPostDeferSnapshot(snapshotResult.Snapshot, plan, utcClock.UtcNow);
+        if (assessment.Outcome == PostDeferSnapshotOutcome.Retryable)
+            return await SchedulePendingAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderUnavailable, cancellationToken);
+        if (assessment.Outcome == PostDeferSnapshotOutcome.Contradictory)
             return await MarkAmbiguousAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderStateDiverged, cancellationToken);
+
+        var expiry = assessment.ExpiryUtc!.Value;
         if (expiry != plan.TargetProviderExpiryUtc)
         {
             if (expiry == plan.BaselineProviderExpiryUtc)
@@ -194,12 +218,19 @@ public sealed class GooglePlayTrialDeferralService(
             return await MarkAmbiguousAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderStateDiverged, cancellationToken);
         }
 
-        return await PersistAuthoritativeSnapshotAsync(plan, snapshotResult.Snapshot, purchaseToken, protectedPurchaseToken, cancellationToken);
+        return await PersistAuthoritativeSnapshotAsync(
+            plan,
+            snapshotResult.Snapshot,
+            assessment.LifecycleState!.Value,
+            purchaseToken,
+            protectedPurchaseToken,
+            cancellationToken);
     }
 
     private async Task<GooglePlayTrialDeferralResult> PersistAuthoritativeSnapshotAsync(
         GooglePlayInitialPremiumDeferralEntity plan,
         GooglePlaySubscriptionV2Snapshot snapshot,
+        GooglePlaySubscriptionLifecycleState lifecycleState,
         string purchaseToken,
         string protectedPurchaseToken,
         CancellationToken cancellationToken)
@@ -212,7 +243,7 @@ public sealed class GooglePlayTrialDeferralService(
             item.ExpiryTimeUtc!.Value.ToUniversalTime(),
             GooglePlayPurchaseAcknowledgementState.Acknowledged,
             plan.IsLicenseTestPurchase,
-            GooglePlaySubscriptionLifecycleState.Active);
+            lifecycleState);
         var tokenSecret = await secretPersistence.FindByClaimIdAsync(plan.GooglePlayPurchaseClaimId, cancellationToken);
         if (tokenSecret is null)
             return await SchedulePendingAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.PersistenceUnavailable, cancellationToken);
@@ -306,6 +337,60 @@ public sealed class GooglePlayTrialDeferralService(
         return true;
     }
 
+    private static PostDeferSnapshotAssessment AssessPostDeferSnapshot(
+        GooglePlaySubscriptionV2Snapshot snapshot,
+        GooglePlayInitialPremiumDeferralEntity plan,
+        DateTimeOffset now)
+    {
+        if (snapshot.StartTimeUtc is not null
+            && snapshot.StartTimeUtc.Value.ToUniversalTime() != plan.ProviderPurchaseStartedAtUtc)
+        {
+            return PostDeferSnapshotAssessment.Contradictory;
+        }
+
+        if (snapshot.IsTestPurchase != plan.IsLicenseTestPurchase
+            || snapshot.LinkedPurchaseToken is not null
+                && !string.IsNullOrWhiteSpace(snapshot.LinkedPurchaseToken)
+                && snapshot.LinkedPurchaseToken.Length <= SubscriptionConstants.Billing.GooglePlayPurchaseTokenMaximumLength
+                && !snapshot.LinkedPurchaseToken.Any(char.IsWhiteSpace)
+            || snapshot.LineItems.Count == 1
+                && !string.IsNullOrWhiteSpace(snapshot.LineItems[0].ProductId)
+                && !string.Equals(
+                    snapshot.LineItems[0].ProductId,
+                    SubscriptionConstants.Billing.GooglePlayPremiumProductId,
+                    StringComparison.Ordinal))
+        {
+            return PostDeferSnapshotAssessment.Contradictory;
+        }
+
+        if (snapshot.StartTimeUtc is null
+            || snapshot.AcknowledgementState != GooglePlayPurchaseAcknowledgementState.Acknowledged
+            || snapshot.LinkedPurchaseToken is not null
+            || snapshot.LineItems.Count != 1
+            || string.IsNullOrWhiteSpace(snapshot.LineItems[0].ProductId)
+            || snapshot.LineItems[0].ExpiryTimeUtc is null)
+        {
+            return PostDeferSnapshotAssessment.Retryable;
+        }
+
+        var expiryUtc = snapshot.LineItems[0].ExpiryTimeUtc!.Value.ToUniversalTime();
+        if (expiryUtc <= plan.ProviderPurchaseStartedAtUtc)
+            return PostDeferSnapshotAssessment.Retryable;
+
+        var lifecycleState = GooglePlayPurchaseVerifier.MapLifecycleState(snapshot.SubscriptionState);
+        if (lifecycleState is null)
+            return new PostDeferSnapshotAssessment(PostDeferSnapshotOutcome.Retryable, expiryUtc);
+
+        if (lifecycleState is GooglePlaySubscriptionLifecycleState.Active or GooglePlaySubscriptionLifecycleState.InGracePeriod
+                && expiryUtc <= now
+            || lifecycleState == GooglePlaySubscriptionLifecycleState.Expired && expiryUtc > now)
+        {
+            return new PostDeferSnapshotAssessment(PostDeferSnapshotOutcome.Retryable, expiryUtc);
+        }
+
+        return new PostDeferSnapshotAssessment(PostDeferSnapshotOutcome.Usable, expiryUtc, lifecycleState);
+    }
+
     private async Task<GooglePlayTrialDeferralResult> SchedulePendingAsync(GooglePlayInitialPremiumDeferralEntity plan, string safeCode, CancellationToken cancellationToken)
     {
         var maximumAttempts = optionsAccessor.Value.MaximumAttempts;
@@ -338,4 +423,13 @@ public sealed class GooglePlayTrialDeferralService(
     private int RetryDelaySeconds(int attempts) => GooglePlayReconciliationIterationService.RetryDelaySeconds(attempts, optionsAccessor.Value);
     private static GooglePlayTrialDeferralResult Result(GooglePlayTrialDeferralResultCode code) => new(code);
     private sealed record ProviderSnapshotResult(GooglePlaySubscriptionV2Snapshot? Snapshot, bool Terminal, string SafeErrorCode);
+    private enum PostDeferSnapshotOutcome { Usable, Retryable, Contradictory }
+    private sealed record PostDeferSnapshotAssessment(
+        PostDeferSnapshotOutcome Outcome,
+        DateTimeOffset? ExpiryUtc = null,
+        GooglePlaySubscriptionLifecycleState? LifecycleState = null)
+    {
+        public static PostDeferSnapshotAssessment Retryable { get; } = new(PostDeferSnapshotOutcome.Retryable);
+        public static PostDeferSnapshotAssessment Contradictory { get; } = new(PostDeferSnapshotOutcome.Contradictory);
+    }
 }

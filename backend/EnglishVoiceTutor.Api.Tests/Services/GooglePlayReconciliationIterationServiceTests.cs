@@ -128,6 +128,22 @@ public sealed class GooglePlayReconciliationIterationServiceTests
     }
 
     [Fact]
+    public async Task RtdnRemainsProcessedWhileAppliedDeferralAwaitsAuthoritativeRefresh()
+    {
+        await using var db = CreateDb();
+        var secret = await AddSecretAsync(db, acknowledgementPending: false, next: Now.AddDays(1), attempts: 0, id: "deferral-pending");
+        var item = Event("deferral-pending", secret.PurchaseTokenFingerprint, GooglePlayRtdnEventStatuses.Received, Now);
+        db.GooglePlayRtdnEvents.Add(item);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        await CreateIteration(db, new RecordingProcessor(GooglePlayPurchaseProcessingResultCode.TrialDeferralPending))
+            .RunOnceAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayRtdnEventStatuses.Processed, item.Status);
+        Assert.Null(item.SafeErrorCode);
+    }
+
+    [Fact]
     public async Task FutureAcknowledgementAndMaximumAttemptTokensAreNotProcessed()
     {
         await using var db = CreateDb();

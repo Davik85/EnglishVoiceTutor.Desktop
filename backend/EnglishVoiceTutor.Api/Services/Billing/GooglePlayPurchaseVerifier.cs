@@ -144,7 +144,7 @@ public sealed class GooglePlayPurchaseVerifier(
         return dated[0];
     }
 
-    private static GooglePlaySubscriptionLifecycleState? MapLifecycleState(string? state) => state switch
+    internal static GooglePlaySubscriptionLifecycleState? MapLifecycleState(string? state) => state switch
     {
         "SUBSCRIPTION_STATE_ACTIVE" => GooglePlaySubscriptionLifecycleState.Active,
         "SUBSCRIPTION_STATE_IN_GRACE_PERIOD" => GooglePlaySubscriptionLifecycleState.InGracePeriod,
