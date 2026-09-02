@@ -60,7 +60,7 @@ public sealed class GooglePlayReconciliationIterationService(
             token.PurchaseToken,
             new GooglePlayPurchaseProcessingContext(confirmedRevocation),
             cancellationToken);
-        if (result.Code is GooglePlayPurchaseProcessingResultCode.Verified or GooglePlayPurchaseProcessingResultCode.TrialDeferralPending) { await eventPersistence.MarkProcessedAsync(item.Id, cancellationToken); return; }
+        if (result.Code == GooglePlayPurchaseProcessingResultCode.Verified) { await eventPersistence.MarkProcessedAsync(item.Id, cancellationToken); return; }
         if (result.Code is GooglePlayPurchaseProcessingResultCode.InvalidPurchase or GooglePlayPurchaseProcessingResultCode.UnsupportedProduct or GooglePlayPurchaseProcessingResultCode.OwnershipConflict or GooglePlayPurchaseProcessingResultCode.AcknowledgementInconsistent or GooglePlayPurchaseProcessingResultCode.TrialDeferralAmbiguous)
         { await eventPersistence.RecordPermanentFailureAsync(item.Id, GooglePlayRtdnSafeErrorCodes.ProviderRejected, cancellationToken); return; }
         await RetryOrFailEventAsync(item, now, options, result.Code == GooglePlayPurchaseProcessingResultCode.AcknowledgementPending ? GooglePlayRtdnSafeErrorCodes.ProviderUnavailable : GooglePlayRtdnSafeErrorCodes.ProviderUnavailable, cancellationToken);

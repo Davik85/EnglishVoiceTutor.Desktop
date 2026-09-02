@@ -45,6 +45,16 @@ public sealed class GooglePlayVerifiedPurchasePersistenceService(AppDbContext db
         {
             var existingSecret = await tokenSecretService.FindByClaimIdAsync(existingClaim.Id, cancellationToken);
             if (existingSecret?.SupersededAtUtc is not null) return Result(GooglePlayVerifiedPurchasePersistenceResultCode.ConsistencyConflict);
+            if (!request.IsAuthoritativeTrialDeferralPersistence
+                && IsEntitlementRetainingLifecycle(request.VerifiedPurchase, utcClock.UtcNow)
+                && await dbContext.GooglePlayInitialPremiumDeferrals.AnyAsync(
+                    item => item.GooglePlayPurchaseClaimId == existingClaim.Id
+                        && item.Status != GooglePlayTrialDeferralStatuses.Completed
+                        && item.Status != GooglePlayTrialDeferralStatuses.AmbiguousTerminal,
+                    cancellationToken))
+            {
+                return Result(GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent);
+            }
         }
         GooglePlayPurchaseClaimEntity? linkedClaim = null;
         var linkedSecretSuperseded = false;

@@ -1,6 +1,12 @@
 # Current State
 
-Review date: 2026-08-31.
+Review date: 2026-09-02.
+
+## 2026-09-02 backend `.146` Google Play initial-deferral validation blocker
+
+Production backend `0.1.35-backend.146` is deployed and healthy, but its controlled production validation did **not** close the Google Play initial Premium deferral blocker. A fresh explicitly allowed license-test purchase was verified successfully and acknowledged. Its one defer mutation returned the exact immutable target expiry, yet the plan immediately became `ambiguous_terminal` with `trial_deferral_provider_state_diverged` and no authoritative provider expiry. A normal subscriptions-v2 verification only seconds later persisted the same exact target expiry. The same purchase then produced RTDN rows ending as `permanent_failure` and `provider_rejected` even though the user had not canceled.
+
+This independently reproduces the same post-defer convergence failure class previously seen with a real-money purchase. The proven evidence is that the mutation response already carried the exact target and a later authoritative GET converged to it; the contents of the first post-defer snapshot were not captured sufficiently to prove that expiry was its only difference. Public Google Play rollout remains blocked until corrected bounded GET-only convergence behavior is deployed and a controlled production validation passes. No `.147` deployment, production-row repair, database migration, Mobile release, Play Console change, configuration change, or further provider mutation is claimed.
 
 ## 2026-09-01 Google Play purchase-gate legacy-data checkpoint
 

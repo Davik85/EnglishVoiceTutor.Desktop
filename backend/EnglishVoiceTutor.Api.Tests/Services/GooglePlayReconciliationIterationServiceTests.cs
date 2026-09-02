@@ -128,7 +128,7 @@ public sealed class GooglePlayReconciliationIterationServiceTests
     }
 
     [Fact]
-    public async Task RtdnRemainsProcessedWhileAppliedDeferralAwaitsAuthoritativeRefresh()
+    public async Task RtdnRemainsRetryableWhileAppliedDeferralAwaitsAuthoritativeRefresh()
     {
         await using var db = CreateDb();
         var secret = await AddSecretAsync(db, acknowledgementPending: false, next: Now.AddDays(1), attempts: 0, id: "deferral-pending");
@@ -139,8 +139,10 @@ public sealed class GooglePlayReconciliationIterationServiceTests
         await CreateIteration(db, new RecordingProcessor(GooglePlayPurchaseProcessingResultCode.TrialDeferralPending))
             .RunOnceAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(GooglePlayRtdnEventStatuses.Processed, item.Status);
-        Assert.Null(item.SafeErrorCode);
+        Assert.Equal(GooglePlayRtdnEventStatuses.RetryableFailure, item.Status);
+        Assert.Equal(GooglePlayRtdnSafeErrorCodes.ProviderUnavailable, item.SafeErrorCode);
+        Assert.Equal(2, item.AttemptCount);
+        Assert.True(item.NextAttemptAtUtc > Now);
     }
 
     [Fact]
