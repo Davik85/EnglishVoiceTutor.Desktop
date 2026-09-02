@@ -411,6 +411,105 @@ public sealed class GooglePlayTrialDeferralTests
     }
 
     [Fact]
+    public async Task ProviderPrecisionTargetResponseRetriesIntermediateThenPersistsActualAuthoritativeExpiry()
+    {
+        await using var db = CreateDb();
+        var clock = new TestClock(PurchaseStart);
+        var localTargetFractionTicks = 3_794_600L;
+        var seeded = await SeedPlanAsync(db, clock, PurchaseStart.AddDays(5).AddTicks(localTargetFractionTicks));
+        var target = BaselineExpiry.AddDays(5).AddTicks(localTargetFractionTicks);
+        var providerExpiry = target.AddTicks(-4_600);
+        var intermediate = BaselineExpiry.AddDays(2);
+        var client = new ScriptedClient(
+            [Snapshot(BaselineExpiry, "command-etag"), Snapshot(intermediate, "intermediate-etag")],
+            new GooglePlaySubscriptionDeferResponseSnapshot([new(SubscriptionConstants.Billing.GooglePlayPremiumProductId, providerExpiry)]));
+        var service = CreateDeferralService(db, clock, client);
+
+        var first = await service.ProcessAsync(seeded.UserId, seeded.Token, seeded.ProtectedToken, TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.Pending, first.Code);
+        Assert.Single(client.DeferCalls);
+        var plan = Assert.Single(db.GooglePlayInitialPremiumDeferrals);
+        Assert.Equal(target, plan.TargetProviderExpiryUtc);
+        Assert.Equal(providerExpiry, plan.ProviderResponseExpiryUtc);
+        Assert.Null(plan.AuthoritativeProviderExpiryUtc);
+        Assert.Equal(BaselineExpiry, Assert.Single(db.Subscriptions).CurrentPeriodEndUtc);
+        Assert.Equal(BaselineExpiry, Assert.Single(db.Entitlements).ExpiresAtUtc);
+
+        var ordinaryReconciliationPersistence = await CreatePersistence(db, clock).PersistAsync(
+            Request(seeded.UserId, seeded.Token, intermediate) with { ProtectedPurchaseToken = seeded.ProtectedToken },
+            TestContext.Current.CancellationToken);
+        Assert.Equal(GooglePlayVerifiedPurchasePersistenceResultCode.AlreadyCurrent, ordinaryReconciliationPersistence.Code);
+        Assert.Equal(BaselineExpiry, Assert.Single(db.Subscriptions).CurrentPeriodEndUtc);
+        Assert.Equal(BaselineExpiry, Assert.Single(db.Entitlements).ExpiresAtUtc);
+
+        clock.UtcNow = clock.UtcNow.AddMinutes(2);
+        client.GetSteps.Enqueue(Snapshot(providerExpiry, "provider-precision-etag"));
+        var second = await service.ProcessAsync(seeded.UserId, seeded.Token, seeded.ProtectedToken, TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.Completed, second.Code);
+        Assert.Single(client.DeferCalls);
+        Assert.Equal(providerExpiry, plan.AuthoritativeProviderExpiryUtc);
+        Assert.Equal(providerExpiry, Assert.Single(db.Subscriptions).CurrentPeriodEndUtc);
+        Assert.Equal(providerExpiry, Assert.Single(db.Entitlements).ExpiresAtUtc);
+        Assert.NotEqual(target, plan.AuthoritativeProviderExpiryUtc);
+    }
+
+    [Fact]
+    public async Task ProviderPrecisionTargetResponseAndImmediateGetCompleteWithActualProviderExpiry()
+    {
+        await using var db = CreateDb();
+        var clock = new TestClock(PurchaseStart);
+        var seeded = await SeedPlanAsync(db, clock, PurchaseStart.AddDays(5).AddTicks(3_794_600));
+        var target = BaselineExpiry.AddDays(5).AddTicks(3_794_600);
+        var providerExpiry = target.AddTicks(-4_600);
+        var client = new ScriptedClient(
+            [Snapshot(BaselineExpiry, "command-etag"), Snapshot(providerExpiry, "provider-precision-etag")],
+            new GooglePlaySubscriptionDeferResponseSnapshot([new(SubscriptionConstants.Billing.GooglePlayPremiumProductId, providerExpiry)]));
+
+        var result = await CreateDeferralService(db, clock, client).ProcessAsync(
+            seeded.UserId,
+            seeded.Token,
+            seeded.ProtectedToken,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.Completed, result.Code);
+        Assert.Single(client.DeferCalls);
+        var plan = Assert.Single(db.GooglePlayInitialPremiumDeferrals);
+        Assert.Equal(target, plan.TargetProviderExpiryUtc);
+        Assert.Equal(providerExpiry, plan.AuthoritativeProviderExpiryUtc);
+        Assert.Equal(providerExpiry, Assert.Single(db.Subscriptions).CurrentPeriodEndUtc);
+        Assert.Equal(providerExpiry, Assert.Single(db.Entitlements).ExpiresAtUtc);
+    }
+
+    [Fact]
+    public async Task ProviderExpiryExactlyOneMillisecondFromTargetIsNotEquivalent()
+    {
+        await using var db = CreateDb();
+        var clock = new TestClock(PurchaseStart);
+        var seeded = await SeedPlanAsync(db, clock, PurchaseStart.AddDays(5).AddTicks(3_794_600));
+        var target = BaselineExpiry.AddDays(5).AddTicks(3_794_600);
+        var providerExpiry = target.AddTicks(-TimeSpan.TicksPerMillisecond);
+        var client = new ScriptedClient(
+            [Snapshot(BaselineExpiry, "command-etag"), Snapshot(providerExpiry, "boundary-etag")],
+            new GooglePlaySubscriptionDeferResponseSnapshot([new(SubscriptionConstants.Billing.GooglePlayPremiumProductId, providerExpiry)]));
+
+        var result = await CreateDeferralService(db, clock, client).ProcessAsync(
+            seeded.UserId,
+            seeded.Token,
+            seeded.ProtectedToken,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.AmbiguousTerminal, result.Code);
+        Assert.Single(client.DeferCalls);
+        var plan = Assert.Single(db.GooglePlayInitialPremiumDeferrals);
+        Assert.Equal(GooglePlayTrialDeferralStatuses.AmbiguousTerminal, plan.Status);
+        Assert.Null(plan.AuthoritativeProviderExpiryUtc);
+        Assert.Equal(BaselineExpiry, Assert.Single(db.Subscriptions).CurrentPeriodEndUtc);
+        Assert.Equal(BaselineExpiry, Assert.Single(db.Entitlements).ExpiresAtUtc);
+    }
+
+    [Fact]
     public async Task SuccessfulExactTargetDeferResponseFailsClosedWhenIntermediateExpiryNeverConverges()
     {
         await using var db = CreateDb();
@@ -484,6 +583,32 @@ public sealed class GooglePlayTrialDeferralTests
         Assert.Equal(GooglePlayTrialDeferralResultCode.Completed, result.Code);
         Assert.Single(client.DeferCalls);
         Assert.Equal(target, Assert.Single(db.Subscriptions).CurrentPeriodEndUtc);
+    }
+
+    [Fact]
+    public async Task LostDeferResponseConvergesFromProviderPrecisionTargetWithoutSecondMutation()
+    {
+        await using var db = CreateDb();
+        var clock = new TestClock(PurchaseStart);
+        var seeded = await SeedPlanAsync(db, clock, PurchaseStart.AddDays(5).AddTicks(3_794_600));
+        var target = BaselineExpiry.AddDays(5).AddTicks(3_794_600);
+        var providerExpiry = target.AddTicks(-4_600);
+        var client = new ScriptedClient(
+            [Snapshot(BaselineExpiry, "command-etag"), Snapshot(providerExpiry, "provider-precision-etag")],
+            new GooglePlaySubscriptionsV2ClientException(GooglePlaySubscriptionsV2ClientFailure.ProviderOutcomeUnknown));
+
+        var result = await CreateDeferralService(db, clock, client).ProcessAsync(
+            seeded.UserId,
+            seeded.Token,
+            seeded.ProtectedToken,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(GooglePlayTrialDeferralResultCode.Completed, result.Code);
+        Assert.Single(client.DeferCalls);
+        var plan = Assert.Single(db.GooglePlayInitialPremiumDeferrals);
+        Assert.Equal(providerExpiry, plan.AuthoritativeProviderExpiryUtc);
+        Assert.Equal(providerExpiry, Assert.Single(db.Subscriptions).CurrentPeriodEndUtc);
+        Assert.Equal(providerExpiry, Assert.Single(db.Entitlements).ExpiresAtUtc);
     }
 
     [Fact]

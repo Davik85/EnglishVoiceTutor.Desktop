@@ -98,7 +98,7 @@ public sealed class GooglePlayTrialDeferralService(
         if (assessment.ExpiryUtc is null)
             return await SchedulePendingAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderUnavailable, cancellationToken);
 
-        if (assessment.ExpiryUtc == plan.TargetProviderExpiryUtc)
+        if (IsTargetProviderExpiryEquivalent(plan.TargetProviderExpiryUtc, assessment.ExpiryUtc.Value))
         {
             plan.Status = GooglePlayTrialDeferralStatuses.ProviderAppliedAwaitingRefresh;
             plan.NextAttemptAtUtc = null;
@@ -213,11 +213,12 @@ public sealed class GooglePlayTrialDeferralService(
             return await MarkAmbiguousAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderStateDiverged, cancellationToken);
 
         var expiry = assessment.ExpiryUtc!.Value;
-        if (expiry != plan.TargetProviderExpiryUtc)
+        if (!IsTargetProviderExpiryEquivalent(plan.TargetProviderExpiryUtc, expiry))
         {
             if (expiry == plan.BaselineProviderExpiryUtc)
                 return await SchedulePendingAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderUnavailable, cancellationToken);
-            if (plan.ProviderResponseExpiryUtc?.ToUniversalTime() == plan.TargetProviderExpiryUtc)
+            if (plan.ProviderResponseExpiryUtc is { } providerResponseExpiry
+                && IsTargetProviderExpiryEquivalent(plan.TargetProviderExpiryUtc, providerResponseExpiry))
                 return await SchedulePendingAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderUnavailable, cancellationToken);
             return await MarkAmbiguousAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderStateDiverged, cancellationToken);
         }
@@ -397,12 +398,24 @@ public sealed class GooglePlayTrialDeferralService(
             return new PostDeferSnapshotAssessment(PostDeferSnapshotOutcome.Retryable, PostDeferAssessmentReasons.TemporarilyUnusable, expiryUtc);
         }
 
-        var reason = expiryUtc == plan.TargetProviderExpiryUtc
+        var reason = IsTargetProviderExpiryEquivalent(plan.TargetProviderExpiryUtc, expiryUtc)
             ? PostDeferAssessmentReasons.TargetConverged
             : expiryUtc == plan.BaselineProviderExpiryUtc
                 ? PostDeferAssessmentReasons.BaselineNotYetConverged
                 : PostDeferAssessmentReasons.IntermediateExpiryNotYetConverged;
         return new PostDeferSnapshotAssessment(PostDeferSnapshotOutcome.Usable, reason, expiryUtc, lifecycleState);
+    }
+
+    private static bool IsTargetProviderExpiryEquivalent(
+        DateTimeOffset expectedTarget,
+        DateTimeOffset providerExpiry)
+    {
+        var expectedUtcTicks = expectedTarget.UtcDateTime.Ticks;
+        var providerUtcTicks = providerExpiry.UtcDateTime.Ticks;
+        var absoluteDeltaTicks = expectedUtcTicks >= providerUtcTicks
+            ? expectedUtcTicks - providerUtcTicks
+            : providerUtcTicks - expectedUtcTicks;
+        return absoluteDeltaTicks < TimeSpan.TicksPerMillisecond;
     }
 
     private void LogPostDeferAssessment(PostDeferSnapshotAssessment assessment) =>
