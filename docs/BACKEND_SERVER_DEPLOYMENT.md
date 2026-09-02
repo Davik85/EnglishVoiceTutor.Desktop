@@ -1,8 +1,10 @@
 # Backend server deployment
 
-Review date: 2026-08-29.
+Review date: 2026-09-02.
 
 ## Current production backend
+
+Production backend `0.1.35-backend.148` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.148`; `.147` is retained as the previous release. `.148` was deployed through the normal repository flow from `ac4c5569162de8ff11a8ade2ee154802da41e28a` (`Handle Google Play expiry precision`). The service is active/running with `.148` as content root, public `/health` was HTTP 200 three consecutive times, and database health was HTTP 200. No EF migration, Mobile/AAB or Play Console change, historical terminal-row repair, or broader production approval is included in this release checkpoint.
 
 Production backend is deployed and healthy.
 
@@ -35,8 +37,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.142`
-- Previous rollback release: `0.1.35-backend.141`
+- Current release: `0.1.35-backend.148`
+- Previous rollback release: `0.1.35-backend.147`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -316,7 +318,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.142`; verified rollback target `.141` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.148`; verified rollback target `.147` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`.

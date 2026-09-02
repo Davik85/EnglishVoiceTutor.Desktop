@@ -1,10 +1,10 @@
 # Command Playbook
 
-Review date: 2026-08-28.
+Review date: 2026-09-02.
 
 ## CMS setup-localization draft import
 
-Production closeout: backend `0.1.35-backend.142` is active (with `.141` retained as rollback), CMS published version `51` is active at runtime, and `.142` applied the additive `20260827105749_AddGooglePlayTrialDeferralFoundation` migration. The `.141` legacy product-limit cleanup and historical `.140` Website CMS design-contract deployment remain preserved. Runtime status is `CmsPublishedSnapshot` with `fallbackUsed=false`; the published content contains 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. The import procedure below remains for a future older draft only; it is not a pending production operation.
+Production closeout: backend `0.1.35-backend.148` is active (with `.147` retained as rollback). Historical `.142` applied the additive `20260827105749_AddGooglePlayTrialDeferralFoundation` migration; `.148` closes the narrow Google provider-precision validation blocker without a migration. CMS published version `51` remains active at runtime. The import procedure below remains for a future older draft only; it is not a pending production operation.
 
 ## Source of truth for current versions
 
@@ -302,7 +302,7 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; current production is `.128` with `.127` as the verified rollback target.
+Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; the documented current production release is `.148` with `.147` as rollback.
 
 Current milestone: CMS published-snapshot runtime is active for published Windows direct lessons. These checks must confirm the active CMS source and clean fallback state without changing release scope.
 
@@ -379,7 +379,7 @@ Rollback remains disabling or removing the CMS runtime flags and restarting the 
 
 ## Current controlled tester handoff checks after CMS runtime milestone
 
-Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.142` and the live public direct Windows manifest points to `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`. The live manifest is verified; no independent second public-download SHA verification is claimed for 1.6. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
+Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.148` and the live public direct Windows manifest points to `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`. The live manifest is verified; no independent second public-download SHA verification is claimed for 1.6. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
 
 Verify the public direct release manifest before handoff:
 
