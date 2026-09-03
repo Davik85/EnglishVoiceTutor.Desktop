@@ -1,10 +1,10 @@
 # Command Playbook
 
-Review date: 2026-09-02.
+Review date: 2026-09-03.
 
 ## CMS setup-localization draft import
 
-Production closeout: backend `0.1.35-backend.148` is active (with `.147` retained as rollback). Historical `.142` applied the additive `20260827105749_AddGooglePlayTrialDeferralFoundation` migration; `.148` closes the narrow Google provider-precision validation blocker without a migration. CMS published version `51` remains active at runtime. The import procedure below remains for a future older draft only; it is not a pending production operation.
+Production closeout: backend `0.1.35-backend.151` is active (with `.150` retained as rollback). `.151` contains the static-homepage/CMS-ownership architecture and required no EF migration. CMS published version `51` remains active at runtime. The import procedure below remains for a future older draft only; it is not a pending production operation.
 
 ## Source of truth for current versions
 
@@ -32,6 +32,8 @@ Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBas
 Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
 
 ## Public website deployment commands
+
+The independent static files are `index.html`, `mobile.html`, and `styles.css`; `mobile.html` is the legacy `noindex,follow` redirect to `/`. Deploy a backend version that understands this ownership boundary before CMS Publish, back up production, install only those files explicitly, then run Website CMS Publish separately. CMS owns `download.html`, legal/support/status pages, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`; do not manually upload those CMS-owned files during the independent-homepage operation, broadly copy `site/public`, or use `scripts/upload-static-site.ps1` as its rollout method. Preserve existing flag assets. Keep Windows release files under `/var/www/languagevoicetutor/releases/windows/direct` separate. Roll back from the recorded backup if verification fails.
 
 Use this section for public landing page and website-file deploys only. This is separate from backend deployment and separate from Windows installer/release upload.
 
@@ -81,14 +83,13 @@ Keep the printed backup path for rollback.
 
 ### Upload public website files
 
-Upload landing page files to `/var/www/languagevoicetutor/site`, not to `/var/www/languagevoicetutor/`:
+Historical broad static-site upload example — do not use this for the current independent-homepage architecture:
 
 ```powershell
 scp .\site\public\index.html lvt-server:/tmp/index.html
-scp .\site\public\download.html lvt-server:/tmp/download.html
 scp .\site\public\styles.css lvt-server:/tmp/styles.css
 scp .\site\public\download.js lvt-server:/tmp/download.js
-ssh lvt-server "sudo mv /tmp/index.html /var/www/languagevoicetutor/site/index.html && sudo mv /tmp/download.html /var/www/languagevoicetutor/site/download.html && sudo mv /tmp/styles.css /var/www/languagevoicetutor/site/styles.css && sudo mv /tmp/download.js /var/www/languagevoicetutor/site/download.js"
+ssh lvt-server "sudo mv /tmp/index.html /var/www/languagevoicetutor/site/index.html && sudo mv /tmp/styles.css /var/www/languagevoicetutor/site/styles.css"
 ```
 
 Upload landing images and their README to the landing assets directory under the correct nginx root:

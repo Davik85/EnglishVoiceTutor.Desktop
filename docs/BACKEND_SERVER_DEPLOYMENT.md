@@ -1,10 +1,10 @@
 # Backend server deployment
 
-Review date: 2026-09-02.
+Review date: 2026-09-03.
 
 ## Current production backend
 
-Production backend `0.1.35-backend.148` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.148`; `.147` is retained as the previous release. `.148` was deployed through the normal repository flow from `ac4c5569162de8ff11a8ade2ee154802da41e28a` (`Handle Google Play expiry precision`). The service is active/running with `.148` as content root, public `/health` was HTTP 200 three consecutive times, and database health was HTTP 200. No EF migration, Mobile/AAB or Play Console change, historical terminal-row repair, or broader production approval is included in this release checkpoint.
+Production backend `0.1.35-backend.151` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.151`; `.150` is retained as the previous rollback release. `.151` was deployed through the normal repository flow from source line `f5fb15cb`, with no EF migration. Public `/health` and `/api/health/database` returned HTTP 200. Google Play Billing, RTDN, and reconciliation remain enabled; the Android Publisher credential plus persistent Data Protection key ring and active certificate remain outside versioned release directories. An unauthenticated POST to `/api/billing/webhooks/google-play/rtdn` returned HTTP 401, confirming the endpoint remains present and protected. Checked public legal/support URLs returned HTTP 200.
 
 Production backend is deployed and healthy.
 
@@ -37,8 +37,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.148`
-- Previous rollback release: `0.1.35-backend.147`
+- Current release: `0.1.35-backend.151`
+- Previous rollback release: `0.1.35-backend.150`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -54,15 +54,15 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.142`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.141`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.151`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.150`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 ## 2026-08-25 `.141` legacy product-limit removal deployment verification
 
-Live verification confirmed `current` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.141`, `previous` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.140`, `languagevoicetutor-backend.service` active, public `/health` HTTP 200 `Healthy`, and public `/api/health/database` HTTP 200 `Healthy` with `canConnect=true`.
+Historical `.141` verification confirmed `current` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.141`, `previous` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.140`, `languagevoicetutor-backend.service` active, public `/health` HTTP 200 `Healthy`, and public `/api/health/database` HTTP 200 `Healthy` with `canConnect=true`.
 
 Approved source commit `5c8e973a0c2ea3f24186c30bf743a77d8d776e57` (`Remove legacy free usage limits`) was deployed through the standard repository backend package -> dry-run -> upload flow. Release `.141` removed the obsolete `free_dev` / `FreeLimits` enforcement/status contract and its per-operation product quotas while preserving usage telemetry and daily counters. Free remains one free lesson per day; an allowed Free lesson, Trial, and Premium/Pro have no separate chat, hint, STT/transcription, TTS, feedback, or estimated-cost product quota. Technical ASP.NET rate limiting remains separate infrastructure protection.
 
-No EF migration or database schema change was required. The deployment did not publish Website CMS content or static website files, release Desktop or Mobile, enable Google Play, or change Paddle, billing, authentication, Admin RBAC, CMS, account lifecycle, or entitlement architecture. Google Play remains disabled.
+No EF migration or database schema change was required. This historical deployment did not publish Website CMS content or static website files, release Desktop or Mobile, enable Google Play, or change Paddle, billing, authentication, Admin RBAC, CMS, account lifecycle, or entitlement architecture. Google Play is enabled in current `.151` production; do not read this dated note as current runtime state.
 
 ## Historical 2026-08-22 `.140` Website CMS FooterTextColor deployment verification
 
@@ -318,7 +318,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.148`; verified rollback target `.147` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.151`; verified rollback target `.150` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`.
@@ -338,7 +338,7 @@ Controlled production Paddle live payment/Premium activation and desktop cancel-
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
-Current production facts after backend `0.1.35-backend.108` and the 2026-07-02 controlled live payment/cancel-renewal validation:
+Historical 2026-07-02 production facts after backend `0.1.35-backend.108` and the controlled live payment/cancel-renewal validation:
 
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.

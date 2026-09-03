@@ -1,8 +1,10 @@
 # Website Paddle review readiness
 
-Review date: 2026-08-22.
+Review date: 2026-09-03.
 
 ## 2026-09-03 static homepage and retired Mobile CMS page
+
+Final production publication deployed backend `.151` first, created `/var/backups/languagevoicetutor/site/static-home-20260903_173550`, explicitly installed `index.html`, `mobile.html`, and `styles.css`, then ran Website CMS Publish once. CMS Publish preserved the independent files. Post-publish SHA-256: `index.html` `c7e437258c292a41ff54e3d4e407002434ca5aa115d9b1a211d00062306d3a89`; `mobile.html` `b81b14e9e80a86fc257b7d51de3fdecd0656191761586fc256eab4aedc8cede7`; `styles.css` `36e2dbfa38b1b0abe269a99321aeed9f0c8ffb6dc728ecab76fcda5f7b038895`. Root, CMS-managed pages/resources, backend health, and database health returned HTTP 200. Sitemap contains the root exactly once and excludes `/mobile.html` and `/ai-language-tutor/`; CMS Home navigation points to `/`, retired Mobile navigation is absent, and seller data retains ORRALEN TECHNOLOGIES LTD and 205 Regent Street.
 
 `site/public/index.html` is the independently deployed static Language Voice Tutor homepage, adapted from the approved standalone landing with its embedded media and decorative flags unchanged. Its canonical URL is `https://languagevoicetutor.com/`; its Windows CTA is `/download.html`; and every Google Play CTA uses `https://play.google.com/store/apps/details?id=com.languagevoicetutor.mobile`. Google Play is publicly available.
 
@@ -95,10 +97,10 @@ The Windows direct release manifest is:
 https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
 
-Current public direct release:
+Current documented public direct release:
 
-- `version`: `1.1`
-- `installerFileName`: `LanguageVoiceTutorSetup-1.1.exe`
+- `version`: `1.6`
+- `installerFileName`: `LanguageVoiceTutorSetup-1.6.exe`
 - `backendBaseUrl`: `https://api.languagevoicetutor.com`
 - `updateMode`: `manual-confirmation`
 

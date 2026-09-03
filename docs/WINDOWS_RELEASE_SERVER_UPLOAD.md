@@ -2,6 +2,8 @@
 
 Review date: 2026-08-25.
 
+> **Historical/current boundary.** Use the live manifest and [CURRENT_STATE.md](CURRENT_STATE.md) for current production values. Earlier `.108`/Windows release references in this upload history are historical and must not be treated as the current backend or Android distribution state.
+
 ## Source of truth for current versions
 
 The live website manifest is the public source of truth for the Windows direct release:
@@ -217,7 +219,7 @@ Admin capabilities should now distinguish configuration from launch completion: 
 
 ## Static site upload boundary after Download page polish
 
-`upload-static-site.ps1` is the public website upload helper, not a backend deployment helper and not a Windows installer release helper. Use PowerShell 7 / `pwsh` for the updated script:
+**Legacy/historical website architecture only:** `upload-static-site.ps1` is retained as a former broad website-upload reference, not the normal current homepage/CMS publication workflow and not a backend or Windows-installer helper. Current homepage publication uses scoped deployment of `index.html`, `mobile.html`, and `styles.css`; Website CMS Publish separately owns CMS-managed pages/resources. Do not broadly upload `site/public` for the current homepage architecture. Windows direct release upload remains separate. The legacy command below is retained only for provenance.
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\upload-static-site.ps1 `

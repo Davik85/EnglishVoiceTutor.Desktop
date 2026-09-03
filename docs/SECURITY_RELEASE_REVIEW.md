@@ -2,6 +2,8 @@
 
 Review date: 2026-06-20.
 
+> **Historical snapshot.** This security/release review records its 2026-06-20 baseline only. Its version and pending-release wording does not describe 2026-09-03 production; see [CURRENT_STATE.md](CURRENT_STATE.md).
+
 Scope: documentation and source review only. No application behavior, billing logic, entitlement logic, Paddle integration behavior, database schema, migrations, deployment scripts, generated artifacts, or secrets were changed by this review.
 
 ## 2026-06-21 Admin RBAC and roadmap update

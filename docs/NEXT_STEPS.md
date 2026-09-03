@@ -1,12 +1,12 @@
 # Next Steps
 
-## Google Play provider-precision validation update (2026-09-02)
+## 2026-09-03 post-release monitoring
 
-Backend `0.1.35-backend.148` is the current documented production release, with `.147` retained as rollback. The controlled license-test validation completed the Google initial Premium-deferral provider-precision path: one defer mutation, `target_converged`, completed plan (`AttemptCount=1`), no pending acknowledgement or reconciliation work, and no new RTDN permanent failure or provider rejection. The local target `...06.283460 CEST` and fresh authoritative provider expiry `...06.283000 CEST` differed by 460 microseconds; the Google-only absolute UTC equivalence rule strictly below one millisecond accepted that normalization, preserved the target, and persisted the actual provider expiry without a second defer. The source correction is commit `ac4c5569162de8ff11a8ade2ee154802da41e28a`.
+Android v8 is publicly available in Google Play Production after owner approval, review submission, and confirmed public installation. Backend `0.1.35-backend.151` is current with `.150` rollback; its health/database checks, enabled Google Play Billing/RTDN/reconciliation continuity, protected RTDN endpoint, and public legal/support URL checks passed. The independent static homepage/mobile redirect/styles architecture was published successfully without CMS Publish overwriting those files.
 
-This closes only that provider-precision blocker. Public Play Production remains subject to the separate targeted smoke, final review, owner approval, pending-refund/lifecycle evidence, October renewal evidence, and any required Google review gates. No migration, Mobile/AAB change, Play Console change, or repair of historical `.146`/`.147` ambiguous-terminal rows is implied. VersionCode 8 remains a viable candidate unless a Mobile change requires a new artifact.
+The next work is monitoring rather than a pending production rollout: observe the normal real-money renewal scheduled for 2026-10-08, pending payment, explicit cancellation, fresh-install billing restore, refund/voided-purchase, chargeback, and other lifecycle evidence if and when it occurs. Do not represent these observations as closed release gates or as evidence that all billing lifecycles are production-verified. Analytics and crash-reporting integration remain separate work.
 
-Review date: 2026-09-02.
+Review date: 2026-09-03.
 
 ## Coordinated ORRALEN client rebrand — future audited work
 
@@ -18,9 +18,9 @@ Desktop audit scope may include visible application branding, logo/icon assets, 
 
 Branding must preserve continuity: do not change Android package `com.languagevoicetutor.mobile`, backend API URLs, user account identity/database architecture, Premium entitlement architecture, signing/update continuity, app History/Progress, or Google Play subscription/base-plan IDs merely for branding. Do not create new product/payment identities as part of visual rebranding, and do not imply ownership of pre-incorporation founder IP.
 
-## Google Play next release and compliance sequence
+## Historical pre-2026-09-03 Google Play release and compliance sequence
 
-The paragraphs below preserve the `.139`/`.142` rollout baseline as historical context. The current source of truth is production backend `0.1.35-backend.148` with `.147` rollback, Mobile `0.1.0+8` / versionCode 8 in Google Play Internal testing, and the completed Restore Credentials cross-device E2E for the tested Android/Google Play account-session path. Google Play Billing, RTDN, and reconciliation are enabled only for the approved controlled context; pending-refund review remains disabled and public rollout remains subject to its separate gates.
+The paragraphs below preserve the `.139`/`.142` rollout baseline as historical context. The current source of truth is production backend `0.1.35-backend.151` with `.150` rollback and Mobile `0.1.0+8` / versionCode 8 publicly available in Google Play Production. Google Play Billing, RTDN, and reconciliation remain enabled; pending-refund review remains separately scoped.
 
 The RTDN, protected-token persistence, reconciliation, linked-purchase-token replacement, and protected pending-refund review database rollout was completed in historical backend `0.1.35-backend.139`. Migrations `20260802154345_AddGooglePlayRtdnPersistenceFoundation` and `20260803052655_AddGooglePlayPendingRefundReviewFoundation` are applied. Controlled Google Play Billing, RTDN, and reconciliation are enabled for the approved Internal-testing license-test context; pending-refund review remains disabled, protects raw token/order material, supports only explicit `NEUTRAL`, submits no fabricated usage evidence, and never changes Premium directly.
 
@@ -102,7 +102,7 @@ Authenticated backend voice scenario semantic resolution was originally deployed
 
 Backend `0.1.35-backend.116` completed the learner-level settings prerequisite. Mobile Settings -> Learning reads and saves `CurrentLevel`, normal lesson start uses it, Choose Level was removed, and physical Mobile validation passed.
 
-## Release-readiness status
+## Historical release-readiness status
 
 Public release boundary: the current product remains a public Windows direct release, not a full broad production-readiness claim.
 

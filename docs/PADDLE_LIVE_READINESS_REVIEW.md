@@ -2,6 +2,8 @@
 
 Review date: 2026-06-25.
 
+> **Historical snapshot.** The production values below are those used for this 2026-06-25 Paddle review, not current production. See [CURRENT_STATE.md](CURRENT_STATE.md) for current backend and Android release status.
+
 Scope: Language Voice Tutor / English Voice Tutor Desktop release path. This is review and planning only. It does not enable live Paddle, change server environment variables, run production Paddle transactions, add secrets, change entitlement semantics, change Desktop behavior, add EF migrations, or modify deployment scripts.
 
 ## Current verified production state used for this review

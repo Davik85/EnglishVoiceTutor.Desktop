@@ -2,6 +2,8 @@
 
 Review date: 2026-07-27.
 
+> **Historical snapshot.** This pre-Mobile review records the state on 2026-07-27 only. Its version and installer references do not describe current production; see [CURRENT_STATE.md](CURRENT_STATE.md) for the 2026-09-03 `.151`/`.150` and public Android v8 state.
+
 ## Progress contract
 
 Authenticated Progress V1 is available at `GET /api/me/progress`. It is backend-owned, separate from recent History, and must not be recreated by Mobile from the maximum-50 History list. See [Progress Endpoints](PROGRESS_ENDPOINTS.md).

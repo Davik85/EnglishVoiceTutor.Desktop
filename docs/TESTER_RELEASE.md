@@ -1,6 +1,6 @@
 # Historical tester release workflow
 
-Review date: 2026-08-25.
+Review date: 2026-09-03.
 
 ## Source of truth for current versions
 
@@ -45,7 +45,7 @@ Windows Direct Release 1.6 is published on the public direct channel. The manual
 
 ## Historical backend notes
 
-Historical tester-era backend snapshot notes are retained only for context. Current production backend for the Windows Direct Release 1.6 documentation state is `0.1.35-backend.141`, with `.140` rollback; verify the live value from the server symlink before calling it current.
+Historical tester-era backend snapshot notes are retained only for context. Current production backend is `0.1.35-backend.151`, with `.150` rollback; verify the live value from the server symlink before calling it current. Android v8 is publicly available in Google Play Production; this does not alter the historical Windows tester observations below.
 
 `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 

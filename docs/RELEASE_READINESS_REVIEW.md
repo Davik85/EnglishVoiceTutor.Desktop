@@ -2,6 +2,8 @@
 
 Review date: 2026-06-30.
 
+> **Historical snapshot.** This controlled Windows-release assessment records its 2026-06-30 baseline only. References to then-current backend, Windows, and pending public-release work are not current production claims; see [CURRENT_STATE.md](CURRENT_STATE.md).
+
 Scope: controlled direct Windows release readiness and broader public-release remaining work. This review is documentation-only and does not change backend runtime code, desktop runtime code, product behavior, billing logic, entitlement logic, Paddle/OpenAI runtime behavior, database schema, migrations, Inno installer behavior, deployment scripts, generated artifacts, signing keys, or secrets.
 
 ## 2026-06-21 Admin RBAC and roadmap update
