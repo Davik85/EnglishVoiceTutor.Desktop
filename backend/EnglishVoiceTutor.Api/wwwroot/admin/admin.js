@@ -1090,14 +1090,13 @@
     const websiteSaveDraftButton = document.getElementById("website-save-draft-button");
     const websitePublishButton = document.getElementById("website-publish-button");
     const websitePreviewButton = document.getElementById("website-preview-button");
-    const simpleWebsitePageKeys = new Set(["download", "mobile", "pricing", "support", "terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"]);
+    const simpleWebsitePageKeys = new Set(["download", "pricing", "support", "terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"]);
     const longFormWebsitePageKeys = new Set(["terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"]);
     const standardBodyMarkdownLimit = 12000;
     const longFormBodyMarkdownLimit = 64000;
     const websiteSections = [
-        ["home", "Home page", [["logoPath","Logo image path"],["logoAltText","Logo alt text"],["fallbackLogoText","Fallback logo text"],["topHeaderText","Top header text"],["supportedLanguageLine","Supported language line"],["windowsCardBadge","Windows card badge"],["windowsCardTitle","Windows card title"],["windowsCardDescription","Windows card description"],["windowsDownloadButtonText","Windows download button text"],["mobileCardBadge","Android card badge"],["mobileCardTitle","Android card title"],["mobileCardDescription","Android card description"],["mobileComingSoonButtonText","Android card CTA text"],["footerCopyrightText","Footer copyright text"],["footerPrivacyLabel","Footer Privacy label"],["footerTermsLabel","Footer Terms label"],["footerRefundsLabel","Footer Refund label"],["footerCancellationLabel","Footer Cancellation label"],["footerSupportLabel","Footer Support label"],["footerPricingLabel","Footer Pricing label"]]],
+        ["home", "Shared site chrome", [["logoPath","Logo image path"],["logoAltText","Logo alt text"],["fallbackLogoText","Fallback logo text"],["topHeaderText","Top header text"],["supportedLanguageLine","Supported language line"],["footerCopyrightText","Footer copyright text"],["footerPrivacyLabel","Footer Privacy label"],["footerTermsLabel","Footer Terms label"],["footerRefundsLabel","Footer Refund label"],["footerCancellationLabel","Footer Cancellation label"],["footerSupportLabel","Footer Support label"],["footerPricingLabel","Footer Pricing label"]]],
         ["download", "Desktop app / Download"],
-        ["mobile", "Android app / Google Play"],
         ["pricing", "Pricing"],
         ["support", "Support"],
         ["terms", "Legal - Terms"],
@@ -1112,7 +1111,6 @@
     ].map(([key, label, fields]) => ({ key, label, fields: fields || [["pageTitle", "Page title"], ["bodyMarkdown", "Body markdown"], ["seoTitle", "SEO title"], ["seoDescription", "SEO description"]], simple: simpleWebsitePageKeys.has(key) }));
     const websiteLegacyBodyFields = {
         download: [["introText"], ["currentVersionLabel", "Current version"], ["safetySupportNote", "Safety and support"]],
-        mobile: [["introText"], ["androidComingSoonText", "Android availability"], ["iosComingSoonText", "iOS note"], ["emailSupportCtaText", "Support"]],
         pricing: [["introText"], ["freePlanText", "Free plan"], ["premiumPlanText", "Premium plan"], ["trialText", "Trial"], ["paddleLiveCheckoutDisclaimerText", "Checkout status"]],
         support: [["introText"], ["supportEmailText", "Support email"], ["responseTimeText", "Response time"], ["accountDeletionSupportText", "Accounts and deletion"], ["billingSupportText", "Billing"]],
         terms: [["effectiveDate", "Effective date"], ["intro"], ["accountUseTerms", "Accounts and use"], ["aiLearningDisclaimer", "AI and learning disclaimer"], ["billingSubscriptionTermsPlaceholder", "Billing and subscriptions"], ["contactSupportText", "Contact"]],
@@ -1128,7 +1126,7 @@
     function setWebsiteMessage(message) { websiteMessageElement.textContent = message || ""; }
     function setWebsiteError(message) { websiteErrorElement.textContent = message || ""; }
     const websiteSectionGroups = [
-        { label: "Main", keys: ["home", "download", "mobile", "design"] },
+        { label: "Main", keys: ["home", "download", "design"] },
         { label: "Commercial", keys: ["pricing", "support"] },
         { label: "Legal", keys: ["terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"] },
         { label: "Marketing / SEO", keys: ["marketingSeo"] }
@@ -1214,47 +1212,6 @@
         field.append(labelElement, input);
         if (options.help) { const helper = document.createElement("p"); helper.className = "muted website-field-help"; helper.textContent = options.help; field.appendChild(helper); }
         return field;
-    }
-    const homeTitleStyleDefaults = { FontFamily: "inherit", MobileSizePx: "28", DesktopSizePx: "52", FontWeight: "800", LineHeight: "1.08" };
-    const homeTitleFontOptions = [["inherit", "Inherit website heading font"], ["system-ui", "System UI"], ["Arial", "Arial"], ["Georgia", "Georgia"], ["Trebuchet MS", "Trebuchet MS"]];
-    const homeTitleWeightOptions = ["400", "500", "600", "700", "800", "900"];
-    function createHomeTitleStyleEditor(titleKey, values) {
-        const section = document.createElement("section");
-        section.className = "home-title-style website-field-long";
-        section.dataset.titleStyleFor = titleKey;
-        const heading = document.createElement("h4"); heading.textContent = "Text style";
-        const helper = document.createElement("p"); helper.className = "muted"; helper.textContent = "Only this title uses these settings. Use the controlled options below; raw CSS is not supported.";
-        const grid = document.createElement("div"); grid.className = "home-title-style-grid";
-        const addSelect = (suffix, label, options) => { const field = document.createElement("div"); field.className = "field website-field"; const labelElement = document.createElement("label"); const id = "website-field-" + titleKey + suffix; labelElement.htmlFor = id; labelElement.textContent = label; const select = document.createElement("select"); select.id = id; select.dataset.websiteKey = titleKey + suffix; const value = String(values[titleKey + suffix] ?? homeTitleStyleDefaults[suffix]); options.forEach(([optionValue, optionLabel]) => { const option = document.createElement("option"); option.value = optionValue; option.textContent = optionLabel; option.selected = optionValue === value; select.appendChild(option); }); field.append(labelElement, select); grid.appendChild(field); };
-        const addNumber = (suffix, label, min, max, step) => { const field = createWebsiteField(titleKey + suffix, label, values[titleKey + suffix] ?? homeTitleStyleDefaults[suffix], { number: true }); const input = field.querySelector("input"); input.min = String(min); input.max = String(max); input.step = String(step); input.inputMode = "decimal"; grid.appendChild(field); };
-        addSelect("FontFamily", "Font family", homeTitleFontOptions);
-        addNumber("MobileSizePx", "Mobile size (px)", 22, 72, 1);
-        addNumber("DesktopSizePx", "Desktop size (px)", 22, 72, 1);
-        addSelect("FontWeight", "Font weight", homeTitleWeightOptions.map(value => [value, value]));
-        addNumber("LineHeight", "Line height", 0.9, 1.8, 0.01);
-        const error = document.createElement("p"); error.className = "error home-title-style-error"; error.hidden = true;
-        section.append(heading, helper, grid, error);
-        return section;
-    }
-    function validateHomeTitleStyles() {
-        if (activeWebsiteSection !== "home") return true;
-        let firstError = "";
-        ["windowsCardTitle", "mobileCardTitle"].forEach(titleKey => {
-            const section = websiteEditorFields.querySelector(".home-title-style[data-title-style-for=\"" + titleKey + "\"]");
-            const error = section?.querySelector(".home-title-style-error");
-            const get = suffix => websiteEditorFields.querySelector("[data-website-key=\"" + titleKey + suffix + "\"]");
-            const mobile = Number(get("MobileSizePx")?.value), desktop = Number(get("DesktopSizePx")?.value), lineHeight = Number(get("LineHeight")?.value);
-            let message = "";
-            if (!Number.isFinite(mobile) || mobile < 22 || mobile > 72) message = "Mobile size must be a finite number from 22 to 72 px.";
-            else if (!Number.isFinite(desktop) || desktop < 22 || desktop > 72) message = "Desktop size must be a finite number from 22 to 72 px.";
-            else if (mobile > desktop) message = "Mobile size must not exceed desktop size.";
-            else if (!Number.isFinite(lineHeight) || lineHeight < 0.9 || lineHeight > 1.8) message = "Line height must be a finite number from 0.9 to 1.8.";
-            if (error) { error.hidden = !message; error.textContent = message; }
-            ["MobileSizePx", "DesktopSizePx", "LineHeight"].forEach(suffix => get(suffix)?.setCustomValidity(message));
-            if (message && !firstError) firstError = message;
-        });
-        if (firstError) { setWebsiteError(firstError); return false; }
-        return true;
     }
     function insertMarkdownAtCursor(textarea, before, after = "") {
         const start = textarea.selectionStart || 0;
@@ -1351,52 +1308,16 @@
         section.append(heading, helper, grid);
         websiteEditorFields.appendChild(section);
     }
-    const mobileProductFields = [
-        ["eyebrowText", "Hero label"],
-        ["googlePlayButtonText", "Google Play button text"],
-        ["googlePlayUrl", "Google Play URL"],
-        ["androidComingSoonText", "Android availability text"],
-        ["iosComingSoonText", "iOS note"],
-        ["emailSupportCtaText", "Support text"],
-        ["conversationTitle", "Conversation feature title"],
-        ["conversationText", "Conversation feature text"],
-        ["learningTitle", "Guided learning feature title"],
-        ["learningText", "Guided learning feature text"],
-        ["progressTitle", "Progress feature title"],
-        ["progressText", "Progress feature text"],
-        ["premiumTitle", "Premium note title"],
-        ["premiumText", "Premium note text"]
-    ];
-    function renderMobileProductEditor(values) {
-        const section = document.createElement("section");
-        section.className = "website-seo-section website-field-long";
-        const heading = document.createElement("h4");
-        heading.textContent = "Android product page";
-        const helper = document.createElement("p");
-        helper.className = "muted";
-        helper.textContent = "These fields drive the Android hero panel, Google Play CTA, availability notes, and compact feature list. The Google Play URL is normalized to the approved listing.";
-        const grid = document.createElement("div");
-        grid.className = "website-seo-grid";
-        mobileProductFields.forEach(([key, label]) => {
-            const isLong = /Text$|Url$/.test(key);
-            grid.appendChild(createWebsiteField(key, label, values[key], { long: isLong, textarea: /Text$/.test(key), rows: 3 }));
-        });
-        section.append(heading, helper, grid);
-        websiteEditorFields.appendChild(section);
-    }
     function renderSimpleWebsiteEditor(section, values) {
         websiteEditorFields.classList.add("website-simple-editor-fields");
         websiteEditorFields.appendChild(createWebsiteField("pageTitle", "Page title", values.pageTitle, { long: true }));
-        if (section.key !== "mobile") {
-            const bodyMarkdown = values.bodyMarkdown || getLegacyWebsiteBodyMarkdown(section.key, values);
-            const bodyField = createWebsiteField("bodyMarkdown", "Body markdown", bodyMarkdown, { long: true, textarea: true, rows: 18 });
-            const bodyTextarea = bodyField.querySelector("textarea");
-            bodyField.insertBefore(createMarkdownToolbar(bodyTextarea), bodyTextarea);
-            addBodyMarkdownCounter(bodyTextarea, section.key);
-            websiteEditorFields.appendChild(bodyField);
-        }
+        const bodyMarkdown = values.bodyMarkdown || getLegacyWebsiteBodyMarkdown(section.key, values);
+        const bodyField = createWebsiteField("bodyMarkdown", "Body markdown", bodyMarkdown, { long: true, textarea: true, rows: 18 });
+        const bodyTextarea = bodyField.querySelector("textarea");
+        bodyField.insertBefore(createMarkdownToolbar(bodyTextarea), bodyTextarea);
+        addBodyMarkdownCounter(bodyTextarea, section.key);
+        websiteEditorFields.appendChild(bodyField);
         if (section.key === "download") { renderDownloadFeatureCardEditor(values); }
-        if (section.key === "mobile") { renderMobileProductEditor(values); }
         const seoSection = document.createElement("section");
         seoSection.className = "website-seo-section website-field-long";
         const heading = document.createElement("h4");
@@ -1459,9 +1380,6 @@
         section.fields.forEach(([key, label]) => {
             const isLong = /description|intro|text|terms|disclaimer|collected|processing|retention|note|placeholder/i.test(key);
             websiteEditorFields.appendChild(createWebsiteField(key, label, values[key], { long: isLong, textarea: isLong, rows: 4, number: /Px|Weight/.test(key) }));
-            if (section.key === "home" && (key === "windowsCardTitle" || key === "mobileCardTitle")) {
-                websiteEditorFields.appendChild(createHomeTitleStyleEditor(key, values));
-            }
         });
     }
     function collectCurrentWebsiteSection() { const section = websiteSections.find(x => x.key === activeWebsiteSection); if (!section) return; if (section.key === "design") { const design = (websiteContentDraft.design ||= {}); websiteEditorFields.querySelectorAll("[data-website-design-key]").forEach(input => { design[input.dataset.websiteDesignKey] = input.value; }); return; } if (section.key === "marketingSeo") { const marketing = (websiteContentDraft.marketing ||= {}); websiteEditorFields.querySelectorAll("[data-website-marketing-key]").forEach(input => { const key = input.dataset.websiteMarketingKey; marketing[key] = input.type === "checkbox" ? String(input.checked) : input.value; }); return; } const target = ((websiteContentDraft.pages ||= {})[section.key] ||= {}); websiteEditorFields.querySelectorAll("[data-website-key]").forEach(input => { const key = input.dataset.websiteKey; target[key] = input.value; }); }
@@ -1469,9 +1387,9 @@
     async function readWebsiteResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
         if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
     async function loadWebsiteContent() { setWebsiteError(""); setWebsiteMessage("Loading Website editor..."); try { const response = await fetch(ApiPaths.websiteContent, { method: "GET", headers: getAdminHeaders() }); const payload = await readWebsiteResponse(response, "Unable to load Website content."); fillWebsiteForm(payload.draft || payload.active); websiteHasLoadedOnce = true; setWebsiteMessage("Draft loaded."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to load Website content."); } }
-    async function saveWebsiteDraft() { setWebsiteError(""); if (!validateHomeTitleStyles()) return false; collectCurrentWebsiteSection(); if (!validateWebsiteBodyMarkdown()) return false; preserveDownloadFeatureCardFields(); setWebsiteMessage("Saving draft..."); websiteSaveDraftButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(websiteContentDraft) }); const payload = await readWebsiteResponse(response, "Unable to save Website draft."); fillWebsiteForm(payload.draft); setWebsiteMessage("Draft saved."); return true; } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to save Website draft."); return false; } finally { websiteSaveDraftButton.disabled = false; } }
-    async function previewWebsiteContent() { setWebsiteError(""); if (!validateHomeTitleStyles()) return; collectCurrentWebsiteSection(); if (!validateWebsiteBodyMarkdown()) return; setWebsiteMessage("Rendering Website preview..."); websitePreviewButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentPreview, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ content: websiteContentDraft, pageKey: activeWebsiteSection === "marketingSeo" || activeWebsiteSection === "design" ? "home" : activeWebsiteSection }) }); const payload = await readWebsiteResponse(response, "Unable to preview Website content."); const previewWindow = window.open("about:blank", "_blank"); if (!previewWindow) { throw new Error("Preview popup was blocked. Allow popups for this admin site and try again."); } previewWindow.opener = null; previewWindow.document.open(); previewWindow.document.write(payload.html || ""); previewWindow.document.close(); setWebsiteMessage("Preview opened in a new tab. Nothing was saved or published."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to preview Website content."); } finally { websitePreviewButton.disabled = false; } }
-    async function publishWebsiteContent() { setWebsiteError(""); if (!validateHomeTitleStyles()) return; collectCurrentWebsiteSection(); preserveDownloadFeatureCardFields(); setWebsiteMessage("Saving draft before publish..."); websitePublishButton.disabled = true; try { const saved = await saveWebsiteDraft(); if (!saved) { return; } setWebsiteMessage("Publishing saved draft to static website..."); const response = await fetch(ApiPaths.websiteContentPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readWebsiteResponse(response, "Unable to publish Website content."); fillWebsiteForm(payload.active); setWebsiteMessage(`Published saved draft to ${Array.isArray(payload.publishedFiles) ? payload.publishedFiles.length : ""} static website files.`); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website content."); } finally { websitePublishButton.disabled = false; } }
+    async function saveWebsiteDraft() { setWebsiteError(""); collectCurrentWebsiteSection(); if (!validateWebsiteBodyMarkdown()) return false; preserveDownloadFeatureCardFields(); setWebsiteMessage("Saving draft..."); websiteSaveDraftButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(websiteContentDraft) }); const payload = await readWebsiteResponse(response, "Unable to save Website draft."); fillWebsiteForm(payload.draft); setWebsiteMessage("Draft saved."); return true; } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to save Website draft."); return false; } finally { websiteSaveDraftButton.disabled = false; } }
+    async function previewWebsiteContent() { setWebsiteError(""); collectCurrentWebsiteSection(); if (!validateWebsiteBodyMarkdown()) return; setWebsiteMessage("Rendering Website preview..."); websitePreviewButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentPreview, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ content: websiteContentDraft, pageKey: activeWebsiteSection === "home" || activeWebsiteSection === "marketingSeo" || activeWebsiteSection === "design" ? "download" : activeWebsiteSection }) }); const payload = await readWebsiteResponse(response, "Unable to preview Website content."); const previewWindow = window.open("about:blank", "_blank"); if (!previewWindow) { throw new Error("Preview popup was blocked. Allow popups for this admin site and try again."); } previewWindow.opener = null; previewWindow.document.open(); previewWindow.document.write(payload.html || ""); previewWindow.document.close(); setWebsiteMessage("Preview opened in a new tab. Nothing was saved or published."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to preview Website content."); } finally { websitePreviewButton.disabled = false; } }
+    async function publishWebsiteContent() { setWebsiteError(""); collectCurrentWebsiteSection(); preserveDownloadFeatureCardFields(); setWebsiteMessage("Saving draft before publish..."); websitePublishButton.disabled = true; try { const saved = await saveWebsiteDraft(); if (!saved) { return; } setWebsiteMessage("Publishing saved draft to static website..."); const response = await fetch(ApiPaths.websiteContentPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readWebsiteResponse(response, "Unable to publish Website content."); fillWebsiteForm(payload.active); setWebsiteMessage(`Published saved draft to ${Array.isArray(payload.publishedFiles) ? payload.publishedFiles.length : ""} static website files.`); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website content."); } finally { websitePublishButton.disabled = false; } }
 
     function resetDashboard() {
         adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable"; systemBillingPaddleStatusElement.textContent = "not configured"; systemBillingPaddleStatusElement.className = "badge unavailable"; systemMobileStoreGooglePlayStatusElement.textContent = "DISABLED / INCOMPLETE"; systemMobileStoreGooglePlayStatusElement.className = "badge unavailable";

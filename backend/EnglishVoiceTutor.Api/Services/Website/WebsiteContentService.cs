@@ -28,12 +28,8 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     private const string WindowsDirectReleaseBasePath = "/releases/windows/direct/";
     private const string DefaultWindowsInstallerFileName = "LanguageVoiceTutorSetup-1.0.exe";
     private const string DefaultWindowsInstallerUrl = WindowsDirectReleaseBasePath + DefaultWindowsInstallerFileName;
+    // Retained only to keep fresh file-backed CMS documents backward-compatible with prior home-card data.
     private const string TitleFontInherit = "inherit";
-    private const string TitleFontSystemUi = "system-ui";
-    private const string TitleFontArial = "Arial";
-    private const string TitleFontGeorgia = "Georgia";
-    private const string TitleFontTrebuchetMs = "Trebuchet MS";
-    private static readonly string[] HomeTitleKeys = ["windowsCardTitle", "mobileCardTitle"];
     private const string ReleaseReadyDownloadBodyMarkdown = """
 Download Language Voice Tutor for Windows. Practice real conversations by text or voice with an AI tutor, choose practical topics, start guided lessons, and improve step by step.
 
@@ -69,7 +65,6 @@ Need help? Email support@languagevoicetutor.com.
 
     public async Task<WebsiteContentResponse> SaveDraftAsync(WebsiteContentSet draft, CancellationToken cancellationToken)
     {
-        ValidateHomeTitleTypography(draft);
         ValidateBodyMarkdownLimits(draft);
         var document = await ReadDocumentAsync(cancellationToken);
         document = document with { Draft = MergeDraft(document.Draft, draft) };
@@ -79,7 +74,6 @@ Need help? Email support@languagevoicetutor.com.
 
     public Task<WebsitePreviewResponse> PreviewAsync(WebsitePreviewRequest request, CancellationToken cancellationToken)
     {
-        ValidateHomeTitleTypography(request.Content);
         ValidateBodyMarkdownLimits(request.Content);
         var normalized = Normalize(request.Content);
         var pageKey = NormalizePageKey(request.PageKey);
@@ -191,40 +185,11 @@ Need help? Email support@languagevoicetutor.com.
             }
         }
         pages["home"]["supportedLanguageLine"] = RequiredLanguageLine;
-        UpgradeLegacyAndroidContent(pages);
-        NormalizeHomeTitleTypography(pages["home"]);
         UpgradeLegacyDownloadContent(pages);
         EnsureDownloadFeatureCards(pages);
         var design = NormalizeDesign(input?.Design, defaults.Design);
         var marketing = NormalizeMarketing(input?.Marketing, defaults.Marketing);
         return new WebsiteContentSet(pages, design, marketing);
-    }
-
-    private static void UpgradeLegacyAndroidContent(Dictionary<string, Dictionary<string, string>> pages)
-    {
-        var home = pages["home"];
-        var mobile = pages["mobile"];
-
-        UpgradeLegacyValue(home, "mobileCardBadge", "Available on Google Play", "In development");
-        UpgradeLegacyValue(home, "mobileCardTitle", "Language Voice Tutor for Android", "Application for mobile devices");
-        UpgradeLegacyValue(home, "mobileCardDescription", "Practice real conversations by text or voice with AI tutors. Choose your study language and level, complete guided lessons, earn rewards, and keep learning wherever you are.",
-            "Android and iOS apps are planned but are not currently available.", "Android and iOS versions are planned.");
-        UpgradeLegacyValue(home, "mobileComingSoonButtonText", "Get the Android app",
-            "Not currently available", "Mobile version coming soon");
-        UpgradeLegacyValue(home, "seoDescription", "Practice real conversations by text or voice with Language Voice Tutor for Windows and Android.",
-            "Language Voice Tutor helps you practice real-life language lessons by text or voice on desktop, with mobile apps planned.");
-
-        UpgradeLegacyValue(mobile, "pageTitle", "Language Voice Tutor for Android", "Mobile app coming soon");
-        UpgradeLegacyValue(mobile, "introText", "Practice real conversations by text or voice with AI tutors, choose your study language and level, and learn wherever you are.",
-            "Android and iOS versions are planned and not currently available.");
-        UpgradeLegacyValue(mobile, "androidComingSoonText", "Available for Android on Google Play.", "Android app coming soon.");
-        UpgradeLegacyValue(mobile, "iosComingSoonText", "iOS is planned and is not currently available.", "iOS app coming soon.");
-        UpgradeLegacyValue(mobile, "emailSupportCtaText", "Need help? Email support@languagevoicetutor.com.",
-            "Email support@languagevoicetutor.com for availability questions.");
-        UpgradeLegacyValue(mobile, "seoTitle", "Language Voice Tutor for Android | Google Play", "Mobile app coming soon | Language Voice Tutor");
-        UpgradeLegacyValue(mobile, "seoDescription", "Get Language Voice Tutor for Android on Google Play and practice languages through text and voice conversations, guided lessons, and progress rewards.",
-            "Android and iOS versions are planned and not currently available.");
-        mobile["googlePlayUrl"] = GooglePlayListingUrl;
     }
 
     private static void UpgradeLegacyValue(Dictionary<string, string> values, string key, string replacement, params string[] legacyValues)
@@ -309,15 +274,13 @@ Need help? Email support@languagevoicetutor.com.
 
     private static string NormalizePageKey(string? pageKey)
     {
-        var key = string.IsNullOrWhiteSpace(pageKey) ? "home" : pageKey.Trim();
-        return PageFiles().Any(page => page.PageKey == key) ? key : "home";
+        var key = string.IsNullOrWhiteSpace(pageKey) ? "download" : pageKey.Trim();
+        return PageFiles().Any(page => page.PageKey == key) ? key : "download";
     }
 
     private static IReadOnlyList<(string PageKey, string FileName)> PageFiles() =>
     [
-        ("home", "index.html"),
         ("download", "download.html"),
-        ("mobile", "mobile.html"),
         ("pricing", "pricing.html"),
         ("support", "support.html"),
         ("terms", "terms.html"),
@@ -331,9 +294,7 @@ Need help? Email support@languagevoicetutor.com.
 
     private static string RenderPage(WebsiteContentSet c, string pageKey, bool includePublicBaseHref = false, StaticReleaseManifest? release = null) => pageKey switch
     {
-        "home" => RenderHome(c, includePublicBaseHref),
         "download" => RenderDownload(c, includePublicBaseHref, release),
-        "mobile" => RenderMobile(c, includePublicBaseHref),
         "pricing" => RenderSimple(c, "pricing", "pricing-title", [("Free plan", "freePlanText"), ("Premium plan", "premiumPlanText"), ("Trial", "trialText"), ("Checkout status", "paddleLiveCheckoutDisclaimerText")], null, includePublicBaseHref),
         "support" => RenderSimple(c, "support", "support-title", [("Support email", "supportEmailText"), ("Response time", "responseTimeText"), ("Accounts and deletion", "accountDeletionSupportText"), ("Billing", "billingSupportText")], null, includePublicBaseHref),
         "terms" => RenderSimple(c, "terms", "terms-title", [("Effective date", "effectiveDate"), ("Accounts and use", "accountUseTerms"), ("AI and learning disclaimer", "aiLearningDisclaimer"), ("Billing and subscriptions", "billingSubscriptionTermsPlaceholder"), ("Contact", "contactSupportText")], null, includePublicBaseHref),
@@ -343,71 +304,8 @@ Need help? Email support@languagevoicetutor.com.
         "seller" => RenderSimple(c, "seller", "seller-title", [("Seller name / legal entity", "sellerNameLegalEntityPlaceholder"), ("Address", "addressPlaceholder"), ("Contact email", "contactEmail"), ("Tax, VAT, company registration", "taxVatCompanyRegistrationPlaceholder"), ("Paddle live review note", "paddleLiveReviewNote")], null, includePublicBaseHref),
         "aiData" => RenderSimple(c, "aiData", "ai-data-title", [("AI tutor disclosure", "aiTutorDisclosureText"), ("Voice and transcription", "voiceTranscriptionDisclosureText"), ("Data processing", "dataProcessingText"), ("User control and deletion", "userControlDeletionText")], null, includePublicBaseHref),
         "status" => RenderSimple(c, "status", "status-title", [("Desktop availability", "desktopAvailabilityText"), ("Mobile", "mobileComingSoonText"), ("Service availability", "serviceAvailabilityDisclaimer"), ("Support", "supportContactText")], null, includePublicBaseHref),
-        _ => RenderHome(c, includePublicBaseHref)
+        _ => RenderDownload(c, includePublicBaseHref, release)
     };
-
-    private static string RenderHome(WebsiteContentSet c, bool includePublicBaseHref)
-    {
-        var h = c.Pages["home"];
-        var main = $"""
-<main class="landing-shell" aria-label="Language Voice Tutor applications">
-    <a class="app-panel app-panel--windows" href="download.html">
-        <img class="app-panel__image" src="assets/images/landing/windows-desktop.webp" alt="Preview image for the Language Voice Tutor desktop app">
-        <span class="app-panel__shade"></span>
-        <section class="app-panel__content">
-            <p class="app-panel__eyebrow">{E(h["windowsCardBadge"])}</p>
-            <h1 class="app-panel__title app-panel__title--windows">{E(h["windowsCardTitle"])}</h1>
-            <p>{E(h["windowsCardDescription"])}</p>
-            <span class="app-panel__cue">{E(h["windowsDownloadButtonText"])}</span>
-        </section>
-    </a>
-    <a class="app-panel app-panel--mobile" href="mobile.html">
-        <img class="app-panel__image" src="assets/images/landing/mobile.webp" alt="Preview image for the Language Voice Tutor Android app">
-        <span class="app-panel__shade"></span>
-        <section class="app-panel__content">
-            <span class="app-panel__badge">{E(h["mobileCardBadge"])}</span>
-            <h2 class="app-panel__title app-panel__title--mobile">{E(h["mobileCardTitle"])}</h2>
-            <p>{E(h["mobileCardDescription"])}</p>
-            <span class="app-panel__cue">{E(h["mobileComingSoonButtonText"])}</span>
-        </section>
-    </a>
-</main>
-""";
-        return Shell(c, E(h["seoTitle"]), E(h["seoDescription"]), main, true, includePublicBaseHref, pageFileName: "index.html", jsonLd: RenderSoftwareApplicationJsonLd(null));
-    }
-
-
-    private static string RenderMobile(WebsiteContentSet c, bool includePublicBaseHref)
-    {
-        var mobile = c.Pages["mobile"];
-        var body = $$"""
-    <main>
-        <section class="mobile-hero" aria-labelledby="product-title">
-            <div class="mobile-hero__shade" aria-hidden="true"></div>
-            <div class="mobile-hero__inner">
-                <section class="mobile-product-panel" aria-label="Android app download">
-                    <p class="eyebrow">{{E(mobile["eyebrowText"])}}</p>
-                    <h1 id="product-title">{{E(mobile["pageTitle"])}}</h1>
-                    <p class="mobile-product-panel__description">{{E(mobile["introText"])}}</p>
-                    <a class="download-button download-button--hero" href="{{E(mobile["googlePlayUrl"])}}" target="_blank" rel="noopener noreferrer">{{E(mobile["googlePlayButtonText"])}}</a>
-                    <p class="mobile-product-panel__availability">{{E(mobile["androidComingSoonText"])}}</p>
-                    <ul class="mobile-feature-list" aria-label="Android app features">
-                        <li><strong>{{E(mobile["conversationTitle"])}}</strong><span>{{E(mobile["conversationText"])}}</span></li>
-                        <li><strong>{{E(mobile["learningTitle"])}}</strong><span>{{E(mobile["learningText"])}}</span></li>
-                        <li><strong>{{E(mobile["progressTitle"])}}</strong><span>{{E(mobile["progressText"])}}</span></li>
-                    </ul>
-                    <p class="mobile-product-panel__premium"><strong>{{E(mobile["premiumTitle"])}}</strong> {{E(mobile["premiumText"])}}</p>
-                    <p class="mobile-product-panel__ios">{{E(mobile["iosComingSoonText"])}}</p>
-                    <p class="mobile-product-panel__support">{{E(mobile["emailSupportCtaText"])}}</p>
-                </section>
-            </div>
-        </section>
-    </main>
-""";
-        return Shell(c, E(mobile["seoTitle"]), E(mobile["seoDescription"]), body, false, includePublicBaseHref, pageFileName: "mobile.html");
-    }
-
-
     private static string RenderDownload(WebsiteContentSet c, bool includePublicBaseHref, StaticReleaseManifest? release)
     {
         var download = c.Pages["download"];
@@ -453,7 +351,7 @@ Need help? Email support@languagevoicetutor.com.
 
     </main>
 """;
-        return Shell(c, E(ValueOrDefault(download, "seoTitle", ReleaseReadyDownloadSeoTitle)), E(ValueOrDefault(download, "seoDescription", ReleaseReadyDownloadSeoDescription)), body, false, includePublicBaseHref, "    <script src=\"download.js?v=20260703-lightbox\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));
+        return Shell(c, E(ValueOrDefault(download, "seoTitle", ReleaseReadyDownloadSeoTitle)), E(ValueOrDefault(download, "seoDescription", ReleaseReadyDownloadSeoDescription)), body, includePublicBaseHref, "    <script src=\"download.js?v=20260703-lightbox\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));
     }
 
     private static (string IntroMarkdown, string NotesMarkdown) SplitDownloadBodyMarkdown(string bodyMarkdown)
@@ -531,137 +429,6 @@ Need help? Email support@languagevoicetutor.com.
     private static string ValueOrDefault(Dictionary<string, string> values, string key, string fallback) =>
         values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : fallback;
 
-    private static void ValidateHomeTitleTypography(WebsiteContentSet? content)
-    {
-        if (content?.Pages is null || !content.Pages.TryGetValue("home", out var home) || home is null)
-        {
-            return;
-        }
-
-        foreach (var titleKey in HomeTitleKeys)
-        {
-            var prefix = titleKey;
-            var keys = new[]
-            {
-                prefix + "FontFamily",
-                prefix + "MobileSizePx",
-                prefix + "DesktopSizePx",
-                prefix + "FontWeight",
-                prefix + "LineHeight"
-            };
-            if (!keys.Any(home.ContainsKey))
-            {
-                continue;
-            }
-
-            var fontFamily = RequireTitleFontFamily(home.GetValueOrDefault(prefix + "FontFamily"), titleKey);
-            var mobileSize = RequireTitleNumber(home.GetValueOrDefault(prefix + "MobileSizePx"), 22, 72, "mobile size", titleKey);
-            var desktopSize = RequireTitleNumber(home.GetValueOrDefault(prefix + "DesktopSizePx"), 22, 72, "desktop size", titleKey);
-            if (mobileSize > desktopSize)
-            {
-                throw new InvalidOperationException($"{titleKey} mobile size must not exceed desktop size.");
-            }
-
-            _ = RequireTitleWeight(home.GetValueOrDefault(prefix + "FontWeight"), titleKey);
-            _ = RequireTitleNumber(home.GetValueOrDefault(prefix + "LineHeight"), 0.9, 1.8, "line height", titleKey);
-            _ = fontFamily;
-        }
-    }
-
-    private static void NormalizeHomeTitleTypography(Dictionary<string, string> home)
-    {
-        foreach (var titleKey in HomeTitleKeys)
-        {
-            var fontKey = titleKey + "FontFamily";
-            var mobileKey = titleKey + "MobileSizePx";
-            var desktopKey = titleKey + "DesktopSizePx";
-            var weightKey = titleKey + "FontWeight";
-            var lineHeightKey = titleKey + "LineHeight";
-            home[fontKey] = NormalizeTitleFontFamily(home.GetValueOrDefault(fontKey));
-            home[mobileKey] = NormalizeTitleNumber(home.GetValueOrDefault(mobileKey), 22, 72, 28);
-            home[desktopKey] = NormalizeTitleNumber(home.GetValueOrDefault(desktopKey), 22, 72, 52);
-            if (ParseTitleNumber(home[mobileKey], 22, 72, out var mobile) && ParseTitleNumber(home[desktopKey], 22, 72, out var desktop) && mobile > desktop)
-            {
-                home[mobileKey] = "28";
-                home[desktopKey] = "52";
-            }
-            home[weightKey] = NormalizeTitleWeight(home.GetValueOrDefault(weightKey));
-            home[lineHeightKey] = NormalizeTitleNumber(home.GetValueOrDefault(lineHeightKey), 0.9, 1.8, 1.08);
-        }
-    }
-
-    private static void AppendHomeTitleStyles(StringBuilder html, Dictionary<string, string> home, string headingFontFamily)
-    {
-        AppendHomeTitleStyle(html, home, "windowsCardTitle", ".landing-page .app-panel h1.app-panel__title--windows", headingFontFamily);
-        AppendHomeTitleStyle(html, home, "mobileCardTitle", ".landing-page .app-panel h2.app-panel__title--mobile", headingFontFamily);
-    }
-
-    private static void AppendHomeTitleStyle(StringBuilder html, Dictionary<string, string> home, string titleKey, string selector, string headingFontFamily)
-    {
-        var font = TitleFontCss(home.GetValueOrDefault(titleKey + "FontFamily"), headingFontFamily);
-        var mobileSize = NormalizeTitleNumber(home.GetValueOrDefault(titleKey + "MobileSizePx"), 22, 72, 28);
-        var desktopSize = NormalizeTitleNumber(home.GetValueOrDefault(titleKey + "DesktopSizePx"), 22, 72, 52);
-        var weight = NormalizeTitleWeight(home.GetValueOrDefault(titleKey + "FontWeight"));
-        var lineHeight = NormalizeTitleNumber(home.GetValueOrDefault(titleKey + "LineHeight"), 0.9, 1.8, 1.08);
-        html.AppendLine($"        {selector} {{ font-family: {font}; font-size: clamp({mobileSize}px, 4vw, {desktopSize}px); font-weight: {weight}; line-height: {lineHeight}; }}");
-    }
-
-    private static string RequireTitleFontFamily(string? value, string titleKey)
-    {
-        if (!TitleFontFamilies().Contains(value?.Trim() ?? string.Empty, StringComparer.Ordinal))
-        {
-            throw new InvalidOperationException($"{titleKey} font family must be Inherit website heading font, System UI, Arial, Georgia, or Trebuchet MS.");
-        }
-        return value!.Trim();
-    }
-
-    private static double RequireTitleNumber(string? value, double minimum, double maximum, string label, string titleKey)
-    {
-        if (!ParseTitleNumber(value, minimum, maximum, out var number))
-        {
-            throw new InvalidOperationException($"{titleKey} {label} must be a finite number from {minimum.ToString(CultureInfo.InvariantCulture)} to {maximum.ToString(CultureInfo.InvariantCulture)}.");
-        }
-        return number;
-    }
-
-    private static string RequireTitleWeight(string? value, string titleKey)
-    {
-        if (!AllowedTitleFontWeights().Contains(value?.Trim() ?? string.Empty, StringComparer.Ordinal))
-        {
-            throw new InvalidOperationException($"{titleKey} font weight must be 400, 500, 600, 700, 800, or 900.");
-        }
-        return value!.Trim();
-    }
-
-    private static bool ParseTitleNumber(string? value, double minimum, double maximum, out double number) =>
-        double.TryParse(value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out number)
-        && double.IsFinite(number)
-        && number >= minimum
-        && number <= maximum;
-
-    private static string NormalizeTitleNumber(string? value, double minimum, double maximum, double fallback) =>
-        ParseTitleNumber(value, minimum, maximum, out var number)
-            ? number.ToString("0.##", CultureInfo.InvariantCulture)
-            : fallback.ToString("0.##", CultureInfo.InvariantCulture);
-
-    private static string NormalizeTitleFontFamily(string? value) =>
-        TitleFontFamilies().Contains(value?.Trim() ?? string.Empty, StringComparer.Ordinal) ? value!.Trim() : TitleFontInherit;
-
-    private static string NormalizeTitleWeight(string? value) =>
-        AllowedTitleFontWeights().Contains(value?.Trim() ?? string.Empty, StringComparer.Ordinal) ? value!.Trim() : "800";
-
-    private static string TitleFontCss(string? value, string headingFontFamily) => NormalizeTitleFontFamily(value) switch
-    {
-        TitleFontSystemUi => "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
-        TitleFontArial => "Arial, sans-serif",
-        TitleFontGeorgia => "Georgia, serif",
-        TitleFontTrebuchetMs => "\"Trebuchet MS\", sans-serif",
-        _ => headingFontFamily
-    };
-
-    private static string[] TitleFontFamilies() => [TitleFontInherit, TitleFontSystemUi, TitleFontArial, TitleFontGeorgia, TitleFontTrebuchetMs];
-    private static string[] AllowedTitleFontWeights() => ["400", "500", "600", "700", "800", "900"];
-
     private static string NormalizeDownloadImagePath(string? value, string fallback)
     {
         var path = NormalizeLogoPath(value, fallback);
@@ -693,7 +460,7 @@ Need help? Email support@languagevoicetutor.com.
             body.AppendLine("    </section>");
             body.Append(Nav());
             body.AppendLine("</main>");
-            return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref, pageFileName: PageFileName(page), jsonLd: page == "pricing" ? RenderSoftwareApplicationJsonLd(null) : null);
+            return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), includePublicBaseHref, pageFileName: PageFileName(page), jsonLd: page == "pricing" ? RenderSoftwareApplicationJsonLd(null) : null);
         }
         body.AppendLine($"        <p class=\"description\">{E(p.GetValueOrDefault("introText", p.GetValueOrDefault("intro", string.Empty)))}</p>");
         if (button is not null)
@@ -712,22 +479,14 @@ Need help? Email support@languagevoicetutor.com.
         }
         body.Append(Nav());
         body.AppendLine("</main>");
-        return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref, pageFileName: PageFileName(page), jsonLd: page == "pricing" ? RenderSoftwareApplicationJsonLd(null) : null);
+        return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), includePublicBaseHref, pageFileName: PageFileName(page), jsonLd: page == "pricing" ? RenderSoftwareApplicationJsonLd(null) : null);
     }
 
-    private static string Shell(WebsiteContentSet c, string title, string description, string main, bool landing, bool includePublicBaseHref, string? extraBodyHtml = null, string pageFileName = "index.html", string? jsonLd = null)
+    private static string Shell(WebsiteContentSet c, string title, string description, string main, bool includePublicBaseHref, string? extraBodyHtml = null, string pageFileName = "download.html", string? jsonLd = null)
     {
         var h = c.Pages["home"];
         var d = c.Design;
-        var cardFontStyle = d.CardTextStyle.Contains("italic", StringComparison.OrdinalIgnoreCase) ? "italic" : "normal";
-        var bodyClass = landing
-            ? "landing-page"
-            : pageFileName switch
-            {
-                "download.html" => "download-page",
-                "mobile.html" => "mobile-page",
-                _ => string.Empty
-            };
+        var bodyClass = pageFileName == "download.html" ? "download-page" : string.Empty;
         var html = new StringBuilder();
         html.AppendLine("<!doctype html>");
         html.AppendLine("<html lang=\"en\">");
@@ -755,16 +514,14 @@ Need help? Email support@languagevoicetutor.com.
         html.Append(RenderPreviewBaseStyles());
         html.AppendLine($"        :root {{ --header-background: {d.HeaderBackgroundColor}; --header-text: {d.HeaderTextColor}; --footer-background: {d.FooterBackgroundColor}; --footer-text: {d.FooterTextColor ?? DefaultFooterTextColor}; --text: {d.MainTextColor}; font-size: {d.BaseFontSizePx}px; }}");
         html.AppendLine($"        body {{ font-family: {d.MainFontFamily}; }}");
-        html.AppendLine($"        .download-button, .app-panel__cue {{ border-radius: {d.ButtonBorderRadiusPx}px; }}");
+        html.AppendLine($"        .download-button {{ border-radius: {d.ButtonBorderRadiusPx}px; }}");
         html.AppendLine($"        .site-header {{ background: {d.HeaderBackgroundColor}; color: {d.HeaderTextColor}; font-weight: {d.HeaderFontWeight}; }}");
-        html.AppendLine($"        .landing-page .app-panel__content {{ font-style: {cardFontStyle}; }}");
-        AppendHomeTitleStyles(html, h, d.MainFontFamily);
         html.AppendLine("    </style>");
         html.AppendLine("</head>");
         html.AppendLine($"<body class=\"{bodyClass}\">");
         html.AppendLine("    <header class=\"site-header\" aria-label=\"Language Voice Tutor site header\">");
         html.AppendLine("        <div class=\"site-header__inner\">");
-        html.AppendLine($"            <a class=\"site-header__brand\" href=\"index.html\" aria-label=\"Language Voice Tutor home\">{Logo(h)}</a>");
+        html.AppendLine($"            <a class=\"site-header__brand\" href=\"/\" aria-label=\"Language Voice Tutor home\">{Logo(h)}</a>");
         html.AppendLine("            <div class=\"site-header__conversation-line\" aria-label=\"Supported study languages\">");
         html.AppendLine($"                <span class=\"site-header__headline\">{E(h["topHeaderText"])}</span>");
         html.AppendLine("                " + RenderLanguageList(h["supportedLanguageLine"]));
@@ -786,7 +543,7 @@ Need help? Email support@languagevoicetutor.com.
 
 
     private static string MarketingValue(Dictionary<string, string>? m, string key) => m is not null && m.TryGetValue(key, out var value) ? value : string.Empty;
-    private static string PageFileName(string pageKey) => PageFiles().FirstOrDefault(p => p.PageKey == pageKey).FileName ?? "index.html";
+    private static string PageFileName(string pageKey) => PageFiles().FirstOrDefault(p => p.PageKey == pageKey).FileName ?? "download.html";
     private static string CanonicalUrl(string fileName) => fileName == "index.html" ? PublicSiteBaseUrl + "/" : PublicSiteBaseUrl + "/" + fileName;
 
     private static void AppendSearchConsoleVerification(StringBuilder html, Dictionary<string, string>? m)
@@ -841,17 +598,18 @@ Disallow: /releases/windows/direct/*.exe
 
 Sitemap: https://languagevoicetutor.com/sitemap.xml
 """;
-    private static string RenderSitemapXml(DateTimeOffset generatedAt) { var lastmod = generatedAt.ToString("yyyy-MM-dd"); var urls = new[] { "/", "/index.html", "/download.html", "/mobile.html", "/ai-language-tutor/", "/pricing.html", "/support.html", "/terms.html", "/privacy.html", "/refunds.html", "/cancellation.html", "/seller.html", "/ai-data.html", "/status.html" }; return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + string.Join("", urls.Select(u => $"  <url><loc>{PublicSiteBaseUrl}{u}</loc><lastmod>{lastmod}</lastmod></url>\n")) + "</urlset>\n"; }
+    private static string RenderSitemapXml(DateTimeOffset generatedAt) { var lastmod = generatedAt.ToString("yyyy-MM-dd"); var urls = new[] { "/", "/download.html", "/pricing.html", "/support.html", "/terms.html", "/privacy.html", "/refunds.html", "/cancellation.html", "/seller.html", "/ai-data.html", "/status.html" }; return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + string.Join("", urls.Select(u => $"  <url><loc>{PublicSiteBaseUrl}{u}</loc><lastmod>{lastmod}</lastmod></url>\n")) + "</urlset>\n"; }
     private static string RenderLlmsTxt() => """
 # Language Voice Tutor
 
-Language Voice Tutor is a Windows desktop application for practicing real-life spoken language lessons with AI-assisted conversation scenarios.
+Language Voice Tutor is available for Windows and Android, with AI-assisted conversation scenarios for real-life language practice.
 
-Windows desktop tester/direct release is available. Android and iOS apps are planned but not currently available. Live paid subscriptions are not enabled until Paddle live setup is completed.
+Windows desktop tester/direct release is available, and the Android app is publicly available on Google Play. Live paid subscriptions are not enabled until Paddle live setup is completed.
 
 ## Important links
 - Home: https://languagevoicetutor.com/
 - Download: https://languagevoicetutor.com/download.html
+- Google Play: https://play.google.com/store/apps/details?id=com.languagevoicetutor.mobile
 - Pricing: https://languagevoicetutor.com/pricing.html
 - Terms: https://languagevoicetutor.com/terms.html
 - Privacy: https://languagevoicetutor.com/privacy.html
@@ -1142,7 +900,7 @@ window.addEventListener("DOMContentLoaded", () => {
         return $"<a href=\"{href}\"{rel}>{label}</a>";
     }
 
-    private static string Nav() => "<section class=\"support-card legal-nav\"><a href=\"index.html\">Home</a><a href=\"download.html\">Download</a><a href=\"mobile.html\">Mobile</a><a href=\"pricing.html\">Pricing</a><a href=\"terms.html\">Terms</a><a href=\"privacy.html\">Privacy</a><a href=\"refunds.html\">Refunds</a><a href=\"cancellation.html\">Cancellation</a><a href=\"support.html\">Support</a></section>";
+    private static string Nav() => "<section class=\"support-card legal-nav\"><a href=\"/\">Home</a><a href=\"download.html\">Download</a><a href=\"pricing.html\">Pricing</a><a href=\"terms.html\">Terms</a><a href=\"privacy.html\">Privacy</a><a href=\"refunds.html\">Refunds</a><a href=\"cancellation.html\">Cancellation</a><a href=\"support.html\">Support</a></section>";
 
     private static string NavLinks(Dictionary<string, string> h) => $"<nav class=\"site-footer__links\" aria-label=\"Legal and company links\"><div class=\"site-footer__link-row site-footer__link-row--primary\"><a href=\"privacy.html\">{E(h["footerPrivacyLabel"])}</a><a href=\"terms.html\">{E(h["footerTermsLabel"])}</a><a href=\"refunds.html\">{E(h["footerRefundsLabel"])}</a><a href=\"cancellation.html\">{E(h["footerCancellationLabel"])}</a><a href=\"support.html\">{E(h["footerSupportLabel"])}</a><a href=\"pricing.html\">{E(h["footerPricingLabel"])}</a></div><div class=\"site-footer__link-row site-footer__link-row--secondary\"><a href=\"seller.html\">Seller / Company Details</a><a href=\"ai-data.html\">AI &amp; Data Disclosure</a><a href=\"status.html\">Service Status</a></div></nav>";
 

@@ -2,17 +2,17 @@
 
 Review date: 2026-08-22.
 
-## 2026-09-03 staged Android launch website update
+## 2026-09-03 static homepage and retired Mobile CMS page
 
-The repository now prepares, but does not publish, an Android-ready homepage panel and a dedicated `mobile.html` page with the approved Google Play listing. The mobile page uses its own full-bleed Android hero and one compact product panel; legacy `mobile.bodyMarkdown` remains stored but is intentionally neither editable nor rendered. This staged source change does not establish that the Google Play Production listing is publicly available; deployment must wait for that separate confirmation and explicit approval. The dated 2026-08-22 public-state statements below remain historical.
+`site/public/index.html` is the independently deployed static Language Voice Tutor homepage, adapted from the approved standalone landing with its embedded media and decorative flags unchanged. Its canonical URL is `https://languagevoicetutor.com/`; its Windows CTA is `/download.html`; and every Google Play CTA uses `https://play.google.com/store/apps/details?id=com.languagevoicetutor.mobile`. Google Play is publicly available.
 
-The repository-local Website CMS default is `site/content/website-content.json`. Production does not use that snapshot as its content authority: the running service overrides `WebsiteContent__StorageJsonPath` with `/var/lib/languagevoicetutor/website-content.json` and `WebsiteContent__PublicSiteRoot` with `/var/www/languagevoicetutor/site`. Production CMS content is environment state and must not be copied wholesale into source control because it can include environment-specific content and marketing settings.
+`site/public/mobile.html` is also independent: it is a deliberately minimal `noindex,follow` redirect to `/` for legacy links. Website CMS must never generate, replace, overwrite, or delete either `index.html` or `mobile.html`. Static homepage and mobile redirect deployment is explicit and file-specific; `scripts/upload-static-site.ps1` must not be used for this rollout.
 
-Website CMS continues to own and generate its explicit root-page list, including `index.html` and `mobile.html`, plus `sitemap.xml`, `robots.txt`, optional `llms.txt`, and `marketing-consent.js`. Android homepage/mobile copy and the Google Play CTA are supplied by the existing JSON/file-backed Website CMS model and safely upgraded by normalization, so no database schema change or EF migration is required. Custom footer, company, seller, privacy, terms, and other unrelated CMS values remain production-owned and are not replaced by Android normalization. The staged homepage language flags keep their existing size, alignment, responsive behavior, and fallback behavior while removing the old border/shadow framing.
+The repository-local Website CMS default is `site/content/website-content.json`. Production does not use that snapshot as its content authority: the running service overrides `WebsiteContent__StorageJsonPath` with `/var/lib/languagevoicetutor/website-content.json` and `WebsiteContent__PublicSiteRoot` with `/var/www/languagevoicetutor/site`. Production CMS JSON is environment-owned state and must not be copied wholesale into source control.
 
-After the updated backend is deployed in a later authorized rollout, CMS-owned `index.html`, `mobile.html`, and `sitemap.xml` must be generated from current production CMS state only after Website CMS Preview is reviewed. Independent files such as `styles.css`, `assets/images/landing/mobile.webp`, and `ai-language-tutor/index.html` are deployed separately and explicitly. The broad `scripts/upload-static-site.ps1` flow must not be used for this Android website rollout.
+CMS owns only `download.html`, `pricing.html`, `support.html`, `terms.html`, `privacy.html`, `refunds.html`, `cancellation.html`, `seller.html`, `ai-data.html`, `status.html`, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`. The existing `home` CMS dictionary remains backward-compatible shared header/footer/site-chrome data for those CMS-rendered pages; it is not a public root-homepage editor. Retired Mobile fields remain stored for backward compatibility but have no public CMS page. No database schema change or EF migration is required.
 
-`site/public/ai-language-tutor/index.html` remains an independent static page: it is not in the Website CMS `PageFiles` list and CMS Publish neither generates nor deletes it. CMS sitemap generation nevertheless preserves exactly one canonical `https://languagevoicetutor.com/ai-language-tutor/` entry. The checked-in standalone page keeps its embedded media and design while using the same approved Google Play listing URL. All Android website changes remain staged and not live until Google Play publication and the later explicitly authorized website rollout.
+`site/public/ai-language-tutor/index.html` remains unchanged as the approved source/reference for the static homepage. It is neither CMS-managed nor included in the CMS sitemap; the sitemap contains only the canonical root homepage and the active CMS-managed pages.
 
 ## Current public website status
 
@@ -24,11 +24,9 @@ ORRALEN is the operating/company/master brand presented on the public website an
 
 The canonical logo asset remains `site/public/assets/brand/lvt-logo.png`. Transparent canvas padding was removed from that PNG without altering, recoloring, redrawing, sharpening, or otherwise changing the artwork. The desktop header remains 88px high, the logo uses the compact 132px brand allocation, and the normal desktop homepage flexes between the real header and footer heights without unnecessary horizontal or vertical overflow. Explicit newline characters entered in the CMS footer copyright field render as visible line breaks.
 
-Public generated pages include:
+CMS-generated pages include:
 
-- `index.html`
 - `download.html`
-- `mobile.html`
 - `pricing.html`
 - `support.html`
 - `terms.html`
@@ -39,7 +37,7 @@ Public generated pages include:
 - `ai-data.html`
 - `status.html`
 
-The home page shows the logo, supported study language flags, a Windows desktop app card, and safe mobile wording. It must not claim mobile apps are currently available and must not say “Mobile version coming soon”. The approved wording is: “Android and iOS apps are planned but are not currently available.”
+The independently deployed root homepage presents the approved standalone Language Voice Tutor design. It is outside Website CMS ownership and links to the CMS-managed legal, support, pricing, company, and status pages. The Android app is publicly available on Google Play; the former CMS Mobile product page is retired.
 
 The shared footer has two rows:
 
@@ -63,7 +61,7 @@ Flow:
 3. **Preview** renders the selected page preview without publishing.
 4. **Publish / Make active** promotes draft/active content and renders static HTML files.
 
-The normal-page editor is simplified to Page title, Body markdown, SEO title, and SEO description. Home remains structured because it has landing cards/assets. The Website **Design** section uses the same draft, Preview, and Publish flow for header background, header text, footer background, footer text, and main text colors. Footer text is independently represented by `FooterTextColor`; legacy Website CMS JSON without that property normalizes to the safe existing `#dce9f7` footer-text default. This additive JSON/file contract change requires a backend deployment but no database schema change or EF migration.
+The normal-page editor is simplified to Page title, Body markdown, SEO title, and SEO description. Its **Shared site chrome** section manages the existing `home` dictionary only for the headers and footers used by CMS-rendered pages; it does not publish the root homepage. The Website **Design** section uses the same draft, Preview, and Publish flow for header background, header text, footer background, footer text, and main text colors. Footer text is independently represented by `FooterTextColor`; legacy Website CMS JSON without that property normalizes to the safe existing `#dce9f7` footer-text default. This additive JSON/file contract change requires a backend deployment but no database schema change or EF migration.
 
 Backend `.140` deploys the independent `FooterTextColor` contract; no EF migration was required. The ORRALEN public header/footer palette remains owner-controlled through Website CMS rather than static CSS. Approved values are Header Background Color `#F2E8D5`, Header Text Color `#17324D`, Footer Background Color `#1B2A3A`, and Footer Text Color `#EDE7DC`. Static CSS owns only the approved Language names `#102A43`, separators `#8A7557`, footer links `#FFFFFF`, and dark flag-border/shadow treatment.
 
@@ -81,7 +79,7 @@ Current safe CMS values before real Google setup: Enable consent banner ON, Enab
 
 Operator field guide: GA4 Measurement ID comes from Google Analytics → Admin → Data streams → Web stream for `languagevoicetutor.com` and has format `G-XXXXXXXXXX`; Google Ads ID comes from Google Ads conversion tag setup and has format `AW-123456789`; the download conversion label comes from the same conversion action setup; Search Console token comes from HTML tag verification for `https://languagevoicetutor.com/` and only the `content="..."` value should be copied. Do not paste placeholders, whole script snippets, or GTM container IDs into these fields unless GTM support is explicitly added later.
 
-Website Publish now emits or maintains public HTML pages, `robots.txt`, `sitemap.xml`, `llms.txt` when enabled, and `marketing-consent.js`. Generated pages include canonical URLs, meta descriptions, Open Graph/Twitter tags, JSON-LD where appropriate, and SoftwareApplication JSON-LD for Windows desktop only. They must not claim Android/iOS, Microsoft Store, Google Play, or App Store availability.
+Website Publish now emits only the CMS-managed HTML pages plus `robots.txt`, `sitemap.xml`, `llms.txt` when enabled, and `marketing-consent.js`. It must preserve independent `index.html` and `mobile.html` byte-for-byte. Generated pages include canonical URLs, meta descriptions, Open Graph/Twitter tags, JSON-LD where appropriate, and SoftwareApplication JSON-LD for Windows desktop only. The CMS-generated sitemap includes the root URL exactly once and excludes `/mobile.html` and `/ai-language-tutor/`.
 
 Consent mode defaults to denied before user choice for `analytics_storage`, `ad_storage`, `ad_user_data`, and `ad_personalization`. The banner supports Accept all, Reject non-essential, Manage choices, and a Privacy Policy link. Privacy Policy includes optional analytics, advertising, and cookie consent disclosure. The website remains usable when non-essential cookies are rejected, and GA/Ads scripts must not be emitted when IDs are empty or tracking is disabled.
 
