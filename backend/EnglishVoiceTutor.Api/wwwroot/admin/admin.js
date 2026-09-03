@@ -1095,9 +1095,9 @@
     const standardBodyMarkdownLimit = 12000;
     const longFormBodyMarkdownLimit = 64000;
     const websiteSections = [
-        ["home", "Home page", [["logoPath","Logo image path"],["logoAltText","Logo alt text"],["fallbackLogoText","Fallback logo text"],["topHeaderText","Top header text"],["supportedLanguageLine","Supported language line"],["windowsCardBadge","Windows card badge"],["windowsCardTitle","Windows card title"],["windowsCardDescription","Windows card description"],["windowsDownloadButtonText","Windows download button text"],["mobileCardBadge","Mobile card badge"],["mobileCardTitle","Mobile card title"],["mobileCardDescription","Mobile card description"],["mobileComingSoonButtonText","Mobile coming soon button text"],["footerCopyrightText","Footer copyright text"],["footerPrivacyLabel","Footer Privacy label"],["footerTermsLabel","Footer Terms label"],["footerRefundsLabel","Footer Refund label"],["footerCancellationLabel","Footer Cancellation label"],["footerSupportLabel","Footer Support label"],["footerPricingLabel","Footer Pricing label"]]],
+        ["home", "Home page", [["logoPath","Logo image path"],["logoAltText","Logo alt text"],["fallbackLogoText","Fallback logo text"],["topHeaderText","Top header text"],["supportedLanguageLine","Supported language line"],["windowsCardBadge","Windows card badge"],["windowsCardTitle","Windows card title"],["windowsCardDescription","Windows card description"],["windowsDownloadButtonText","Windows download button text"],["mobileCardBadge","Android card badge"],["mobileCardTitle","Android card title"],["mobileCardDescription","Android card description"],["mobileComingSoonButtonText","Android card CTA text"],["footerCopyrightText","Footer copyright text"],["footerPrivacyLabel","Footer Privacy label"],["footerTermsLabel","Footer Terms label"],["footerRefundsLabel","Footer Refund label"],["footerCancellationLabel","Footer Cancellation label"],["footerSupportLabel","Footer Support label"],["footerPricingLabel","Footer Pricing label"]]],
         ["download", "Desktop app / Download"],
-        ["mobile", "Mobile app / Coming soon"],
+        ["mobile", "Android app / Google Play"],
         ["pricing", "Pricing"],
         ["support", "Support"],
         ["terms", "Legal - Terms"],
@@ -1112,7 +1112,7 @@
     ].map(([key, label, fields]) => ({ key, label, fields: fields || [["pageTitle", "Page title"], ["bodyMarkdown", "Body markdown"], ["seoTitle", "SEO title"], ["seoDescription", "SEO description"]], simple: simpleWebsitePageKeys.has(key) }));
     const websiteLegacyBodyFields = {
         download: [["introText"], ["currentVersionLabel", "Current version"], ["safetySupportNote", "Safety and support"]],
-        mobile: [["introText"], ["androidComingSoonText", "Android"], ["iosComingSoonText", "iOS"], ["emailSupportCtaText", "Contact"]],
+        mobile: [["introText"], ["androidComingSoonText", "Android availability"], ["iosComingSoonText", "iOS note"], ["emailSupportCtaText", "Support"]],
         pricing: [["introText"], ["freePlanText", "Free plan"], ["premiumPlanText", "Premium plan"], ["trialText", "Trial"], ["paddleLiveCheckoutDisclaimerText", "Checkout status"]],
         support: [["introText"], ["supportEmailText", "Support email"], ["responseTimeText", "Response time"], ["accountDeletionSupportText", "Accounts and deletion"], ["billingSupportText", "Billing"]],
         terms: [["effectiveDate", "Effective date"], ["intro"], ["accountUseTerms", "Accounts and use"], ["aiLearningDisclaimer", "AI and learning disclaimer"], ["billingSubscriptionTermsPlaceholder", "Billing and subscriptions"], ["contactSupportText", "Contact"]],
@@ -1351,15 +1351,50 @@
         section.append(heading, helper, grid);
         websiteEditorFields.appendChild(section);
     }
+    const mobileProductFields = [
+        ["eyebrowText", "Hero label"],
+        ["googlePlayButtonText", "Google Play button text"],
+        ["googlePlayUrl", "Google Play URL"],
+        ["androidComingSoonText", "Android availability text"],
+        ["iosComingSoonText", "iOS note"],
+        ["emailSupportCtaText", "Support text"],
+        ["conversationTitle", "Conversation card title"],
+        ["conversationText", "Conversation card text"],
+        ["learningTitle", "Guided learning card title"],
+        ["learningText", "Guided learning card text"],
+        ["progressTitle", "Progress card title"],
+        ["progressText", "Progress card text"],
+        ["premiumTitle", "Premium card title"],
+        ["premiumText", "Premium card text"]
+    ];
+    function renderMobileProductEditor(values) {
+        const section = document.createElement("section");
+        section.className = "website-seo-section website-field-long";
+        const heading = document.createElement("h4");
+        heading.textContent = "Android product page";
+        const helper = document.createElement("p");
+        helper.className = "muted";
+        helper.textContent = "These fields drive the Android hero, Google Play CTA, availability notes, and feature cards. The Google Play URL is normalized to the approved listing.";
+        const grid = document.createElement("div");
+        grid.className = "website-seo-grid";
+        mobileProductFields.forEach(([key, label]) => {
+            const isLong = /Text$|Url$/.test(key);
+            grid.appendChild(createWebsiteField(key, label, values[key], { long: isLong, textarea: /Text$/.test(key), rows: 3 }));
+        });
+        section.append(heading, helper, grid);
+        websiteEditorFields.appendChild(section);
+    }
     function renderSimpleWebsiteEditor(section, values) {
         websiteEditorFields.classList.add("website-simple-editor-fields");
         websiteEditorFields.appendChild(createWebsiteField("pageTitle", "Page title", values.pageTitle, { long: true }));
-        const bodyField = createWebsiteField("bodyMarkdown", "Body markdown", values.bodyMarkdown || getLegacyWebsiteBodyMarkdown(section.key, values), { long: true, textarea: true, rows: 18 });
+        const bodyMarkdown = section.key === "mobile" ? (values.bodyMarkdown || "") : (values.bodyMarkdown || getLegacyWebsiteBodyMarkdown(section.key, values));
+        const bodyField = createWebsiteField("bodyMarkdown", "Body markdown", bodyMarkdown, { long: true, textarea: true, rows: 18 });
         const bodyTextarea = bodyField.querySelector("textarea");
         bodyField.insertBefore(createMarkdownToolbar(bodyTextarea), bodyTextarea);
         addBodyMarkdownCounter(bodyTextarea, section.key);
         websiteEditorFields.appendChild(bodyField);
         if (section.key === "download") { renderDownloadFeatureCardEditor(values); }
+        if (section.key === "mobile") { renderMobileProductEditor(values); }
         const seoSection = document.createElement("section");
         seoSection.className = "website-seo-section website-field-long";
         const heading = document.createElement("h4");

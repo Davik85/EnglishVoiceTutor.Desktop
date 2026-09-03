@@ -17,6 +17,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     private const string DefaultFooterTextColor = "#dce9f7";
     private const string PreviewPublicBaseHref = "https://languagevoicetutor.com/";
     private const string PublicSiteBaseUrl = "https://languagevoicetutor.com";
+    private const string GooglePlayListingUrl = "https://play.google.com/store/apps/details?id=com.languagevoicetutor.mobile";
     private const string RequiredLanguageLine = "🇬🇧 English · 🇫🇷 French · 🇩🇪 German · 🇪🇸 Spanish · 🇮🇹 Italian · 🇵🇹 Portuguese";
     private const string ReleaseReadyDownloadPageTitle = "Language Voice Tutor for Windows";
     private const int StandardBodyMarkdownLimit = 12000;
@@ -190,14 +191,48 @@ Need help? Email support@languagevoicetutor.com.
             }
         }
         pages["home"]["supportedLanguageLine"] = RequiredLanguageLine;
-        pages["home"]["mobileCardDescription"] = "Android and iOS apps are planned but are not currently available.";
-        pages["home"]["mobileComingSoonButtonText"] = "Not currently available";
+        UpgradeLegacyAndroidContent(pages);
         NormalizeHomeTitleTypography(pages["home"]);
         UpgradeLegacyDownloadContent(pages);
         EnsureDownloadFeatureCards(pages);
         var design = NormalizeDesign(input?.Design, defaults.Design);
         var marketing = NormalizeMarketing(input?.Marketing, defaults.Marketing);
         return new WebsiteContentSet(pages, design, marketing);
+    }
+
+    private static void UpgradeLegacyAndroidContent(Dictionary<string, Dictionary<string, string>> pages)
+    {
+        var home = pages["home"];
+        var mobile = pages["mobile"];
+
+        UpgradeLegacyValue(home, "mobileCardBadge", "Available on Google Play", "In development");
+        UpgradeLegacyValue(home, "mobileCardTitle", "Language Voice Tutor for Android", "Application for mobile devices");
+        UpgradeLegacyValue(home, "mobileCardDescription", "Practice real conversations by text or voice with AI tutors. Choose your study language and level, complete guided lessons, earn rewards, and keep learning wherever you are.",
+            "Android and iOS apps are planned but are not currently available.", "Android and iOS versions are planned.");
+        UpgradeLegacyValue(home, "mobileComingSoonButtonText", "Get the Android app",
+            "Not currently available", "Mobile version coming soon");
+        UpgradeLegacyValue(home, "seoDescription", "Practice real conversations by text or voice with Language Voice Tutor for Windows and Android.",
+            "Language Voice Tutor helps you practice real-life language lessons by text or voice on desktop, with mobile apps planned.");
+
+        UpgradeLegacyValue(mobile, "pageTitle", "Language Voice Tutor for Android", "Mobile app coming soon");
+        UpgradeLegacyValue(mobile, "introText", "Practice real conversations by text or voice with AI tutors, choose your study language and level, and learn wherever you are.",
+            "Android and iOS versions are planned and not currently available.");
+        UpgradeLegacyValue(mobile, "androidComingSoonText", "Available for Android on Google Play.", "Android app coming soon.");
+        UpgradeLegacyValue(mobile, "iosComingSoonText", "iOS is planned and is not currently available.", "iOS app coming soon.");
+        UpgradeLegacyValue(mobile, "emailSupportCtaText", "Need help? Email support@languagevoicetutor.com.",
+            "Email support@languagevoicetutor.com for availability questions.");
+        UpgradeLegacyValue(mobile, "seoTitle", "Language Voice Tutor for Android | Google Play", "Mobile app coming soon | Language Voice Tutor");
+        UpgradeLegacyValue(mobile, "seoDescription", "Get Language Voice Tutor for Android on Google Play and practice languages through text and voice conversations, guided lessons, and progress rewards.",
+            "Android and iOS versions are planned and not currently available.");
+        mobile["googlePlayUrl"] = GooglePlayListingUrl;
+    }
+
+    private static void UpgradeLegacyValue(Dictionary<string, string> values, string key, string replacement, params string[] legacyValues)
+    {
+        if (!values.TryGetValue(key, out var value) || legacyValues.Any(legacy => string.Equals(value, legacy, StringComparison.OrdinalIgnoreCase)))
+        {
+            values[key] = replacement;
+        }
     }
 
     private static void UpgradeLegacyDownloadContent(Dictionary<string, Dictionary<string, string>> pages)
@@ -298,7 +333,7 @@ Need help? Email support@languagevoicetutor.com.
     {
         "home" => RenderHome(c, includePublicBaseHref),
         "download" => RenderDownload(c, includePublicBaseHref, release),
-        "mobile" => RenderSimple(c, "mobile", "mobile-title", [("Android", "androidComingSoonText"), ("iOS", "iosComingSoonText"), ("Contact", "emailSupportCtaText")], null, includePublicBaseHref),
+        "mobile" => RenderMobile(c, includePublicBaseHref),
         "pricing" => RenderSimple(c, "pricing", "pricing-title", [("Free plan", "freePlanText"), ("Premium plan", "premiumPlanText"), ("Trial", "trialText"), ("Checkout status", "paddleLiveCheckoutDisclaimerText")], null, includePublicBaseHref),
         "support" => RenderSimple(c, "support", "support-title", [("Support email", "supportEmailText"), ("Response time", "responseTimeText"), ("Accounts and deletion", "accountDeletionSupportText"), ("Billing", "billingSupportText")], null, includePublicBaseHref),
         "terms" => RenderSimple(c, "terms", "terms-title", [("Effective date", "effectiveDate"), ("Accounts and use", "accountUseTerms"), ("AI and learning disclaimer", "aiLearningDisclaimer"), ("Billing and subscriptions", "billingSubscriptionTermsPlaceholder"), ("Contact", "contactSupportText")], null, includePublicBaseHref),
@@ -326,20 +361,69 @@ Need help? Email support@languagevoicetutor.com.
             <span class="app-panel__cue">{E(h["windowsDownloadButtonText"])}</span>
         </section>
     </a>
-    <section class="app-panel app-panel--mobile app-panel--inactive">
-        <img class="app-panel__image" src="assets/images/landing/mobile.webp" alt="Preview image for future Language Voice Tutor mobile apps">
+    <a class="app-panel app-panel--mobile" href="mobile.html">
+        <img class="app-panel__image" src="assets/images/landing/mobile.webp" alt="Preview image for the Language Voice Tutor Android app">
         <span class="app-panel__shade"></span>
-        <div class="app-panel__content">
+        <section class="app-panel__content">
             <span class="app-panel__badge">{E(h["mobileCardBadge"])}</span>
             <h2 class="app-panel__title app-panel__title--mobile">{E(h["mobileCardTitle"])}</h2>
             <p>{E(h["mobileCardDescription"])}</p>
-            <span class="app-panel__cue app-panel__cue--disabled">{E(h["mobileComingSoonButtonText"])}</span>
-        </div>
-    </section>
+            <span class="app-panel__cue">{E(h["mobileComingSoonButtonText"])}</span>
+        </section>
+    </a>
 </main>
 """;
         return Shell(c, E(h["seoTitle"]), E(h["seoDescription"]), main, true, includePublicBaseHref, pageFileName: "index.html", jsonLd: RenderSoftwareApplicationJsonLd(null));
     }
+
+
+    private static string RenderMobile(WebsiteContentSet c, bool includePublicBaseHref)
+    {
+        var mobile = c.Pages["mobile"];
+        var bodyMarkdown = mobile.GetValueOrDefault("bodyMarkdown", string.Empty);
+        var details = string.IsNullOrWhiteSpace(bodyMarkdown)
+            ? string.Empty
+            : $"""
+        <section class="page-shell mobile-details-shell markdown-content" aria-label="More about Language Voice Tutor for Android">
+{RenderMarkdown(bodyMarkdown)}
+        </section>
+""";
+        var body = $$"""
+    <main>
+        <section class="download-hero mobile-hero" aria-labelledby="product-title">
+            <div class="download-hero__shade" aria-hidden="true"></div>
+            <div class="download-hero__inner">
+                <section class="download-cta-panel" aria-label="Android app download">
+                    <p class="eyebrow">{{E(mobile["eyebrowText"])}}</p>
+                    <h1 id="product-title">{{E(mobile["pageTitle"])}}</h1>
+                    <p class="download-hero__subtitle">{{E(mobile["introText"])}}</p>
+                    <a class="download-button download-button--hero" href="{{E(mobile["googlePlayUrl"])}}" target="_blank" rel="noopener noreferrer">{{E(mobile["googlePlayButtonText"])}}</a>
+                    <p class="download-hero__status">{{E(mobile["androidComingSoonText"])}}</p>
+                    <p class="download-hero__notes">{{E(mobile["iosComingSoonText"])}}</p>
+                    <p class="download-cta-support">{{E(mobile["emailSupportCtaText"])}}</p>
+                </section>
+
+                <section class="download-feature-grid mobile-feature-grid" aria-label="Android app features">
+                    {{RenderMobileFeatureCard(mobile, "conversation", "Conversation practice")}}
+                    {{RenderMobileFeatureCard(mobile, "learning", "Guided learning")}}
+                    {{RenderMobileFeatureCard(mobile, "progress", "Progress and rewards")}}
+                    {{RenderMobileFeatureCard(mobile, "premium", "Premium support")}}
+                </section>
+            </div>
+        </section>
+{{details}}
+    </main>
+""";
+        return Shell(c, E(mobile["seoTitle"]), E(mobile["seoDescription"]), body, false, includePublicBaseHref, pageFileName: "mobile.html");
+    }
+
+    private static string RenderMobileFeatureCard(Dictionary<string, string> mobile, string prefix, string label) => $$"""
+                    <article class="download-feature-card mobile-feature-card">
+                        <p class="eyebrow">{{E(label)}}</p>
+                        <h2>{{E(mobile[$"{prefix}Title"])}}</h2>
+                        <p>{{E(mobile[$"{prefix}Text"])}}</p>
+                    </article>
+""";
 
 
     private static string RenderDownload(WebsiteContentSet c, bool includePublicBaseHref, StaticReleaseManifest? release)
@@ -654,7 +738,14 @@ Need help? Email support@languagevoicetutor.com.
         var h = c.Pages["home"];
         var d = c.Design;
         var cardFontStyle = d.CardTextStyle.Contains("italic", StringComparison.OrdinalIgnoreCase) ? "italic" : "normal";
-        var bodyClass = landing ? "landing-page" : string.Empty;
+        var bodyClass = landing
+            ? "landing-page"
+            : pageFileName switch
+            {
+                "download.html" => "download-page",
+                "mobile.html" => "download-page mobile-page",
+                _ => string.Empty
+            };
         var html = new StringBuilder();
         html.AppendLine("<!doctype html>");
         html.AppendLine("<html lang=\"en\">");
@@ -768,7 +859,7 @@ Disallow: /releases/windows/direct/*.exe
 
 Sitemap: https://languagevoicetutor.com/sitemap.xml
 """;
-    private static string RenderSitemapXml(DateTimeOffset generatedAt) { var lastmod = generatedAt.ToString("yyyy-MM-dd"); var urls = new[] { "/", "/index.html", "/download.html", "/mobile.html", "/pricing.html", "/support.html", "/terms.html", "/privacy.html", "/refunds.html", "/cancellation.html", "/seller.html", "/ai-data.html", "/status.html" }; return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + string.Join("", urls.Select(u => $"  <url><loc>{PublicSiteBaseUrl}{u}</loc><lastmod>{lastmod}</lastmod></url>\n")) + "</urlset>\n"; }
+    private static string RenderSitemapXml(DateTimeOffset generatedAt) { var lastmod = generatedAt.ToString("yyyy-MM-dd"); var urls = new[] { "/", "/index.html", "/download.html", "/mobile.html", "/ai-language-tutor/", "/pricing.html", "/support.html", "/terms.html", "/privacy.html", "/refunds.html", "/cancellation.html", "/seller.html", "/ai-data.html", "/status.html" }; return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + string.Join("", urls.Select(u => $"  <url><loc>{PublicSiteBaseUrl}{u}</loc><lastmod>{lastmod}</lastmod></url>\n")) + "</urlset>\n"; }
     private static string RenderLlmsTxt() => """
 # Language Voice Tutor
 
@@ -884,7 +975,7 @@ window.addEventListener("DOMContentLoaded", () => {
         .site-header__conversation-line { display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 8px; }
         .site-header__headline { margin: 0; color: inherit; font-weight: 750; }
         .site-header__language { display: inline-flex; align-items: center; gap: 6px; color: #102A43; white-space: nowrap; }
-        .site-header__flag { display: inline-block; width: 22px; height: 15px; border: 1px solid rgba(23, 50, 77, 0.28); border-radius: 2px; object-fit: cover; box-shadow: 0 1px 2px rgba(23, 50, 77, 0.18); }
+        .site-header__flag { display: inline-block; width: 22px; height: 15px; border: 0; border-radius: 0; object-fit: cover; box-shadow: none; }
         .site-header__separator { color: #8A7557; }
         .landing-page .landing-shell { display: grid; width: 100%; max-width: 100vw; flex: 1 1 auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: clamp(420px, calc(100svh - 176px), 760px); background: #07192c; overflow: hidden; }
         @supports (height: 100dvh) { .landing-page .landing-shell { min-height: clamp(420px, calc(100dvh - 176px), 760px); } }
@@ -898,7 +989,6 @@ window.addEventListener("DOMContentLoaded", () => {
         .landing-page .app-panel__title { margin: 0 0 18px; text-wrap: balance; }
         .landing-page .app-panel p { max-width: 32rem; margin: 0; color: rgba(255, 255, 255, 0.92); font-size: clamp(1rem, 1.6vw, 1.28rem); }
         .landing-page .app-panel__cue { display: inline-flex; align-items: center; margin-top: auto; padding: 13px 18px; background: #ffffff; color: #0d2b4c; font-weight: 850; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2); }
-        .landing-page .app-panel__cue--disabled { cursor: not-allowed; background: rgba(255, 255, 255, 0.22); color: rgba(255, 255, 255, 0.76); box-shadow: none; }
         .site-footer { display: flex; min-height: 88px; align-items: center; justify-content: space-between; gap: 20px; padding: 22px clamp(20px, 5vw, 64px); background: var(--footer-background); color: var(--footer-text); }
         .site-footer p { margin: 0; }
         .site-footer__links, .legal-nav { display: flex; flex-wrap: wrap; gap: 10px 18px; }
@@ -1159,9 +1249,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
     private static WebsiteContentSet DefaultSet() => new(new()
     {
-        ["home"] = new(){{"logoPath",""},{"logoAltText","Language Voice Tutor logo"},{"fallbackLogoText","Language Voice Tutor"},{"topHeaderText","Practice real conversations in:"},{"supportedLanguageLine",RequiredLanguageLine},{"windowsCardBadge","Available for testers"},{"windowsCardTitle","Application for Windows"},{"windowsCardTitleFontFamily",TitleFontInherit},{"windowsCardTitleMobileSizePx","28"},{"windowsCardTitleDesktopSizePx","52"},{"windowsCardTitleFontWeight","800"},{"windowsCardTitleLineHeight","1.08"},{"windowsCardDescription","Practice real-life language lessons by text or voice on your desktop."},{"windowsDownloadButtonText","Download desktop version"},{"mobileCardBadge","In development"},{"mobileCardTitle","Application for mobile devices"},{"mobileCardTitleFontFamily",TitleFontInherit},{"mobileCardTitleMobileSizePx","28"},{"mobileCardTitleDesktopSizePx","52"},{"mobileCardTitleFontWeight","800"},{"mobileCardTitleLineHeight","1.08"},{"mobileCardDescription","Android and iOS apps are planned but are not currently available."},{"mobileComingSoonButtonText","Not currently available"},{"footerCopyrightText","© Language Voice Tutor. All rights reserved."},{"footerPrivacyLabel","Privacy Policy"},{"footerTermsLabel","Terms of Use"},{"footerRefundsLabel","Refund Policy"},{"footerCancellationLabel","Cancellation"},{"footerSupportLabel","Support"},{"footerPricingLabel","Pricing"},{"seoTitle","Language Voice Tutor"},{"seoDescription","Language Voice Tutor helps you practice real-life language lessons by text or voice on desktop, with mobile apps planned."}},
+        ["home"] = new(){{"logoPath",""},{"logoAltText","Language Voice Tutor logo"},{"fallbackLogoText","Language Voice Tutor"},{"topHeaderText","Practice real conversations in:"},{"supportedLanguageLine",RequiredLanguageLine},{"windowsCardBadge","Available for testers"},{"windowsCardTitle","Application for Windows"},{"windowsCardTitleFontFamily",TitleFontInherit},{"windowsCardTitleMobileSizePx","28"},{"windowsCardTitleDesktopSizePx","52"},{"windowsCardTitleFontWeight","800"},{"windowsCardTitleLineHeight","1.08"},{"windowsCardDescription","Practice real-life language lessons by text or voice on your desktop."},{"windowsDownloadButtonText","Download desktop version"},{"mobileCardBadge","Available on Google Play"},{"mobileCardTitle","Language Voice Tutor for Android"},{"mobileCardTitleFontFamily",TitleFontInherit},{"mobileCardTitleMobileSizePx","28"},{"mobileCardTitleDesktopSizePx","52"},{"mobileCardTitleFontWeight","800"},{"mobileCardTitleLineHeight","1.08"},{"mobileCardDescription","Practice real conversations by text or voice with AI tutors. Choose your study language and level, complete guided lessons, earn rewards, and keep learning wherever you are."},{"mobileComingSoonButtonText","Get the Android app"},{"footerCopyrightText","© Language Voice Tutor. All rights reserved."},{"footerPrivacyLabel","Privacy Policy"},{"footerTermsLabel","Terms of Use"},{"footerRefundsLabel","Refund Policy"},{"footerCancellationLabel","Cancellation"},{"footerSupportLabel","Support"},{"footerPricingLabel","Pricing"},{"seoTitle","Language Voice Tutor"},{"seoDescription","Practice real conversations by text or voice with Language Voice Tutor for Windows and Android."}},
         ["download"] = Page(ReleaseReadyDownloadPageTitle, ReleaseReadyDownloadSeoDescription, DownloadDefaults()),
-        ["mobile"] = Page("Mobile app coming soon","Android and iOS versions are planned and not currently available.", new(){{"androidComingSoonText","Android app coming soon."},{"iosComingSoonText","iOS app coming soon."},{"emailSupportCtaText","Email support@languagevoicetutor.com for availability questions."}}),
+        ["mobile"] = Page("Language Voice Tutor for Android","Practice real conversations by text or voice with AI tutors, choose your study language and level, and learn wherever you are.", new(){{"eyebrowText","Android app"},{"googlePlayButtonText","Get it on Google Play"},{"googlePlayUrl",GooglePlayListingUrl},{"androidComingSoonText","Available for Android on Google Play."},{"iosComingSoonText","iOS is planned and is not currently available."},{"emailSupportCtaText","Need help? Email support@languagevoicetutor.com."},{"conversationTitle","Speak and write with AI tutors"},{"conversationText","Build practical conversation skills through text and voice practice with AI tutors."},{"learningTitle","Choose your path"},{"learningText","Select your study language and level, then work through guided lessons at your pace."},{"progressTitle","Keep making progress"},{"progressText","Complete practical conversation practice, earn rewards, and follow your learning progress."},{"premiumTitle","Continue with Premium"},{"premiumText","Premium supports continued access to the app's learning experience and tutor features."},{"seoTitle","Language Voice Tutor for Android | Google Play"},{"seoDescription","Get Language Voice Tutor for Android on Google Play and practice languages through text and voice conversations, guided lessons, and progress rewards."}}),
         ["pricing"] = Page("Pricing","Language Voice Tutor is currently offered for Windows desktop tester access.", new(){{"freePlanText","Invited testers may be able to use free Windows desktop access during evaluation."},{"premiumPlanText","Premium subscription details are draft placeholders until paid billing is enabled by the owner."},{"trialText","Trial terms are not final and require owner/legal review."},{"paddleLiveCheckoutDisclaimerText","No live checkout button is provided and production Paddle billing is not enabled from this page."}}),
         ["support"] = Page("Contact support","For Language Voice Tutor help, contact support@languagevoicetutor.com.", new(){{"supportEmailText","support@languagevoicetutor.com"},{"responseTimeText","Response times may vary during tester access."},{"accountDeletionSupportText","Contact support for account or deletion requests."},{"billingSupportText","Billing support applies only if paid billing is enabled."}}),
         ["terms"] = Legal("Terms of Use", "These draft terms describe use of Language Voice Tutor and require owner/legal review before final publication.", new(){{"accountUseTerms","Use the service lawfully and keep account credentials secure."},{"aiLearningDisclaimer","The AI tutor may be inaccurate and is for educational practice, not professional advice."},{"billingSubscriptionTermsPlaceholder","Premium subscription terms are placeholders until owner/legal approval."},{"contactSupportText","Contact support@languagevoicetutor.com for help."}}),

@@ -2,6 +2,18 @@
 
 Review date: 2026-08-22.
 
+## 2026-09-03 staged Android launch website update
+
+The repository now prepares, but does not publish, an Android-ready homepage panel and a dedicated `mobile.html` page with the approved Google Play listing. This staged source change does not establish that the Google Play Production listing is publicly available; deployment must wait for that separate confirmation and explicit approval. The dated 2026-08-22 public-state statements below remain historical.
+
+The repository-local Website CMS default is `site/content/website-content.json`. Production does not use that snapshot as its content authority: the running service overrides `WebsiteContent__StorageJsonPath` with `/var/lib/languagevoicetutor/website-content.json` and `WebsiteContent__PublicSiteRoot` with `/var/www/languagevoicetutor/site`. Production CMS content is environment state and must not be copied wholesale into source control because it can include environment-specific content and marketing settings.
+
+Website CMS continues to own and generate its explicit root-page list, including `index.html` and `mobile.html`, plus `sitemap.xml`, `robots.txt`, optional `llms.txt`, and `marketing-consent.js`. Android homepage/mobile copy and the Google Play CTA are supplied by the existing JSON/file-backed Website CMS model and safely upgraded by normalization, so no database schema change or EF migration is required. Custom footer, company, seller, privacy, terms, and other unrelated CMS values remain production-owned and are not replaced by Android normalization. The staged homepage language flags keep their existing size, alignment, responsive behavior, and fallback behavior while removing the old border/shadow framing.
+
+After the updated backend is deployed in a later authorized rollout, CMS-owned `index.html`, `mobile.html`, and `sitemap.xml` must be generated from current production CMS state only after Website CMS Preview is reviewed. Independent files such as `styles.css`, `assets/images/landing/mobile.webp`, and `ai-language-tutor/index.html` are deployed separately and explicitly. The broad `scripts/upload-static-site.ps1` flow must not be used for this Android website rollout.
+
+`site/public/ai-language-tutor/index.html` remains an independent static page: it is not in the Website CMS `PageFiles` list and CMS Publish neither generates nor deletes it. CMS sitemap generation nevertheless preserves exactly one canonical `https://languagevoicetutor.com/ai-language-tutor/` entry. The checked-in standalone page keeps its embedded media and design while using the same approved Google Play listing URL. All Android website changes remain staged and not live until Google Play publication and the later explicitly authorized website rollout.
+
 ## Current public website status
 
 Public site: `https://languagevoicetutor.com`.

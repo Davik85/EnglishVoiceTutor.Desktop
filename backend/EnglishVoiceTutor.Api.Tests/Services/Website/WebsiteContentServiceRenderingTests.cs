@@ -6,11 +6,13 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Xml.Linq;
 
 namespace EnglishVoiceTutor.Api.Tests.Services.Website;
 
 public sealed class WebsiteContentServiceRenderingTests
 {
+    private const string GooglePlayListingUrl = "https://play.google.com/store/apps/details?id=com.languagevoicetutor.mobile";
     private const string LegacyDownloadBodyMarkdown = """
 A Windows desktop app for practicing spoken languages with an AI tutor.
 
@@ -50,6 +52,55 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Contains("assets/flags/it.webp", html);
         Assert.Contains("assets/flags/pt.webp", html);
         Assert.True(CountOccurrences(html, "<img ") > 2);
+    }
+
+    [Fact]
+    public async Task PublishedHomeActivatesAndroidPanelAndPublishedMobileUsesDedicatedGooglePlayLayout()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+
+        await service.PublishAsync(TestContext.Current.CancellationToken);
+        var home = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"), TestContext.Current.CancellationToken);
+        var mobile = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "mobile.html"), TestContext.Current.CancellationToken);
+
+        Assert.Contains("<a class=\"app-panel app-panel--mobile\" href=\"mobile.html\">", home);
+        Assert.Contains("assets/images/landing/mobile.webp", home);
+        Assert.Contains("Available on Google Play", home);
+        Assert.DoesNotContain("app-panel--inactive", home);
+        Assert.DoesNotContain("app-panel__cue--disabled", home);
+        Assert.DoesNotContain("coming soon", home, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("not currently available", home, StringComparison.OrdinalIgnoreCase);
+
+        Assert.Contains("<body class=\"download-page mobile-page\">", mobile);
+        Assert.Contains("class=\"download-hero mobile-hero\"", mobile);
+        Assert.Contains($"href=\"{GooglePlayListingUrl}\" target=\"_blank\" rel=\"noopener noreferrer\"", mobile);
+        Assert.Contains("Get it on Google Play", mobile);
+        Assert.Contains("Speak and write with AI tutors", mobile);
+        Assert.Contains("Choose your path", mobile);
+        Assert.Contains("Keep making progress", mobile);
+        Assert.Contains("Continue with Premium", mobile);
+        Assert.Contains("iOS is planned and is not currently available.", mobile);
+        Assert.DoesNotContain("Android app coming soon", mobile, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("<link rel=\"canonical\" href=\"https://languagevoicetutor.com/mobile.html\">", mobile);
+        Assert.Contains("<meta property=\"og:title\" content=\"Language Voice Tutor for Android | Google Play\">", mobile);
+        Assert.Contains("<meta name=\"twitter:description\" content=", mobile);
+    }
+
+    [Fact]
+    public async Task PublishedSitemapIncludesIndependentAiLandingExactlyOnceWithoutManagingItsHtml()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+
+        var response = await service.PublishAsync(TestContext.Current.CancellationToken);
+        var sitemapPath = Path.Combine(fixture.PublicSiteRoot, "sitemap.xml");
+        var sitemap = XDocument.Load(sitemapPath);
+        XNamespace ns = "http://www.sitemaps.org/schemas/sitemap/0.9";
+        var urls = sitemap.Descendants(ns + "loc").Select(element => element.Value).ToList();
+
+        Assert.Equal(1, urls.Count(url => url == "https://languagevoicetutor.com/ai-language-tutor/"));
+        Assert.DoesNotContain(response.PublishedFiles, file => file.Contains("ai-language-tutor", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -245,7 +296,9 @@ Need help? Email support@languagevoicetutor.com.
         var releaseManifest = Path.Combine(fixture.PublicSiteRoot, "releases", "windows", "direct", "latest.json");
         var installerArtifact = Path.Combine(fixture.PublicSiteRoot, "releases", "windows", "direct", "LanguageVoiceTutorSetup-1.0.exe");
         var assetLinksFile = Path.Combine(fixture.PublicSiteRoot, ".well-known", "assetlinks.json");
-        foreach (var path in new[] { downloadAsset, landingAsset, brandAsset, flagAsset, releaseManifest, installerArtifact, assetLinksFile })
+        var independentAiLanding = Path.Combine(fixture.PublicSiteRoot, "ai-language-tutor", "index.html");
+        var unrelatedAsset = Path.Combine(fixture.PublicSiteRoot, "assets", "custom", "sentinel.txt");
+        foreach (var path in new[] { downloadAsset, landingAsset, brandAsset, flagAsset, releaseManifest, installerArtifact, assetLinksFile, independentAiLanding, unrelatedAsset })
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         }
@@ -258,6 +311,8 @@ Need help? Email support@languagevoicetutor.com.
         await File.WriteAllTextAsync(releaseManifest, releaseManifestSentinel, TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(installerArtifact, "installer", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(assetLinksFile, assetLinksSentinel, TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(independentAiLanding, "independent AI landing sentinel", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(unrelatedAsset, "unrelated asset sentinel", TestContext.Current.CancellationToken);
 
         var response = await service.PublishAsync(TestContext.Current.CancellationToken);
 
@@ -272,11 +327,15 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Equal("installer", await File.ReadAllTextAsync(installerArtifact, TestContext.Current.CancellationToken));
         Assert.True(File.Exists(assetLinksFile));
         Assert.Equal(assetLinksSentinel, await File.ReadAllTextAsync(assetLinksFile, TestContext.Current.CancellationToken));
+        Assert.Equal("independent AI landing sentinel", await File.ReadAllTextAsync(independentAiLanding, TestContext.Current.CancellationToken));
+        Assert.Equal("unrelated asset sentinel", await File.ReadAllTextAsync(unrelatedAsset, TestContext.Current.CancellationToken));
         var downloadHtml = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
         Assert.Contains("href=\"/releases/windows/direct/LanguageVoiceTutorSetup-1.0.exe\"", downloadHtml);
         Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine("assets", "images", "download"), StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine("releases", "windows", "direct"), StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine(".well-known", "assetlinks.json"), StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine("ai-language-tutor", "index.html"), StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine("assets", "custom"), StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -307,6 +366,45 @@ Need help? Email support@languagevoicetutor.com.
         var persistedJson = await File.ReadAllTextAsync(fixture.StorageJsonPath, TestContext.Current.CancellationToken);
         Assert.DoesNotContain("tester download", persistedJson, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Current version details are loaded from the release manifest.", persistedJson);
+    }
+
+    [Fact]
+    public async Task GetAsyncUpgradesLegacyAndroidCopyWithoutOverwritingCustomCompanyFooterOrLegalContent()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var seeded = await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken);
+        seeded.Active.Pages["home"]["mobileCardBadge"] = "In development";
+        seeded.Active.Pages["home"]["mobileCardDescription"] = "Android and iOS apps are planned but are not currently available.";
+        seeded.Active.Pages["home"]["windowsCardTitle"] = "Custom Windows title";
+        seeded.Active.Pages["home"]["footerCopyrightText"] = "COMPANY-FOOTER-SENTINEL";
+        seeded.Active.Pages["seller"]["sellerNameLegalEntityPlaceholder"] = "COMPANY-NAME-SENTINEL";
+        seeded.Active.Pages["seller"]["addressPlaceholder"] = "COMPANY-ADDRESS-SENTINEL";
+        seeded.Active.Pages["privacy"]["bodyMarkdown"] = "PRIVACY-LEGAL-SENTINEL";
+        seeded.Active.Pages["terms"]["bodyMarkdown"] = "TERMS-LEGAL-SENTINEL";
+        seeded.Draft.Pages["mobile"]["pageTitle"] = "Mobile app coming soon";
+        seeded.Draft.Pages["mobile"]["introText"] = "Custom Android introduction";
+        seeded.Draft.Pages["mobile"]["googlePlayUrl"] = "https://example.invalid/wrong";
+        await fixture.WriteDocumentAsync(new WebsiteContentDocument(seeded.Active, seeded.Draft));
+
+        var upgraded = await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("Available on Google Play", upgraded.Active.Pages["home"]["mobileCardBadge"]);
+        Assert.Contains("earn rewards", upgraded.Active.Pages["home"]["mobileCardDescription"]);
+        Assert.Equal("Custom Windows title", upgraded.Active.Pages["home"]["windowsCardTitle"]);
+        Assert.Equal("COMPANY-FOOTER-SENTINEL", upgraded.Active.Pages["home"]["footerCopyrightText"]);
+        Assert.Equal("COMPANY-NAME-SENTINEL", upgraded.Active.Pages["seller"]["sellerNameLegalEntityPlaceholder"]);
+        Assert.Equal("COMPANY-ADDRESS-SENTINEL", upgraded.Active.Pages["seller"]["addressPlaceholder"]);
+        Assert.Equal("PRIVACY-LEGAL-SENTINEL", upgraded.Active.Pages["privacy"]["bodyMarkdown"]);
+        Assert.Equal("TERMS-LEGAL-SENTINEL", upgraded.Active.Pages["terms"]["bodyMarkdown"]);
+        Assert.Equal("COMPANY-FOOTER-SENTINEL", upgraded.Draft.Pages["home"]["footerCopyrightText"]);
+        Assert.Equal("COMPANY-NAME-SENTINEL", upgraded.Draft.Pages["seller"]["sellerNameLegalEntityPlaceholder"]);
+        Assert.Equal("COMPANY-ADDRESS-SENTINEL", upgraded.Draft.Pages["seller"]["addressPlaceholder"]);
+        Assert.Equal("PRIVACY-LEGAL-SENTINEL", upgraded.Draft.Pages["privacy"]["bodyMarkdown"]);
+        Assert.Equal("TERMS-LEGAL-SENTINEL", upgraded.Draft.Pages["terms"]["bodyMarkdown"]);
+        Assert.Equal("Language Voice Tutor for Android", upgraded.Draft.Pages["mobile"]["pageTitle"]);
+        Assert.Equal("Custom Android introduction", upgraded.Draft.Pages["mobile"]["introText"]);
+        Assert.Equal(GooglePlayListingUrl, upgraded.Active.Pages["mobile"]["googlePlayUrl"]);
+        Assert.Equal(GooglePlayListingUrl, upgraded.Draft.Pages["mobile"]["googlePlayUrl"]);
     }
 
     [Fact]
@@ -599,8 +697,10 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Contains("color: #102A43", styles);
         Assert.Contains("color: #8A7557", styles);
         Assert.Contains("color: #FFFFFF", styles);
-        Assert.Contains("border: 1px solid rgba(23, 50, 77, 0.28)", styles);
-        Assert.Contains("box-shadow: 0 1px 2px rgba(23, 50, 77, 0.18)", styles);
+        Assert.Contains("border: 0", styles);
+        Assert.Contains("box-shadow: none", styles);
+        Assert.DoesNotContain("border: 1px solid rgba(23, 50, 77, 0.28)", styles);
+        Assert.DoesNotContain("box-shadow: 0 1px 2px rgba(23, 50, 77, 0.18)", styles);
         Assert.DoesNotContain("#F2E8D5", styles, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("#1B2A3A", styles, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("#EDE7DC", styles, StringComparison.OrdinalIgnoreCase);
@@ -830,6 +930,19 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Contains("updateBodyMarkdownCounter", adminJs);
         Assert.Contains("validateWebsiteBodyMarkdown", adminJs);
         Assert.Contains("website-body-markdown-over-limit", adminJs);
+    }
+
+    [Fact]
+    public void AdminWebsiteEditorExposesAndroidProductAndGooglePlayFields()
+    {
+        var adminJs = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "backend", "EnglishVoiceTutor.Api", "wwwroot", "admin", "admin.js"));
+
+        Assert.Contains("Android app / Google Play", adminJs);
+        Assert.Contains("renderMobileProductEditor", adminJs);
+        Assert.Contains("googlePlayButtonText", adminJs);
+        Assert.Contains("googlePlayUrl", adminJs);
+        Assert.Contains("conversationTitle", adminJs);
+        Assert.Contains("premiumText", adminJs);
     }
 
     [Fact]
