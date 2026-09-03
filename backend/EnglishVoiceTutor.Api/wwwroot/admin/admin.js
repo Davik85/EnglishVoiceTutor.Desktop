@@ -1358,14 +1358,14 @@
         ["androidComingSoonText", "Android availability text"],
         ["iosComingSoonText", "iOS note"],
         ["emailSupportCtaText", "Support text"],
-        ["conversationTitle", "Conversation card title"],
-        ["conversationText", "Conversation card text"],
-        ["learningTitle", "Guided learning card title"],
-        ["learningText", "Guided learning card text"],
-        ["progressTitle", "Progress card title"],
-        ["progressText", "Progress card text"],
-        ["premiumTitle", "Premium card title"],
-        ["premiumText", "Premium card text"]
+        ["conversationTitle", "Conversation feature title"],
+        ["conversationText", "Conversation feature text"],
+        ["learningTitle", "Guided learning feature title"],
+        ["learningText", "Guided learning feature text"],
+        ["progressTitle", "Progress feature title"],
+        ["progressText", "Progress feature text"],
+        ["premiumTitle", "Premium note title"],
+        ["premiumText", "Premium note text"]
     ];
     function renderMobileProductEditor(values) {
         const section = document.createElement("section");
@@ -1374,7 +1374,7 @@
         heading.textContent = "Android product page";
         const helper = document.createElement("p");
         helper.className = "muted";
-        helper.textContent = "These fields drive the Android hero, Google Play CTA, availability notes, and feature cards. The Google Play URL is normalized to the approved listing.";
+        helper.textContent = "These fields drive the Android hero panel, Google Play CTA, availability notes, and compact feature list. The Google Play URL is normalized to the approved listing.";
         const grid = document.createElement("div");
         grid.className = "website-seo-grid";
         mobileProductFields.forEach(([key, label]) => {
@@ -1387,12 +1387,14 @@
     function renderSimpleWebsiteEditor(section, values) {
         websiteEditorFields.classList.add("website-simple-editor-fields");
         websiteEditorFields.appendChild(createWebsiteField("pageTitle", "Page title", values.pageTitle, { long: true }));
-        const bodyMarkdown = section.key === "mobile" ? (values.bodyMarkdown || "") : (values.bodyMarkdown || getLegacyWebsiteBodyMarkdown(section.key, values));
-        const bodyField = createWebsiteField("bodyMarkdown", "Body markdown", bodyMarkdown, { long: true, textarea: true, rows: 18 });
-        const bodyTextarea = bodyField.querySelector("textarea");
-        bodyField.insertBefore(createMarkdownToolbar(bodyTextarea), bodyTextarea);
-        addBodyMarkdownCounter(bodyTextarea, section.key);
-        websiteEditorFields.appendChild(bodyField);
+        if (section.key !== "mobile") {
+            const bodyMarkdown = values.bodyMarkdown || getLegacyWebsiteBodyMarkdown(section.key, values);
+            const bodyField = createWebsiteField("bodyMarkdown", "Body markdown", bodyMarkdown, { long: true, textarea: true, rows: 18 });
+            const bodyTextarea = bodyField.querySelector("textarea");
+            bodyField.insertBefore(createMarkdownToolbar(bodyTextarea), bodyTextarea);
+            addBodyMarkdownCounter(bodyTextarea, section.key);
+            websiteEditorFields.appendChild(bodyField);
+        }
         if (section.key === "download") { renderDownloadFeatureCardEditor(values); }
         if (section.key === "mobile") { renderMobileProductEditor(values); }
         const seoSection = document.createElement("section");

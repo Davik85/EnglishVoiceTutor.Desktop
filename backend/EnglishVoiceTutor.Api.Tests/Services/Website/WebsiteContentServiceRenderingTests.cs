@@ -59,7 +59,16 @@ Need help? Email support@languagevoicetutor.com.
     {
         using var fixture = new WebsiteContentServiceFixture();
         var service = fixture.CreateService();
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        content.Pages["mobile"]["bodyMarkdown"] = """
+MOBILE-LEGACY-BODY-SENTINEL
 
+Android and iOS versions are planned but are not currently available.
+Android app coming soon.
+""";
+
+        await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
+        var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "mobile"), TestContext.Current.CancellationToken);
         await service.PublishAsync(TestContext.Current.CancellationToken);
         var home = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"), TestContext.Current.CancellationToken);
         var mobile = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "mobile.html"), TestContext.Current.CancellationToken);
@@ -72,16 +81,32 @@ Need help? Email support@languagevoicetutor.com.
         Assert.DoesNotContain("coming soon", home, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("not currently available", home, StringComparison.OrdinalIgnoreCase);
 
-        Assert.Contains("<body class=\"download-page mobile-page\">", mobile);
-        Assert.Contains("class=\"download-hero mobile-hero\"", mobile);
-        Assert.Contains($"href=\"{GooglePlayListingUrl}\" target=\"_blank\" rel=\"noopener noreferrer\"", mobile);
-        Assert.Contains("Get it on Google Play", mobile);
-        Assert.Contains("Speak and write with AI tutors", mobile);
-        Assert.Contains("Choose your path", mobile);
-        Assert.Contains("Keep making progress", mobile);
-        Assert.Contains("Continue with Premium", mobile);
-        Assert.Contains("iOS is planned and is not currently available.", mobile);
-        Assert.DoesNotContain("Android app coming soon", mobile, StringComparison.OrdinalIgnoreCase);
+        foreach (var renderedMobile in new[] { preview.Html, mobile })
+        {
+            Assert.Contains("<body class=\"mobile-page\">", renderedMobile);
+            Assert.Contains("<section class=\"mobile-hero\"", renderedMobile);
+            Assert.Contains("<section class=\"mobile-product-panel\"", renderedMobile);
+            Assert.Equal(1, CountOccurrences(renderedMobile, "<section class=\"mobile-product-panel\""));
+            Assert.Contains("class=\"mobile-feature-list\"", renderedMobile);
+            Assert.Equal(3, CountOccurrences(renderedMobile, "<li><strong>"));
+            Assert.Contains($"href=\"{GooglePlayListingUrl}\" target=\"_blank\" rel=\"noopener noreferrer\"", renderedMobile);
+            Assert.Contains("Get it on Google Play", renderedMobile);
+            Assert.Contains("Speak and write with AI tutors", renderedMobile);
+            Assert.Contains("Choose your path", renderedMobile);
+            Assert.Contains("Keep making progress", renderedMobile);
+            Assert.Contains("Continue with Premium", renderedMobile);
+            Assert.Contains("iOS is planned and is not currently available.", renderedMobile);
+            Assert.DoesNotContain("class=\"download-hero", renderedMobile);
+            Assert.DoesNotContain("download-feature-grid", renderedMobile);
+            Assert.DoesNotContain("mobile-feature-grid", renderedMobile);
+            Assert.DoesNotContain("download-feature-card", renderedMobile);
+            Assert.DoesNotContain("mobile-feature-card", renderedMobile);
+            Assert.DoesNotContain("mobile-details-shell", renderedMobile);
+            Assert.DoesNotContain("MOBILE-LEGACY-BODY-SENTINEL", renderedMobile);
+            Assert.DoesNotContain("Android and iOS versions are planned", renderedMobile, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Android app coming soon", renderedMobile, StringComparison.OrdinalIgnoreCase);
+        }
+
         Assert.Contains("<link rel=\"canonical\" href=\"https://languagevoicetutor.com/mobile.html\">", mobile);
         Assert.Contains("<meta property=\"og:title\" content=\"Language Voice Tutor for Android | Google Play\">", mobile);
         Assert.Contains("<meta name=\"twitter:description\" content=", mobile);
@@ -939,6 +964,7 @@ Need help? Email support@languagevoicetutor.com.
 
         Assert.Contains("Android app / Google Play", adminJs);
         Assert.Contains("renderMobileProductEditor", adminJs);
+        Assert.Contains("if (section.key !== \"mobile\")", adminJs);
         Assert.Contains("googlePlayButtonText", adminJs);
         Assert.Contains("googlePlayUrl", adminJs);
         Assert.Contains("conversationTitle", adminJs);

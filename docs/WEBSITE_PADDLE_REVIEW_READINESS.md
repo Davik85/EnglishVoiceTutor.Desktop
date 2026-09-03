@@ -4,7 +4,7 @@ Review date: 2026-08-22.
 
 ## 2026-09-03 staged Android launch website update
 
-The repository now prepares, but does not publish, an Android-ready homepage panel and a dedicated `mobile.html` page with the approved Google Play listing. This staged source change does not establish that the Google Play Production listing is publicly available; deployment must wait for that separate confirmation and explicit approval. The dated 2026-08-22 public-state statements below remain historical.
+The repository now prepares, but does not publish, an Android-ready homepage panel and a dedicated `mobile.html` page with the approved Google Play listing. The mobile page uses its own full-bleed Android hero and one compact product panel; legacy `mobile.bodyMarkdown` remains stored but is intentionally neither editable nor rendered. This staged source change does not establish that the Google Play Production listing is publicly available; deployment must wait for that separate confirmation and explicit approval. The dated 2026-08-22 public-state statements below remain historical.
 
 The repository-local Website CMS default is `site/content/website-content.json`. Production does not use that snapshot as its content authority: the running service overrides `WebsiteContent__StorageJsonPath` with `/var/lib/languagevoicetutor/website-content.json` and `WebsiteContent__PublicSiteRoot` with `/var/www/languagevoicetutor/site`. Production CMS content is environment state and must not be copied wholesale into source control because it can include environment-specific content and marketing settings.
 

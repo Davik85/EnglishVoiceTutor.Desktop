@@ -380,50 +380,32 @@ Need help? Email support@languagevoicetutor.com.
     private static string RenderMobile(WebsiteContentSet c, bool includePublicBaseHref)
     {
         var mobile = c.Pages["mobile"];
-        var bodyMarkdown = mobile.GetValueOrDefault("bodyMarkdown", string.Empty);
-        var details = string.IsNullOrWhiteSpace(bodyMarkdown)
-            ? string.Empty
-            : $"""
-        <section class="page-shell mobile-details-shell markdown-content" aria-label="More about Language Voice Tutor for Android">
-{RenderMarkdown(bodyMarkdown)}
-        </section>
-""";
         var body = $$"""
     <main>
-        <section class="download-hero mobile-hero" aria-labelledby="product-title">
-            <div class="download-hero__shade" aria-hidden="true"></div>
-            <div class="download-hero__inner">
-                <section class="download-cta-panel" aria-label="Android app download">
+        <section class="mobile-hero" aria-labelledby="product-title">
+            <div class="mobile-hero__shade" aria-hidden="true"></div>
+            <div class="mobile-hero__inner">
+                <section class="mobile-product-panel" aria-label="Android app download">
                     <p class="eyebrow">{{E(mobile["eyebrowText"])}}</p>
                     <h1 id="product-title">{{E(mobile["pageTitle"])}}</h1>
-                    <p class="download-hero__subtitle">{{E(mobile["introText"])}}</p>
+                    <p class="mobile-product-panel__description">{{E(mobile["introText"])}}</p>
                     <a class="download-button download-button--hero" href="{{E(mobile["googlePlayUrl"])}}" target="_blank" rel="noopener noreferrer">{{E(mobile["googlePlayButtonText"])}}</a>
-                    <p class="download-hero__status">{{E(mobile["androidComingSoonText"])}}</p>
-                    <p class="download-hero__notes">{{E(mobile["iosComingSoonText"])}}</p>
-                    <p class="download-cta-support">{{E(mobile["emailSupportCtaText"])}}</p>
-                </section>
-
-                <section class="download-feature-grid mobile-feature-grid" aria-label="Android app features">
-                    {{RenderMobileFeatureCard(mobile, "conversation", "Conversation practice")}}
-                    {{RenderMobileFeatureCard(mobile, "learning", "Guided learning")}}
-                    {{RenderMobileFeatureCard(mobile, "progress", "Progress and rewards")}}
-                    {{RenderMobileFeatureCard(mobile, "premium", "Premium support")}}
+                    <p class="mobile-product-panel__availability">{{E(mobile["androidComingSoonText"])}}</p>
+                    <ul class="mobile-feature-list" aria-label="Android app features">
+                        <li><strong>{{E(mobile["conversationTitle"])}}</strong><span>{{E(mobile["conversationText"])}}</span></li>
+                        <li><strong>{{E(mobile["learningTitle"])}}</strong><span>{{E(mobile["learningText"])}}</span></li>
+                        <li><strong>{{E(mobile["progressTitle"])}}</strong><span>{{E(mobile["progressText"])}}</span></li>
+                    </ul>
+                    <p class="mobile-product-panel__premium"><strong>{{E(mobile["premiumTitle"])}}</strong> {{E(mobile["premiumText"])}}</p>
+                    <p class="mobile-product-panel__ios">{{E(mobile["iosComingSoonText"])}}</p>
+                    <p class="mobile-product-panel__support">{{E(mobile["emailSupportCtaText"])}}</p>
                 </section>
             </div>
         </section>
-{{details}}
     </main>
 """;
         return Shell(c, E(mobile["seoTitle"]), E(mobile["seoDescription"]), body, false, includePublicBaseHref, pageFileName: "mobile.html");
     }
-
-    private static string RenderMobileFeatureCard(Dictionary<string, string> mobile, string prefix, string label) => $$"""
-                    <article class="download-feature-card mobile-feature-card">
-                        <p class="eyebrow">{{E(label)}}</p>
-                        <h2>{{E(mobile[$"{prefix}Title"])}}</h2>
-                        <p>{{E(mobile[$"{prefix}Text"])}}</p>
-                    </article>
-""";
 
 
     private static string RenderDownload(WebsiteContentSet c, bool includePublicBaseHref, StaticReleaseManifest? release)
@@ -743,7 +725,7 @@ Need help? Email support@languagevoicetutor.com.
             : pageFileName switch
             {
                 "download.html" => "download-page",
-                "mobile.html" => "download-page mobile-page",
+                "mobile.html" => "mobile-page",
                 _ => string.Empty
             };
         var html = new StringBuilder();
