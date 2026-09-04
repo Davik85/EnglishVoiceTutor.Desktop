@@ -118,7 +118,11 @@ public sealed class TranslationService
                     Strict = true,
                     Schema = TranslationResponseSchema
                 }
-            }
+            },
+            Temperature = AiTextModelTemperaturePolicy.Resolve(
+                AiTextModelRole.Translation,
+                options.Model,
+                options.TranslationOmitTemperature)
         };
 
         var httpClient = _httpClientFactory.CreateClient();

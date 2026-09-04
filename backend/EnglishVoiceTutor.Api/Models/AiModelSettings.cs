@@ -12,6 +12,11 @@ public sealed record AiModelSettings(
     string ConversationModeTextToSpeechModel,
     string RealtimeVoiceModel)
 {
+    public bool LessonTutorChatOmitTemperature { get; init; }
+    public bool FeedbackCorrectionOmitTemperature { get; init; }
+    public bool LessonHintOmitTemperature { get; init; }
+    public bool TranslationOmitTemperature { get; init; }
+
     public static AiModelSettings Defaults { get; } = new(
         OpenAiConstants.DefaultModel,
         OpenAiConstants.DefaultModel,

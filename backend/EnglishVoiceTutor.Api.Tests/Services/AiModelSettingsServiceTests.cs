@@ -15,6 +15,86 @@ public sealed class AiModelSettingsServiceTests : IDisposable
     private readonly string _root = Path.Combine(Path.GetTempPath(), "lvt-ai-model-settings-tests", Guid.NewGuid().ToString("N"));
 
     [Fact]
+    public async Task HistoricalJsonWithoutTemperatureFlagsLoadsWithLegacyDefaults()
+    {
+        var releaseRoot = Path.Combine(_root, "backend", "releases", "0.1.35-backend.148");
+        var persistentPath = Path.Combine(_root, "backend", "site", "content", "ai-model-settings.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(persistentPath)!);
+        File.WriteAllText(persistentPath, """
+        {
+          "active": {
+            "lessonTutorChatModel": "gpt-5.5",
+            "feedbackCorrectionModel": "gpt-5.2-feedback",
+            "lessonHintModel": "gpt-5.2-hint",
+            "translationModel": "gpt-5.2-translation",
+            "speechToTextModel": "gpt-4o-mini-transcribe",
+            "lessonChatTextToSpeechModel": "tts-1",
+            "conversationModeTextToSpeechModel": "gpt-4o-mini-tts",
+            "realtimeVoiceModel": "gpt-realtime"
+          },
+          "draft": {
+            "lessonTutorChatModel": "gpt-5.6-terra",
+            "feedbackCorrectionModel": "gpt-5.2-feedback-draft",
+            "lessonHintModel": "gpt-5.2-hint-draft",
+            "translationModel": "gpt-5.2-translation-draft",
+            "speechToTextModel": "gpt-4o-mini-transcribe",
+            "lessonChatTextToSpeechModel": "tts-1",
+            "conversationModeTextToSpeechModel": "gpt-4o-mini-tts",
+            "realtimeVoiceModel": "gpt-realtime"
+          },
+          "updatedAtUtc": "2026-09-04T00:00:00+00:00",
+          "updatedBy": "historical-admin",
+          "revision": 12
+        }
+        """);
+
+        var response = await CreateService(releaseRoot).GetAsync(CancellationToken.None);
+
+        Assert.Equal("gpt-5.5", response.Active.LessonTutorChatModel);
+        Assert.Equal("gpt-5.2-feedback", response.Active.FeedbackCorrectionModel);
+        Assert.Equal("gpt-5.2-hint", response.Active.LessonHintModel);
+        Assert.Equal("gpt-5.2-translation", response.Active.TranslationModel);
+        Assert.Equal("gpt-5.6-terra", response.Draft.LessonTutorChatModel);
+        Assert.False(response.Active.LessonTutorChatOmitTemperature);
+        Assert.False(response.Active.FeedbackCorrectionOmitTemperature);
+        Assert.False(response.Active.LessonHintOmitTemperature);
+        Assert.False(response.Active.TranslationOmitTemperature);
+        Assert.False(response.Draft.LessonTutorChatOmitTemperature);
+        Assert.False(response.Draft.FeedbackCorrectionOmitTemperature);
+        Assert.False(response.Draft.LessonHintOmitTemperature);
+        Assert.False(response.Draft.TranslationOmitTemperature);
+    }
+
+    [Fact]
+    public async Task DraftValidatePublishAndResetPreserveAllTemperatureFlags()
+    {
+        var releaseRoot = Path.Combine(_root, "backend", "releases", "0.1.35-backend.148");
+        var service = CreateService(releaseRoot);
+        var flagged = AiModelSettings.Defaults with
+        {
+            LessonTutorChatOmitTemperature = true,
+            FeedbackCorrectionOmitTemperature = false,
+            LessonHintOmitTemperature = true,
+            TranslationOmitTemperature = true
+        };
+
+        var validation = service.Validate(flagged);
+        var saved = await service.SaveDraftAsync(flagged, "test-admin", CancellationToken.None);
+        var reloadedAfterSave = await CreateService(releaseRoot).GetAsync(CancellationToken.None);
+        var published = await service.PublishAsync("test-admin", CancellationToken.None);
+        await service.SaveDraftAsync(AiModelSettings.Defaults, "test-admin", CancellationToken.None);
+        var reset = await service.ResetDraftFromActiveAsync("test-admin", CancellationToken.None);
+
+        Assert.True(validation.IsValid);
+        AssertTemperatureFlags(saved.Draft, true, false, true, true);
+        AssertTemperatureFlags(reloadedAfterSave.Draft, true, false, true, true);
+        AssertTemperatureFlags(published.Active, true, false, true, true);
+        AssertTemperatureFlags(published.Draft, true, false, true, true);
+        AssertTemperatureFlags(reset.Active, true, false, true, true);
+        AssertTemperatureFlags(reset.Draft, true, false, true, true);
+    }
+
+    [Fact]
     public async Task PublishPersistsActiveSettingsOutsideReleaseContentRoot()
     {
         var releaseRoot = Path.Combine(_root, "backend", "releases", "0.1.35-backend.81");
@@ -90,6 +170,14 @@ public sealed class AiModelSettingsServiceTests : IDisposable
     {
         var document = new AiModelSettingsDocument(settings, settings, DateTimeOffset.UtcNow, null, revision);
         File.WriteAllText(path, JsonSerializer.Serialize(document, new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true }));
+    }
+
+    private static void AssertTemperatureFlags(AiModelSettings settings, bool lessonTutor, bool feedback, bool hint, bool translation)
+    {
+        Assert.Equal(lessonTutor, settings.LessonTutorChatOmitTemperature);
+        Assert.Equal(feedback, settings.FeedbackCorrectionOmitTemperature);
+        Assert.Equal(hint, settings.LessonHintOmitTemperature);
+        Assert.Equal(translation, settings.TranslationOmitTemperature);
     }
 
     public void Dispose()

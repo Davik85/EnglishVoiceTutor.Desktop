@@ -75,7 +75,11 @@ public sealed class OpenAiLessonHintService : ILessonHintService
                         Strict = true,
                         Schema = LessonHintResponseSchema
                     }
-                }
+                },
+                Temperature = AiTextModelTemperaturePolicy.Resolve(
+                    AiTextModelRole.LessonHint,
+                    options.Model,
+                    options.LessonHintOmitTemperature)
             };
 
             var httpClient = _httpClientFactory.CreateClient();

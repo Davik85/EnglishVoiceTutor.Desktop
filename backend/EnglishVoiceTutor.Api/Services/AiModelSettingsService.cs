@@ -192,7 +192,13 @@ public sealed partial class AiModelSettingsService(IOptions<AiModelSettingsOptio
             NormalizeModel(settings.SpeechToTextModel, AiModelSettings.Defaults.SpeechToTextModel),
             NormalizeModel(settings.LessonChatTextToSpeechModel, AiModelSettings.Defaults.LessonChatTextToSpeechModel),
             NormalizeModel(settings.ConversationModeTextToSpeechModel, AiModelSettings.Defaults.ConversationModeTextToSpeechModel),
-            NormalizeModel(settings.RealtimeVoiceModel, AiModelSettings.Defaults.RealtimeVoiceModel));
+            NormalizeModel(settings.RealtimeVoiceModel, AiModelSettings.Defaults.RealtimeVoiceModel))
+        {
+            LessonTutorChatOmitTemperature = settings.LessonTutorChatOmitTemperature,
+            FeedbackCorrectionOmitTemperature = settings.FeedbackCorrectionOmitTemperature,
+            LessonHintOmitTemperature = settings.LessonHintOmitTemperature,
+            TranslationOmitTemperature = settings.TranslationOmitTemperature
+        };
     }
 
     private static string NormalizeModel(string? value, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();

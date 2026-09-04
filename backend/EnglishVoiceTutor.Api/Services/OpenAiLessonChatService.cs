@@ -202,6 +202,12 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         CancellationToken cancellationToken)
     {
         var input = _lessonPromptBuilder.BuildInput(request);
+        var textRole = string.Equals(request.RequestPurpose, "feedback", StringComparison.OrdinalIgnoreCase)
+            ? AiTextModelRole.FeedbackCorrection
+            : AiTextModelRole.LessonTutorChat;
+        var omitTemperature = textRole == AiTextModelRole.FeedbackCorrection
+            ? options.FeedbackCorrectionOmitTemperature
+            : options.LessonTutorChatOmitTemperature;
         if (!string.IsNullOrWhiteSpace(previousValidationReason))
         {
             input = $"{input}\nRepair instruction:\nThe previous provider reply was rejected for this safe schema reason: {previousValidationReason}. Return only a valid JSON object that exactly matches the lesson_chat_response schema. Do not use markdown fences.\n";
@@ -222,7 +228,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
                     Schema = LessonChatResponseSchema
                 }
             },
-            Temperature = ResolveTemperature(options.Model)
+            Temperature = AiTextModelTemperaturePolicy.Resolve(textRole, options.Model, omitTemperature)
         };
 
         var httpClient = _httpClientFactory.CreateClient();
@@ -293,10 +299,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
     }
 
     internal static double? ResolveTemperature(string modelId) =>
-        IsGpt55Model(modelId) ? null : 0.3;
-
-    private static bool IsGpt55Model(string modelId) =>
-        modelId.Trim().StartsWith("gpt-5.5", StringComparison.OrdinalIgnoreCase);
+        AiTextModelTemperaturePolicy.Resolve(AiTextModelRole.LessonTutorChat, modelId, omitTemperature: false);
 
     private static string ToSafeProviderFailureMessage(string category) => category switch
     {

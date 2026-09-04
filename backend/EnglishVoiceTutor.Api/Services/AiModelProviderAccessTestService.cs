@@ -26,14 +26,19 @@ public sealed class AiModelProviderAccessTestService
 
     public async Task<AiModelProviderTestResponse> TestDraftAsync(AiModelSettings draft, CancellationToken cancellationToken)
     {
-        var validation = _settingsService.Validate(draft);
         var apiKey = Environment.GetEnvironmentVariable(OpenAiConstants.ApiKeyEnvironmentVariableName) ?? string.Empty;
+        return await TestDraftAsync(draft, apiKey, cancellationToken);
+    }
+
+    internal async Task<AiModelProviderTestResponse> TestDraftAsync(AiModelSettings draft, string apiKey, CancellationToken cancellationToken)
+    {
+        var validation = _settingsService.Validate(draft);
         var results = new List<AiModelProviderTestResult>
         {
-            await TestTextRoleAsync("lesson_tutor_chat", "Lesson tutor chat model", draft.LessonTutorChatModel, validation, apiKey, cancellationToken),
-            await TestTextRoleAsync("feedback_correction", "Feedback / correction model", draft.FeedbackCorrectionModel, validation, apiKey, cancellationToken),
-            await TestTextRoleAsync("lesson_hint", "Lesson hint model", draft.LessonHintModel, validation, apiKey, cancellationToken),
-            await TestTextRoleAsync("translation", "Translation model", draft.TranslationModel, validation, apiKey, cancellationToken),
+            await TestTextRoleAsync(AiTextModelRole.LessonTutorChat, "lesson_tutor_chat", "Lesson tutor chat model", draft.LessonTutorChatModel, draft.LessonTutorChatOmitTemperature, validation, apiKey, cancellationToken),
+            await TestTextRoleAsync(AiTextModelRole.FeedbackCorrection, "feedback_correction", "Feedback / correction model", draft.FeedbackCorrectionModel, draft.FeedbackCorrectionOmitTemperature, validation, apiKey, cancellationToken),
+            await TestTextRoleAsync(AiTextModelRole.LessonHint, "lesson_hint", "Lesson hint model", draft.LessonHintModel, draft.LessonHintOmitTemperature, validation, apiKey, cancellationToken),
+            await TestTextRoleAsync(AiTextModelRole.Translation, "translation", "Translation model", draft.TranslationModel, draft.TranslationOmitTemperature, validation, apiKey, cancellationToken),
             NotTested("speech_to_text", "Speech-to-text model", draft.SpeechToTextModel, validation),
             NotTested("lesson_chat_text_to_speech", "Lesson chat text-to-speech model", draft.LessonChatTextToSpeechModel, validation),
             NotTested("conversation_mode_text_to_speech", "Conversation mode text-to-speech model", draft.ConversationModeTextToSpeechModel, validation),
@@ -53,21 +58,21 @@ public sealed class AiModelProviderAccessTestService
         var tests = new (string Name, OpenAiResponsesRequest Request)[]
         {
             ("minimal_responses_text", new OpenAiResponsesRequest { Model = model, Instructions = "Reply with ok.", Input = "ok" }),
-            ("current_provider_test_shape", new OpenAiResponsesRequest { Model = model, Instructions = "Return the word ok.", Input = "ok", Temperature = 0 }),
+            ("current_provider_test_shape", CreateTextRoleRequest(AiTextModelRole.LessonTutorChat, model, draft.LessonTutorChatOmitTemperature)),
             ("minimal_structured_output", new OpenAiResponsesRequest { Model = model, Instructions = "Return JSON with ok true.", Input = "ok", Text = new OpenAiTextOptions { Format = new OpenAiTextFormat { Type = OpenAiConstants.JsonSchemaFormatType, Name = "tiny_safe_schema", Strict = true, Schema = TinySchema } } }),
-            ("lesson_chat_runtime_shape_without_user_content", CreateSafeLessonRuntimeShape(model))
+            ("lesson_chat_runtime_shape_without_user_content", CreateSafeLessonRuntimeShape(model, draft.LessonTutorChatOmitTemperature))
         };
         var results = new List<AiModelProviderCompatibilityDiagnosticResult>();
         foreach (var test in tests) results.Add(await SendDiagnosticAsync(test.Name, test.Request, apiKey, cancellationToken));
         return results;
     }
 
-    private static OpenAiResponsesRequest CreateSafeLessonRuntimeShape(string model) => new()
+    private static OpenAiResponsesRequest CreateSafeLessonRuntimeShape(string model, bool omitTemperature) => new()
     {
         Model = model,
         Instructions = OpenAiConstants.LessonReplySystemInstructions,
         Input = "Safe diagnostic lesson input. No user lesson content is included.",
-        Temperature = OpenAiLessonChatService.ResolveTemperature(model),
+        Temperature = AiTextModelTemperaturePolicy.Resolve(AiTextModelRole.LessonTutorChat, model, omitTemperature),
         Text = new OpenAiTextOptions { Format = new OpenAiTextFormat { Type = OpenAiConstants.JsonSchemaFormatType, Name = OpenAiConstants.LessonChatResponseSchemaName, Strict = true, Schema = JsonSerializer.Deserialize<JsonElement>("""
 {
   "type": "object",
@@ -82,14 +87,22 @@ public sealed class AiModelProviderAccessTestService
 """) } }
     };
 
-    private async Task<AiModelProviderTestResult> TestTextRoleAsync(string roleId, string roleLabel, string modelId, AiModelSettingsValidationResponse validation, string apiKey, CancellationToken cancellationToken)
+    private async Task<AiModelProviderTestResult> TestTextRoleAsync(AiTextModelRole role, string roleId, string roleLabel, string modelId, bool omitTemperature, AiModelSettingsValidationResponse validation, string apiKey, CancellationToken cancellationToken)
     {
         var syntaxValid = IsRoleSyntaxValid(validation, roleLabel);
         if (!syntaxValid) return new(roleId, roleLabel, modelId, false, false, false, AiModelProviderTestCategories.InvalidRequest, "Model ID failed format validation; provider access was not tested.", null, null);
         if (string.IsNullOrWhiteSpace(apiKey)) return new(roleId, roleLabel, modelId, true, false, null, AiModelProviderTestCategories.NotTested, "OpenAI API key is not configured on the server; provider access was not tested.", null, null);
-        var diagnostic = await SendDiagnosticAsync("provider_access", new OpenAiResponsesRequest { Model = modelId.Trim(), Instructions = "Return the word ok.", Input = "ok", Temperature = 0 }, apiKey, cancellationToken);
+        var diagnostic = await SendDiagnosticAsync("provider_access", CreateTextRoleRequest(role, modelId, omitTemperature), apiKey, cancellationToken);
         return new(roleId, roleLabel, modelId, true, true, diagnostic.ProviderOk, diagnostic.SafeCategory, diagnostic.ProviderOk ? "Provider accepted a minimal safe Responses API request for this model." : ToSafeMessage(diagnostic.SafeCategory), diagnostic.StatusCode, diagnostic.DurationMs, diagnostic.ProviderErrorType, diagnostic.ProviderErrorCode, diagnostic.ProviderErrorParam, diagnostic.SanitizedProviderMessage);
     }
+
+    internal static OpenAiResponsesRequest CreateTextRoleRequest(AiTextModelRole role, string modelId, bool omitTemperature) => new()
+    {
+        Model = modelId.Trim(),
+        Instructions = "Return the word ok.",
+        Input = "ok",
+        Temperature = AiTextModelTemperaturePolicy.Resolve(role, modelId, omitTemperature)
+    };
 
     private async Task<AiModelProviderCompatibilityDiagnosticResult> SendDiagnosticAsync(string testName, OpenAiResponsesRequest request, string apiKey, CancellationToken cancellationToken)
     {

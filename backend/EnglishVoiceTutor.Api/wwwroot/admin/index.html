@@ -647,7 +647,7 @@
                         <article class="card"><h2>Capabilities Check</h2><ul id="capabilities-list" class="capability-list"></ul></article>
                         <article class="card" aria-labelledby="ai-models-heading">
                             <h2 id="ai-models-heading">AI Models</h2>
-                            <p class="muted">Super Admin-only runtime model settings. API keys are not stored here and remain server environment secrets. Save a draft, Validate format, Test provider access, then publish and run a small real lesson. Format validation does not prove provider access. Use Test provider access before publishing a new model.</p>
+                            <p class="muted">Super Admin-only runtime model settings. API keys are not stored here and remain server environment secrets. Each text role has an independent omit-temperature override; leaving it off preserves that role's existing behavior. Save a draft, Validate format, Test provider access, then publish and run a small real lesson. Format validation does not prove provider access. Use Test provider access before publishing a new model.</p>
                             <div class="website-action-bar" aria-label="AI model actions">
                                 <button id="ai-models-load-button" type="button">Load AI Models</button>
                                 <button id="ai-models-save-draft-button" type="button">Save draft</button>
@@ -668,6 +668,6 @@
             </div>
         </section>
     </main>
-    <script src="/admin/admin.js?v=admin-cms-20260613-raw-json-fix"></script>
+    <script src="/admin/admin.js?v=admin-cms-20260904-temperature-overrides"></script>
 </body>
 </html>

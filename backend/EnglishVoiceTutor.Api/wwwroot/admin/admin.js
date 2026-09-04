@@ -1034,10 +1034,10 @@
     const aiModelsResetDraftButton = document.getElementById("ai-models-reset-draft-button");
     const aiModelsPublishButton = document.getElementById("ai-models-publish-button");
     const aiModelFields = [
-        ["lessonTutorChatModel", "Lesson tutor chat model"],
-        ["feedbackCorrectionModel", "Feedback / correction model"],
-        ["lessonHintModel", "Lesson hint model"],
-        ["translationModel", "Translation model"],
+        ["lessonTutorChatModel", "Lesson tutor chat model", "lessonTutorChatOmitTemperature"],
+        ["feedbackCorrectionModel", "Feedback / correction model", "feedbackCorrectionOmitTemperature"],
+        ["lessonHintModel", "Lesson hint model", "lessonHintOmitTemperature"],
+        ["translationModel", "Translation model", "translationOmitTemperature"],
         ["speechToTextModel", "Speech-to-text model"],
         ["lessonChatTextToSpeechModel", "Lesson chat text-to-speech model"],
         ["conversationModeTextToSpeechModel", "Conversation Mode text-to-speech model"],
@@ -1049,7 +1049,7 @@
     function renderAiModelFields() {
         if (!aiModelsFieldsElement) { return; }
         aiModelsFieldsElement.textContent = "";
-        aiModelFields.forEach(([key, label]) => {
+        aiModelFields.forEach(([key, label, omitTemperatureKey]) => {
             const wrapper = document.createElement("div");
             wrapper.className = "field";
             const labelElement = document.createElement("label");
@@ -1066,12 +1066,30 @@
             help.className = "help-text";
             help.textContent = "Validate checks format/syntax only: letters, numbers, dot, dash, underscore, and colon. Format validation does not prove provider access.";
             wrapper.append(labelElement, input, help);
+            if (omitTemperatureKey) {
+                const omitLabel = document.createElement("label");
+                omitLabel.className = "checkbox-field";
+                omitLabel.setAttribute("for", `ai-model-${omitTemperatureKey}`);
+                const omitInput = document.createElement("input");
+                omitInput.id = `ai-model-${omitTemperatureKey}`;
+                omitInput.type = "checkbox";
+                omitInput.checked = aiModelDraft[omitTemperatureKey] === true;
+                omitInput.dataset.aiModelOmitKey = omitTemperatureKey;
+                const omitText = document.createElement("span");
+                omitText.textContent = "Omit temperature parameter";
+                omitLabel.append(omitInput, omitText);
+                const omitHelp = document.createElement("p");
+                omitHelp.className = "help-text";
+                omitHelp.textContent = "Enable for models that reject the temperature parameter. Off preserves this role's existing behavior.";
+                wrapper.append(omitLabel, omitHelp);
+            }
             aiModelsFieldsElement.appendChild(wrapper);
         });
     }
     function collectAiModelDraft() {
         if (!aiModelsFieldsElement) { return; }
         aiModelsFieldsElement.querySelectorAll("[data-ai-model-key]").forEach(input => { aiModelDraft[input.dataset.aiModelKey] = input.value; });
+        aiModelsFieldsElement.querySelectorAll("[data-ai-model-omit-key]").forEach(input => { aiModelDraft[input.dataset.aiModelOmitKey] = input.checked; });
     }
     async function readAiModelsResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
         if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
