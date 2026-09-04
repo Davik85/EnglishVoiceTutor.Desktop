@@ -56,6 +56,6 @@ def test_publish_writes_marketing_artifacts_and_release_manifest_is_source():
     assert 'await W("robots.txt", RenderRobotsTxt())' in service
     assert 'await W("sitemap.xml", RenderSitemapXml' in service
     assert 'await W("llms.txt", RenderLlmsTxt())' in service
-    assert 'await W("marketing-consent.js", RenderMarketingConsentJs())' in service
+    assert 'await W("marketing-consent.js", RenderMarketingConsentJs(c.Marketing))' in service
     assert "ReadStaticReleaseManifest(root)" in service
     assert "LanguageVoiceTutorSetup-1.0.exe" not in service

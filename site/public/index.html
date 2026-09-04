@@ -592,5 +592,25 @@
 <link href="/assets/homepage/index.css" rel="stylesheet"/>
 
 <link href="/assets/homepage/index.css" rel="stylesheet"/>
+<section class="consent-banner" id="consent-banner" role="dialog" aria-modal="false" aria-labelledby="consent-title" aria-describedby="consent-description" hidden>
+  <div class="consent-banner__content">
+    <div class="consent-banner__copy">
+      <p class="consent-banner__eyebrow" id="consent-title">Optional cookies</p>
+      <p id="consent-description">We may use analytics and advertising cookies, if enabled, to understand traffic, improve Language Voice Tutor, measure marketing performance, and count download clicks. You can accept all, reject non-essential cookies, or manage choices. <a class="consent-banner__link" href="/privacy.html">Privacy Policy</a></p>
+    </div>
+    <div class="consent-choices" id="consent-manage" hidden>
+      <p class="consent-choices__title">Manage optional categories</p>
+      <label class="consent-choice"><input type="checkbox" id="consent-analytics"> <span><strong>Analytics cookies</strong><small>Help us measure site traffic and product improvement signals.</small></span></label>
+      <label class="consent-choice"><input type="checkbox" id="consent-advertising"> <span><strong>Advertising cookies</strong><small>Help us measure marketing performance and download conversions if Google Ads is enabled.</small></span></label>
+    </div>
+    <div class="consent-banner__actions" aria-label="Cookie consent actions">
+      <button class="consent-button consent-button--primary" type="button" data-consent-action="accept">Accept all</button>
+      <button class="consent-button consent-button--secondary" type="button" data-consent-action="reject">Reject non-essential</button>
+      <button class="consent-button consent-button--link" type="button" data-consent-action="manage">Manage choices</button>
+      <button class="consent-button consent-button--primary" type="button" data-consent-action="save" id="consent-save" hidden>Save choices</button>
+    </div>
+  </div>
+</section>
+<script src="/marketing-consent.js?v=marketing-seo" defer></script>
 </body>
 </html>

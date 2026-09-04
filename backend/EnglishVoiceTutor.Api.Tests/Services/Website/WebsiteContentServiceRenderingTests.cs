@@ -59,6 +59,29 @@ Need help? Email support@languagevoicetutor.com.
     }
 
     [Fact]
+    public async Task PublishEmbedsOnlyEnabledCmsAnalyticsInSharedConsentRuntimeFallback()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var enabled = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        enabled.Marketing!["enableAnalytics"] = "true";
+        enabled.Marketing!["googleAnalyticsMeasurementId"] = "G-ABC12345";
+        enabled.Marketing!["enableAdsTracking"] = "false";
+        await fixture.WriteDocumentAsync(new WebsiteContentDocument(enabled, enabled));
+        await service.PublishAsync(TestContext.Current.CancellationToken);
+
+        var runtime = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "marketing-consent.js"), TestContext.Current.CancellationToken);
+        Assert.Contains("gaMeasurementId: 'G-ABC12345'", runtime);
+        Assert.Contains("googleAdsId: ''", runtime);
+
+        enabled.Marketing!["enableAnalytics"] = "false";
+        await fixture.WriteDocumentAsync(new WebsiteContentDocument(enabled, enabled));
+        await service.PublishAsync(TestContext.Current.CancellationToken);
+        runtime = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "marketing-consent.js"), TestContext.Current.CancellationToken);
+        Assert.DoesNotContain("G-ABC12345", runtime);
+    }
+
+    [Fact]
     public async Task RetiredHomeAndMobilePreviewRequestsRenderTheCmsManagedDownloadPage()
     {
         using var fixture = new WebsiteContentServiceFixture();

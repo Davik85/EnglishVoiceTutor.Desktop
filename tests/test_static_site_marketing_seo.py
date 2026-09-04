@@ -172,6 +172,11 @@ def test_google_tags_are_optional_sanitized_and_consent_denied_by_default():
     assert "SafeAdsId" in source and "AdsIdRegex" in source
     assert "googletagmanager.com/gtag/js?id=" in source
     assert "googletagmanager.com/gtag/js?id=" not in index
+    assert 'src="/marketing-consent.js?v=marketing-seo" defer' in index
+    assert 'id="consent-banner"' in index
+    assert not re.search(r"G-[A-Z0-9]{6,16}", index)
+    assert "fallbackMarketing" in consent_js
+    assert "if (!window.lvtMarketing)" in consent_js
     assert "gtag('consent', 'default'" in source
     assert 'analytics_storage: "denied"' in consent_js
     assert 'ad_storage: "denied"' in consent_js

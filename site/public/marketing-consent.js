@@ -1,3 +1,5 @@
+const fallbackMarketing = { gaMeasurementId: '', googleAdsId: '', downloadConversionLabel: '' };
+if (!window.lvtMarketing) { window.lvtMarketing = fallbackMarketing; }
 const consentKey = "lvt_marketing_consent_v1";
 const deniedConsent = { analytics_storage: "denied", ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" };
 function hasGtag() { return typeof window.gtag === "function"; }

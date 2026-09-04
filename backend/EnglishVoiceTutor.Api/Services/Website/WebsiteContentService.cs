@@ -267,7 +267,7 @@ Need help? Email support@languagevoicetutor.com.
         await W("robots.txt", RenderRobotsTxt());
         await W("sitemap.xml", RenderSitemapXml(DateTimeOffset.UtcNow));
         if (IsEnabled(c.Marketing, "enableLlmsTxt")) { await W("llms.txt", RenderLlmsTxt()); }
-        await W("marketing-consent.js", RenderMarketingConsentJs());
+        await W("marketing-consent.js", RenderMarketingConsentJs(c.Marketing));
         return files;
     }
 
@@ -621,7 +621,14 @@ Windows desktop tester/direct release is available, and the Android app is publi
 - Service Status: https://languagevoicetutor.com/status.html
 """;
 
-    private static string RenderMarketingConsentJs() => """
+    private static string RenderMarketingConsentJs(Dictionary<string, string>? m)
+    {
+        var ga = IsEnabled(m, "enableAnalytics") ? SafeGaId(MarketingValue(m, "googleAnalyticsMeasurementId")) : string.Empty;
+        var ads = IsEnabled(m, "enableAdsTracking") ? SafeAdsId(MarketingValue(m, "googleAdsId")) : string.Empty;
+        var downloadLabel = SafeConversionLabel(MarketingValue(m, "googleAdsDownloadConversionLabel"));
+        return $$"""
+const fallbackMarketing = { gaMeasurementId: '{{E(ga)}}', googleAdsId: '{{E(ads)}}', downloadConversionLabel: '{{E(downloadLabel)}}' };
+if (!window.lvtMarketing) { window.lvtMarketing = fallbackMarketing; }
 const consentKey = "lvt_marketing_consent_v1";
 const deniedConsent = { analytics_storage: "denied", ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" };
 function hasGtag() { return typeof window.gtag === "function"; }
@@ -678,6 +685,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 });
 """;
+    }
 
     private static string Logo(Dictionary<string, string> h)
     {
