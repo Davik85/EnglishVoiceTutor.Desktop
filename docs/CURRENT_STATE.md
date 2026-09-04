@@ -2,6 +2,14 @@
 
 Review date: 2026-09-04.
 
+## 2026-09-04 independent homepage SEO/social-preview production checkpoint
+
+The independent homepage at `https://languagevoicetutor.com/` completed its SEO/social-preview rollout from accepted metadata commit `f38f3e2b` through final externalization commit `2c4af26`. The former `26,776,039`-byte HTML document contained 33 inline base64 image URLs and approximately 3.2 MB of inline CSS; the same visual payloads were preserved as static homepage resources under `site/public/assets/homepage/`, leaving `site/public/index.html` at `37,930` bytes. The accepted canonical, title, standard description, robots, Open Graph, Twitter, and JSON-LD metadata remain in the lightweight homepage head. The public sharing logo remains the separate, unchanged `site/public/assets/brand/lvt-logo.png` (`/assets/brand/lvt-logo.png`).
+
+Production verification found the local, remote, and public homepage SHA-256 values identical at `7b2b6c085b3d0878001e2136dee229944af01d47896bceee7a2336c158ea7e51`; all 22 homepage-owned external resources returned HTTP 200. Manual comparison confirmed visual parity, and sharing previews were confirmed in Telegram, LinkedIn, Facebook, and WhatsApp. The rollout backup is `/var/www/languagevoicetutor/site.backup.20260904T131225Z`.
+
+Canonical production routing remains nginx-managed and already verified: `/` returns HTTP 200; `/index.html`, `/ai-language-tutor`, and `/ai-language-tutor/` redirect to `https://languagevoicetutor.com/`; and the `www` host redirects to the equivalent non-`www` HTTPS URL while preserving path and query. This rollout did not deploy backend code, apply an EF migration, publish Website CMS content, change Mobile or billing, or redesign the protected sharing logo or decorative flag assets.
+
 ## 2026-09-04 production AI model compatibility and backend `.154` checkpoint
 
 Production backend `0.1.35-backend.154` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.154`, with `/opt/languagevoicetutor/backend/releases/0.1.35-backend.153` retained as rollback. `.154` was deployed from source commit `f9479afa2dc7367e13cbe93174b2537b7b2bb68b` through the normal package, reviewed dry-run, and production upload flow. No EF migration was required. `languagevoicetutor-backend.service` is active, and public `/health` plus `/api/health/database` returned HTTP 200.

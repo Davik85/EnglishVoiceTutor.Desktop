@@ -31,11 +31,13 @@ Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBas
 
 Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
 
-## Public website deployment commands
+## Independent homepage deployment
 
-The independent static files are `index.html`, `mobile.html`, and `styles.css`; `mobile.html` is the legacy `noindex,follow` redirect to `/`. Deploy a backend version that understands this ownership boundary before CMS Publish, back up production, install only those files explicitly, then run Website CMS Publish separately. CMS owns `download.html`, legal/support/status pages, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`; do not manually upload those CMS-owned files during the independent-homepage operation, broadly copy `site/public`, or use `scripts/upload-static-site.ps1` as its rollout method. Preserve existing flag assets. Keep Windows release files under `/var/www/languagevoicetutor/releases/windows/direct` separate. Roll back from the recorded backup if verification fails.
+The independent homepage deployment unit is `site/public/index.html` together with every required `site/public/assets/homepage/**` resource. Install those files together whenever `index.html` references them; a missing homepage asset is a failed deployment even if `/` returns HTTP 200. `mobile.html` remains the legacy `noindex,follow` redirect to `/`, and the still-valid independent `styles.css` remains preserved; neither is removed merely because the homepage now uses `assets/homepage/`.
 
-Use this section for public landing page and website-file deploys only. This is separate from backend deployment and separate from Windows installer/release upload.
+Website CMS Publish must not overwrite or delete `index.html`, `mobile.html`, `styles.css`, or `assets/homepage/**`. CMS ownership remains `download.html`, `pricing.html`, `support.html`, legal pages, `status.html`, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`. Do not manually upload those CMS-owned files during the independent-homepage operation, broadly copy `site/public`, or use `scripts/upload-static-site.ps1` for this rollout. Keep the accepted sharing logo `/assets/brand/lvt-logo.png` separate and unchanged, preserve existing flag assets, and keep Windows release files under `/var/www/languagevoicetutor/releases/windows/direct` separate.
+
+Use this section for the independent homepage only. It is separate from backend deployment, Website CMS Publish, and Windows installer/release upload.
 
 Critical paths:
 
@@ -47,25 +49,15 @@ Public website source files in this repository live under `site/public/`. Upload
 
 ### Pre-deployment diagnostics
 
-Check the nginx website root and release alias before uploading:
+Confirm the public website root and the separate Windows release alias before any homepage deployment:
 
 ```powershell
 ssh lvt-server "sudo nginx -T 2>/dev/null | sed -n '/server_name languagevoicetutor.com/,/}/p' | grep -E 'root /var/www/languagevoicetutor/site|alias /var/www/languagevoicetutor/releases/windows/direct'"
-```
-
-List the current website files from the correct website root:
-
-```powershell
 ssh lvt-server "find /var/www/languagevoicetutor/site -maxdepth 3 -type f | sort"
-```
-
-Verify the Windows release alias directory separately:
-
-```powershell
 ssh lvt-server "find /var/www/languagevoicetutor/releases/windows/direct -maxdepth 1 -type f | sort"
 ```
 
-Optional public alias verification before a website deploy:
+The first command is read-only confirmation that nginx serves the public site from `/var/www/languagevoicetutor/site` and maps `/releases/windows/direct/` separately to `/var/www/languagevoicetutor/releases/windows/direct`. The next commands list the current public-site and Windows-release files without changing either surface. Optional public Windows manifest verification remains available:
 
 ```powershell
 Invoke-WebRequest https://languagevoicetutor.com/releases/windows/direct/latest.json -UseBasicParsing
@@ -81,64 +73,55 @@ ssh lvt-server "backup=/var/www/languagevoicetutor/site.backup.$(date -u +%Y%m%d
 
 Keep the printed backup path for rollback.
 
-### Upload public website files
+### Install the homepage unit
 
-Historical broad static-site upload example — do not use this for the current independent-homepage architecture:
+Copy `index.html` and the complete `assets/homepage/**` tree to a staged location, then install both into `/var/www/languagevoicetutor/site` as one unit. Do not modify nginx during an ordinary homepage content deployment: the accepted canonical redirects already exist as production nginx configuration and are not Website CMS output or repository-managed deployment content.
 
-```powershell
-scp .\site\public\index.html lvt-server:/tmp/index.html
-scp .\site\public\styles.css lvt-server:/tmp/styles.css
-scp .\site\public\download.js lvt-server:/tmp/download.js
-ssh lvt-server "sudo mv /tmp/index.html /var/www/languagevoicetutor/site/index.html && sudo mv /tmp/styles.css /var/www/languagevoicetutor/site/styles.css"
-```
+### Cleanup after a confirmed wrong-root upload
 
-Upload landing images and their README to the landing assets directory under the correct nginx root:
+Use this only when diagnostics confirm that files were accidentally uploaded directly to `/var/www/languagevoicetutor/`, rather than its `/site` child. Do not remove `/var/www/languagevoicetutor/site` or `/var/www/languagevoicetutor/releases`; do not use this as a homepage deployment method. Remove only the confirmed misplaced files, for example:
 
 ```powershell
-ssh lvt-server "sudo mkdir -p /var/www/languagevoicetutor/site/assets/images/landing"
-scp .\site\public\assets\images\landing\windows-desktop.webp lvt-server:/tmp/windows-desktop.webp
-scp .\site\public\assets\images\landing\mobile.webp lvt-server:/tmp/mobile.webp
-scp .\site\public\assets\images\landing\README.md lvt-server:/tmp/landing-README.md
-ssh lvt-server "sudo mv /tmp/windows-desktop.webp /var/www/languagevoicetutor/site/assets/images/landing/windows-desktop.webp && sudo mv /tmp/mobile.webp /var/www/languagevoicetutor/site/assets/images/landing/mobile.webp && sudo mv /tmp/landing-README.md /var/www/languagevoicetutor/site/assets/images/landing/README.md"
-```
-
-Do not upload or move Windows installer files with these website commands. Windows installer release files stay in `/var/www/languagevoicetutor/releases/windows/direct`.
-
-### Cleanup if files were accidentally uploaded to the wrong root
-
-Only run this cleanup if diagnostics confirm accidental public website files were uploaded directly under `/var/www/languagevoicetutor/`. Do not remove `/var/www/languagevoicetutor/site` or `/var/www/languagevoicetutor/releases`.
-
-```powershell
-ssh lvt-server "sudo rm -f /var/www/languagevoicetutor/index.html /var/www/languagevoicetutor/download.html /var/www/languagevoicetutor/styles.css /var/www/languagevoicetutor/download.js && sudo rm -rf /var/www/languagevoicetutor/assets"
+ssh lvt-server "sudo rm -f /var/www/languagevoicetutor/index.html /var/www/languagevoicetutor/download.html /var/www/languagevoicetutor/styles.css /var/www/languagevoicetutor/download.js"
 ```
 
 ### Public verification
 
-Verify the website and landing assets over HTTPS after upload:
+Verify the root response and every required homepage resource over HTTPS. A compact PowerShell example is:
+
+```powershell
+$homepageAssets = Get-ChildItem .\site\public\assets\homepage -Recurse -File |
+  ForEach-Object { '/assets/homepage/' + $_.FullName.Substring((Resolve-Path .\site\public\assets\homepage).Path.Length + 1).Replace('\', '/') }
+
+(Invoke-WebRequest https://languagevoicetutor.com/ -UseBasicParsing).StatusCode
+$homepageAssets | ForEach-Object { (Invoke-WebRequest "https://languagevoicetutor.com$_" -UseBasicParsing).StatusCode }
+```
+
+The root and every listed homepage asset must return `200`. Compare the public `index.html` to the staged file when byte-for-byte release verification is required. Verify current canonical routing read-only; these checks are verification only, not instructions to edit nginx:
 
 ```powershell
 Invoke-WebRequest https://languagevoicetutor.com/ -UseBasicParsing
-Invoke-WebRequest https://languagevoicetutor.com/download.html -UseBasicParsing
-Invoke-WebRequest https://languagevoicetutor.com/assets/images/landing/windows-desktop.webp -UseBasicParsing
-Invoke-WebRequest https://languagevoicetutor.com/assets/images/landing/mobile.webp -UseBasicParsing
-Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
+Invoke-WebRequest https://languagevoicetutor.com/index.html -MaximumRedirection 0 -UseBasicParsing
+Invoke-WebRequest https://languagevoicetutor.com/ai-language-tutor -MaximumRedirection 0 -UseBasicParsing
+Invoke-WebRequest https://languagevoicetutor.com/ai-language-tutor/ -MaximumRedirection 0 -UseBasicParsing
+Invoke-WebRequest https://www.languagevoicetutor.com/example?source=check -MaximumRedirection 0 -UseBasicParsing
 ```
 
-The first four checks must return `200 OK`. The `latest.json` check must remain valid and should still show the intended Windows release metadata. Current verified manifest values are `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`.
+Require `/` to return `200`; `/index.html`, `/ai-language-tutor`, and `/ai-language-tutor/` to redirect to `/`; and `www` to redirect to the equivalent non-`www` HTTPS URL while preserving path and query.
 
-### Rollback public website files
+### Rollback the homepage unit
 
-Rollback uses the timestamped backup directory printed by the backup command. Replace `<backup-dir>` with that exact path:
+Rollback uses the timestamped backup directory printed by the backup command. Restore `index.html` and `assets/homepage/` together from the same backup; do not restore one without the other. Replace `<backup-dir>` with that exact path:
 
 ```powershell
-ssh lvt-server "sudo rsync -a --delete <backup-dir>/ /var/www/languagevoicetutor/site/"
+ssh -t lvt-server "set -eu; sudo cp -a '<backup-dir>/index.html' '/var/www/languagevoicetutor/site/index.html'; sudo rm -rf '/var/www/languagevoicetutor/site/assets/homepage'; if [ -d '<backup-dir>/assets/homepage' ]; then sudo cp -a '<backup-dir>/assets/homepage' '/var/www/languagevoicetutor/site/assets/homepage'; fi; echo HOMEPAGE_ROLLBACK=PASS"
 ```
 
 Re-run the public verification commands after rollback.
 
-### Resolved landing page deployment incident note
+### Historical wrong-root incident
 
-A landing page update was initially uploaded to `/var/www/languagevoicetutor/`, but nginx serves the public website from `/var/www/languagevoicetutor/site`. Because the files were in the wrong parent directory, the live homepage did not update and public requests for `download.html` plus landing assets returned 404. Diagnostics confirmed the real nginx root, confirmed `/releases/windows/direct/` is a separate alias to `/var/www/languagevoicetutor/releases/windows/direct/`, and confirmed that Windows release files should not be mixed with website files. The accidental files were removed from the wrong parent directory, then `index.html`, `download.html`, `styles.css`, `download.js`, the landing images, and the landing README were uploaded to `/var/www/languagevoicetutor/site`. Public verification then returned `200 OK` for the homepage, `download.html`, and both landing images, while `latest.json` remained valid.
+An earlier landing-page upload to `/var/www/languagevoicetutor/` did not update the public site because nginx serves `/var/www/languagevoicetutor/site`. Windows release files remained separately served from `/var/www/languagevoicetutor/releases/windows/direct`. This is operational history retained to prevent repeating the wrong-root upload; it does not authorize a broad static-site upload for the current independent homepage.
 
 
 ## Microsoft Store/MSIX prototype commands discontinued
@@ -436,7 +419,7 @@ Current production facts after backend `0.1.35-backend.108` and the 2026-07-02 c
 - 2026-07-02 controlled validation completed: real live payment Complete for Language Voice Tutor Pro at 14.99 EUR via Google Pay; live checkout transaction creation, `subscription.created`, `subscription.activated`, `transaction.completed`, payment persistence, subscription snapshot processing, reconciliation, entitlement activation (`ActivatedCount=1`, `BlockedCount=0`, `FailedCount=0`), and desktop Premium visibility were verified without exposing raw provider payloads or secrets. Earlier failed payment attempts were processed without Premium activation (`ActivatedCount=0` / `AlreadySkippedCount=1`). One PostgreSQL serialization conflict during subscription snapshot processing retried successfully and ended with `FailedCount=0`. Desktop cancel-renewal was verified: auto-renewal became inactive while Premium remained active until `8/2/2026`. Full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred and not a current blocker.
 - Controlled live payment, webhook delivery, payment persistence, subscription snapshot processing, entitlement activation, desktop Premium visibility, and desktop cancel-renewal behavior were completed and documented on 2026-07-02. Paddle full-refund Premium revocation is production-verified on backend `0.1.35-backend.108` using the already stored live `adjustment.updated` event; automatic future handling should use delivered `adjustment.created` / `adjustment.updated` notifications, with the operator reprocess command reserved for already-stored/legacy events only. Chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred and not a current blocker; broad public paid launch remains pending final release-readiness review and remaining release blockers.
 
-Static website upload command must target the real nginx root:
+Historical broad static-site upload command (not for the current independent homepage, which must deploy `index.html` with `assets/homepage/**`) targeted the real nginx root:
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\upload-static-site.ps1 `
