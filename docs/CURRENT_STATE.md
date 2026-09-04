@@ -2,6 +2,14 @@
 
 Review date: 2026-09-04.
 
+## 2026-09-04 consent-aware Google Analytics and backend `.155` production checkpoint
+
+Production backend `0.1.35-backend.155` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.155`, with `.154` retained for rollback. Accepted source commit `3821c02f284c291d47815157b97f906f4b4956d9` was deployed through the standard package, reviewed dry-run, and upload flow without an EF migration. `languagevoicetutor-backend.service` is active, and public `/health` plus `/api/health/database` returned HTTP 200.
+
+Website CMS remains the sole source of truth for `marketing.enableAnalytics`, `marketing.googleAnalyticsMeasurementId`, `marketing.enableConsentBanner`, and `marketing.enableAdsTracking`; Active and Draft marketing state were identical before rollout. Analytics and the consent banner are enabled, while Google Ads remains disabled with no Ads ID configured. CMS Publish owns `/marketing-consent.js`; its generated runtime supplies normalized CMS marketing values only as a fallback when `window.lvtMarketing` is absent, preserving the inline configuration on CMS pages. The independent `/index.html` remains separately deployed, contains no separately maintained GA ID, and consumes that same shared runtime using the `lvt_marketing_consent_v1` consent key.
+
+Google consent defaults to denied. The public first-visit/private-browsing flow displayed the consent banner; GA loaded only after analytics consent was accepted, and the accepted visit appeared in Google Analytics Realtime. Public runtime and homepage checks returned HTTP 200, confirmed fallback configuration and disabled Google Ads, and preserved the homepage SEO/social metadata plus protected sharing/logo/flag assets. The pre-rollout website backup is `/var/www/languagevoicetutor/site.backup.analytics.20260904T145622Z`.
+
 ## 2026-09-04 independent homepage SEO/social-preview production checkpoint
 
 The independent homepage at `https://languagevoicetutor.com/` completed its SEO/social-preview rollout from accepted metadata commit `f38f3e2b` through final externalization commit `2c4af26`. The former `26,776,039`-byte HTML document contained 33 inline base64 image URLs and approximately 3.2 MB of inline CSS; the same visual payloads were preserved as static homepage resources under `site/public/assets/homepage/`, leaving `site/public/index.html` at `37,930` bytes. The accepted canonical, title, standard description, robots, Open Graph, Twitter, and JSON-LD metadata remain in the lightweight homepage head. The public sharing logo remains the separate, unchanged `site/public/assets/brand/lvt-logo.png` (`/assets/brand/lvt-logo.png`).
@@ -10,9 +18,9 @@ Production verification found the local, remote, and public homepage SHA-256 val
 
 Canonical production routing remains nginx-managed and already verified: `/` returns HTTP 200; `/index.html`, `/ai-language-tutor`, and `/ai-language-tutor/` redirect to `https://languagevoicetutor.com/`; and the `www` host redirects to the equivalent non-`www` HTTPS URL while preserving path and query. This rollout did not deploy backend code, apply an EF migration, publish Website CMS content, change Mobile or billing, or redesign the protected sharing logo or decorative flag assets.
 
-## 2026-09-04 production AI model compatibility and backend `.154` checkpoint
+## 2026-09-04 historical AI model compatibility and backend `.154` checkpoint
 
-Production backend `0.1.35-backend.154` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.154`, with `/opt/languagevoicetutor/backend/releases/0.1.35-backend.153` retained as rollback. `.154` was deployed from source commit `f9479afa2dc7367e13cbe93174b2537b7b2bb68b` through the normal package, reviewed dry-run, and production upload flow. No EF migration was required. `languagevoicetutor-backend.service` is active, and public `/health` plus `/api/health/database` returned HTTP 200.
+At that earlier checkpoint, production backend `0.1.35-backend.154` was current with `.153` retained as rollback. `.154` was deployed from source commit `f9479afa2dc7367e13cbe93174b2537b7b2bb68b` through the normal package, reviewed dry-run, and production upload flow without an EF migration.
 
 The deployed compatibility sequence is: `.152` added four independent text-role **Omit temperature parameter** flags; `.153` corrected Lesson Summary to use the Lesson Tutor Chat effective temperature policy; and `.154` completed independent runtime model routing. A missing or `false` flag preserves the established behavior for that role, while `true` omits the `temperature` JSON property entirely. No model-name-based override is enabled automatically, and STT, TTS, and Realtime do not have these flags.
 
@@ -271,7 +279,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.154`, with `.153` retained as rollback. `.152` through `.154` required no EF migration; the prior Google Play, Restore Credentials, Backend Data Protection, and initial-deferral foundations remain deployed. Android v8 is publicly available in Google Play Production, while still-unobserved billing lifecycle paths remain post-release monitoring.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.155`, with `.154` retained as rollback. `.152` through `.155` required no EF migration; the prior Google Play, Restore Credentials, Backend Data Protection, and initial-deferral foundations remain deployed. Android v8 is publicly available in Google Play Production, while still-unobserved billing lifecycle paths remain post-release monitoring.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: Windows Direct Release 1.6 is available through the manifest-driven `/releases/windows/direct/latest.json` flow; the published manifest SHA-256 and size are verified facts, without a claimed independent second public-download hash. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Windows installer: current Windows direct public release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`; its update flow remains manual-confirmation and does not silently auto-update. The installed 1.5 -> 1.6 manual-confirmation update completed successfully.
@@ -301,7 +309,7 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-The current backend release is `0.1.35-backend.154`, with `.153` retained as rollback. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`; Google Play foundation migrations and `20260831080122_AddRestoreCredentialsFoundation` are applied. Public backend and database health returned HTTP 200; `.142` applied the additive Google Play trial-deferral foundation migration, while `.152`, `.153`, and `.154` required no migration. Backend Data Protection is enabled in production with its persistent key ring and active certificate outside release directories. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
+The current backend release is `0.1.35-backend.155`, with `.154` retained as rollback. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`; Google Play foundation migrations and `20260831080122_AddRestoreCredentialsFoundation` are applied. Public backend and database health returned HTTP 200; `.142` applied the additive Google Play trial-deferral foundation migration, while `.152` through `.155` required no migration. Backend Data Protection is enabled in production with its persistent key ring and active certificate outside release directories. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
 
 Backend deployment uses:
 
@@ -426,7 +434,7 @@ Markdown rendering supports headings, bold, italic, bullet lists, numbered lists
 
 ## Website CMS Marketing / SEO and public crawler readiness
 
-The Website CMS now includes a visible **Marketing / SEO** section. These settings are stored through the existing JSON/file-based Website CMS model; no database table, schema change, migration, backend secret, environment variable, or committed example JSON value is required for Google setup. Google Analytics, Google Ads, and Search Console values are optional public website configuration and must be entered only in Admin Website CMS when real owner-approved values exist. Do not put real Google IDs, conversion labels, Search Console tokens, script snippets, GTM container IDs, secrets, or placeholder example values into code, docs, env files, or committed JSON examples.
+The Website CMS now includes a visible **Marketing / SEO** section. These settings are stored through the existing JSON/file-based Website CMS model; no database table, schema change, migration, backend secret, environment variable, or committed example JSON value is required for Google setup. The generic Search Console token field remains available, but current `languagevoicetutor.com` ownership is already verified through DNS/domain-provider verification and does not use an HTML token or homepage `google-site-verification` meta tag. Do not put real Google IDs, conversion labels, script snippets, GTM container IDs, secrets, or placeholder example values into code, docs, env files, or committed JSON examples.
 
 Marketing / SEO fields:
 
@@ -443,23 +451,22 @@ Current safe CMS values before real Google setup:
 
 - Enable consent banner: ON
 - Enable llms.txt: ON
-- Enable analytics: OFF until a real GA4 Measurement ID is available
-- Google Analytics Measurement ID: empty until available
-- Enable ads tracking: OFF until real Google Ads values are available
-- Google Ads ID: empty until available
-- Google Ads download conversion label: empty until available
-- Google Search Console verification token: empty until Search Console property verification is started
+- Enable analytics: ON with a valid configured GA4 Measurement ID
+- Google Analytics Measurement ID: configured in Website CMS only
+- Enable ads tracking: OFF
+- Google Ads ID and download conversion label: empty
+- Google Search Console verification token: not used for the current production site; DNS/domain-provider ownership verification is complete
 
 Operator field guide:
 
 - Google Analytics Measurement ID: Google Analytics → Admin → Data streams → Web stream for `languagevoicetutor.com` → Measurement ID. Expected format: `G-XXXXXXXXXX`. Do not paste the example placeholder into CMS.
 - Google Ads ID: Google Ads → Goals / Conversions → selected website conversion action → Tag setup. Expected format: `AW-123456789`. Do not paste the example placeholder into CMS.
 - Google Ads download conversion label: same Google Ads conversion action setup; the label is specific to the download conversion action.
-- Google Search Console verification token: Search Console → add property for `https://languagevoicetutor.com/` → HTML tag verification. Copy only the value inside `content="..."`, not the full meta tag.
+- Google Search Console verification token: a generic CMS capability only; do not obtain or paste an HTML verification token for the current DNS-verified property, and do not add a homepage verification meta tag.
 - Do not paste whole Google script snippets into any of these fields.
 - Do not use GTM container IDs in the GA Measurement ID field unless the website code explicitly supports GTM later.
 
-Website Publish now emits or maintains public HTML pages, `robots.txt`, `sitemap.xml`, `llms.txt` when enabled, and `marketing-consent.js`. Public generated pages include canonical URLs, meta descriptions, Open Graph tags, Twitter card tags, JSON-LD where appropriate, and SoftwareApplication JSON-LD for the Windows desktop app only. Public pages must not claim Android/iOS availability and must not claim Microsoft Store, Google Play, or App Store availability.
+Website Publish now emits or maintains public HTML pages, `robots.txt`, `sitemap.xml`, `llms.txt` when enabled, and `marketing-consent.js`. The generated runtime is also the CMS-owned fallback configuration source for independent `index.html`; the homepage must not maintain a GA ID. Public generated pages include canonical URLs, meta descriptions, Open Graph tags, Twitter card tags, JSON-LD where appropriate, and SoftwareApplication JSON-LD for the Windows desktop app only.
 
 Consent and privacy readiness:
 
@@ -468,7 +475,7 @@ Consent and privacy readiness:
 - The banner supports Accept all, Reject non-essential, Manage choices, and a Privacy Policy link.
 - Privacy Policy includes optional analytics, advertising, and cookie consent disclosure.
 - The website remains usable when non-essential cookies are rejected.
-- Google Analytics / Google Ads scripts must not be emitted when IDs are empty or tracking is disabled.
+- GA starts only after permitted analytics consent; Google Ads remains disabled.
 
 Final verification caveats:
 
@@ -642,14 +649,14 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 ### Current release point
 
 - Windows direct release: `1.6`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.6.exe`, production backend URL, `minimumSupportedVersion=1.6`, and manual-confirmation update mode. The published manifest SHA-256 is `9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3` and size is `188959874` bytes; no independent second public-download SHA verification is claimed for 1.6.
-- Backend release in tracked release docs: current production is `0.1.35-backend.154`, with `.153` as rollback; `/health` and `/api/health/database` are verified healthy. Older backend references are historical and not current production unless a section is explicitly documenting those releases.
+- Backend release in tracked release docs: current production is `0.1.35-backend.155`, with `.154` as rollback; `/health` and `/api/health/database` are verified healthy. Older backend references are historical and not current production unless a section is explicitly documenting those releases.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`. Current Active text roles all use `gpt-5.6-luna`, with all four omit-temperature flags enabled; `.154` routes the four text roles independently and keeps Lesson Summary on the Lesson Tutor Chat model policy.
 
 ### What is ready, partial, and blocked
 
 Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, verified persistent AI Models production storage, Website CMS draft/publish mechanics, and documented secret boundaries.
 
-Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.154`, with `.153` retained as rollback and deploys, health checks, database health checks, and migrations kept as separate operations.
+Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.155`, with `.154` retained as rollback and deploys, health checks, database health checks, and migrations kept as separate operations.
 
 Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, final website/legal/support/pricing approval, monitoring/privacy/release-readiness review, and explicit release decision after controlled tester feedback. Controlled Paddle live payment/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed, but they are not a broad launch decision; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 

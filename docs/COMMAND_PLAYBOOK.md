@@ -4,7 +4,7 @@ Review date: 2026-09-04.
 
 ## CMS setup-localization draft import
 
-Current production baseline: backend `0.1.35-backend.154` is active, with `.153` retained as rollback; the live `current` and `previous` symlinks remain authoritative. Historical `.151` established the static-homepage/CMS-ownership architecture, which remains in force. `.152`, `.153`, and `.154` required no EF migration. CMS published version `51` remains active at runtime. The import procedure below remains for a future older draft only; it is not a pending production operation.
+Current production baseline: backend `0.1.35-backend.155` is active, with `.154` retained as rollback; the live `current` and `previous` symlinks remain authoritative. Historical `.151` established the static-homepage/CMS-ownership architecture, which remains in force. `.152` through `.155` required no EF migration. A Website CMS Publish occurred during the `.155` analytics rollout; verify the current published version from the CMS rather than assuming the earlier documented version `51` remains current. The import procedure below remains for a future older draft only; it is not a pending production operation.
 
 ## Source of truth for current versions
 
@@ -36,6 +36,8 @@ Generated local files under `artifacts/` are not proof that a version is live on
 The independent homepage deployment unit is `site/public/index.html` together with every required `site/public/assets/homepage/**` resource. Install those files together whenever `index.html` references them; a missing homepage asset is a failed deployment even if `/` returns HTTP 200. `mobile.html` remains the legacy `noindex,follow` redirect to `/`, and the still-valid independent `styles.css` remains preserved; neither is removed merely because the homepage now uses `assets/homepage/`.
 
 Website CMS Publish must not overwrite or delete `index.html`, `mobile.html`, `styles.css`, or `assets/homepage/**`. CMS ownership remains `download.html`, `pricing.html`, `support.html`, legal pages, `status.html`, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`. The independent homepage consumes that shared CMS marketing runtime; it must never contain a separately maintained GA Measurement ID, and an ordinary homepage deployment must not overwrite `marketing-consent.js`. Do not manually upload those CMS-owned files during the independent-homepage operation, broadly copy `site/public`, or use `scripts/upload-static-site.ps1` for this rollout. Keep the accepted sharing logo `/assets/brand/lvt-logo.png` separate and unchanged, preserve existing flag assets, and keep Windows release files under `/var/www/languagevoicetutor/releases/windows/direct` separate.
+
+When the shared analytics runtime changes, deploy in this order: backend release, Website CMS Publish to regenerate `marketing-consent.js`, independent homepage deployment when its HTML/CSS changed, then consent/runtime verification. Ordinary homepage deployment remains file-specific and must not overwrite `marketing-consent.js`.
 
 Use this section for the independent homepage only. It is separate from backend deployment, Website CMS Publish, and Windows installer/release upload.
 
@@ -286,7 +288,7 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; the documented current production release is `.154` with `.153` as rollback.
+Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; the documented current production release is `.155` with `.154` as rollback.
 
 Current milestone: CMS published-snapshot runtime is active for published Windows direct lessons. These checks must confirm the active CMS source and clean fallback state without changing release scope.
 
@@ -363,7 +365,7 @@ Rollback remains disabling or removing the CMS runtime flags and restarting the 
 
 ## Current controlled tester handoff checks after CMS runtime milestone
 
-Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.154`, the `previous` symlink points to `.153`, and the live public direct Windows manifest points to `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`. The live manifest is verified; no independent second public-download SHA verification is claimed for 1.6. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
+Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.155`, the `previous` symlink points to `.154`, and the live public direct Windows manifest points to `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`. The live manifest is verified; no independent second public-download SHA verification is claimed for 1.6. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
 
 Verify the public direct release manifest before handoff:
 
