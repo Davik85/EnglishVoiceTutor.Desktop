@@ -53,6 +53,7 @@ public sealed class OpenAiLessonHintService : ILessonHintService
     public async Task<LessonHintResponse> CreateHintAsync(LessonChatRequest request, CancellationToken cancellationToken = default)
     {
         var options = _optionsProvider.GetOptions();
+        var selectedModel = options.LessonHintModel;
 
         if (string.IsNullOrWhiteSpace(options.ApiKey))
         {
@@ -63,7 +64,7 @@ public sealed class OpenAiLessonHintService : ILessonHintService
         {
             var apiRequest = new OpenAiResponsesRequest
             {
-                Model = options.Model,
+                Model = selectedModel,
                 Instructions = OpenAiConstants.LessonHintSystemInstructions,
                 Input = _lessonPromptBuilder.BuildHintInput(request),
                 Text = new OpenAiTextOptions
@@ -78,7 +79,7 @@ public sealed class OpenAiLessonHintService : ILessonHintService
                 },
                 Temperature = AiTextModelTemperaturePolicy.Resolve(
                     AiTextModelRole.LessonHint,
-                    options.Model,
+                    selectedModel,
                     options.LessonHintOmitTemperature)
             };
 
@@ -101,7 +102,7 @@ public sealed class OpenAiLessonHintService : ILessonHintService
             {
                 UserId = _requestUserResolver.ResolveCurrentUser().UserId,
                 Operation = UsageConstants.Operations.LessonChatHint,
-                Model = options.Model,
+                Model = selectedModel,
                 StudyLanguage = ResolveStudyLanguage(request.TargetLanguageName, request.TargetLanguageId),
                 Status = UsageConstants.Statuses.Success,
                 EstimatedCost = 0m,

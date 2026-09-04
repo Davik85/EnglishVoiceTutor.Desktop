@@ -16,8 +16,10 @@ public sealed class AiTextModelRequestShapeTests
     [InlineData("", "gpt-5.5", false, false, null)]
     [InlineData("", "gpt-5.6-terra", true, false, null)]
     [InlineData("", "gpt-5.2", true, false, null)]
+    [InlineData("", "lesson-chat-distinct-model", true, false, null)]
     [InlineData("feedback", "gpt-5.2", false, false, 0.3)]
     [InlineData("feedback", "gpt-5.2", false, true, null)]
+    [InlineData("feedback", "feedback-distinct-model", false, true, null)]
     public async Task LessonAndFeedbackRuntimeRequestsPreserveLegacyPolicyUnlessTheirOverrideIsEnabled(
         string requestPurpose,
         string modelId,
@@ -27,11 +29,17 @@ public sealed class AiTextModelRequestShapeTests
     {
         var settings = AiModelSettings.Defaults with
         {
-            LessonTutorChatModel = modelId,
+            LessonTutorChatModel = string.Equals(requestPurpose, "feedback", StringComparison.OrdinalIgnoreCase)
+                ? "lesson-chat-distinct-model"
+                : modelId,
+            FeedbackCorrectionModel = string.Equals(requestPurpose, "feedback", StringComparison.OrdinalIgnoreCase)
+                ? modelId
+                : "feedback-distinct-model",
             LessonTutorChatOmitTemperature = lessonTutorOmitTemperature,
             FeedbackCorrectionOmitTemperature = feedbackOmitTemperature
         };
         var capture = new CapturingHttpClientFactory(CreateOutputEnvelope(CreateLessonReplyJson()));
+        var usage = new RecordingUsageEventService();
         var avatarProvider = new TutorAvatarProfileProvider(NullLogger<TutorAvatarProfileProvider>.Instance);
         var service = new OpenAiLessonChatService(
             CreateOptionsProvider(settings),
@@ -40,7 +48,7 @@ public sealed class AiTextModelRequestShapeTests
             new TutorIdentityGuard(NullLogger<TutorIdentityGuard>.Instance),
             capture,
             new FakeRequestUserResolver(),
-            new NoOpUsageEventService(),
+            usage,
             NullLogger<OpenAiLessonChatService>.Instance);
 
         await service.CreateReplyAsync(new LessonChatRequest
@@ -54,7 +62,8 @@ public sealed class AiTextModelRequestShapeTests
             RequestPurpose = requestPurpose
         }, CancellationToken.None);
 
-        AssertTemperature(capture.RequestBodies.Single(), expectedTemperature);
+        AssertRequest(capture.RequestBodies.Single(), modelId, expectedTemperature);
+        Assert.Equal(modelId, Assert.Single(usage.Records).Model);
     }
 
     [Theory]
@@ -64,11 +73,12 @@ public sealed class AiTextModelRequestShapeTests
     {
         var settings = AiModelSettings.Defaults with
         {
-            LessonTutorChatModel = "gpt-5.2-runtime",
-            LessonHintModel = "gpt-5.6-hint-draft",
+            LessonTutorChatModel = "lesson-chat-distinct-model",
+            LessonHintModel = "hint-distinct-model",
             LessonHintOmitTemperature = omitTemperature
         };
         var capture = new CapturingHttpClientFactory(CreateOutputEnvelope("{\"hintText\":\"Try a greeting.\"}"));
+        var usage = new RecordingUsageEventService();
         var avatarProvider = new TutorAvatarProfileProvider(NullLogger<TutorAvatarProfileProvider>.Instance);
         var service = new OpenAiLessonHintService(
             CreateOptionsProvider(settings),
@@ -76,7 +86,7 @@ public sealed class AiTextModelRequestShapeTests
             new LessonPromptBuilder(avatarProvider),
             capture,
             new FakeRequestUserResolver(),
-            new NoOpUsageEventService());
+            usage);
 
         await service.CreateHintAsync(new LessonChatRequest
         {
@@ -89,7 +99,8 @@ public sealed class AiTextModelRequestShapeTests
 
         var body = capture.RequestBodies.Single();
         AssertTemperature(body, null);
-        Assert.Equal("gpt-5.2-runtime", ReadModel(body));
+        Assert.Equal("hint-distinct-model", ReadModel(body));
+        Assert.Equal("hint-distinct-model", Assert.Single(usage.Records).Model);
     }
 
     [Theory]
@@ -99,16 +110,17 @@ public sealed class AiTextModelRequestShapeTests
     {
         var settings = AiModelSettings.Defaults with
         {
-            LessonTutorChatModel = "gpt-5.2-runtime",
-            TranslationModel = "gpt-5.6-translation-draft",
+            LessonTutorChatModel = "lesson-chat-distinct-model",
+            TranslationModel = "translation-distinct-model",
             TranslationOmitTemperature = omitTemperature
         };
         var capture = new CapturingHttpClientFactory(CreateOutputEnvelope("{\"translatedText\":\"Szia.\"}"));
+        var usage = new RecordingUsageEventService();
         var service = new TranslationService(
             CreateOptionsProvider(settings),
             capture,
             new DevUserProvider(),
-            new NoOpUsageEventService());
+            usage);
 
         await service.TranslateAsync(new TranslationRequest
         {
@@ -119,7 +131,8 @@ public sealed class AiTextModelRequestShapeTests
 
         var body = capture.RequestBodies.Single();
         AssertTemperature(body, null);
-        Assert.Equal("gpt-5.2-runtime", ReadModel(body));
+        Assert.Equal("translation-distinct-model", ReadModel(body));
+        Assert.Equal("translation-distinct-model", Assert.Single(usage.Records).Model);
     }
 
     [Theory]
@@ -251,8 +264,13 @@ public sealed class AiTextModelRequestShapeTests
         public ResolvedRequestUser ResolveCurrentUser() => new(Guid.NewGuid(), RequestUserResolver.AuthenticatedSource);
     }
 
-    private sealed class NoOpUsageEventService : IUsageEventService
+    private sealed class RecordingUsageEventService : IUsageEventService
     {
-        public Task TryRecordAsync(UsageEventRecord record, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public List<UsageEventRecord> Records { get; } = [];
+        public Task TryRecordAsync(UsageEventRecord record, CancellationToken cancellationToken = default)
+        {
+            Records.Add(record);
+            return Task.CompletedTask;
+        }
     }
 }

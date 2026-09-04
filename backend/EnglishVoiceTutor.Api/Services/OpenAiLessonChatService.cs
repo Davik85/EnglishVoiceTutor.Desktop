@@ -114,6 +114,10 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         }
 
         var operation = ResolveOperation(request.RequestPurpose);
+        var textRole = ResolveTextRole(request.RequestPurpose);
+        var selectedModel = textRole == AiTextModelRole.FeedbackCorrection
+            ? options.FeedbackCorrectionModel
+            : options.LessonTutorChatModel;
         LessonChatResponse? lessonReply = null;
         string? validationReason = null;
 
@@ -122,16 +126,16 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             OpenAiResponsesResponse openAiResponse;
             try
             {
-                openAiResponse = await SendResponsesApiRequestAsync(request, options, validationReason, cancellationToken);
+                openAiResponse = await SendResponsesApiRequestAsync(request, options, textRole, selectedModel, validationReason, cancellationToken);
             }
             catch (Exception ex)
             {
-                LogProviderCallFailure(ex, operation, request, options.Model);
+                LogProviderCallFailure(ex, operation, request, textRole, selectedModel);
                 throw;
             }
 
-            await TryRecordUsageAsync(operation, request, options.Model, openAiResponse, cancellationToken);
-            LogResponsesUsage(operation, request, options.Model, openAiResponse);
+            await TryRecordUsageAsync(operation, request, selectedModel, openAiResponse, cancellationToken);
+            LogResponsesUsage(operation, request, selectedModel, openAiResponse);
 
             if (TryParseLessonReply(openAiResponse, out lessonReply, out validationReason))
             {
@@ -141,7 +145,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             _logger.LogWarning(
                 "OpenAI lesson chat response invalid. Operation={Operation}; Model={Model}; ResponseId={ResponseId}; LessonId={LessonId}; UserTurnNumber={UserTurnNumber}; Attempt={Attempt}; MaxAttempts={MaxAttempts}; ValidationReason={ValidationReason}.",
                 operation,
-                options.Model,
+                selectedModel,
                 openAiResponse.Id,
                 request.LessonScenarioId,
                 request.UserTurnNumber,
@@ -155,7 +159,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             _logger.LogWarning(
                 "OpenAI lesson chat response invalid after retry. Operation={Operation}; Model={Model}; LessonId={LessonId}; UserTurnNumber={UserTurnNumber}; ValidationReason={ValidationReason}; SafeFallbackReturned=True.",
                 operation,
-                options.Model,
+                selectedModel,
                 request.LessonScenarioId,
                 request.UserTurnNumber,
                 validationReason ?? OpenAiResponseInvalidMessage);
@@ -172,7 +176,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         {
             _logger.LogWarning(
                 "AssistantOutputLanguageViolation Model={Model}; LessonId={LessonId}; Level={Level}; Topic={Topic}; Subtopic={Subtopic}; BotReplyLength={BotReplyLength}; LanguageSwitchRequest={LanguageSwitchRequest}.",
-                options.Model,
+                selectedModel,
                 request.LessonScenarioId,
                 string.IsNullOrWhiteSpace(request.Level) ? request.SelectedLevel : request.Level,
                 string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
@@ -198,13 +202,12 @@ public sealed class OpenAiLessonChatService : ILessonChatService
     private async Task<OpenAiResponsesResponse> SendResponsesApiRequestAsync(
         LessonChatRequest request,
         OpenAiOptions options,
+        AiTextModelRole textRole,
+        string selectedModel,
         string? previousValidationReason,
         CancellationToken cancellationToken)
     {
         var input = _lessonPromptBuilder.BuildInput(request);
-        var textRole = string.Equals(request.RequestPurpose, "feedback", StringComparison.OrdinalIgnoreCase)
-            ? AiTextModelRole.FeedbackCorrection
-            : AiTextModelRole.LessonTutorChat;
         var omitTemperature = textRole == AiTextModelRole.FeedbackCorrection
             ? options.FeedbackCorrectionOmitTemperature
             : options.LessonTutorChatOmitTemperature;
@@ -215,7 +218,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
         var apiRequest = new OpenAiResponsesRequest
         {
-            Model = options.Model,
+            Model = selectedModel,
             Instructions = OpenAiConstants.LessonReplySystemInstructions,
             Input = input,
             Text = new OpenAiTextOptions
@@ -228,7 +231,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
                     Schema = LessonChatResponseSchema
                 }
             },
-            Temperature = AiTextModelTemperaturePolicy.Resolve(textRole, options.Model, omitTemperature)
+            Temperature = AiTextModelTemperaturePolicy.Resolve(textRole, selectedModel, omitTemperature)
         };
 
         var httpClient = _httpClientFactory.CreateClient();
@@ -268,7 +271,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
     }
 
 
-    private void LogProviderCallFailure(Exception exception, string operation, LessonChatRequest request, string configuredModelId)
+    private void LogProviderCallFailure(Exception exception, string operation, LessonChatRequest request, AiTextModelRole textRole, string configuredModelId)
     {
         var statusCode = exception is OpenAiProviderRequestException providerException ? (int?)providerException.StatusCode : null;
         var safeCategory = exception is OpenAiProviderRequestException providerRequestException
@@ -285,8 +288,9 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
         _logger.LogError(
             exception,
-            "Lesson chat provider call failed. operation={Operation}; modelRole=lesson_tutor_chat; configuredModelId={ConfiguredModelId}; providerStatusCode={ProviderStatusCode}; safeCategory={SafeCategory}; providerErrorType={ProviderErrorType}; providerErrorCode={ProviderErrorCode}; providerErrorParam={ProviderErrorParam}; sanitizedProviderMessage={SanitizedProviderMessage}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
+            "Lesson chat provider call failed. operation={Operation}; modelRole={ModelRole}; configuredModelId={ConfiguredModelId}; providerStatusCode={ProviderStatusCode}; safeCategory={SafeCategory}; providerErrorType={ProviderErrorType}; providerErrorCode={ProviderErrorCode}; providerErrorParam={ProviderErrorParam}; sanitizedProviderMessage={SanitizedProviderMessage}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
             operation,
+            textRole == AiTextModelRole.FeedbackCorrection ? "feedback_correction" : "lesson_tutor_chat",
             configuredModelId,
             statusCode,
             safeCategory,
@@ -379,6 +383,11 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
         return UsageConstants.Operations.LessonChatReply;
     }
+
+    private static AiTextModelRole ResolveTextRole(string purpose) =>
+        string.Equals(purpose, "feedback", StringComparison.OrdinalIgnoreCase)
+            ? AiTextModelRole.FeedbackCorrection
+            : AiTextModelRole.LessonTutorChat;
 
     private static string? ResolveStudyLanguage(string? targetLanguageName, string? targetLanguageId)
     {

@@ -29,6 +29,10 @@ public sealed class OpenAiOptionsProvider
         {
             ApiKey = _apiKeyProvider(),
             Model = settings.LessonTutorChatModel,
+            LessonTutorChatModel = settings.LessonTutorChatModel,
+            FeedbackCorrectionModel = settings.FeedbackCorrectionModel,
+            LessonHintModel = settings.LessonHintModel,
+            TranslationModel = settings.TranslationModel,
             LessonTutorChatOmitTemperature = settings.LessonTutorChatOmitTemperature,
             FeedbackCorrectionOmitTemperature = settings.FeedbackCorrectionOmitTemperature,
             LessonHintOmitTemperature = settings.LessonHintOmitTemperature,

@@ -60,7 +60,7 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
     [InlineData("gpt-5.2", false, true)]
     [InlineData("gpt-5.5", false, false)]
     [InlineData("gpt-5.6-terra", true, false)]
-    [InlineData("ordinary-model", true, false)]
+    [InlineData("lesson-chat-distinct-model", true, false)]
     public async Task SummaryRequestUsesLessonTutorChatEffectiveTemperatureAndPersistsValidResponse(
         string modelId,
         bool omitTemperature,
@@ -71,13 +71,17 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         var settings = AiModelSettings.Defaults with
         {
             LessonTutorChatModel = modelId,
+            FeedbackCorrectionModel = "feedback-distinct-model",
+            LessonHintModel = "hint-distinct-model",
+            TranslationModel = "translation-distinct-model",
             LessonTutorChatOmitTemperature = omitTemperature
         };
         var httpClientFactory = new SingleResponseHttpClientFactory(TopLevelEnvelope(ValidSummaryJson));
+        var usage = new RecordingUsageEventService();
         var service = CreateGenerator(
             db,
             TopLevelEnvelope(ValidSummaryJson),
-            new RecordingUsageEventService(),
+            usage,
             new RecordingLogger<LessonSummaryGenerationService>(),
             settings,
             httpClientFactory);
@@ -98,6 +102,7 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
 
         var summary = await db.LessonSummaries.SingleAsync(item => item.SessionId == session.Id, TestContext.Current.CancellationToken);
         Assert.Equal("Good progress.", summary.Summary);
+        Assert.Equal(modelId, Assert.Single(usage.Records, item => item.Status == UsageConstants.Statuses.Success).Model);
     }
 
     [Fact]

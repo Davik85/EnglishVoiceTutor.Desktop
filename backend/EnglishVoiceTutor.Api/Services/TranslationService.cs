@@ -51,6 +51,7 @@ public sealed class TranslationService
         var targetLanguage = request.TargetLanguage.Trim();
         var sourceLanguage = string.IsNullOrWhiteSpace(request.SourceLanguageName) ? "English" : request.SourceLanguageName.Trim();
         var options = _optionsProvider.GetOptions();
+        var selectedModel = options.TranslationModel;
 
         if (string.IsNullOrWhiteSpace(options.ApiKey))
         {
@@ -59,12 +60,12 @@ public sealed class TranslationService
 
         try
         {
-            var openAiResponse = await SendResponsesApiRequestAsync(trimmedText, sourceLanguage, targetLanguage, options, cancellationToken);
+            var openAiResponse = await SendResponsesApiRequestAsync(trimmedText, sourceLanguage, targetLanguage, options, selectedModel, cancellationToken);
             await _usageEventService.TryRecordAsync(new UsageEventRecord
             {
                 UserId = _devUserProvider.GetDevUserId(),
                 Operation = UsageConstants.Operations.Translation,
-                Model = options.Model,
+                Model = selectedModel,
                 StudyLanguage = ResolveStudyLanguage(request.TargetLanguage),
                 Status = UsageConstants.Statuses.Success,
                 EstimatedCost = 0m,
@@ -102,11 +103,12 @@ public sealed class TranslationService
         string sourceLanguage,
         string targetLanguage,
         OpenAiOptions options,
+        string selectedModel,
         CancellationToken cancellationToken)
     {
         var apiRequest = new OpenAiResponsesRequest
         {
-            Model = options.Model,
+            Model = selectedModel,
             Instructions = OpenAiConstants.TranslationSystemInstructions,
             Input = string.Format(TranslationInputTemplate, sourceLanguage, targetLanguage, text),
             Text = new OpenAiTextOptions
@@ -121,7 +123,7 @@ public sealed class TranslationService
             },
             Temperature = AiTextModelTemperaturePolicy.Resolve(
                 AiTextModelRole.Translation,
-                options.Model,
+                selectedModel,
                 options.TranslationOmitTemperature)
         };
 

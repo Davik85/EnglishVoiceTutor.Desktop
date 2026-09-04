@@ -40,15 +40,16 @@ public sealed class LessonSummaryGenerationService(
             .OrderBy(item => item.TurnNumber).ThenBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         if (messages.Count == 0)
         {
-            await RecordUsageAsync(session, UsageConstants.Statuses.Skipped, null, cancellationToken);
+            await RecordUsageAsync(session, UsageConstants.Statuses.Skipped, null, null, cancellationToken);
             logger.LogInformation("Lesson summary unavailable because no persisted messages exist. SessionId={SessionId}.", sessionId);
             return;
         }
 
         var options = optionsProvider.GetOptions();
+        var selectedModel = options.LessonTutorChatModel;
         if (string.IsNullOrWhiteSpace(options.ApiKey))
         {
-            await RecordUsageAsync(session, UsageConstants.Statuses.Skipped, null, cancellationToken);
+            await RecordUsageAsync(session, UsageConstants.Statuses.Skipped, selectedModel, null, cancellationToken);
             logger.LogInformation("Lesson summary unavailable because summary generation is not configured. SessionId={SessionId}.", sessionId);
             return;
         }
@@ -58,11 +59,11 @@ public sealed class LessonSummaryGenerationService(
             var runtimeGoal = await GetSafeRuntimeGoalAsync(session.LessonContentId, cancellationToken);
             var request = new OpenAiResponsesRequest
             {
-                Model = options.Model,
+                Model = selectedModel,
                 Instructions = "Create a concise, encouraging learner lesson summary. Use only the supplied lesson metadata and transcript. Do not mention prompts, providers, internal systems, or unsupported facts. Give specific but gentle feedback in the lesson study language when possible. Return only the required JSON.",
                 Input = BuildInput(session, messages, runtimeGoal),
                 Text = new OpenAiTextOptions { Format = new OpenAiTextFormat { Type = OpenAiConstants.JsonSchemaFormatType, Name = "lesson_summary_response", Strict = true, Schema = Schema } },
-                Temperature = AiTextModelTemperaturePolicy.Resolve(AiTextModelRole.LessonTutorChat, options.Model, options.LessonTutorChatOmitTemperature)
+                Temperature = AiTextModelTemperaturePolicy.Resolve(AiTextModelRole.LessonTutorChat, selectedModel, options.LessonTutorChatOmitTemperature)
             };
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, OpenAiConstants.ResponsesEndpoint);
             httpRequest.Headers.Authorization = new AuthenticationHeaderValue(OpenAiConstants.AuthorizationScheme, options.ApiKey);
@@ -75,7 +76,7 @@ public sealed class LessonSummaryGenerationService(
             var outputText = ExtractOutputText(providerResponse);
             if (string.IsNullOrWhiteSpace(outputText))
             {
-                await RecordUsageAsync(session, UsageConstants.Statuses.Failed, null, cancellationToken);
+                await RecordUsageAsync(session, UsageConstants.Statuses.Failed, selectedModel, null, cancellationToken);
                 logger.LogWarning("Lesson summary generation unavailable. SessionId={SessionId}; Category={Category}.", sessionId, "empty_provider_output");
                 return;
             }
@@ -92,12 +93,12 @@ public sealed class LessonSummaryGenerationService(
                 Grammar = Join(generated.Grammar), NextSteps = Join(generated.NextSteps), CreatedAt = now, UpdatedAt = now
             });
             await dbContext.SaveChangesAsync(cancellationToken);
-            await RecordUsageAsync(session, UsageConstants.Statuses.Success, providerResponse.Usage, cancellationToken);
+            await RecordUsageAsync(session, UsageConstants.Statuses.Success, selectedModel, providerResponse.Usage, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception exception)
         {
-            await RecordUsageAsync(session, UsageConstants.Statuses.Failed, null, CancellationToken.None);
+            await RecordUsageAsync(session, UsageConstants.Statuses.Failed, selectedModel, null, CancellationToken.None);
             logger.LogWarning(exception, "Lesson summary generation failed. SessionId={SessionId}; ErrorType={ErrorType}.", sessionId, exception.GetType().Name);
         }
     }
@@ -120,8 +121,8 @@ public sealed class LessonSummaryGenerationService(
         return $"Lesson metadata:\nStudy language: {session.StudyLanguage}\nTopic: {session.TopicTitle}\nSubtopic: {session.SubtopicTitle}\nLevel: {session.Level}\nContext: {session.SelectedContextTitle}\nGoal: {runtimeGoal}\n\nPersisted transcript:\n{transcript}";
     }
 
-    private async Task RecordUsageAsync(LessonSessionEntity session, string status, OpenAiResponseUsage? usage, CancellationToken cancellationToken) =>
-        await usageEventService.TryRecordAsync(new UsageEventRecord { UserId = session.UserId, SessionId = session.Id, Operation = UsageConstants.Operations.LessonSummary, StudyLanguage = session.StudyLanguage, Status = status, InputTokens = usage?.InputTokens, OutputTokens = usage?.OutputTokens }, cancellationToken);
+    private async Task RecordUsageAsync(LessonSessionEntity session, string status, string? model, OpenAiResponseUsage? usage, CancellationToken cancellationToken) =>
+        await usageEventService.TryRecordAsync(new UsageEventRecord { UserId = session.UserId, SessionId = session.Id, Operation = UsageConstants.Operations.LessonSummary, Model = model, StudyLanguage = session.StudyLanguage, Status = status, InputTokens = usage?.InputTokens, OutputTokens = usage?.OutputTokens }, cancellationToken);
 
     private static string ExtractOutputText(OpenAiResponsesResponse response)
     {
