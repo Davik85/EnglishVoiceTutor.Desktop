@@ -1,10 +1,10 @@
 # Command Playbook
 
-Review date: 2026-09-03.
+Review date: 2026-09-04.
 
 ## CMS setup-localization draft import
 
-Production closeout: backend `0.1.35-backend.151` is active (with `.150` retained as rollback). `.151` contains the static-homepage/CMS-ownership architecture and required no EF migration. CMS published version `51` remains active at runtime. The import procedure below remains for a future older draft only; it is not a pending production operation.
+Current production baseline: backend `0.1.35-backend.154` is active, with `.153` retained as rollback; the live `current` and `previous` symlinks remain authoritative. Historical `.151` established the static-homepage/CMS-ownership architecture, which remains in force. `.152`, `.153`, and `.154` required no EF migration. CMS published version `51` remains active at runtime. The import procedure below remains for a future older draft only; it is not a pending production operation.
 
 ## Source of truth for current versions
 
@@ -303,7 +303,7 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; the documented current production release is `.148` with `.147` as rollback.
+Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; the documented current production release is `.154` with `.153` as rollback.
 
 Current milestone: CMS published-snapshot runtime is active for published Windows direct lessons. These checks must confirm the active CMS source and clean fallback state without changing release scope.
 
@@ -380,7 +380,7 @@ Rollback remains disabling or removing the CMS runtime flags and restarting the 
 
 ## Current controlled tester handoff checks after CMS runtime milestone
 
-Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.148` and the live public direct Windows manifest points to `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`. The live manifest is verified; no independent second public-download SHA verification is claimed for 1.6. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
+Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.154`, the `previous` symlink points to `.153`, and the live public direct Windows manifest points to `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`. The live manifest is verified; no independent second public-download SHA verification is claimed for 1.6. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
 
 Verify the public direct release manifest before handoff:
 
@@ -402,7 +402,7 @@ The active Windows release flow is Direct EXE/Inno plus the direct `latest.json`
 
 ## AI Models CMS post-deploy verification
 
-After a backend deploy, open **Admin CMS → System → AI Models → Load AI Models** as Super Admin. Confirm lesson tutor chat remains `gpt-5.5`; confirm feedback/correction, lesson hint, and translation remain `gpt-5.2`; run **Validate format**; run **Test provider access** only if model settings changed; and do not publish unless the changes are intentional. AI Models CMS JSON is persistent server data/config at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` resolved outside versioned backend release folders, not a packaged release artifact. The current production persistent file is verified, survived backend restart, and matched the release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`; future deploys must not use `/opt/languagevoicetutor/backend/current/site/content/ai-model-settings.json` or `/opt/languagevoicetutor/backend/releases/<version>/site/content/ai-model-settings.json` as the source of truth.
+After a backend deploy, open **Admin CMS → System → AI Models → Load AI Models** as Super Admin. Confirm Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation each remain `gpt-5.6-luna`; confirm all four **Omit temperature parameter** flags remain enabled; run **Validate format**; run **Test provider access** only if model settings changed; and do not publish unless the changes are intentional. AI Models CMS JSON is persistent server data/config at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` resolved outside versioned backend release folders, not a packaged release artifact. Historical persistence verification confirmed the file survived backend restart and matched its then-current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`; future deploys must not use `/opt/languagevoicetutor/backend/current/site/content/ai-model-settings.json` or `/opt/languagevoicetutor/backend/releases/<version>/site/content/ai-model-settings.json` as the source of truth.
 
 ## Do not mix release operations
 
@@ -427,7 +427,7 @@ Current production facts after backend `0.1.35-backend.108` and the 2026-07-02 c
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.
 - Backend current symlink is `/opt/languagevoicetutor/backend/current`; backend releases are under `/opt/languagevoicetutor/backend/releases/<version>`.
-- AI Models persistent server data remains `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; known-good models remain `gpt-5.5` for lesson tutor chat and `gpt-5.2` for feedback correction, lesson hints, and translation.
+- At that historical checkpoint, AI Models persistent server data remained `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; the then-known-good models were `gpt-5.5` for lesson tutor chat and `gpt-5.2` for feedback correction, lesson hints, and translation.
 - Static website nginx root is `/var/www/languagevoicetutor/site`. The parent `/var/www/languagevoicetutor` is not the nginx static-site root and must not be used as the static website upload target.
 - Public Paddle config is `/var/www/languagevoicetutor/site/paddle.public.json`; public Paddle checkout page is `/var/www/languagevoicetutor/site/pay.html`.
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.

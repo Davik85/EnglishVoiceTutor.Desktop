@@ -1,10 +1,12 @@
 # Backend server deployment
 
-Review date: 2026-09-03.
+Review date: 2026-09-04.
 
 ## Current production backend
 
-Production backend `0.1.35-backend.151` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.151`; `.150` is retained as the previous rollback release. `.151` was deployed through the normal repository flow from source line `f5fb15cb`, with no EF migration. Public `/health` and `/api/health/database` returned HTTP 200. Google Play Billing, RTDN, and reconciliation remain enabled; the Android Publisher credential plus persistent Data Protection key ring and active certificate remain outside versioned release directories. An unauthenticated POST to `/api/billing/webhooks/google-play/rtdn` returned HTTP 401, confirming the endpoint remains present and protected. Checked public legal/support URLs returned HTTP 200.
+Production backend `0.1.35-backend.154` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.154`; `.153` is retained as the previous rollback release. `.154` was deployed through the normal package -> dry-run -> reviewed production upload flow from source commit `f9479afa2dc7367e13cbe93174b2537b7b2bb68b`. No EF migration was required. `languagevoicetutor-backend.service` is active, and public `/health` plus `/api/health/database` returned HTTP 200. Google Play Billing, RTDN, and reconciliation remain enabled; the Android Publisher credential plus persistent Data Protection key ring and active certificate remain outside versioned release directories.
+
+Recent AI compatibility releases required no EF migration: `.152` added independent text-role omit-temperature overrides, `.153` corrected Lesson Summary to use the Lesson Tutor Chat effective-temperature policy, and `.154` completed independent runtime routing for Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation while intentionally keeping Lesson Summary on the Lesson Tutor Chat model. The current Active text-role configuration is `gpt-5.6-luna` for all four roles with all four omit-temperature flags enabled. `.153` production validation confirmed a successful Lesson Summary and no recurrence of the prior bounded summary failure messages; `.154` manual smoke confirmed lesson start/flow, Hint, and Translation. Distinct role-model routing is proven by automated request-shape tests because the current production model IDs are equal.
 
 Production backend is deployed and healthy.
 
@@ -37,8 +39,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.151`
-- Previous rollback release: `0.1.35-backend.150`
+- Current release: `0.1.35-backend.154`
+- Previous rollback release: `0.1.35-backend.153`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -54,7 +56,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.151`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.150`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.154`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.153`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 ## 2026-08-25 `.141` legacy product-limit removal deployment verification
 
@@ -246,9 +248,9 @@ Results: `dotnet test` passed `89/89`; all listed Python policy checks passed. T
 
 AI Models CMS active/draft runtime settings are persistent server data/config, not release artifacts. The configured `AiModelSettings:StorageJsonPath` defaults to `site/content/ai-model-settings.json` and is resolved outside the versioned release content root, so production stores it under the persistent backend data tree (`/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`) rather than `/opt/languagevoicetutor/backend/current/site/content/` or `/opt/languagevoicetutor/backend/releases/<version>/site/content/`. Backend startup/deploy must not overwrite an existing active settings file with packaged defaults, and future backend deploys must not rely on release-folder AI Models JSON as the source of truth. If the persistent file is missing but a legacy release-content file exists, the backend imports that file once; otherwise defaults seed the in-memory draft/active values until an admin saves or publishes.
 
-Current production verification: the persistent file exists at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`, was seeded from `/opt/languagevoicetutor/backend/current/site/content/ai-model-settings.json` only as a one-time data/config correction, has mode `644`, contains lesson tutor chat `gpt-5.5` plus feedback/correction, lesson hint, and translation `gpt-5.2`, and matched the current release file by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`. After restarting `languagevoicetutor-backend.service`, `/health` and `/api/health/database` returned `200 Healthy`, the persistent file still existed, and `gpt-5.5` plus `gpt-5.2` remained present. This correction was not a backend deploy, not a database migration, not a Website CMS publish, and not a Windows installer upload.
+Persistence verification: the persistent file exists at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`, was seeded from `/opt/languagevoicetutor/backend/current/site/content/ai-model-settings.json` only as a one-time data/config correction, has mode `644`, and survived a backend service restart. At that historical persistence checkpoint it contained `gpt-5.5` plus `gpt-5.2` and matched the then-current release file by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`. Current Active text-role values are now `gpt-5.6-luna` for Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation, with all four omit-temperature flags enabled. The persistence correction was not a backend deploy, database migration, Website CMS publish, or Windows installer upload.
 
-After backend deploy, Super Admin should verify **Admin CMS → System → AI Models → Load AI Models**: lesson tutor chat remains `gpt-5.5`; feedback/correction, lesson hint, and translation remain `gpt-5.2`; then run **Validate format**. Test provider access only if settings changed, and do not publish unless changes are intentional. API keys remain environment secrets and are never stored in AI Models CMS JSON.
+After backend deploy, Super Admin should verify **Admin CMS → System → AI Models → Load AI Models**: Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation each remain `gpt-5.6-luna`, and all four **Omit temperature parameter** flags remain enabled; then run **Validate format**. Test provider access only if settings changed, and do not publish unless changes are intentional. API keys remain environment secrets and are never stored in AI Models CMS JSON.
 
 ## Rollback
 
@@ -318,11 +320,11 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.151`; verified rollback target `.150` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.154`; verified rollback target `.153` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`.
-- AI Models: persistent production storage is verified and survived restart with known-good `gpt-5.5` / `gpt-5.2` values.
+- AI Models: persistent production storage is verified; all four Active text roles use `gpt-5.6-luna` with their omit-temperature flags enabled, and `.154` routes the roles independently at runtime.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: website legal/support/seller/AI/status pages are ready for owner/legal final review as drafts, not final legal advice.
 
