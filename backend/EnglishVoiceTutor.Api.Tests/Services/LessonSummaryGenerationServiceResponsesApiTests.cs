@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.LessonSessions;
 using EnglishVoiceTutor.Api.Contracts.Subscription;
@@ -53,6 +54,50 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         var summary = await db.LessonSummaries.SingleOrDefaultAsync(item => item.SessionId == session.Id, TestContext.Current.CancellationToken);
         Assert.NotNull(summary);
         Assert.Equal("Good progress.", summary!.Summary);
+    }
+
+    [Theory]
+    [InlineData("gpt-5.2", false, true)]
+    [InlineData("gpt-5.5", false, false)]
+    [InlineData("gpt-5.6-terra", true, false)]
+    [InlineData("ordinary-model", true, false)]
+    public async Task SummaryRequestUsesLessonTutorChatEffectiveTemperatureAndPersistsValidResponse(
+        string modelId,
+        bool omitTemperature,
+        bool expectsNumericTemperature)
+    {
+        await using var db = CreateDbContext();
+        var session = await SeedFinishedSessionWithMessageAsync(db);
+        var settings = AiModelSettings.Defaults with
+        {
+            LessonTutorChatModel = modelId,
+            LessonTutorChatOmitTemperature = omitTemperature
+        };
+        var httpClientFactory = new SingleResponseHttpClientFactory(TopLevelEnvelope(ValidSummaryJson));
+        var service = CreateGenerator(
+            db,
+            TopLevelEnvelope(ValidSummaryJson),
+            new RecordingUsageEventService(),
+            new RecordingLogger<LessonSummaryGenerationService>(),
+            settings,
+            httpClientFactory);
+
+        await service.TryGenerateForFinishedSessionAsync(session.Id, TestContext.Current.CancellationToken);
+
+        var requestBody = Assert.Single(httpClientFactory.RequestBodies);
+        using var requestJson = JsonDocument.Parse(requestBody);
+        Assert.Equal(modelId, requestJson.RootElement.GetProperty("model").GetString());
+        if (expectsNumericTemperature)
+        {
+            Assert.Equal(0.3, requestJson.RootElement.GetProperty("temperature").GetDouble());
+        }
+        else
+        {
+            Assert.False(requestJson.RootElement.TryGetProperty("temperature", out _));
+        }
+
+        var summary = await db.LessonSummaries.SingleAsync(item => item.SessionId == session.Id, TestContext.Current.CancellationToken);
+        Assert.Equal("Good progress.", summary.Summary);
     }
 
     [Fact]
@@ -125,8 +170,20 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
 
     public void Dispose() => Environment.SetEnvironmentVariable(OpenAiConstants.ApiKeyEnvironmentVariableName, _originalApiKey);
 
-    private static LessonSummaryGenerationService CreateGenerator(AppDbContext db, string providerEnvelope, RecordingUsageEventService usage, RecordingLogger<LessonSummaryGenerationService> logger) =>
-        new(db, new OpenAiOptionsProvider(new FakeAiModelSettingsService()), new SingleResponseHttpClientFactory(providerEnvelope), new EmptyRuntimeContentService(), usage, logger);
+    private static LessonSummaryGenerationService CreateGenerator(
+        AppDbContext db,
+        string providerEnvelope,
+        RecordingUsageEventService usage,
+        RecordingLogger<LessonSummaryGenerationService> logger,
+        AiModelSettings? settings = null,
+        SingleResponseHttpClientFactory? httpClientFactory = null) =>
+        new(
+            db,
+            new OpenAiOptionsProvider(new FakeAiModelSettingsService(settings)),
+            httpClientFactory ?? new SingleResponseHttpClientFactory(providerEnvelope),
+            new EmptyRuntimeContentService(),
+            usage,
+            logger);
 
     private static string TopLevelEnvelope(string outputText) =>
         "{\"id\":\"resp-top-level\",\"output_text\":" + System.Text.Json.JsonSerializer.Serialize(outputText) + ",\"output\":[]}";
@@ -155,12 +212,17 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
 
     private sealed class SingleResponseHttpClientFactory(string envelope) : IHttpClientFactory
     {
-        public HttpClient CreateClient(string name) => new(new SingleResponseHandler(envelope));
+        public List<string> RequestBodies { get; } = [];
+        public HttpClient CreateClient(string name) => new(new SingleResponseHandler(envelope, RequestBodies));
     }
 
-    private sealed class SingleResponseHandler(string envelope) : HttpMessageHandler
+    private sealed class SingleResponseHandler(string envelope, List<string> requestBodies) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(envelope, Encoding.UTF8, "application/json") });
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            requestBodies.Add(await request.Content!.ReadAsStringAsync(cancellationToken));
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(envelope, Encoding.UTF8, "application/json") };
+        }
     }
 
     private sealed class EmptyRuntimeContentService : ICmsRuntimeLessonContentService
@@ -182,9 +244,9 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) => Entries.Add((formatter(state, exception), exception));
     }
 
-    private sealed class FakeAiModelSettingsService : IAiModelSettingsService
+    private sealed class FakeAiModelSettingsService(AiModelSettings? settings = null) : IAiModelSettingsService
     {
-        public AiModelSettings GetActiveSettings() => AiModelSettings.Defaults;
+        public AiModelSettings GetActiveSettings() => settings ?? AiModelSettings.Defaults;
         public Task<AiModelSettingsResponse> GetAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<AiModelSettingsResponse> SaveDraftAsync(AiModelSettings draft, string? updatedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
         public AiModelSettingsValidationResponse Validate(AiModelSettings settings) => throw new NotSupportedException();

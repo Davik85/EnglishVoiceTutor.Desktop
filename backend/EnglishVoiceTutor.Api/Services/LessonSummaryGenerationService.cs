@@ -62,7 +62,7 @@ public sealed class LessonSummaryGenerationService(
                 Instructions = "Create a concise, encouraging learner lesson summary. Use only the supplied lesson metadata and transcript. Do not mention prompts, providers, internal systems, or unsupported facts. Give specific but gentle feedback in the lesson study language when possible. Return only the required JSON.",
                 Input = BuildInput(session, messages, runtimeGoal),
                 Text = new OpenAiTextOptions { Format = new OpenAiTextFormat { Type = OpenAiConstants.JsonSchemaFormatType, Name = "lesson_summary_response", Strict = true, Schema = Schema } },
-                Temperature = OpenAiLessonChatService.ResolveTemperature(options.Model)
+                Temperature = AiTextModelTemperaturePolicy.Resolve(AiTextModelRole.LessonTutorChat, options.Model, options.LessonTutorChatOmitTemperature)
             };
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, OpenAiConstants.ResponsesEndpoint);
             httpRequest.Headers.Authorization = new AuthenticationHeaderValue(OpenAiConstants.AuthorizationScheme, options.ApiKey);
