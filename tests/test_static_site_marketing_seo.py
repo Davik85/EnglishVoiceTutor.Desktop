@@ -74,6 +74,16 @@ def _logo_url(logo):
 
 def test_independent_homepage_has_root_social_and_application_seo_metadata():
     raw_html = (PUBLIC / "index.html").read_bytes()
+    assert len(raw_html) < 1_000_000
+    for metadata_token in [
+        b"og:title",
+        b"og:description",
+        b"og:url",
+        b"og:image",
+        b"twitter:image",
+    ]:
+        offset = raw_html.lower().find(metadata_token)
+        assert 0 <= offset < 32 * 1024
     body_offset = raw_html.lower().find(b"<body")
     assert body_offset >= 0
     head_html = raw_html[:body_offset].decode("utf-8")
