@@ -1,10 +1,22 @@
 # Current State
 
-Review date: 2026-09-04.
+Review date: 2026-09-09.
+
+## 2026-09-09 multilingual Lesson Hint backend `.156` and Android v9 public-production checkpoint
+
+Production backend `0.1.35-backend.156` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.156`, with `.155` retained for rollback. Accepted source commit `f72492bfa8399f1622c0084ac9294325222d0b13` (`Fix lesson hint study language handling`) was deployed through the normal package -> reviewed dry-run -> production upload flow without an EF migration. `languagevoicetutor-backend.service` is active/running; `/health` returned HTTP 200, and `/api/health/database` returned HTTP 200 with `canConnect=true`. Rollback was not required.
+
+The Lesson Hint defect had three backend-owned causes: its system instruction retained a legacy English-only rule, its request input omitted the explicit target-study-language block already used by normal Lesson Chat, and its deterministic fallback always returned one English sentence containing an invented personal name. `.156` removes the English-only requirement, requires Hint output only in the selected target study language, reuses the existing explicit target-study-language prompt block, and supplies deterministic learner-facing fallbacks for English, French, German, Portuguese, Spanish, and Italian. Missing or unknown study-language ids remain compatible with the existing English default. The public Hint route and JSON contract are unchanged.
+
+Pre-deploy verification passed with 19 focused Hint tests, zero failures or skips; the backend Release build completed with zero warnings and errors; and `git diff --check` passed. Android `0.1.0+9` / versionCode 9 was then used against production `.156`; manual checks on several non-English study languages confirmed that repeated Hint requests remained in the selected study language. The production multilingual Hint regression is considered fixed.
+
+Admin CMS AI Models were verified after deployment: Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation all remain `gpt-5.6-luna`, with all four **Omit temperature parameter** flags enabled. No AI Models setting was edited or published as part of `.156`. The release changed no authentication, authorization, subscription, Google Play Billing, Paddle, RTDN, reconciliation, database schema/data, CMS published content, Mobile code, normal Lesson Chat behavior, Feedback, Realtime / Conversation mode, model selection, temperature setting, or production configuration.
+
+Android `0.1.0+9` / versionCode 9 is publicly available in Google Play Production. Its source version bump is commit `0af802958a6a42116ecc1d8084ebdecc12e11406`, and it includes the Free Conversation regression correction from `fefbac3f366920b980f831ddd55c18e2734471a0`. The dated v8 publication and Restore Credentials evidence below remains historical and is not relabeled as v9 validation.
 
 ## 2026-09-04 consent-aware Google Analytics and backend `.155` production checkpoint
 
-Production backend `0.1.35-backend.155` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.155`, with `.154` retained for rollback. Accepted source commit `3821c02f284c291d47815157b97f906f4b4956d9` was deployed through the standard package, reviewed dry-run, and upload flow without an EF migration. `languagevoicetutor-backend.service` is active, and public `/health` plus `/api/health/database` returned HTTP 200.
+At this 2026-09-04 checkpoint, production backend `0.1.35-backend.155` was current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.155`, with `.154` retained for rollback. Accepted source commit `3821c02f284c291d47815157b97f906f4b4956d9` was deployed through the standard package, reviewed dry-run, and upload flow without an EF migration. `languagevoicetutor-backend.service` was active, and public `/health` plus `/api/health/database` returned HTTP 200.
 
 Website CMS remains the sole source of truth for `marketing.enableAnalytics`, `marketing.googleAnalyticsMeasurementId`, `marketing.enableConsentBanner`, and `marketing.enableAdsTracking`; Active and Draft marketing state were identical before rollout. Analytics and the consent banner are enabled, while Google Ads remains disabled with no Ads ID configured. CMS Publish owns `/marketing-consent.js`; its generated runtime supplies normalized CMS marketing values only as a fallback when `window.lvtMarketing` is absent, preserving the inline configuration on CMS pages. The independent `/index.html` remains separately deployed, contains no separately maintained GA ID, and consumes that same shared runtime using the `lvt_marketing_consent_v1` consent key.
 
@@ -279,7 +291,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.155`, with `.154` retained as rollback. `.152` through `.155` required no EF migration; the prior Google Play, Restore Credentials, Backend Data Protection, and initial-deferral foundations remain deployed. Android v8 is publicly available in Google Play Production, while still-unobserved billing lifecycle paths remain post-release monitoring.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.156`, with `.155` retained as rollback. `.152` through `.156` required no EF migration; the prior Google Play, Restore Credentials, Backend Data Protection, and initial-deferral foundations remain deployed. Android v9 is publicly available in Google Play Production, while still-unobserved billing lifecycle paths remain post-release monitoring.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: Windows Direct Release 1.6 is available through the manifest-driven `/releases/windows/direct/latest.json` flow; the published manifest SHA-256 and size are verified facts, without a claimed independent second public-download hash. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Windows installer: current Windows direct public release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`; its update flow remains manual-confirmation and does not silently auto-update. The installed 1.5 -> 1.6 manual-confirmation update completed successfully.
@@ -309,7 +321,7 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-The current backend release is `0.1.35-backend.155`, with `.154` retained as rollback. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`; Google Play foundation migrations and `20260831080122_AddRestoreCredentialsFoundation` are applied. Public backend and database health returned HTTP 200; `.142` applied the additive Google Play trial-deferral foundation migration, while `.152` through `.155` required no migration. Backend Data Protection is enabled in production with its persistent key ring and active certificate outside release directories. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
+The current backend release is `0.1.35-backend.156`, with `.155` retained as rollback. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`; Google Play foundation migrations and `20260831080122_AddRestoreCredentialsFoundation` are applied. Public backend and database health returned HTTP 200; `.142` applied the additive Google Play trial-deferral foundation migration, while `.152` through `.156` required no migration. Backend Data Protection is enabled in production with its persistent key ring and active certificate outside release directories. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
 
 Backend deployment uses:
 
@@ -649,14 +661,14 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 ### Current release point
 
 - Windows direct release: `1.6`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.6.exe`, production backend URL, `minimumSupportedVersion=1.6`, and manual-confirmation update mode. The published manifest SHA-256 is `9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3` and size is `188959874` bytes; no independent second public-download SHA verification is claimed for 1.6.
-- Backend release in tracked release docs: current production is `0.1.35-backend.155`, with `.154` as rollback; `/health` and `/api/health/database` are verified healthy. Older backend references are historical and not current production unless a section is explicitly documenting those releases.
+- Backend release in tracked release docs: current production is `0.1.35-backend.156`, with `.155` as rollback; `/health` and `/api/health/database` are verified healthy. Older backend references are historical and not current production unless a section is explicitly documenting those releases.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`. Current Active text roles all use `gpt-5.6-luna`, with all four omit-temperature flags enabled; `.154` routes the four text roles independently and keeps Lesson Summary on the Lesson Tutor Chat model policy.
 
 ### What is ready, partial, and blocked
 
 Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, verified persistent AI Models production storage, Website CMS draft/publish mechanics, and documented secret boundaries.
 
-Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.155`, with `.154` retained as rollback and deploys, health checks, database health checks, and migrations kept as separate operations.
+Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.156`, with `.155` retained as rollback and deploys, health checks, database health checks, and migrations kept as separate operations.
 
 Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, final website/legal/support/pricing approval, monitoring/privacy/release-readiness review, and explicit release decision after controlled tester feedback. Controlled Paddle live payment/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed, but they are not a broad launch decision; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 

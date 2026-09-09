@@ -1,12 +1,14 @@
 # Backend server deployment
 
-Review date: 2026-09-04.
+Review date: 2026-09-09.
 
 ## Current production backend
 
-Production backend `0.1.35-backend.155` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.155`; `.154` is retained as the previous rollback release. `.155` was deployed through the normal package -> dry-run -> reviewed production upload flow from source commit `3821c02f284c291d47815157b97f906f4b4956d9`. No EF migration was required. `.155` adds the CMS-generated shared analytics fallback that lets independent `index.html` consume the existing consent runtime without maintaining a GA ID. `languagevoicetutor-backend.service` is active, and public `/health` plus `/api/health/database` returned HTTP 200. Google Play Billing, RTDN, and reconciliation remain enabled; the Android Publisher credential plus persistent Data Protection key ring and active certificate remain outside versioned release directories.
+Production backend `0.1.35-backend.156` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.156`; `.155` is retained as the previous rollback release. `.156` was deployed through the normal package -> reviewed dry-run -> production upload flow from source commit `f72492bfa8399f1622c0084ac9294325222d0b13` (`Fix lesson hint study language handling`). No EF migration was required. The release removes the legacy English-only Lesson Hint instruction, adds the existing explicit target-study-language block to Hint input, and makes deterministic Hint fallback language-aware for all six supported study languages while retaining English for missing or unknown ids. The public Hint route and JSON contract are unchanged.
 
-Recent AI compatibility releases required no EF migration: `.152` added independent text-role omit-temperature overrides, `.153` corrected Lesson Summary to use the Lesson Tutor Chat effective-temperature policy, and `.154` completed independent runtime routing for Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation while intentionally keeping Lesson Summary on the Lesson Tutor Chat model. The current Active text-role configuration is `gpt-5.6-luna` for all four roles with all four omit-temperature flags enabled. `.153` production validation confirmed a successful Lesson Summary and no recurrence of the prior bounded summary failure messages; `.154` manual smoke confirmed lesson start/flow, Hint, and Translation. Distinct role-model routing is proven by automated request-shape tests because the current production model IDs are equal.
+Pre-deploy verification passed with 19 focused Hint tests, zero failures or skips; the backend Release build completed with zero warnings and errors; and `git diff --check` passed. After deployment, `languagevoicetutor-backend.service` was active/running, `/health` returned HTTP 200, and `/api/health/database` returned HTTP 200 with `canConnect=true`. Android v9 manual production checks on several non-English study languages confirmed that repeated Hint requests remained in the selected language; rollback was not required. Google Play Billing, RTDN, and reconciliation remain enabled, and no authentication, authorization, subscription, billing, Paddle, database, CMS-published-content, Mobile, model-selection, temperature, or production-configuration change was part of `.156`.
+
+Recent AI compatibility releases required no EF migration: `.152` added independent text-role omit-temperature overrides, `.153` corrected Lesson Summary to use the Lesson Tutor Chat effective-temperature policy, and `.154` completed independent runtime routing for Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation while intentionally keeping Lesson Summary on the Lesson Tutor Chat model. The current Active text-role configuration remains `gpt-5.6-luna` for all four roles with all four omit-temperature flags enabled; Admin CMS verification after `.156` confirmed those values, and no AI Models setting was edited or published. `.153` production validation confirmed a successful Lesson Summary and no recurrence of the prior bounded summary failure messages; `.154` manual smoke confirmed lesson start/flow, Hint, and Translation. Distinct role-model routing is proven by automated request-shape tests because the current production model IDs are equal.
 
 Production backend is deployed and healthy.
 
@@ -39,8 +41,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.155`
-- Previous rollback release: `0.1.35-backend.154`
+- Current release: `0.1.35-backend.156`
+- Previous rollback release: `0.1.35-backend.155`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -56,7 +58,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.155`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.154`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.156`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.155`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 ## 2026-08-25 `.141` legacy product-limit removal deployment verification
 
@@ -320,7 +322,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.155`; verified rollback target `.154` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.156`; verified rollback target `.155` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`.
