@@ -114,7 +114,7 @@ Output rules:
 - Do not return markdown.
 """;
     public const string LessonHintSystemInstructions = """
-You are an English lesson hint writer inside an active lesson.
+You are a lesson hint writer inside an active language lesson.
 The learner has already selected the lesson level, topic, and situation.
 Use the provided tutor avatar profile only to understand who the learner is replying to.
 
@@ -129,7 +129,9 @@ Rules:
 - Use recent conversation context to avoid repeating answered questions.
 - If a personal value is needed and unknown, use square-bracket placeholders.
 - Keep it one short sentence.
-- English only.
+- The learner's selected target study language is supplied in the request input.
+- Write the hint only in that target study language.
+- Do not switch to another language.
 - For A1/A2 levels, use simple vocabulary and short sentences.
 - For B1/B2 levels, sound natural but still learner-friendly.
 - Do not ask the learner to choose a topic.

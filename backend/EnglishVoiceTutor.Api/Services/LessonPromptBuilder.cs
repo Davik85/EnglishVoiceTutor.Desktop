@@ -298,6 +298,7 @@ public sealed class LessonPromptBuilder
         var avatarProfile = ResolveRequestTutorProfile(request, _avatarProfileProvider.GetById(request.TutorAvatarId));
 
         AppendLessonContext(prompt, request, avatarProfile, includeNativeLanguage: false);
+        AppendTargetStudyLanguage(prompt, request);
         AppendCmsPromptTemplates(prompt, request);
         AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode);
         AppendAvatarProfile(prompt, avatarProfile);
