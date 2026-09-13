@@ -106,6 +106,35 @@ class _HomepageHeadParser(HTMLParser):
             self._json_parts = None
 
 
+class _HomepageLanguageLinkParser(HTMLParser):
+    _VOID_ELEMENTS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.links = {"language-strip": [], "language-box": []}
+        self._open_elements = []
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+        classes = set(attributes.get("class", "").split())
+        group = next((name for name in self.links if name in classes), None)
+
+        if tag == "a" and attributes.get("href"):
+            for _, parent_group in reversed(self._open_elements):
+                if parent_group is not None:
+                    self.links[parent_group].append(attributes["href"])
+                    break
+
+        if tag not in self._VOID_ELEMENTS:
+            self._open_elements.append((tag, group))
+
+    def handle_endtag(self, tag):
+        for index in range(len(self._open_elements) - 1, -1, -1):
+            if self._open_elements[index][0] == tag:
+                del self._open_elements[index:]
+                break
+
+
 def _meta_values(parser, attribute, key):
     return [meta.get("content") for meta in parser.metas if meta.get(attribute) == key]
 
@@ -207,6 +236,11 @@ def test_language_practice_pages_have_focused_static_seo_and_download_paths():
 
 
 def test_independent_homepage_has_root_social_and_application_seo_metadata():
+    homepage_title = "AI Speaking Practice in 6 Languages | Orralen"
+    homepage_description = (
+        "Practice English, French, German, Spanish, Italian and Portuguese with an AI tutor. "
+        "Speak or type, get corrections, and train at CEFR levels A1–B2."
+    )
     raw_html = (PUBLIC / "index.html").read_bytes()
     assert len(raw_html) < 1_000_000
     for metadata_token in [
@@ -231,12 +265,12 @@ def test_independent_homepage_has_root_social_and_application_seo_metadata():
         if "canonical" in link.get("rel", "").lower().split()
     ]
     assert canonicals == ["https://languagevoicetutor.com/"]
-    assert parser.titles == [
-        "AI Language Tutor for Speaking Practice & Real Conversations | Language Voice Tutor"
-    ]
-    assert _meta_values(parser, "name", "description") == [
-        "Practice English, French, German, Spanish, Italian, and Portuguese with an AI language tutor. Improve speaking through realistic voice and text conversations, CEFR levels A1–B2, guided lessons, and instant corrections."
-    ]
+    assert parser.titles == [homepage_title]
+    assert _meta_values(parser, "name", "description") == [homepage_description]
+    assert _meta_values(parser, "property", "og:title") == [homepage_title]
+    assert _meta_values(parser, "property", "og:description") == [homepage_description]
+    assert _meta_values(parser, "name", "twitter:title") == [homepage_title]
+    assert _meta_values(parser, "name", "twitter:description") == [homepage_description]
     assert _meta_values(parser, "name", "robots") == [
         "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
     ]
@@ -273,6 +307,8 @@ def test_independent_homepage_has_root_social_and_application_seo_metadata():
         nodes, "WebPage", "https://languagevoicetutor.com/#webpage"
     )
     assert webpage["url"] == "https://languagevoicetutor.com/"
+    assert webpage["name"] == homepage_title
+    assert webpage["description"] == homepage_description
     assert {item["@id"] for item in webpage["mainEntity"]} == {
         "https://languagevoicetutor.com/#windows-app",
         "https://languagevoicetutor.com/#android-app",
@@ -295,6 +331,15 @@ def test_independent_homepage_has_root_social_and_application_seo_metadata():
         assert _logo_url(organization["logo"]) == (
             "https://languagevoicetutor.com/assets/brand/lvt-logo.png"
         )
+
+
+def test_independent_homepage_language_selectors_link_to_practice_pages():
+    parser = _HomepageLanguageLinkParser()
+    parser.feed((PUBLIC / "index.html").read_text(encoding="utf-8"))
+
+    expected_links = [f"/{name}" for name in EXPECTED_LANGUAGE_PRACTICE_PAGES]
+    assert parser.links["language-strip"] == expected_links
+    assert parser.links["language-box"] == expected_links
 
 
 def test_google_tags_are_optional_sanitized_and_consent_denied_by_default():
