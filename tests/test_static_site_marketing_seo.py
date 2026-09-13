@@ -72,6 +72,14 @@ def _logo_url(logo):
     return logo if isinstance(logo, str) else logo.get("url") or logo.get("contentUrl")
 
 
+def test_independent_homepage_references_external_stylesheet_once():
+    stylesheet_href = "/assets/homepage/index.css"
+    index = (PUBLIC / "index.html").read_text(encoding="utf-8")
+
+    assert index.count(stylesheet_href) == 1
+    assert (PUBLIC / stylesheet_href.removeprefix("/")).is_file()
+
+
 def test_independent_homepage_has_root_social_and_application_seo_metadata():
     raw_html = (PUBLIC / "index.html").read_bytes()
     assert len(raw_html) < 1_000_000
