@@ -163,16 +163,16 @@ def _logo_url(logo):
 
 
 def test_independent_homepage_references_external_stylesheet_once():
-    stylesheet_href = "/assets/homepage/index.css"
+    stylesheet_href = "/assets/homepage/index.css?v=20260913-visual3"
     index = (PUBLIC / "index.html").read_text(encoding="utf-8")
 
     assert index.count(stylesheet_href) == 1
-    assert (PUBLIC / stylesheet_href.removeprefix("/")).is_file()
+    assert (PUBLIC / stylesheet_href.split("?", 1)[0].removeprefix("/")).is_file()
 
 
 def test_language_practice_pages_have_focused_static_seo_and_download_paths():
-    stylesheet_href = "/assets/homepage/index.css"
-    practice_stylesheet_href = "/assets/homepage/language-practice.css"
+    stylesheet_href = "/assets/homepage/index.css?v=20260913-visual3"
+    practice_stylesheet_href = "/assets/homepage/language-practice.css?v=20260913-visual3"
     consent_runtime = 'src="/marketing-consent.js?v=marketing-seo"'
     google_play_url = "https://play.google.com/store/apps/details?id=com.languagevoicetutor.mobile"
     windows_url = "https://languagevoicetutor.com/download.html"
@@ -254,7 +254,7 @@ def test_language_practice_pages_have_focused_static_seo_and_download_paths():
     assert len(canonicals) == len(set(canonicals)) == 6
     assert all((PUBLIC / image_path.removeprefix("/")).is_file() for image_path in product_image_paths)
 
-    practice_css = (PUBLIC / practice_stylesheet_href.removeprefix("/")).read_text(encoding="utf-8")
+    practice_css = (PUBLIC / practice_stylesheet_href.split("?", 1)[0].removeprefix("/")).read_text(encoding="utf-8")
     assert "practice-dialogue::before" in practice_css
     assert 'url("/assets/homepage/people/lana.jpg")' in practice_css
     assert 'url("/assets/homepage/devices/mobile-app.jpg")' in practice_css
@@ -264,10 +264,11 @@ def test_language_practice_pages_have_focused_static_seo_and_download_paths():
     assert ".practice-tutors" not in practice_css
     assert ".practice-tutor-row" not in practice_css
     assert ".practice-section__intro::before" not in practice_css
-    assert "margin: 0 auto 34px;" in practice_css
-    assert "text-align: center;" in practice_css
+    assert ".practice-card::before" not in practice_css
+    assert ".practice-card:nth-child" not in practice_css
+    assert ".practice-section__intro {\n  max-width: 780px;\n  margin: 0 auto 34px;\n  text-align: center;\n}" in practice_css
 
-    homepage_css = (PUBLIC / stylesheet_href.removeprefix("/")).read_text(encoding="utf-8")
+    homepage_css = (PUBLIC / stylesheet_href.split("?", 1)[0].removeprefix("/")).read_text(encoding="utf-8")
     assert ".language-strip .lang:hover .flag-icon" in homepage_css
     assert ".language-strip .lang:focus-visible .flag-icon" in homepage_css
     assert "transform:scale(1.12)" in homepage_css
