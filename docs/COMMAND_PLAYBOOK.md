@@ -1,10 +1,10 @@
 # Command Playbook
 
-Review date: 2026-09-04.
+Review date: 2026-09-13.
 
 ## CMS setup-localization draft import
 
-Current production baseline: backend `0.1.35-backend.155` is active, with `.154` retained as rollback; the live `current` and `previous` symlinks remain authoritative. Historical `.151` established the static-homepage/CMS-ownership architecture, which remains in force. `.152` through `.155` required no EF migration. A Website CMS Publish occurred during the `.155` analytics rollout; verify the current published version from the CMS rather than assuming the earlier documented version `51` remains current. The import procedure below remains for a future older draft only; it is not a pending production operation.
+Current production baseline: backend `0.1.35-backend.157` is active, with `.156` retained as rollback; the live `current` and `previous` symlinks remain authoritative. `.157` added the Website CMS sitemap-generator update for the six language-practice URLs and required no EF migration. Historical `.151` established the static-homepage/CMS-ownership architecture, which remains in force. The import procedure below remains for a future older draft only; it is not a pending production operation.
 
 ## Source of truth for current versions
 
@@ -31,15 +31,15 @@ Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBas
 
 Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
 
-## Independent homepage deployment
+## Independent static marketing and SEO deployment
 
-The independent homepage deployment unit is `site/public/index.html` together with every required `site/public/assets/homepage/**` resource. Install those files together whenever `index.html` references them; a missing homepage asset is a failed deployment even if `/` returns HTTP 200. `mobile.html` remains the legacy `noindex,follow` redirect to `/`, and the still-valid independent `styles.css` remains preserved; neither is removed merely because the homepage now uses `assets/homepage/`.
+The independent static ownership set is `site/public/index.html`, `mobile.html`, `styles.css`, the six `*-speaking-practice.html` pages, and `site/public/assets/homepage/**`. A particular deployment installs only the reviewed changed independent files plus the assets they require; it does not upload every file in this set. A missing homepage or language-page asset is a failed deployment even if `/` returns HTTP 200. `mobile.html` remains the legacy `noindex,follow` redirect to `/`, and `styles.css` remains preserved.
 
-Website CMS Publish must not overwrite or delete `index.html`, `mobile.html`, `styles.css`, or `assets/homepage/**`. CMS ownership remains `download.html`, `pricing.html`, `support.html`, legal pages, `status.html`, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`. The independent homepage consumes that shared CMS marketing runtime; it must never contain a separately maintained GA Measurement ID, and an ordinary homepage deployment must not overwrite `marketing-consent.js`. Do not manually upload those CMS-owned files during the independent-homepage operation, broadly copy `site/public`, or use `scripts/upload-static-site.ps1` for this rollout. Keep the accepted sharing logo `/assets/brand/lvt-logo.png` separate and unchanged, preserve existing flag assets, and keep Windows release files under `/var/www/languagevoicetutor/releases/windows/direct` separate.
+Website CMS Publish must not overwrite or delete `index.html`, `mobile.html`, `styles.css`, the six language-practice pages, or `assets/homepage/**`. CMS ownership is exactly `download.html`, `pricing.html`, `support.html`, `terms.html`, `privacy.html`, `refunds.html`, `cancellation.html`, `seller.html`, `ai-data.html`, `status.html`, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`. The independent homepage consumes that shared CMS marketing runtime; it must never contain a separately maintained GA Measurement ID, and an ordinary independent static deployment must not overwrite `marketing-consent.js`. Do not manually upload those CMS-owned files, broadly copy `site/public`, or use `scripts/upload-static-site.ps1` as the normal independent static-unit deployment. Keep the accepted sharing logo `/assets/brand/lvt-logo.png` separate and unchanged, preserve existing flag assets, and keep Windows release files under `/var/www/languagevoicetutor/releases/windows/direct` separate.
 
-When the shared analytics runtime changes, deploy in this order: backend release, Website CMS Publish to regenerate `marketing-consent.js`, independent homepage deployment when its HTML/CSS changed, then consent/runtime verification. Ordinary homepage deployment remains file-specific and must not overwrite `marketing-consent.js`.
+When the shared analytics runtime changes, deploy in this order: backend release, Website CMS Publish to regenerate `marketing-consent.js`, independent static deployment when its HTML/CSS changed, then consent/runtime verification. Independent deployment remains file-specific and must not overwrite `marketing-consent.js`. Existing nginx rules serve HTML with `Cache-Control: no-cache`; CSS, JS/MJS, JSON, XML, SVG, and other covered text assets for one hour; and PNG, JPEG/JPG, GIF, WebP, AVIF, ICO, WOFF, and WOFF2 for seven days. Gzip is enabled for relevant text assets and Brotli is disabled. Shared CSS changes require a versioned URL because of caching; the current token is `?v=20260913-visual3`. Ordinary static content deployment does not reload nginx, and nginx configuration is not repository-managed content.
 
-Use this section for the independent homepage only. It is separate from backend deployment, Website CMS Publish, and Windows installer/release upload.
+Use this section for the independent static marketing/SEO unit only. It is separate from backend deployment, Website CMS Publish, and Windows installer/release upload.
 
 Critical paths:
 
@@ -51,7 +51,7 @@ Public website source files in this repository live under `site/public/`. Upload
 
 ### Pre-deployment diagnostics
 
-Confirm the public website root and the separate Windows release alias before any homepage deployment:
+Confirm the public website root and the separate Windows release alias before any independent static deployment:
 
 ```powershell
 ssh lvt-server "sudo nginx -T 2>/dev/null | sed -n '/server_name languagevoicetutor.com/,/}/p' | grep -E 'root /var/www/languagevoicetutor/site|alias /var/www/languagevoicetutor/releases/windows/direct'"
@@ -75,9 +75,9 @@ ssh lvt-server "backup=/var/www/languagevoicetutor/site.backup.$(date -u +%Y%m%d
 
 Keep the printed backup path for rollback.
 
-### Install the homepage unit
+### Install the independent static unit
 
-Copy `index.html` and the complete `assets/homepage/**` tree to a staged location, then install both into `/var/www/languagevoicetutor/site` as one unit. Do not modify nginx during an ordinary homepage content deployment: the accepted canonical redirects already exist as production nginx configuration and are not Website CMS output or repository-managed deployment content.
+Copy the reviewed independent files and the complete referenced `assets/homepage/**` resources to a staged location, then install them into `/var/www/languagevoicetutor/site` as one unit. Do not modify nginx during an ordinary static content deployment: the accepted canonical redirects already exist as production nginx configuration and are not Website CMS output or repository-managed deployment content.
 
 ### Cleanup after a confirmed wrong-root upload
 
@@ -89,17 +89,30 @@ ssh lvt-server "sudo rm -f /var/www/languagevoicetutor/index.html /var/www/langu
 
 ### Public verification
 
-Verify the root response and every required homepage resource over HTTPS. A compact PowerShell example is:
+Verify every changed independent HTML file and every required asset over HTTPS. For the current marketing/SEO surface, this compact read-only example verifies the homepage and all six language pages:
 
 ```powershell
+$independentHtmlPaths = @(
+  '/',
+  '/english-speaking-practice.html',
+  '/french-speaking-practice.html',
+  '/german-speaking-practice.html',
+  '/spanish-speaking-practice.html',
+  '/italian-speaking-practice.html',
+  '/portuguese-speaking-practice.html'
+)
+
+$independentHtmlPaths | ForEach-Object {
+  (Invoke-WebRequest "https://languagevoicetutor.com$_" -UseBasicParsing).StatusCode
+}
+
 $homepageAssets = Get-ChildItem .\site\public\assets\homepage -Recurse -File |
   ForEach-Object { '/assets/homepage/' + $_.FullName.Substring((Resolve-Path .\site\public\assets\homepage).Path.Length + 1).Replace('\', '/') }
 
-(Invoke-WebRequest https://languagevoicetutor.com/ -UseBasicParsing).StatusCode
 $homepageAssets | ForEach-Object { (Invoke-WebRequest "https://languagevoicetutor.com$_" -UseBasicParsing).StatusCode }
 ```
 
-The root and every listed homepage asset must return `200`. Compare the public `index.html` to the staged file when byte-for-byte release verification is required. Verify current canonical routing read-only; these checks are verification only, not instructions to edit nginx:
+Each changed independent HTML file and every listed required asset must return `200`; checking only `/` does not prove a language-page deployment succeeded. Compare the public changed HTML file to its staged file when byte-for-byte release verification is required. Verify current canonical routing read-only; these checks are verification only, not instructions to edit nginx:
 
 ```powershell
 Invoke-WebRequest https://languagevoicetutor.com/ -UseBasicParsing
@@ -111,19 +124,25 @@ Invoke-WebRequest https://www.languagevoicetutor.com/example?source=check -Maxim
 
 Require `/` to return `200`; `/index.html`, `/ai-language-tutor`, and `/ai-language-tutor/` to redirect to `/`; and `www` to redirect to the equivalent non-`www` HTTPS URL while preserving path and query.
 
-### Rollback the homepage unit
+### Rollback the independent static unit
 
-Rollback uses the timestamped backup directory printed by the backup command. Restore `index.html` and `assets/homepage/` together from the same backup; do not restore one without the other. Replace `<backup-dir>` with that exact path:
+Rollback uses the timestamped backup directory printed by the backup command. The command below is only the homepage plus shared-homepage-assets rollback example; use it only when those files changed. Replace `<backup-dir>` with that exact path:
 
 ```powershell
 ssh -t lvt-server "set -eu; sudo cp -a '<backup-dir>/index.html' '/var/www/languagevoicetutor/site/index.html'; sudo rm -rf '/var/www/languagevoicetutor/site/assets/homepage'; if [ -d '<backup-dir>/assets/homepage' ]; then sudo cp -a '<backup-dir>/assets/homepage' '/var/www/languagevoicetutor/site/assets/homepage'; fi; echo HOMEPAGE_ROLLBACK=PASS"
 ```
 
-Re-run the public verification commands after rollback.
+For language-page-only changes, restore the exact changed language HTML files from that same timestamped backup, for example:
+
+```powershell
+ssh -t lvt-server "sudo cp -a '<backup-dir>/english-speaking-practice.html' '/var/www/languagevoicetutor/site/english-speaking-practice.html'"
+```
+
+Do not restore unrelated independent files and never touch CMS-owned files during an independent-static rollback. Re-run the verification for each restored HTML file and its required assets.
 
 ### Historical wrong-root incident
 
-An earlier landing-page upload to `/var/www/languagevoicetutor/` did not update the public site because nginx serves `/var/www/languagevoicetutor/site`. Windows release files remained separately served from `/var/www/languagevoicetutor/releases/windows/direct`. This is operational history retained to prevent repeating the wrong-root upload; it does not authorize a broad static-site upload for the current independent homepage.
+An earlier landing-page upload to `/var/www/languagevoicetutor/` did not update the public site because nginx serves `/var/www/languagevoicetutor/site`. Windows release files remained separately served from `/var/www/languagevoicetutor/releases/windows/direct`. This is operational history retained to prevent repeating the wrong-root upload; it does not authorize a broad static-site upload for the current independent static unit.
 
 
 ## Microsoft Store/MSIX prototype commands discontinued
@@ -288,7 +307,7 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; the documented current production release is `.155` with `.154` as rollback.
+Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; the documented current production release is `.157` with `.156` as rollback.
 
 Current milestone: CMS published-snapshot runtime is active for published Windows direct lessons. These checks must confirm the active CMS source and clean fallback state without changing release scope.
 
@@ -365,7 +384,7 @@ Rollback remains disabling or removing the CMS runtime flags and restarting the 
 
 ## Current controlled tester handoff checks after CMS runtime milestone
 
-Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.155`, the `previous` symlink points to `.154`, and the live public direct Windows manifest points to `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`. The live manifest is verified; no independent second public-download SHA verification is claimed for 1.6. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
+Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.157`, the `previous` symlink points to `.156`, and the live public direct Windows manifest points to `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`. The live manifest is verified; no independent second public-download SHA verification is claimed for 1.6. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
 
 Verify the public direct release manifest before handoff:
 
