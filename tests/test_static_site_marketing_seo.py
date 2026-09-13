@@ -243,6 +243,9 @@ def test_language_practice_pages_have_focused_static_seo_and_download_paths():
         assert "Back to homepage" not in html, name
         assert 'class="practice-tutors"' not in html, name
         assert 'class="practice-tutor-row"' not in html, name
+        assert "practice-download-visual" not in html, name
+        assert "practice-download-visual__phone" not in html, name
+        assert "practice-download-visual__laptop" not in html, name
         assert not re.search(r"G-[A-Z0-9]{6,16}", html), name
         assert not re.search(r"AW-\d+", html), name
         assert "google-site-verification" not in html.lower(), name
