@@ -98,7 +98,9 @@
     .language-strip .lang:focus-visible,
     .language-card:focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; }
     .flag-icon { display:inline-block; flex:0 0 auto; object-fit:contain; background:transparent; box-shadow:none; vertical-align:middle; }
-    .language-strip .flag-icon { width:26px; height:26px; border-radius:0; background:transparent; box-shadow:none; }
+    .language-strip .flag-icon { width:26px; height:26px; border-radius:0; background:transparent; box-shadow:none; transition:transform .18s ease; }
+    .language-strip .lang:hover .flag-icon,
+    .language-strip .lang:focus-visible .flag-icon { transform:scale(1.12); }
     .language-card .flag-icon { width:74px; height:74px; display:block; margin:0 auto 12px; border-radius:0; }
 
     /* Hero */

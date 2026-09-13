@@ -66,6 +66,11 @@ EXPECTED_LANGUAGE_PRACTICE_PAGES = {
     },
 }
 
+EXPECTED_LANGUAGE_LINK_TITLES = {
+    name: f"{name.split('-', 1)[0].title()} speaking practice"
+    for name in EXPECTED_LANGUAGE_PRACTICE_PAGES
+}
+
 
 class _HomepageHeadParser(HTMLParser):
     def __init__(self):
@@ -118,6 +123,7 @@ class _HomepageLanguageLinkParser(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.links = {"language-strip": [], "language-box": []}
+        self.link_attributes = {"language-strip": [], "language-box": []}
         self._open_elements = []
 
     def handle_starttag(self, tag, attrs):
@@ -129,6 +135,7 @@ class _HomepageLanguageLinkParser(HTMLParser):
             for _, parent_group in reversed(self._open_elements):
                 if parent_group is not None:
                     self.links[parent_group].append(attributes["href"])
+                    self.link_attributes[parent_group].append(attributes)
                     break
 
         if tag not in self._VOID_ELEMENTS:
@@ -175,16 +182,12 @@ def test_language_practice_pages_have_focused_static_seo_and_download_paths():
         "/assets/homepage/devices/mobile-app.jpg",
         "/assets/homepage/devices/windows-laptop.png",
         "/assets/homepage/people/lana.jpg",
-        "/assets/homepage/people/nelli.jpg",
-        "/assets/homepage/people/david.png",
     ]
     page_image_paths = [
         "/assets/homepage/devices/hero-screen.jpg",
-        "/assets/homepage/people/lana.jpg",
-        "/assets/homepage/people/nelli.jpg",
-        "/assets/homepage/people/david.png",
     ]
     expected_language_links = [f'/{name}' for name in EXPECTED_LANGUAGE_PRACTICE_PAGES]
+    expected_language_titles = list(EXPECTED_LANGUAGE_LINK_TITLES.values())
     descriptions = []
     canonicals = []
 
@@ -194,6 +197,8 @@ def test_language_practice_pages_have_focused_static_seo_and_download_paths():
         html = path.read_text(encoding="utf-8")
         parser = _HomepageHeadParser()
         parser.feed(html)
+        language_parser = _HomepageLanguageLinkParser()
+        language_parser.feed(html)
 
         page_canonicals = [
             link.get("href")
@@ -220,9 +225,24 @@ def test_language_practice_pages_have_focused_static_seo_and_download_paths():
         assert 'id="consent-banner"' in html, name
         assert 'class="practice-hero__product-frame"' in html, name
         assert 'fetchpriority="high"' in html, name
-        assert 'class="practice-tutors"' in html, name
         assert all(image_path in html for image_path in page_image_paths), name
-        assert all(f'href="{href}"' in html for href in expected_language_links), name
+        assert html.count('class="topbar"') == 1, name
+        assert html.count('class="language-strip"') == 1, name
+        assert language_parser.links["language-strip"] == expected_language_links, name
+        assert [
+            attributes.get("title")
+            for attributes in language_parser.link_attributes["language-strip"]
+        ] == expected_language_titles, name
+        assert [
+            attributes.get("href")
+            for attributes in language_parser.link_attributes["language-strip"]
+            if attributes.get("aria-current") == "page"
+        ] == [f"/{name}"], name
+        assert 'class="practice-header"' not in html, name
+        assert 'class="practice-language-nav"' not in html, name
+        assert "Back to homepage" not in html, name
+        assert 'class="practice-tutors"' not in html, name
+        assert 'class="practice-tutor-row"' not in html, name
         assert not re.search(r"G-[A-Z0-9]{6,16}", html), name
         assert not re.search(r"AW-\d+", html), name
         assert "google-site-verification" not in html.lower(), name
@@ -239,6 +259,18 @@ def test_language_practice_pages_have_focused_static_seo_and_download_paths():
     assert 'url("/assets/homepage/people/lana.jpg")' in practice_css
     assert 'url("/assets/homepage/devices/mobile-app.jpg")' in practice_css
     assert 'url("/assets/homepage/devices/windows-laptop.png")' in practice_css
+    assert ".practice-header" not in practice_css
+    assert ".practice-language-nav" not in practice_css
+    assert ".practice-tutors" not in practice_css
+    assert ".practice-tutor-row" not in practice_css
+    assert ".practice-section__intro::before" not in practice_css
+    assert "margin: 0 auto 34px;" in practice_css
+    assert "text-align: center;" in practice_css
+
+    homepage_css = (PUBLIC / stylesheet_href.removeprefix("/")).read_text(encoding="utf-8")
+    assert ".language-strip .lang:hover .flag-icon" in homepage_css
+    assert ".language-strip .lang:focus-visible .flag-icon" in homepage_css
+    assert "transform:scale(1.12)" in homepage_css
 
 
 def test_independent_homepage_has_root_social_and_application_seo_metadata():
@@ -340,11 +372,18 @@ def test_independent_homepage_has_root_social_and_application_seo_metadata():
 
 
 def test_independent_homepage_language_selectors_link_to_practice_pages():
+    html = (PUBLIC / "index.html").read_text(encoding="utf-8")
     parser = _HomepageLanguageLinkParser()
-    parser.feed((PUBLIC / "index.html").read_text(encoding="utf-8"))
+    parser.feed(html)
 
     expected_links = [f"/{name}" for name in EXPECTED_LANGUAGE_PRACTICE_PAGES]
+    assert html.count('class="topbar"') == 1
+    assert html.count('class="language-strip"') == 1
     assert parser.links["language-strip"] == expected_links
+    assert [
+        attributes.get("title")
+        for attributes in parser.link_attributes["language-strip"]
+    ] == list(EXPECTED_LANGUAGE_LINK_TITLES.values())
     assert parser.links["language-box"] == expected_links
 
 
