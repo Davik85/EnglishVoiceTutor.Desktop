@@ -19,6 +19,12 @@ EXPECTED_SITEMAP_PATHS = [
     "/seller.html",
     "/ai-data.html",
     "/status.html",
+    "/english-speaking-practice.html",
+    "/french-speaking-practice.html",
+    "/german-speaking-practice.html",
+    "/spanish-speaking-practice.html",
+    "/italian-speaking-practice.html",
+    "/portuguese-speaking-practice.html",
 ]
 
 EXPECTED_LANGUAGE_PRACTICE_PAGES = {

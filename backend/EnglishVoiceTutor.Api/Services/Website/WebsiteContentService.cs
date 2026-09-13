@@ -598,7 +598,7 @@ Disallow: /releases/windows/direct/*.exe
 
 Sitemap: https://languagevoicetutor.com/sitemap.xml
 """;
-    private static string RenderSitemapXml(DateTimeOffset generatedAt) { var lastmod = generatedAt.ToString("yyyy-MM-dd"); var urls = new[] { "/", "/download.html", "/pricing.html", "/support.html", "/terms.html", "/privacy.html", "/refunds.html", "/cancellation.html", "/seller.html", "/ai-data.html", "/status.html" }; return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + string.Join("", urls.Select(u => $"  <url><loc>{PublicSiteBaseUrl}{u}</loc><lastmod>{lastmod}</lastmod></url>\n")) + "</urlset>\n"; }
+    private static string RenderSitemapXml(DateTimeOffset generatedAt) { var lastmod = generatedAt.ToString("yyyy-MM-dd"); var urls = new[] { "/", "/download.html", "/pricing.html", "/support.html", "/terms.html", "/privacy.html", "/refunds.html", "/cancellation.html", "/seller.html", "/ai-data.html", "/status.html", "/english-speaking-practice.html", "/french-speaking-practice.html", "/german-speaking-practice.html", "/spanish-speaking-practice.html", "/italian-speaking-practice.html", "/portuguese-speaking-practice.html" }; return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + string.Join("", urls.Select(u => $"  <url><loc>{PublicSiteBaseUrl}{u}</loc><lastmod>{lastmod}</lastmod></url>\n")) + "</urlset>\n"; }
     private static string RenderLlmsTxt() => """
 # Language Voice Tutor
 
