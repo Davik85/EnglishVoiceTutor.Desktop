@@ -21,6 +21,45 @@ EXPECTED_SITEMAP_PATHS = [
     "/status.html",
 ]
 
+EXPECTED_LANGUAGE_PRACTICE_PAGES = {
+    "english-speaking-practice.html": {
+        "title": "English Speaking Practice with AI | Orralen",
+        "h1": "Practice English Speaking with an AI Tutor",
+        "canonical": "https://languagevoicetutor.com/english-speaking-practice.html",
+        "description": "Practise speaking English with an AI tutor by voice or text. Build confidence through everyday conversations, clear corrections and 100+ guided lessons.",
+    },
+    "french-speaking-practice.html": {
+        "title": "French Speaking Practice with AI | Orralen",
+        "h1": "Practice French Speaking with an AI Tutor",
+        "canonical": "https://languagevoicetutor.com/french-speaking-practice.html",
+        "description": "Practise speaking French with an AI tutor by voice or text. Build useful conversation skills with everyday situations, clear corrections and guided lessons.",
+    },
+    "german-speaking-practice.html": {
+        "title": "German Speaking Practice with AI | Orralen",
+        "h1": "Practice German Speaking with an AI Tutor",
+        "canonical": "https://languagevoicetutor.com/german-speaking-practice.html",
+        "description": "Practise speaking German with an AI tutor by voice or text. Work through everyday situations from A1 to B2 with clear corrections and guided lessons.",
+    },
+    "spanish-speaking-practice.html": {
+        "title": "Spanish Speaking Practice with AI | Orralen",
+        "h1": "Practice Spanish Speaking with an AI Tutor",
+        "canonical": "https://languagevoicetutor.com/spanish-speaking-practice.html",
+        "description": "Practise speaking Spanish with an AI tutor by voice or text. Build confidence with everyday conversations, clear corrections and 100+ guided lessons.",
+    },
+    "italian-speaking-practice.html": {
+        "title": "Italian Speaking Practice with AI | Orralen",
+        "h1": "Practice Italian Speaking with an AI Tutor",
+        "canonical": "https://languagevoicetutor.com/italian-speaking-practice.html",
+        "description": "Practise speaking Italian with an AI tutor by voice or text. Use everyday situations from A1 to B2, get clear corrections and explore guided lessons.",
+    },
+    "portuguese-speaking-practice.html": {
+        "title": "Portuguese Speaking Practice with AI | Orralen",
+        "h1": "Practice Portuguese Speaking with an AI Tutor",
+        "canonical": "https://languagevoicetutor.com/portuguese-speaking-practice.html",
+        "description": "Practise speaking Portuguese with an AI tutor by voice or text. Build confidence in everyday situations with clear corrections and 100+ guided lessons.",
+    },
+}
+
 
 class _HomepageHeadParser(HTMLParser):
     def __init__(self):
@@ -28,8 +67,10 @@ class _HomepageHeadParser(HTMLParser):
         self.links = []
         self.metas = []
         self.titles = []
+        self.h1s = []
         self.json_ld = []
         self._title_parts = None
+        self._h1_parts = None
         self._json_parts = None
 
     def handle_starttag(self, tag, attrs):
@@ -40,12 +81,16 @@ class _HomepageHeadParser(HTMLParser):
             self.metas.append(attributes)
         elif tag == "title":
             self._title_parts = []
+        elif tag == "h1":
+            self._h1_parts = []
         elif tag == "script" and attributes.get("type") == "application/ld+json":
             self._json_parts = []
 
     def handle_data(self, data):
         if self._title_parts is not None:
             self._title_parts.append(data)
+        if self._h1_parts is not None:
+            self._h1_parts.append(data)
         if self._json_parts is not None:
             self._json_parts.append(data)
 
@@ -53,6 +98,9 @@ class _HomepageHeadParser(HTMLParser):
         if tag == "title" and self._title_parts is not None:
             self.titles.append("".join(self._title_parts).strip())
             self._title_parts = None
+        elif tag == "h1" and self._h1_parts is not None:
+            self.h1s.append("".join(self._h1_parts).strip())
+            self._h1_parts = None
         elif tag == "script" and self._json_parts is not None:
             self.json_ld.append("".join(self._json_parts))
             self._json_parts = None
@@ -78,6 +126,84 @@ def test_independent_homepage_references_external_stylesheet_once():
 
     assert index.count(stylesheet_href) == 1
     assert (PUBLIC / stylesheet_href.removeprefix("/")).is_file()
+
+
+def test_language_practice_pages_have_focused_static_seo_and_download_paths():
+    stylesheet_href = "/assets/homepage/index.css"
+    practice_stylesheet_href = "/assets/homepage/language-practice.css"
+    consent_runtime = 'src="/marketing-consent.js?v=marketing-seo"'
+    google_play_url = "https://play.google.com/store/apps/details?id=com.languagevoicetutor.mobile"
+    windows_url = "https://languagevoicetutor.com/download.html"
+    trial_sentence = "Register and get 7 days of Premium. The Free plan includes one free lesson every day."
+    product_image_paths = [
+        "/assets/homepage/devices/hero-screen.jpg",
+        "/assets/homepage/devices/mobile-app.jpg",
+        "/assets/homepage/devices/windows-laptop.png",
+        "/assets/homepage/people/lana.jpg",
+        "/assets/homepage/people/nelli.jpg",
+        "/assets/homepage/people/david.png",
+    ]
+    page_image_paths = [
+        "/assets/homepage/devices/hero-screen.jpg",
+        "/assets/homepage/people/lana.jpg",
+        "/assets/homepage/people/nelli.jpg",
+        "/assets/homepage/people/david.png",
+    ]
+    expected_language_links = [f'/{name}' for name in EXPECTED_LANGUAGE_PRACTICE_PAGES]
+    descriptions = []
+    canonicals = []
+
+    for name, expected in EXPECTED_LANGUAGE_PRACTICE_PAGES.items():
+        path = PUBLIC / name
+        assert path.is_file(), name
+        html = path.read_text(encoding="utf-8")
+        parser = _HomepageHeadParser()
+        parser.feed(html)
+
+        page_canonicals = [
+            link.get("href")
+            for link in parser.links
+            if "canonical" in link.get("rel", "").lower().split()
+        ]
+        page_descriptions = _meta_values(parser, "name", "description")
+
+        assert parser.titles == [expected["title"]], name
+        assert parser.h1s == [expected["h1"]], name
+        assert page_canonicals == [expected["canonical"]], name
+        assert page_descriptions == [expected["description"]], name
+        assert _meta_values(parser, "name", "robots") == ["index, follow"], name
+        assert _meta_values(parser, "property", "og:title") == [expected["title"]], name
+        assert _meta_values(parser, "property", "og:description") == [expected["description"]], name
+        assert _meta_values(parser, "property", "og:url") == [expected["canonical"]], name
+        assert _meta_values(parser, "name", "twitter:title") == [expected["title"]], name
+        assert html.count(stylesheet_href) == 1, name
+        assert html.count(consent_runtime) == 1, name
+        assert html.count(practice_stylesheet_href) == 1, name
+        assert google_play_url in html, name
+        assert windows_url in html, name
+        assert html.count(trial_sentence) == 1, name
+        assert 'id="consent-banner"' in html, name
+        assert 'class="practice-hero__product-frame"' in html, name
+        assert 'fetchpriority="high"' in html, name
+        assert 'class="practice-tutors"' in html, name
+        assert all(image_path in html for image_path in page_image_paths), name
+        assert all(f'href="{href}"' in html for href in expected_language_links), name
+        assert not re.search(r"G-[A-Z0-9]{6,16}", html), name
+        assert not re.search(r"AW-\d+", html), name
+        assert "google-site-verification" not in html.lower(), name
+
+        descriptions.extend(page_descriptions)
+        canonicals.extend(page_canonicals)
+
+    assert len(descriptions) == len(set(descriptions)) == 6
+    assert len(canonicals) == len(set(canonicals)) == 6
+    assert all((PUBLIC / image_path.removeprefix("/")).is_file() for image_path in product_image_paths)
+
+    practice_css = (PUBLIC / practice_stylesheet_href.removeprefix("/")).read_text(encoding="utf-8")
+    assert "practice-dialogue::before" in practice_css
+    assert 'url("/assets/homepage/people/lana.jpg")' in practice_css
+    assert 'url("/assets/homepage/devices/mobile-app.jpg")' in practice_css
+    assert 'url("/assets/homepage/devices/windows-laptop.png")' in practice_css
 
 
 def test_independent_homepage_has_root_social_and_application_seo_metadata():
