@@ -12,8 +12,45 @@ public sealed class AdminFeedbackReportsUiStaticTests
     {
         Assert.Contains("Feedback &amp; reports", AdminIndex);
         Assert.Contains("data-tab-id=\"feedback-reports\"", AdminIndex);
+        Assert.Contains("id=\"feedback-reports-new-badge\"", AdminIndex);
         Assert.Contains("feedbackReportsRead: \"feedback_reports.read\"", AdminJs);
         Assert.Contains("[Tabs.feedbackReports]: { anyPermissions: [AdminPermissionIds.feedbackReportsRead] }", AdminJs);
+    }
+
+    [Fact]
+    public void NewReportBadgeUsesExistingFilteredListTotalCount()
+    {
+        var badgeFlow = AdminJs.Substring(AdminJs.IndexOf("function resetFeedbackReportsNewBadge"), AdminJs.IndexOf("function appendFeedbackReportText") - AdminJs.IndexOf("function resetFeedbackReportsNewBadge"));
+
+        Assert.Contains("new URLSearchParams({ status: \"new\", page: \"1\", pageSize: \"1\" })", badgeFlow);
+        Assert.Contains("adminFetch(`${ApiPaths.feedbackReports}?${query.toString()}`)", badgeFlow);
+        Assert.Contains("const totalCount = payload?.totalCount", badgeFlow);
+        Assert.Contains("Number.isInteger(totalCount)", badgeFlow);
+        Assert.Contains("count > 99 ? \"99+\" : String(count)", badgeFlow);
+        Assert.Contains("count === 1 ? \"report\" : \"reports\"", badgeFlow);
+        Assert.Contains("setAttribute(\"aria-label\", label)", badgeFlow);
+        Assert.Contains("feedbackReportsNewBadgeElement.title = label", badgeFlow);
+        Assert.Contains("feedbackReportsNewBadgeElement.classList.add(\"hidden\")", badgeFlow);
+        Assert.Contains("hasAdminPermission(AdminPermissionIds.feedbackReportsRead)", badgeFlow);
+    }
+
+    [Fact]
+    public void NewReportBadgePollingRefreshesAndCleansUpWithTheAdminSession()
+    {
+        var resetFlow = AdminJs.Substring(AdminJs.IndexOf("function resetDashboard"), AdminJs.IndexOf("async function fetchUserByEmail") - AdminJs.IndexOf("function resetDashboard"));
+        var authFlow = AdminJs.Substring(AdminJs.IndexOf("async function showAdminShellAfterAuth"), AdminJs.IndexOf("async function restoreAdminSessionFromCookie") - AdminJs.IndexOf("async function showAdminShellAfterAuth"));
+        var mutationRefresh = AdminJs.Substring(AdminJs.IndexOf("async function refreshFeedbackReportsAfterMutation"), AdminJs.IndexOf("async function changeFeedbackReportStatus") - AdminJs.IndexOf("async function refreshFeedbackReportsAfterMutation"));
+
+        Assert.Contains("FeedbackReportsBadgePollIntervalMs = 60_000", AdminJs);
+        Assert.Contains("window.setInterval", AdminJs);
+        Assert.Contains("window.clearInterval(feedbackReportsBadgePollTimer)", AdminJs);
+        Assert.Contains("document.addEventListener(\"visibilitychange\"", AdminJs);
+        Assert.Contains("document.visibilityState === \"visible\"", AdminJs);
+        Assert.Contains("await refreshFeedbackReportsNewBadge();", authFlow);
+        Assert.Contains("startFeedbackReportsBadgePolling();", authFlow);
+        Assert.Contains("await refreshFeedbackReportsNewBadge();", mutationRefresh);
+        Assert.Contains("stopFeedbackReportsBadgePolling();", resetFlow);
+        Assert.Contains("resetFeedbackReportsNewBadge();", resetFlow);
     }
 
     [Fact]

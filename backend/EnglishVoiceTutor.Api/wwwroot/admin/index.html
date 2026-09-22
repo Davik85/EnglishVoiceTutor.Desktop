@@ -36,7 +36,7 @@
                     <button id="tab-button-free-lesson" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-free-lesson" aria-selected="false" data-tab-id="free-lesson">Free Lesson</button>
                     <button id="tab-button-audit-log" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-audit-log" aria-selected="false" data-tab-id="audit-log">Audit Log</button>
                     <button id="tab-button-admin-activity" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-admin-activity" aria-selected="false" data-tab-id="admin-activity">Admin Activity</button>
-                    <button id="tab-button-feedback-reports" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-feedback-reports" aria-selected="false" data-tab-id="feedback-reports">Feedback &amp; reports</button>
+                    <button id="tab-button-feedback-reports" class="admin-tab-button feedback-reports-tab-button" type="button" role="tab" aria-controls="tab-panel-feedback-reports" aria-selected="false" data-tab-id="feedback-reports"><span>Feedback &amp; reports</span><span id="feedback-reports-new-badge" class="feedback-reports-new-badge hidden" aria-live="polite"></span></button>
                     <button id="tab-button-cms-content" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-cms-content" aria-selected="false" data-tab-id="cms-content">CMS Content</button>
                     <button id="tab-button-website" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-website" aria-selected="false" data-tab-id="website">Website</button>
                     <button id="tab-button-role-management" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-role-management" aria-selected="false" data-tab-id="role-management">Role Assignments</button>
@@ -57,11 +57,11 @@
                                     <dt>Permission count</dt><dd id="admin-permission-count">-</dd>
                                 </dl>
                             </article>
-                            <article class="card">
-                                <h2>Available workflows</h2>
+                            <details class="card workflow-availability-details">
+                                <summary>Available workflows</summary>
                                 <p class="muted">Informational only. Tabs, buttons, and backend calls are not blocked by this client-side view.</p>
                                 <ul id="workflow-availability-list" class="placeholder-list"></ul>
-                            </article>
+                            </details>
                         </div>
 
                         <article class="card product-statistics-card" aria-labelledby="product-statistics-heading">
@@ -644,7 +644,7 @@
                     </div>
 
                     <div id="tab-panel-system" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-system">
-                        <article class="card"><h2>Capabilities Check</h2><ul id="capabilities-list" class="capability-list"></ul></article>
+                        <article class="card hidden" aria-hidden="true"><h2>Capabilities Check</h2><ul id="capabilities-list" class="capability-list"></ul></article>
                         <article class="card" aria-labelledby="ai-models-heading">
                             <h2 id="ai-models-heading">AI Models</h2>
                             <p class="muted">Super Admin-only runtime model settings. API keys are not stored here and remain server environment secrets. Each text role has an independent omit-temperature override; leaving it off preserves that role's existing behavior. Save a draft, Validate format, Test provider access, then publish and run a small real lesson. Format validation does not prove provider access. Use Test provider access before publishing a new model.</p>
@@ -662,7 +662,7 @@
                             <pre id="ai-models-provider-test-results" class="website-json-preview" aria-live="polite"></pre>
                             <div id="ai-models-fields" class="grid website-editor-fields"></div>
                         </article>
-                        <article class="card"><h2>Release / Capability Status</h2><ul class="placeholder-list"><li>productionRolesAvailable <span id="system-production-roles-available" class="badge unavailable">false</span></li><li>Billing / Paddle <span id="system-billing-paddle-status" class="badge unavailable">not configured</span></li><li>Production RBAC <span class="badge available">controlled cutover complete when fallback is disabled</span></li><li>Mobile Store / Google Play <span id="system-mobile-store-google-play-status" class="badge unavailable">checking</span></li></ul></article>
+                        <article class="card hidden" aria-hidden="true"><h2>Release / Capability Status</h2><ul class="placeholder-list"><li>productionRolesAvailable <span id="system-production-roles-available" class="badge unavailable">false</span></li><li>Billing / Paddle <span id="system-billing-paddle-status" class="badge unavailable">not configured</span></li><li>Production RBAC <span class="badge available">controlled cutover complete when fallback is disabled</span></li><li>Mobile Store / Google Play <span id="system-mobile-store-google-play-status" class="badge unavailable">checking</span></li></ul></article>
                     </div>
                 </section>
             </div>

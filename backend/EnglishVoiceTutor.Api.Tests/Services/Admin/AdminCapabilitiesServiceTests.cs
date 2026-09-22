@@ -103,10 +103,23 @@ public sealed class AdminCapabilitiesServiceTests
     }
 
     [Fact]
-    public void AdminSystemCardRendersGooglePlayBridgeCapabilityDynamically()
+    public void OverviewWorkflowListUsesCollapsedNativeDetails()
     {
-        Assert.Contains("Release / Capability Status", AdminIndex, StringComparison.Ordinal);
+        Assert.Contains("<details class=\"card workflow-availability-details\">", AdminIndex, StringComparison.Ordinal);
+        Assert.Contains("<summary>Available workflows</summary>", AdminIndex, StringComparison.Ordinal);
+        Assert.Contains("id=\"workflow-availability-list\"", AdminIndex, StringComparison.Ordinal);
+        Assert.DoesNotContain("<details class=\"card workflow-availability-details\" open", AdminIndex, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AdminSystemCapabilityElementsRemainFunctionalButAreHidden()
+    {
+        Assert.Contains("<article class=\"card hidden\" aria-hidden=\"true\"><h2>Capabilities Check</h2>", AdminIndex, StringComparison.Ordinal);
+        Assert.Contains("id=\"capabilities-list\"", AdminIndex, StringComparison.Ordinal);
+        Assert.Contains("<article class=\"card hidden\" aria-hidden=\"true\"><h2>Release / Capability Status</h2>", AdminIndex, StringComparison.Ordinal);
         Assert.Contains("Mobile Store / Google Play", AdminIndex, StringComparison.Ordinal);
+        Assert.Contains("id=\"system-production-roles-available\"", AdminIndex, StringComparison.Ordinal);
+        Assert.Contains("id=\"system-billing-paddle-status\"", AdminIndex, StringComparison.Ordinal);
         Assert.Contains("id=\"system-mobile-store-google-play-status\"", AdminIndex, StringComparison.Ordinal);
         Assert.DoesNotContain("Future Sections / Deferred Scope", AdminIndex, StringComparison.Ordinal);
         Assert.DoesNotContain("Mobile Store Bridge", AdminIndex, StringComparison.Ordinal);

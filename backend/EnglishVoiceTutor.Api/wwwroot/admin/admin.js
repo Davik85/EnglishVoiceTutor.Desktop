@@ -340,6 +340,7 @@
     const activityLoadingElement = document.getElementById("activity-loading");
     const activityErrorElement = document.getElementById("activity-error");
     const activityResultElement = document.getElementById("activity-result-table");
+    const feedbackReportsNewBadgeElement = document.getElementById("feedback-reports-new-badge");
     const feedbackReportsStatusFilter = document.getElementById("feedback-reports-status-filter");
     const feedbackReportsCategoryFilter = document.getElementById("feedback-reports-category-filter");
     const feedbackReportsLoadingElement = document.getElementById("feedback-reports-loading");
@@ -369,9 +370,12 @@
     const feedbackReportReplyHistoryElement = document.getElementById("feedback-report-reply-history");
     const feedbackReportReplyHistoryContentElement = document.getElementById("feedback-report-reply-history-content");
     const FeedbackReportPageSize = 50;
+    const FeedbackReportsBadgePollIntervalMs = 60_000;
     const FeedbackReportStatuses = Object.freeze(["new", "reviewed", "needs_information", "processing", "resolved", "rejected"]);
     const FeedbackReportCategories = Object.freeze(["suggestion", "app_issue", "ai_response", "account_deletion"]);
     let feedbackReportsState = { page: 1, totalCount: 0, items: [], selectedReportId: null, selectedReport: null, statusRequestPending: false, replyRequestPending: false, replyUnavailable: false, statusPermissionDenied: false, replyPermissionDenied: false, preflight: null, preflightRequestPending: false, preflightNotRun: false, preflightPermissionDenied: false, preflightMessage: "", preflightError: "", executionRequestPending: false };
+    let feedbackReportsBadgePollTimer = null;
+    let feedbackReportsBadgeRequestId = 0;
 
     const freeLessonResetCard = document.getElementById("free-lesson-reset-card");
     const freeLessonResetForm = document.getElementById("free-lesson-reset-form");
@@ -1410,6 +1414,8 @@
     async function publishWebsiteContent() { setWebsiteError(""); collectCurrentWebsiteSection(); preserveDownloadFeatureCardFields(); setWebsiteMessage("Saving draft before publish..."); websitePublishButton.disabled = true; try { const saved = await saveWebsiteDraft(); if (!saved) { return; } setWebsiteMessage("Publishing saved draft to static website..."); const response = await fetch(ApiPaths.websiteContentPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readWebsiteResponse(response, "Unable to publish Website content."); fillWebsiteForm(payload.active); setWebsiteMessage(`Published saved draft to ${Array.isArray(payload.publishedFiles) ? payload.publishedFiles.length : ""} static website files.`); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website content."); } finally { websitePublishButton.disabled = false; } }
 
     function resetDashboard() {
+        stopFeedbackReportsBadgePolling();
+        resetFeedbackReportsNewBadge();
         adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable"; systemBillingPaddleStatusElement.textContent = "not configured"; systemBillingPaddleStatusElement.className = "badge unavailable"; systemMobileStoreGooglePlayStatusElement.textContent = "DISABLED / INCOMPLETE"; systemMobileStoreGooglePlayStatusElement.className = "badge unavailable";
         setLookupError(""); setLookupLoading(false); setLookupSourceLoading(LookupSources.premium, false); setLookupSourceLoading(LookupSources.freeLesson, false); clearLookupErrors(); clearUserLookupResult(); lookupForm.reset(); premiumLookupForm.reset(); freeLessonLookupForm.reset(); clearSelectedUserState();
         setGrantVisible(false); setRevokeVisible(false); setBillingCancelRenewalVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearBillingCancelRenewalState(); clearFreeLessonResetState(); grantForm.reset(); revokeForm.reset(); billingCancelRenewalForm.reset(); freeLessonResetForm.reset(); clearAuditLog(); clearAllCmsDirtyState();
@@ -2335,6 +2341,56 @@
         clearFeedbackReportDetails();
     }
 
+    function resetFeedbackReportsNewBadge() {
+        feedbackReportsBadgeRequestId += 1;
+        feedbackReportsNewBadgeElement.textContent = "";
+        feedbackReportsNewBadgeElement.classList.add("hidden");
+        feedbackReportsNewBadgeElement.removeAttribute("aria-label");
+        feedbackReportsNewBadgeElement.removeAttribute("title");
+    }
+
+    function renderFeedbackReportsNewBadge(totalCount) {
+        const count = Math.max(0, Math.floor(totalCount));
+        if (count === 0) { resetFeedbackReportsNewBadge(); return; }
+        const label = `${count.toLocaleString()} new feedback ${count === 1 ? "report" : "reports"}`;
+        feedbackReportsNewBadgeElement.textContent = count > 99 ? "99+" : String(count);
+        feedbackReportsNewBadgeElement.setAttribute("aria-label", label);
+        feedbackReportsNewBadgeElement.title = label;
+        feedbackReportsNewBadgeElement.classList.remove("hidden");
+    }
+
+    function stopFeedbackReportsBadgePolling() {
+        if (feedbackReportsBadgePollTimer !== null) {
+            window.clearInterval(feedbackReportsBadgePollTimer);
+            feedbackReportsBadgePollTimer = null;
+        }
+    }
+
+    function startFeedbackReportsBadgePolling() {
+        stopFeedbackReportsBadgePolling();
+        if (!hasAdminPermission(AdminPermissionIds.feedbackReportsRead)) { resetFeedbackReportsNewBadge(); return; }
+        feedbackReportsBadgePollTimer = window.setInterval(() => { refreshFeedbackReportsNewBadge().catch(() => { }); }, FeedbackReportsBadgePollIntervalMs);
+    }
+
+    async function refreshFeedbackReportsNewBadge() {
+        if (!hasAdminPermission(AdminPermissionIds.feedbackReportsRead)) {
+            stopFeedbackReportsBadgePolling();
+            resetFeedbackReportsNewBadge();
+            return;
+        }
+        const requestId = ++feedbackReportsBadgeRequestId;
+        const query = new URLSearchParams({ status: "new", page: "1", pageSize: "1" });
+        try {
+            const payload = await adminFetch(`${ApiPaths.feedbackReports}?${query.toString()}`);
+            const totalCount = payload?.totalCount;
+            if (requestId === feedbackReportsBadgeRequestId && hasAdminPermission(AdminPermissionIds.feedbackReportsRead) && Number.isInteger(totalCount) && totalCount >= 0) {
+                renderFeedbackReportsNewBadge(totalCount);
+            }
+        } catch (error) {
+            if (error instanceof Error && error.message === ErrorMessages.sessionExpired) { throw error; }
+        }
+    }
+
     function appendFeedbackReportText(container, text, className = "") {
         const element = document.createElement("p");
         if (className) { element.className = className; }
@@ -2871,6 +2927,7 @@
     }
 
     async function refreshFeedbackReportsAfterMutation() {
+        await refreshFeedbackReportsNewBadge();
         const filter = feedbackReportsStatusFilter.value;
         const selectedStatus = String(feedbackReportsState.selectedReport?.status || "");
         if (filter && filter !== selectedStatus) { feedbackReportsState.page = 1; await loadFeedbackReports(); }
@@ -3601,6 +3658,7 @@
     [cmsPromptTemplateBodyInput, cmsPromptTemplateIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("promptTemplate")));
     [cmsTutorProfileDisplayNameInput, cmsTutorProfileCommunicationStyleJsonInput, cmsTutorProfileSafetyNotesJsonInput, cmsTutorProfileIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("tutorProfile")));
     window.addEventListener("beforeunload", (event) => { if (!hasUnsavedChanges()) { return; } event.preventDefault(); event.returnValue = UnsavedChangesMessage; });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { refreshFeedbackReportsNewBadge().catch(() => { }); } });
 
     async function logoutAdminSession() {
         if (!confirmDiscardUnsavedChanges()) { return; }
@@ -3674,7 +3732,7 @@
             button.disabled = !canUseTab;
             button.setAttribute("aria-hidden", canUseTab ? "false" : "true");
         });
-        if (!canAccessTab(Tabs.feedbackReports)) { clearFeedbackReportsState(); }
+        if (!canAccessTab(Tabs.feedbackReports)) { stopFeedbackReportsBadgePolling(); resetFeedbackReportsNewBadge(); clearFeedbackReportsState(); }
         if (!canAccessTab(getCurrentActiveTab())) { activateTab(Tabs.overview); }
     }
 
@@ -4020,6 +4078,8 @@
     async function showAdminShellAfterAuth(preferredTabId) {
         await loadAdminCapabilities();
         setDashboardVisible(true);
+        await refreshFeedbackReportsNewBadge();
+        startFeedbackReportsBadgePolling();
         initializeTabs();
         const selectedTabId = isKnownTab(preferredTabId) ? preferredTabId : Tabs.overview;
         activateTab(selectedTabId);
