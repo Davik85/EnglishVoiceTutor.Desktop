@@ -1,12 +1,22 @@
 # Backend server deployment
 
-Review date: 2026-09-13.
+Review date: 2026-09-22.
 
 ## Current production backend
 
-Production backend `0.1.35-backend.157` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.157`; `.156` is retained as the previous rollback release. `.157` was deployed through the normal package -> reviewed dry-run -> production upload flow. It contains only the Website CMS sitemap-generator update adding the six language-practice URLs; no EF migration, schema change, or data change was required. The source history is `1f2c215b82df031f9e20f9f230668fcd8400ada6` (`Add language practice pages to sitemap`), with the final static website correction at `6512425e0765c96380aecd30d26d9656a849707a` (`Remove obsolete English CTA visuals`). Static HTML/CSS corrections do not require backend execution; `.157` is the specific backend release that lets Website CMS Publish generate the updated sitemap.
+Production backend `0.1.35-backend.158` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.158`; `.157` is the verified previous rollback release. `.158` was deployed from source commit `4da1e9147795d80f713a63ea815acfa5ca03e10a` (`Improve admin feedback notifications and dashboard layout`) through the normal reviewed package flow. The reviewed linux-x64 package SHA-256 was `BDB5CD7429C1CCFB034C1B63FD01170647AA442E69BD71F737F8484228EF6424`, and the real deploy reused that package rather than rebuilding it. No EF migration was run.
 
-After deployment, `languagevoicetutor-backend.service` was active/running, `/health` returned HTTP 200, and `/api/health/database` returned HTTP 200 with `canConnect=true`; rollback was not required. The release does not publish Website CMS content by itself and does not change authentication, authorization, subscription, billing, Paddle, Mobile, model selection, temperature, or production configuration.
+The `.158` Admin Shell adds a green numeric badge for Feedback & reports whose existing status is exactly `new`. The badge reuses `GET /api/admin/feedback-reports` with `status=new`, `page=1`, and `pageSize=1`, uses `TotalCount`, requires `feedback_reports.read`, polls approximately every 60 seconds, refreshes on browser visibility and relevant report mutations, stops/resets with session cleanup, preserves the last known value across transient failures, and displays `99+` for large counts. It does not introduce persisted unread/read state, and opening a report does not change its status or reduce the badge. Overview **Available workflows** is a native collapsed-by-default details control. System **Capabilities Check** and **Release / Capability Status** are visually hidden while their DOM elements and capability processing remain intact; **AI Models** remains visible and functional.
+
+Pre-deploy verification confirmed clean `HEAD` and `origin/main` at the accepted source commit, the backend Linux deployment policy passed, the combined focused Admin feedback and capability tests passed 23/23 with zero failures or skips, real `admin.js` syntax parsing passed, `git diff --check` passed, and the Release linux-x64 package built successfully. Production verification confirmed `current` at `.158`, `previous` at `.157`, `languagevoicetutor-backend.service` active/running, `/health` HTTP 200 `Healthy`, and `/api/health/database` HTTP 200 `Healthy` with `canConnect=true`. Deployed `index.html`, `admin.js`, and `admin.css` contained the expected `.158` Admin UI; Admin CMS login/dashboard/logout/re-login, workflow collapse, feedback badge behavior, hidden System diagnostics, and unchanged AI Models passed manual smoke. The badge initially showed 4 new reports, stayed at 4 when Feedback & reports was opened, and fell immediately to 3 after one test App problem report changed from New to Reviewed. Recent service logs showed normal `.158` startup from `/opt/languagevoicetutor/backend/releases/0.1.35-backend.158` and successful Admin login. Rollback was not required.
+
+Production AI Models remain `gpt-5.6-luna` for Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation, with all four omit-temperature flags enabled. `.158` introduced no database schema/data change, new feedback endpoint, unread/read persistence, Admin RBAC or permission change, account-deletion workflow change, authentication contract change, billing/Premium/Paddle/Google Play/RTDN/reconciliation change, Mobile or Desktop release, Website CMS published-content change, AI model configuration change, or production secret/configuration change.
+
+## Historical 2026-09-13 `.157` Website sitemap production checkpoint
+
+Production backend `0.1.35-backend.157` was current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.157`; `.156` was retained as the previous rollback release. `.157` was deployed through the normal package -> reviewed dry-run -> production upload flow. It contains only the Website CMS sitemap-generator update adding the six language-practice URLs; no EF migration, schema change, or data change was required. The source history is `1f2c215b82df031f9e20f9f230668fcd8400ada6` (`Add language practice pages to sitemap`), with the final static website correction at `6512425e0765c96380aecd30d26d9656a849707a` (`Remove obsolete English CTA visuals`). Static HTML/CSS corrections do not require backend execution; `.157` is the specific backend release that lets Website CMS Publish generate the updated sitemap.
+
+After deployment, `languagevoicetutor-backend.service` was active/running, `/health` returned HTTP 200, and `/api/health/database` returned HTTP 200 with `canConnect=true`; rollback was not required. The release did not publish Website CMS content by itself and did not change authentication, authorization, subscription, billing, Paddle, Mobile, model selection, temperature, or production configuration.
 
 ## Historical 2026-09-09 `.156` Lesson Hint production checkpoint
 
@@ -47,8 +57,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.157`
-- Previous rollback release: `0.1.35-backend.156`
+- Current release: `0.1.35-backend.158`
+- Previous rollback release: `0.1.35-backend.157`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -64,7 +74,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.157`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.156`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.158`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.157`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 ## 2026-08-25 `.141` legacy product-limit removal deployment verification
 
@@ -328,7 +338,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.157`; verified rollback target `.156` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.158`; verified rollback target `.157` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`.
