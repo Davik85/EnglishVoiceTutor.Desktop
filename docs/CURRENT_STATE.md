@@ -1,10 +1,20 @@
 # Current State
 
-Review date: 2026-09-22.
+Review date: 2026-09-24.
 
-## 2026-09-22 Admin feedback notifications, dashboard cleanup, and backend `.158` production checkpoint
+## 2026-09-24 TutorIdentityGuard false-positive fix and backend `.159` production checkpoint
 
-Production backend `0.1.35-backend.158` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.158`; `.157` is the verified rollback release. Accepted source commit `4da1e9147795d80f713a63ea815acfa5ca03e10a` (`Improve admin feedback notifications and dashboard layout`) was deployed from the reviewed linux-x64 package with SHA-256 `BDB5CD7429C1CCFB034C1B63FD01170647AA442E69BD71F737F8484228EF6424`. The real deployment reused that reviewed package rather than rebuilding it. No EF migration was run.
+Production backend `0.1.35-backend.159` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`; `.158` is the verified rollback release. Accepted source commit `330a7e89967ba909450dbf887a9de1f65624390c` (`Fix tutor identity guard false positives`) was deployed from the reviewed package with SHA-256 `51C36CAE9D8C4E4ACC6DE2B13FB4E80F420CCBDBAEBAEBC081C1D9C0A762603C`. The deployment reused that package without rebuilding it. No EF migration was run, and no database schema or data change occurred.
+
+The TutorIdentityGuard false positive came from global `RegexOptions.IgnoreCase`: it also applied to the `[A-Z][a-z]+` candidate-name capture, so ordinary lowercase words after `I am`, including `looking` and `interested`, could be mistaken for tutor names and replaced with the active tutor name. The fix scopes case-insensitive matching to the self-introduction prefix and keeps the proper-name capture case-sensitive. `I am looking...` and `I am interested...` remain unchanged; a genuine wrong self-introduction such as `I'm David` with active tutor Lana is still corrected.
+
+Pre-deploy verification passed 10 focused `TutorIdentityGuard` tests with zero failures, `git diff --check`, and the backend Linux deployment policy. Production `current` points to `.159` and `previous` to `.158`; `languagevoicetutor-backend.service` is active/running, `/health` returned HTTP 200 `Healthy`, and `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`. Startup logs confirmed content root `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`. Manual production reproduction of the original lesson flow passed. No TutorIdentityGuard rewrite events were observed in the available bounded journal output after `.159` startup during verification. No rollback was required.
+
+This release made no API contract, authentication, authorization, billing, subscription, Mobile, Desktop UI, Website, AI model configuration, or production secret/configuration change.
+
+## Historical 2026-09-22 Admin feedback notifications, dashboard cleanup, and backend `.158` production checkpoint
+
+Production backend `0.1.35-backend.158` was current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.158`; `.157` was the verified rollback release at this checkpoint. Accepted source commit `4da1e9147795d80f713a63ea815acfa5ca03e10a` (`Improve admin feedback notifications and dashboard layout`) was deployed from the reviewed linux-x64 package with SHA-256 `BDB5CD7429C1CCFB034C1B63FD01170647AA442E69BD71F737F8484228EF6424`. The real deployment reused that reviewed package rather than rebuilding it. No EF migration was run.
 
 Admin Feedback & reports now shows a green numeric badge for reports whose existing status is exactly `new`. It uses the existing `GET /api/admin/feedback-reports` endpoint with `status=new`, `page=1`, and `pageSize=1`, takes the value from `TotalCount`, and is gated by `feedback_reports.read`. It refreshes approximately every 60 seconds, when the browser tab becomes visible again, and after relevant report mutations; polling stops and the badge resets during session cleanup/logout. A transient refresh failure keeps the last successfully known state rather than displaying a false zero, and counts above 99 display as `99+`. This is not a separate persisted unread/read model: opening or viewing a report does not change its status or reduce the badge count by itself.
 
@@ -317,7 +327,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.158`, with `.157` retained as rollback. `.158` required no EF migration and adds the Admin feedback notification badge plus the narrow Admin dashboard presentation cleanup; the prior Google Play, Restore Credentials, Backend Data Protection, and initial-deferral foundations remain deployed. Android `0.1.0+10` / versionCode 10 is publicly active in Google Play Production as of the 2026-09-20 public-production checkpoint, while still-unobserved billing lifecycle paths remain post-release monitoring.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.159`, with `.158` retained as rollback. `.159` fixes the TutorIdentityGuard false positive without an EF migration; the `.158` Admin feedback notification badge and dashboard presentation cleanup remain deployed. The prior Google Play, Restore Credentials, Backend Data Protection, and initial-deferral foundations remain deployed. Android `0.1.0+10` / versionCode 10 is publicly active in Google Play Production as of the 2026-09-20 public-production checkpoint, while still-unobserved billing lifecycle paths remain post-release monitoring.
 - Website: Website CMS-generated pages and the independent homepage/language-practice static pages are live; the six-page visual and sitemap publication checkpoint is complete.
 - Download: Windows Direct Release 1.6 is available through the manifest-driven `/releases/windows/direct/latest.json` flow; the published manifest SHA-256 and size are verified facts, without a claimed independent second public-download hash. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Windows installer: current Windows direct public release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`; its update flow remains manual-confirmation and does not silently auto-update. The installed 1.5 -> 1.6 manual-confirmation update completed successfully.
@@ -347,7 +357,7 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-The current backend release is `0.1.35-backend.158`, with `.157` retained as rollback. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`; Google Play foundation migrations and `20260831080122_AddRestoreCredentialsFoundation` are applied. Public backend and database health returned HTTP 200; `.142` applied the additive Google Play trial-deferral foundation migration, while `.152` through `.158` required no migration. Backend Data Protection is enabled in production with its persistent key ring and active certificate outside release directories. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
+The current backend release is `0.1.35-backend.159`, with `.158` retained as rollback. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`; Google Play foundation migrations and `20260831080122_AddRestoreCredentialsFoundation` are applied. Public backend and database health returned HTTP 200; `.142` applied the additive Google Play trial-deferral foundation migration, while `.152` through `.159` required no migration. Backend Data Protection is enabled in production with its persistent key ring and active certificate outside release directories. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
 
 Backend deployment uses:
 
@@ -687,14 +697,14 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 ### Current release point
 
 - Windows direct release: `1.6`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.6.exe`, production backend URL, `minimumSupportedVersion=1.6`, and manual-confirmation update mode. The published manifest SHA-256 is `9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3` and size is `188959874` bytes; no independent second public-download SHA verification is claimed for 1.6.
-- Backend release in tracked release docs: current production is `0.1.35-backend.158`, with `.157` as rollback; `/health` and `/api/health/database` are verified healthy. Older backend references are historical and not current production unless a section is explicitly documenting those releases.
+- Backend release in tracked release docs: current production is `0.1.35-backend.159`, with `.158` as rollback; `/health` and `/api/health/database` are verified healthy. Older backend references are historical and not current production unless a section is explicitly documenting those releases.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`. Current Active text roles all use `gpt-5.6-luna`, with all four omit-temperature flags enabled; `.154` routes the four text roles independently and keeps Lesson Summary on the Lesson Tutor Chat model policy.
 
 ### What is ready, partial, and blocked
 
 Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, verified persistent AI Models production storage, Website CMS draft/publish mechanics, and documented secret boundaries.
 
-Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.158`, with `.157` retained as rollback and deploys, health checks, database health checks, and migrations kept as separate operations.
+Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.159`, with `.158` retained as rollback and deploys, health checks, database health checks, and migrations kept as separate operations.
 
 Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, final website/legal/support/pricing approval, monitoring/privacy/release-readiness review, and explicit release decision after controlled tester feedback. Controlled Paddle live payment/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed, but they are not a broad launch decision; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 

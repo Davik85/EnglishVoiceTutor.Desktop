@@ -1,10 +1,20 @@
 # Backend server deployment
 
-Review date: 2026-09-22.
+Review date: 2026-09-24.
 
 ## Current production backend
 
-Production backend `0.1.35-backend.158` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.158`; `.157` is the verified previous rollback release. `.158` was deployed from source commit `4da1e9147795d80f713a63ea815acfa5ca03e10a` (`Improve admin feedback notifications and dashboard layout`) through the normal reviewed package flow. The reviewed linux-x64 package SHA-256 was `BDB5CD7429C1CCFB034C1B63FD01170647AA442E69BD71F737F8484228EF6424`, and the real deploy reused that package rather than rebuilding it. No EF migration was run.
+Production backend `0.1.35-backend.159` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`; `.158` is the verified previous rollback release. `.159` was deployed from accepted source commit `330a7e89967ba909450dbf887a9de1f65624390c` (`Fix tutor identity guard false positives`). The reviewed package SHA-256 was `51C36CAE9D8C4E4ACC6DE2B13FB4E80F420CCBDBAEBAEBC081C1D9C0A762603C`; production deployment reused that package without rebuilding it. No EF migration or database schema/data change occurred.
+
+The TutorIdentityGuard false positive came from global `RegexOptions.IgnoreCase` applying to the `[A-Z][a-z]+` candidate-name capture. Lowercase words after `I am`, including `looking` and `interested`, could therefore be mistaken for tutor names and replaced with the active tutor name. `.159` limits case-insensitive matching to the self-introduction prefix, keeping the proper-name capture case-sensitive. Ordinary `I am looking...` and `I am interested...` phrases remain unchanged, while a genuine wrong self-introduction such as `I'm David` with active tutor Lana is still corrected.
+
+Pre-deploy verification passed 10 focused `TutorIdentityGuard` tests with zero failures, `git diff --check`, and the backend Linux deployment policy. Production verification confirmed `current` at `.159`, `previous` at `.158`, `languagevoicetutor-backend.service` active/running, `/health` HTTP 200 `Healthy`, and `/api/health/database` HTTP 200 `Healthy` with `canConnect=true`. Startup logs confirmed content root `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`. Manual production reproduction of the original lesson flow passed. No TutorIdentityGuard rewrite events were observed in the available bounded journal output after `.159` startup during verification. No rollback was required.
+
+`.159` made no API contract, authentication, authorization, billing, subscription, Mobile, Desktop UI, Website, AI model configuration, or production secret/configuration change.
+
+## Historical 2026-09-22 `.158` Admin feedback and dashboard production checkpoint
+
+Production backend `0.1.35-backend.158` was current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.158`; `.157` was the verified previous rollback release at this checkpoint. `.158` was deployed from source commit `4da1e9147795d80f713a63ea815acfa5ca03e10a` (`Improve admin feedback notifications and dashboard layout`) through the normal reviewed package flow. The reviewed linux-x64 package SHA-256 was `BDB5CD7429C1CCFB034C1B63FD01170647AA442E69BD71F737F8484228EF6424`, and the real deploy reused that package rather than rebuilding it. No EF migration was run.
 
 The `.158` Admin Shell adds a green numeric badge for Feedback & reports whose existing status is exactly `new`. The badge reuses `GET /api/admin/feedback-reports` with `status=new`, `page=1`, and `pageSize=1`, uses `TotalCount`, requires `feedback_reports.read`, polls approximately every 60 seconds, refreshes on browser visibility and relevant report mutations, stops/resets with session cleanup, preserves the last known value across transient failures, and displays `99+` for large counts. It does not introduce persisted unread/read state, and opening a report does not change its status or reduce the badge. Overview **Available workflows** is a native collapsed-by-default details control. System **Capabilities Check** and **Release / Capability Status** are visually hidden while their DOM elements and capability processing remain intact; **AI Models** remains visible and functional.
 
@@ -57,8 +67,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.158`
-- Previous rollback release: `0.1.35-backend.157`
+- Current release: `0.1.35-backend.159`
+- Previous rollback release: `0.1.35-backend.158`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -74,7 +84,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.158`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.157`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.158`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 ## 2026-08-25 `.141` legacy product-limit removal deployment verification
 
@@ -338,7 +348,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.158`; verified rollback target `.157` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.159`; verified rollback target `.158` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`.
