@@ -8,8 +8,8 @@ public sealed class TutorIdentityGuard
     private const string GeneratedNameGroupName = "name";
 
     private static readonly Regex SelfIntroductionRegex = new(
-        @"\b(?:(?:hi|hello)\s*,?\s*)?(?:(?:I\s*(?:am|'m))|(?:my\s+name\s+is))\s+(?<name>[A-Z][a-z]+)\b",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        @"\b(?i:(?:(?:hi|hello)\s*,?\s*)?(?:(?:I\s*(?:am|'m))|(?:my\s+name\s+is))\s+)(?<name>[A-Z][a-z]+)\b",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly HashSet<string> CommonWordsThatAreNotTutorNames = new(StringComparer.OrdinalIgnoreCase)
     {
