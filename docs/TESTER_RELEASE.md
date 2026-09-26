@@ -45,7 +45,7 @@ Windows Direct Release 1.6 is published on the public direct channel. The manual
 
 ## Historical backend notes
 
-Historical tester-era backend snapshot notes are retained only for context. Current production backend is `0.1.35-backend.151`, with `.150` rollback; verify the live value from the server symlink before calling it current. Android v8 is publicly available in Google Play Production; this does not alter the historical Windows tester observations below.
+Historical tester-era backend snapshot notes are retained only for context. See [CURRENT_STATE.md](CURRENT_STATE.md) for the latest documented backend and Android state; verify the live backend symlink before calling a version current. These changes do not alter the historical Windows tester observations below.
 
 `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
@@ -102,7 +102,7 @@ Downloaded update installers from **Check for updates** are saved in the current
 
 ## CMS/Admin and content runtime
 
-CMS/Admin is connected. CMS published-snapshot runtime is active for published Windows direct lessons. **Save draft** alone does not affect the desktop app; **Save draft** plus **Publish** is required, and newly started desktop lessons pick up published CMS changes. The admin-only **Initialize from static JSON** action initializes `static-json-v1` CMS draft/admin content from packaged static JSON for first setup/recovery, does not publish automatically, and does not switch runtime. Runtime should use CMS published snapshot when `CmsContent__UsePublishedSnapshotForRuntime=true` and a valid published snapshot is active. Static JSON fallback remains available as initialization/emergency fallback; static JSON should not be the normal active learner source. Normal runtime status should remain `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, with no errors and no warnings. Production critical-change approval remains future work. Public release remains blocked until controlled tester feedback and operational readiness are complete.
+CMS/Admin is connected. CMS published-snapshot runtime is active for published Windows direct lessons. **Save draft** alone does not affect the desktop app; **Save draft** plus **Publish** is required, and newly started desktop lessons pick up published CMS changes. The admin-only **Initialize from static JSON** action initializes `static-json-v1` CMS draft/admin content from packaged static JSON for first setup/recovery, does not publish automatically, and does not switch runtime. Runtime should use CMS published snapshot when `CmsContent__UsePublishedSnapshotForRuntime=true` and a valid published snapshot is active. Static JSON fallback remains available as initialization/emergency fallback; static JSON should not be the normal active learner source. Normal runtime status should remain `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, with no errors and no warnings. Production critical-change approval remains future work. Broader paid-launch readiness and critical-change approval remain separate follow-up work.
 
 ## Windows installer installed-version behavior
 

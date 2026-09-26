@@ -18,7 +18,7 @@ Scope: Language Voice Tutor / English Voice Tutor Desktop release path. This is 
 
 ## Reviewed files and areas
 
-- Production planning docs: `docs/paddle-production-readiness-checklist.md`, `docs/paddle-production-webhook-setup.md`, `docs/subscription-billing-foundation.md`, `docs/billing-remaining-operations-plan.md`, `docs/CURRENT_STATE.md`, `docs/NEXT_STEPS.md`, `docs/RELEASE_READINESS_REVIEW.md`, `docs/SECURITY_RELEASE_REVIEW.md`, and `docs/BACKEND_SERVER_DEPLOYMENT.md`.
+- Production planning docs: `docs/paddle-production-readiness-checklist.md`, `docs/paddle-production-webhook-setup.md`, `docs/subscription-billing-foundation.md`, `docs/billing-remaining-operations-plan.md`, `docs/CURRENT_STATE.md`, `docs/NEXT_STEPS.md`, `docs/SECURITY_RELEASE_REVIEW.md`, and `docs/BACKEND_SERVER_DEPLOYMENT.md`.
 - Backend billing/Paddle code: checkout-session endpoint, Paddle checkout adapter, backend-hosted checkout launch page, Paddle webhook endpoint/signature verification/ingestion/normalization, billing-event reconciliation, payment persistence, subscription snapshot processing, entitlement activation, cancellation services, and billing/admin statistics services/tests.
 - Desktop billing flow only for understanding: Account/Upgrade/Refresh/Cancel UI paths and backend checkout-session client paths.
 - Policy/smoke coverage: Paddle smoke scripts, billing policy tests, logging/privacy policy tests, deployment policy tests, documentation source-of-truth policy, and Admin product statistics policy.

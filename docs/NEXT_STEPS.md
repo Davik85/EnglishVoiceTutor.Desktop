@@ -1,14 +1,14 @@
 # Next Steps
 
-## 2026-09-13 current production baseline and post-release monitoring
+## Current production baseline and post-release monitoring
 
-Orralen - Language Voice Tutor Android `0.1.0+9` / versionCode 9 is publicly available in Google Play Production. Backend `0.1.35-backend.157` is current with `.156` rollback; the service is active and public backend/database health checks returned HTTP 200. `.157` added only the Website CMS sitemap-generator update for the six language-practice URLs and required no EF migration. The completed static language-practice SEO/visual/sitemap publication is not a future deployment: the six independent language pages are live, visually accepted, use `?v=20260913-visual3`, and the controlled CMS Publish produced an exact 17-URL sitemap with all URLs returning HTTP 200. Homepage and language-page assets were preserved by SHA comparison, database health remained HTTP 200, and no rollback was needed. The independent static unit remains `index.html`, `mobile.html`, `styles.css`, the six language pages, and `assets/homepage/**`; Website CMS owns its generated pages, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`.
+Orralen - Language Voice Tutor Android `0.1.0+10` / versionCode 10 is publicly available in Google Play Production. Backend `0.1.35-backend.159` is the latest documented production release with `.158` rollback; verify live state before a new handoff. The earlier `.157` Website CMS sitemap-generator deployment required no EF migration. The completed static language-practice SEO/visual/sitemap publication is not a future deployment: the six independent language pages are live, visually accepted, use `?v=20260913-visual3`, and the controlled CMS Publish produced an exact 17-URL sitemap with all URLs returning HTTP 200. Homepage and language-page assets were preserved by SHA comparison, database health remained HTTP 200, and no rollback was needed. The independent static unit remains `index.html`, `mobile.html`, `styles.css`, the six language pages, and `assets/homepage/**`; Website CMS owns its generated pages, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`.
 
 AI temperature compatibility and independent text-role routing are completed production behavior, not future work. `.152` deployed four independent text-role omit-temperature flags, `.153` corrected Lesson Summary to use the Lesson Tutor Chat effective-temperature policy and was production-validated with a successful Summary, and `.154` routed Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation through their corresponding model settings while intentionally keeping Summary on `LessonTutorChatModel`. The current Active text-role model is `gpt-5.6-luna` for all four roles, with all four omit-temperature flags enabled. `.154` production smoke confirmed lesson start/flow, Hint, and Translation; independent distinct-model routing is proven by automated request-shape tests because production currently uses the same model ID for all four roles.
 
 The homepage SEO/social-preview rollout is closed production work: visual parity and previews in Telegram, LinkedIn, Facebook, and WhatsApp are confirmed, and no additional homepage/social-preview rollout is a current release task. Consent-aware Google Analytics is also completed production work: Website CMS is the configuration source, the shared runtime defaults consent to denied, the independent homepage uses that runtime without a GA ID, Google Ads is disabled, and a consented first visit was verified in Google Analytics Realtime. The next work is monitoring rather than a pending production rollout: observe the normal real-money renewal scheduled for 2026-10-08, pending payment, explicit cancellation, fresh-install billing restore, refund/voided-purchase, chargeback, and other lifecycle evidence if and when it occurs. Do not represent these observations as closed release gates or as evidence that all billing lifecycles are production-verified. Crash-reporting integration remains separate work.
 
-Review date: 2026-09-13.
+Review date: 2026-09-26.
 
 ## Coordinated ORRALEN client rebrand — future audited work
 
@@ -22,7 +22,7 @@ Branding must preserve continuity: do not change Android package `com.languagevo
 
 ## Historical pre-2026-09-03 Google Play release and compliance sequence
 
-The paragraphs below preserve the `.139`/`.142` rollout baseline as historical context. The current source of truth is production backend `0.1.35-backend.157` with `.156` rollback and Orralen - Language Voice Tutor Android `0.1.0+9` / versionCode 9 publicly available in Google Play Production. Google Play Billing, RTDN, and reconciliation remain enabled; pending-refund review remains separately scoped. Older planned release-sequence language is retained only as history; current remaining work is billing lifecycle monitoring and separately approved rebrand work, not a language-page SEO deployment.
+The paragraphs below preserve the `.139`/`.142` rollout baseline as historical context. The current source of truth is [CURRENT_STATE.md](CURRENT_STATE.md); the latest documented backend is `.159` with `.158` rollback, and Android `0.1.0+10` / versionCode 10 is public in Google Play Production. Google Play Billing, RTDN, and reconciliation remain enabled; pending-refund review remains separately scoped. Older planned release-sequence language is retained only as history; current remaining work is billing lifecycle monitoring and separately approved rebrand work, not a language-page SEO deployment.
 
 The RTDN, protected-token persistence, reconciliation, linked-purchase-token replacement, and protected pending-refund review database rollout was completed in historical backend `0.1.35-backend.139`. Migrations `20260802154345_AddGooglePlayRtdnPersistenceFoundation` and `20260803052655_AddGooglePlayPendingRefundReviewFoundation` are applied. Controlled Google Play Billing, RTDN, and reconciliation are enabled for the approved Internal-testing license-test context; pending-refund review remains disabled, protects raw token/order material, supports only explicit `NEUTRAL`, submits no fabricated usage evidence, and never changes Premium directly.
 
@@ -106,7 +106,7 @@ Backend `0.1.35-backend.116` completed the learner-level settings prerequisite. 
 
 ## Historical release-readiness status
 
-Public release boundary: the current product remains a public Windows direct release, not a full broad production-readiness claim.
+The backend and Google Play statements in this section record an earlier checkpoint. See the current baseline above and [CURRENT_STATE.md](CURRENT_STATE.md) before citing production state. The public Windows direct release is not a full broad production-readiness claim.
 
 - Backend: production healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.148`, with `.147` retained as rollback. Historical `.142` applied the additive Google Play trial-deferral foundation; `.146` and `.147` remain preserved incident records, while `.148` closes only their provider-precision validation blocker. Restore Credentials, the applied foundation migration, one free lesson per day, usage telemetry, separate technical rate limiting, and the documented CMS snapshot remain intact. Controlled Google Play Internal testing is enabled, but public rollout still requires separate lifecycle evidence, final review, and explicit owner approval.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
@@ -117,7 +117,7 @@ Public release boundary: the current product remains a public Windows direct rel
 
 Do not state that the product is fully public production-ready. This remains a public Windows direct release, not a full broad production-readiness claim, and not broad public production readiness.
 
-Pre-mobile planning should start from [`docs/PRE_MOBILE_READINESS.md`](PRE_MOBILE_READINESS.md) so stale Windows `1.0`, backend `.99`, tester-era, or pre-live Paddle facts are not reused as current mobile planning inputs. Mobile v1 must be treated as another client for the same Language Voice Tutor product: same backend account, database, Premium entitlement, usage/limits, lesson history/progress, lesson model, and backend-verified billing source of truth.
+Future Mobile work should use the current Mobile repository and shared backend contracts. Desktop and Mobile use the same backend account, database, Premium entitlement, usage/limits, lesson history/progress, lesson model, and backend-verified billing source of truth.
 
 ## Remaining release steps
 
@@ -128,7 +128,7 @@ Pre-mobile planning should start from [`docs/PRE_MOBILE_READINESS.md`](PRE_MOBIL
 5. Monitoring/logging/privacy hardening for remaining Admin operations and paid-launch evidence.
 6. Backup/restore/rollback drill currency check before broader launch.
 7. Controlled Paddle live payment/webhook/Premium activation, failed-payment non-activation, desktop cancel-renewal, and full-refund Premium revocation are completed for the 2026-07-02 owner-led test; chargeback remains implemented/test-covered but not live-chargeback-tested, expanded customer portal/subscription management is deferred, and Direct installer code signing/final smoke plus broad release decision remain pending.
-8. Microsoft Store/MSIX discontinued for now; do not claim Microsoft Store, Android, or iOS availability as currently available.
+8. Microsoft Store/MSIX is discontinued for now; do not claim Microsoft Store or iOS availability. Android is publicly available in Google Play Production.
 
 ## Backend next-step guardrails
 

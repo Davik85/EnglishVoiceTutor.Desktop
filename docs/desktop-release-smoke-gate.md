@@ -404,7 +404,7 @@ Known issues:
 
 ## Next recommended phase after this gate
 
-After this smoke gate passes, continue to the next approved desktop hardening item in `docs/desktop-release-work-plan.md`. Keep production billing deferred until the desktop hardening gate and final release triage are complete.
+After this smoke gate passes, use [NEXT_STEPS.md](NEXT_STEPS.md) and [CURRENT_STATE.md](CURRENT_STATE.md) to choose the next approved desktop work. Preserve the separate billing and release decision gates.
 
 ## Step 5B-5 backend-unavailable and account UX hardening
 

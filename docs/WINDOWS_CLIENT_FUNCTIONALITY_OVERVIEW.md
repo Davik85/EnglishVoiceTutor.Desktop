@@ -10,7 +10,7 @@ The document is intended to serve as:
 
 - an internal source of truth for the current Windows client functionality;
 - a customer/client presentation preparation reference;
-- a planning reference for a future mobile client that should mirror the same core product model.
+- a reference for the shared product model across Windows and Mobile.
 
 This document describes current product behavior only. It does not claim that broad public production readiness, production billing operations, mobile apps, or production CMS/Admin operations are complete beyond the cautious status already recorded in the release-readiness documents.
 
@@ -18,7 +18,7 @@ This document describes current product behavior only. It does not claim that br
 
 - Current client platform: Windows desktop app.
 - Current public distribution path: Windows direct-download release, with the live manifest as the release source of truth.
-- Future platforms: Android and iOS mobile clients are planning targets only; mobile apps are not currently available.
+- Android is publicly available in Google Play Production. iOS remains a future platform.
 - The desktop client is backend-driven for account, lesson, subscription/Premium, AI, transcription, translation, TTS, progress/history, and settings sync behavior where those features require server state.
 
 ## Main user flow
@@ -189,17 +189,16 @@ Current source-of-truth boundaries:
 
 Keep external/customer-facing wording honest:
 
-- Do not claim Android or iOS apps exist. They are future planning targets only.
-- Do not claim Microsoft Store, Google Play, or App Store availability.
+- Android is available in Google Play Production; do not claim iOS App Store or Microsoft Store availability.
 - Do not claim broad public production readiness. Current docs describe a public Windows direct release and a healthy production backend, but broader paid-launch/public-readiness work remains cautious and follow-up driven.
 - Do not claim production billing operations or expanded customer portal/subscription management are fully complete; broad paid launch remains pending final review.
 - Do not claim the full native/explanation catalog has complete UI localization. Only the 14 release-ready interface languages are exposed as interface languages for this phase.
 - Code signing / SmartScreen mitigation remains deferred for the Windows direct installer path.
 - CMS/Admin should be described using the existing cautious status: CMS/Admin foundations exist, runtime CMS published snapshot is active for published Windows direct lessons, but broader production CMS/Admin operational readiness and critical-change approval remain follow-up areas unless newer source-of-truth documents say otherwise.
 
-## Mobile client notes: which functionality should be reused or mirrored in the future mobile client
+## Shared product behavior for Mobile
 
-A future mobile client should be another client for the same product, not a separate product. It should reuse or mirror:
+The Mobile client is another client for the same product. Shared behavior includes:
 
 - The same user account and backend session model.
 - The same backend-owned Premium/subscription entitlement state.
@@ -212,4 +211,4 @@ A future mobile client should be another client for the same product, not a sepa
 - The same backend-owned progress/history model.
 - The same security boundary: no client-side OpenAI calls, no client-side Premium decisions, and no provider secrets in the mobile app.
 
-Mobile planning should adapt layout, touch ergonomics, audio permissions, backgrounding behavior, and store billing surfaces, but should not introduce a separate account system, backend, database, entitlement model, or lesson behavior model.
+Future Mobile changes should preserve the shared account, backend, database, entitlement, and lesson behavior model while adapting layout, audio permissions, and store billing surfaces to the platform.

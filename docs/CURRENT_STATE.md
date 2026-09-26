@@ -1,6 +1,8 @@
 # Current State
 
-Review date: 2026-09-24.
+Review date: 2026-09-26.
+
+Android `0.1.0+10` / versionCode 10 is publicly available in Google Play Production as Orralen - Language Voice Tutor. This current status supersedes the dated v8/v9 checkpoints below.
 
 ## 2026-09-24 TutorIdentityGuard false-positive fix and backend `.159` production checkpoint
 

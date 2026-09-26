@@ -42,7 +42,7 @@ updateMode: manual-confirmation
 minimumSupportedVersion: 1.6
 ```
 
-This release passed the real upload and the live manifest was fetched with cache busting. The published manifest SHA-256 and size above are verified facts; no independent second public-download SHA verification is claimed for 1.6. The successful 1.5 -> 1.6 manual-confirmation update is verified without a broader installed-app functional-smoke claim. Current production backend is `0.1.35-backend.141` with `.140` rollback after a separate backend-only deployment; `.141` required no migration or schema change.
+This release passed the real upload and the live manifest was fetched with cache busting. The published manifest SHA-256 and size above are verified facts; no independent second public-download SHA verification is claimed for 1.6. The successful 1.5 -> 1.6 manual-confirmation update is verified without a broader installed-app functional-smoke claim. The current backend release and rollback are recorded in [CURRENT_STATE.md](CURRENT_STATE.md); verify the server `current` symlink before handoff. This Windows upload did not deploy the backend or run migrations.
 
 Release/tester installed builds are server-only. The production backend URL for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`.
 
@@ -173,7 +173,7 @@ Required static fallback text:
 
 ## Release-readiness status and deferred items
 
-Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.141`, with `.140` rollback. Website Paddle-review polish is completed separately from this upload flow. Historical Paddle validation performed on `.108` remains evidence for that dated release, not a current backend claim. Chargeback remains implemented/test-covered but not live-chargeback-tested and partial refunds remain conservative/manual-review. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
+The latest documented production backend and rollback are in [CURRENT_STATE.md](CURRENT_STATE.md); verify live health and the `current` symlink before handoff. Website Paddle-review polish is completed separately from this upload flow. Historical Paddle validation performed on `.108` remains evidence for that dated release, not a current backend claim. Chargeback remains implemented/test-covered but not live-chargeback-tested and partial refunds remain conservative/manual-review. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
 
 Do not state that the product is fully public production-ready. The current Windows release remains a public Windows direct release, not a full broad production-readiness claim, and not broad public production readiness.
 
