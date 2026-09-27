@@ -1,6 +1,6 @@
 # Backend Health Endpoints
 
-These lightweight endpoints are intended for local and development verification before the desktop app is connected to backend-backed user settings. They do not require authentication and they do not expose secrets, connection strings, database passwords, database hosts, or database usernames.
+These lightweight endpoints support local/development checks and the authenticated production Admin CMS health strip. The endpoints themselves do not require authentication. Their responses intentionally expose only safe status information, never secrets, connection strings, database passwords, database hosts, or database usernames. The Admin CMS header displays only the status derived from each response.
 
 ## `GET /api/health`
 
@@ -50,4 +50,8 @@ Expected status code: `503 Service Unavailable`
 }
 ```
 
-The database health response includes only the EF Core provider name and a short safe error message. It must not include connection strings, passwords, hosts, usernames, or other secrets.
+The database health response includes only the EF Core provider name and a short safe error message. It must not include connection strings, passwords, hosts, usernames, or other secrets. The Admin CMS health strip does not display the provider or error field.
+
+The strip also reads `GET /api/backend/config-status` for **AI Config**. This reports whether OpenAI is configured; it is not a live OpenAI provider-health check and does not test provider access. **CMS Runtime** uses the authenticated `GET /api/admin/dev/cms/runtime-status` diagnostic, subject to `cms.runtime_status.read`; admins without that permission see a neutral unavailable state. A working static JSON fallback appears as a warning.
+
+The strip is informational. Investigate a warning or error with the appropriate deeper diagnostics before drawing conclusions about the full production system.

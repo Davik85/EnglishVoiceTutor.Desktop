@@ -14,8 +14,27 @@ button:disabled { background: #93a7d7; cursor: not-allowed; }
 .error { color: #b91c1c; min-height: 24px; margin: 8px 0 0; }
 .success { color: #166534; min-height: 24px; margin: 8px 0 0; }
 .hidden { display: none; }
-.dashboard-header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 20px; }
+.dashboard-header { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; margin-bottom: 20px; }
 .selected-user-summary { color: #374151; margin: 8px 0 0; }
+.dashboard-header > div:first-child { flex: 0 1 190px; min-width: 0; }
+.dashboard-header > #logout-button { flex: 0 0 auto; margin-left: auto; }
+.health-strip { align-items: center; display: flex; flex: 1 1 650px; flex-wrap: wrap; gap: 8px 12px; min-width: 0; }
+.health-indicators { display: flex; flex: 1 1 480px; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.health-indicator { align-items: center; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 999px; color: #475569; display: inline-flex; font-size: 12px; font-weight: 600; gap: 5px; padding: 5px 8px; white-space: nowrap; }
+.health-indicator::before { background: currentColor; border-radius: 50%; content: ""; height: 7px; width: 7px; }
+.health-indicator[data-state="healthy"] { background: #dcfce7; border-color: #86efac; color: #166534; }
+.health-indicator[data-state="warning"] { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+.health-indicator[data-state="unhealthy"] { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+.health-state { font-weight: 700; }
+.health-actions { align-items: center; color: #4b5563; display: flex; flex: 0 0 auto; font-size: 12px; gap: 6px; white-space: nowrap; }
+.health-actions button { font-size: 12px; padding: 5px 8px; }
+@media (max-width: 720px) {
+  .dashboard-header { align-items: flex-start; }
+  .dashboard-header > #logout-button { order: 1; }
+  .health-strip { flex-basis: 100%; order: 2; }
+  .health-indicator { flex: 1 1 125px; justify-content: center; }
+  .health-actions { justify-content: flex-end; width: 100%; }
+}
 .admin-shell { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; }
 .admin-sidebar { display: flex; flex-direction: column; gap: 8px; }
 .admin-tab-button { text-align: left; background: #e5e7eb; color: #1f2937; }

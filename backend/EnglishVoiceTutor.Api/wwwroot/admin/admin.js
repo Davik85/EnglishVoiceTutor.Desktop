@@ -18,6 +18,9 @@
     const ApiPaths = {
         login: "/api/auth/login",
         adminSession: "/api/admin/session",
+        health: "/api/health",
+        databaseHealth: "/api/health/database",
+        backendConfigStatus: "/api/backend/config-status",
         adminMe: "/api/admin/me",
         capabilities: "/api/admin/capabilities",
         statisticsOverview: "/api/admin/statistics/overview",
@@ -190,6 +193,11 @@
     const CmsSubTabs = Object.freeze({ overview: "overview", topics: "topics", scenarios: "scenarios", levels: "levels", prompts: "prompts", tutors: "tutors", validationPreview: "validation-preview", versionsPublish: "versions-publish", audit: "audit" });
     const LookupSources = Object.freeze({ userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson" });
     let accessToken = null;
+    let healthPollingTimer = null;
+    let healthRefreshInFlight = false;
+    let healthRefreshQueued = false;
+    let healthAbortController = null;
+    let healthPollingGeneration = 0;
     let selectedUserId = null;
     let selectedUserEmail = null;
     let selectedUserLookupPayload = null;
@@ -228,6 +236,9 @@
     const loginError = document.getElementById("login-error");
     const signInButton = document.getElementById("sign-in-button");
     const logoutButton = document.getElementById("logout-button");
+    const healthRefreshButton = document.getElementById("health-refresh-button");
+    const healthCheckedAtElement = document.getElementById("health-checked-at");
+    const healthIndicators = ["health-backend", "health-database", "health-cms-runtime", "health-ai-config"].map((id) => document.getElementById(id));
     const selectedUserSummaryElement = document.getElementById("selected-user-summary");
     const tabButtons = Array.from(document.querySelectorAll(".admin-tab-button"));
     const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
@@ -607,6 +618,91 @@
 
     function hasAdminPermission(permissionId) {
         return adminAccessSnapshot.permissions.includes(permissionId);
+    }
+
+    function renderHealthIndicator(index, state, label) {
+        const indicator = healthIndicators[index];
+        indicator.dataset.state = state;
+        indicator.querySelector(".health-state").textContent = label;
+    }
+
+    function resetHealthIndicators(label) {
+        healthIndicators.forEach((_, index) => renderHealthIndicator(index, "unknown", label));
+        healthCheckedAtElement.textContent = "Updated -";
+        healthRefreshButton.disabled = false;
+    }
+
+    async function readHealthPayload(path, signal, authenticated = false) {
+        const response = await fetch(path, { method: "GET", headers: authenticated ? getAdminHeaders() : {}, signal });
+        if (authenticated && response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (!response.ok) { throw new Error("Status request failed."); }
+        return response.json();
+    }
+
+    async function refreshHealthStatus() {
+        if (!healthPollingTimer || dashboard.classList.contains("hidden")) { return; }
+        if (healthRefreshInFlight) { healthRefreshQueued = true; return; }
+        const generation = healthPollingGeneration;
+        const controller = new AbortController();
+        healthAbortController = controller;
+        healthRefreshInFlight = true;
+        healthRefreshButton.disabled = true;
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        try {
+            const checks = [
+                readHealthPayload(ApiPaths.health, controller.signal).then((payload) =>
+                    payload?.status === "Healthy" ? { state: "healthy", label: "OK" } : { state: "unhealthy", label: "Failed" }),
+                readHealthPayload(ApiPaths.databaseHealth, controller.signal).then((payload) =>
+                    payload?.status === "Healthy" && payload?.canConnect === true ? { state: "healthy", label: "OK" } : { state: "unhealthy", label: "Failed" }),
+                hasAdminPermission(AdminPermissionIds.cmsRuntimeStatusRead)
+                    ? readHealthPayload(ApiPaths.cmsRuntimeStatus, controller.signal, true).then((payload) =>
+                        payload?.success !== true ? { state: "unhealthy", label: "Failed" }
+                            : payload?.fallbackUsed === true ? { state: "warning", label: "Fallback" }
+                                : payload?.validationSuccess === true ? { state: "healthy", label: "OK" } : { state: "unhealthy", label: "Failed" })
+                    : Promise.resolve({ state: "unknown", label: "Not available" }),
+                readHealthPayload(ApiPaths.backendConfigStatus, controller.signal).then((payload) =>
+                    payload?.openAiStatus === "configured" ? { state: "healthy", label: "OK" }
+                        : payload?.openAiStatus === "not_configured" ? { state: "warning", label: "Not set" } : { state: "unhealthy", label: "Failed" })
+            ];
+            const updates = checks.map(async (check, index) => {
+                let status;
+                try { status = await check; }
+                catch (_) { status = { state: "unhealthy", label: "Failed" }; }
+                if (generation === healthPollingGeneration) { renderHealthIndicator(index, status.state, status.label); }
+            });
+            await Promise.allSettled(updates);
+            if (generation !== healthPollingGeneration) { return; }
+            healthCheckedAtElement.textContent = `Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+        } finally {
+            clearTimeout(timeoutId);
+            if (generation === healthPollingGeneration) {
+                healthAbortController = null;
+                healthRefreshInFlight = false;
+                healthRefreshButton.disabled = false;
+                if (healthRefreshQueued) {
+                    healthRefreshQueued = false;
+                    void refreshHealthStatus();
+                }
+            }
+        }
+    }
+
+    function startHealthStatusPolling() {
+        if (healthPollingTimer) { return; }
+        resetHealthIndicators("Checking");
+        healthPollingTimer = setInterval(() => {
+            if (document.visibilityState === "visible") { void refreshHealthStatus(); }
+        }, 30000);
+        void refreshHealthStatus();
+    }
+
+    function stopHealthStatusPolling() {
+        if (healthPollingTimer) { clearInterval(healthPollingTimer); healthPollingTimer = null; }
+        healthPollingGeneration++;
+        if (healthAbortController) { healthAbortController.abort(); healthAbortController = null; }
+        healthRefreshInFlight = false;
+        healthRefreshQueued = false;
+        resetHealthIndicators("-");
     }
 
     function hasAnyAdminPermission(permissionIds = []) {
@@ -1414,6 +1510,7 @@
     async function publishWebsiteContent() { setWebsiteError(""); collectCurrentWebsiteSection(); preserveDownloadFeatureCardFields(); setWebsiteMessage("Saving draft before publish..."); websitePublishButton.disabled = true; try { const saved = await saveWebsiteDraft(); if (!saved) { return; } setWebsiteMessage("Publishing saved draft to static website..."); const response = await fetch(ApiPaths.websiteContentPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readWebsiteResponse(response, "Unable to publish Website content."); fillWebsiteForm(payload.active); setWebsiteMessage(`Published saved draft to ${Array.isArray(payload.publishedFiles) ? payload.publishedFiles.length : ""} static website files.`); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website content."); } finally { websitePublishButton.disabled = false; } }
 
     function resetDashboard() {
+        stopHealthStatusPolling();
         stopFeedbackReportsBadgePolling();
         resetFeedbackReportsNewBadge();
         adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable"; systemBillingPaddleStatusElement.textContent = "not configured"; systemBillingPaddleStatusElement.className = "badge unavailable"; systemMobileStoreGooglePlayStatusElement.textContent = "DISABLED / INCOMPLETE"; systemMobileStoreGooglePlayStatusElement.className = "badge unavailable";
@@ -3658,7 +3755,12 @@
     [cmsPromptTemplateBodyInput, cmsPromptTemplateIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("promptTemplate")));
     [cmsTutorProfileDisplayNameInput, cmsTutorProfileCommunicationStyleJsonInput, cmsTutorProfileSafetyNotesJsonInput, cmsTutorProfileIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("tutorProfile")));
     window.addEventListener("beforeunload", (event) => { if (!hasUnsavedChanges()) { return; } event.preventDefault(); event.returnValue = UnsavedChangesMessage; });
-    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { refreshFeedbackReportsNewBadge().catch(() => { }); } });
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            refreshFeedbackReportsNewBadge().catch(() => { });
+            void refreshHealthStatus();
+        }
+    });
 
     async function logoutAdminSession() {
         if (!confirmDiscardUnsavedChanges()) { return; }
@@ -4078,6 +4180,7 @@
     async function showAdminShellAfterAuth(preferredTabId) {
         await loadAdminCapabilities();
         setDashboardVisible(true);
+        startHealthStatusPolling();
         await refreshFeedbackReportsNewBadge();
         startFeedbackReportsBadgePolling();
         initializeTabs();
@@ -4151,6 +4254,7 @@
     aiModelsResetDraftButton?.addEventListener("click", async () => { await resetAiModelDraft(); });
     aiModelsPublishButton?.addEventListener("click", async () => { await publishAiModelDraft(); });
     roleManagementForms.forEach((form) => form.addEventListener("submit", async (event) => { event.preventDefault(); await submitRoleManagementMutation(form); }));
+    healthRefreshButton.addEventListener("click", () => { void refreshHealthStatus(); });
     logoutButton.addEventListener("click", () => { logoutAdminSession(); });
     initializeTabs();
     updateSelectedUserHeader();

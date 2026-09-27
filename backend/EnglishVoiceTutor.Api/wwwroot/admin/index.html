@@ -25,6 +25,15 @@
                     <h1>Admin Shell</h1>
                     <p id="selected-user-summary" class="selected-user-summary">Selected user: -</p>
                 </div>
+                <div id="health-strip" class="health-strip" role="group" aria-label="Production status">
+                    <div class="health-indicators" aria-live="polite">
+                        <span id="health-backend" class="health-indicator" data-state="unknown"><span>Backend/API</span><span class="health-state">Checking</span></span>
+                        <span id="health-database" class="health-indicator" data-state="unknown"><span>Database</span><span class="health-state">Checking</span></span>
+                        <span id="health-cms-runtime" class="health-indicator" data-state="unknown"><span>CMS Runtime</span><span class="health-state">Checking</span></span>
+                        <span id="health-ai-config" class="health-indicator" data-state="unknown"><span>AI Config</span><span class="health-state">Checking</span></span>
+                    </div>
+                    <div class="health-actions"><span id="health-checked-at">Updated -</span><button id="health-refresh-button" type="button">Refresh</button></div>
+                </div>
                 <button id="logout-button" type="button">Logout</button>
             </header>
 
