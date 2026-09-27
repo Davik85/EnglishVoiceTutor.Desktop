@@ -5,6 +5,7 @@ using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Services.Cms;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Shared.NativeLanguages;
+using EnglishVoiceTutor.Shared.UserProfiles;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services;
@@ -37,12 +38,18 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
 
     public async Task<UserSettingsResponse> UpdateAsync(Guid userId, UpdateUserSettingsRequest request, CancellationToken cancellationToken)
     {
-        ValidateUpdateRequest(request);
+        var normalizedDisplayName = ValidateUpdateRequest(request);
 
         var user = await LoadOrCreateUserAsync(userId, cancellationToken);
         var settings = user.Settings!;
         var profile = user.Profile!;
         var now = DateTimeOffset.UtcNow;
+
+        if (request.DisplayName is not null)
+        {
+            profile.DisplayName = normalizedDisplayName ?? string.Empty;
+            profile.UpdatedAt = now;
+        }
 
         if (!string.IsNullOrWhiteSpace(request.NativeLanguage))
         {
@@ -177,8 +184,14 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         return $"{DefaultUserEmailPrefix}-{userId:N}@{DefaultUserEmailDomain}";
     }
 
-    private static void ValidateUpdateRequest(UpdateUserSettingsRequest request)
+    private static string? ValidateUpdateRequest(UpdateUserSettingsRequest request)
     {
+        string? normalizedDisplayName = null;
+        if (request.DisplayName is not null && !UserDisplayNamePolicy.TryNormalize(request.DisplayName, out normalizedDisplayName))
+        {
+            throw new UserSettingsValidationException("Display name must contain Unicode letters only.");
+        }
+
         if (!StudyLanguageConstants.IsSupported(request.StudyLanguage))
         {
             throw new UserSettingsValidationException($"Study language must be one of: {string.Join(", ", StudyLanguageConstants.SupportedStudyLanguages)}.");
@@ -213,6 +226,8 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         {
             throw new UserSettingsValidationException($"Speech speed must be between {MinSpeechSpeed:0.0} and {MaxSpeechSpeed:0.0}.");
         }
+
+        return normalizedDisplayName;
     }
 
     private static string ToSupportedCanonicalTutorId(string? tutorId)
@@ -267,6 +282,7 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
 
         return new UserSettingsResponse(
             settings.UserId,
+            profile.DisplayName,
             nativeLanguage,
             settings.StudyLanguage,
             settings.ExplanationLanguage,

@@ -210,6 +210,107 @@ public sealed class UserSettingsServiceTests
         Assert.Equal("lana", settings.SelectedTutorId);
     }
 
+    [Theory]
+    [InlineData("David")]
+    [InlineData("José")]
+    [InlineData("Давид")]
+    [InlineData("محمد")]
+    [InlineData("山田")]
+    [InlineData("민수")]
+    public async Task UpdateWithUnicodeDisplayNamePersistsAndReturnsIt(string displayName)
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+        var userId = Guid.NewGuid();
+        var request = CreateValidRequest(selectedTutorId: null);
+        request.DisplayName = displayName;
+
+        var updated = await service.UpdateAsync(userId, request, TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
+        var retrieved = await service.GetOrCreateAsync(userId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(displayName, updated.DisplayName);
+        Assert.Equal(displayName, profile.DisplayName);
+        Assert.Equal(displayName, retrieved.DisplayName);
+    }
+
+    [Theory]
+    [InlineData("David123")]
+    [InlineData("David Smith")]
+    [InlineData("David!")]
+    [InlineData("😀")]
+    [InlineData(" David")]
+    [InlineData("David ")]
+    public async Task InvalidDisplayNameIsRejectedWithoutReplacingSavedName(string displayName)
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+        var userId = Guid.NewGuid();
+        var validRequest = CreateValidRequest(selectedTutorId: null);
+        validRequest.DisplayName = "José";
+        await service.UpdateAsync(userId, validRequest, TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
+        var originalUpdatedAt = profile.UpdatedAt;
+        var invalidRequest = CreateValidRequest(selectedTutorId: null);
+        invalidRequest.DisplayName = displayName;
+
+        var exception = await Assert.ThrowsAsync<UserSettingsValidationException>(() =>
+            service.UpdateAsync(userId, invalidRequest, TestContext.Current.CancellationToken));
+
+        Assert.Equal("Display name must contain Unicode letters only.", exception.Message);
+        Assert.Equal("José", profile.DisplayName);
+        Assert.Equal(originalUpdatedAt, profile.UpdatedAt);
+        Assert.Equal("José", (await service.GetOrCreateAsync(userId, TestContext.Current.CancellationToken)).DisplayName);
+    }
+
+    [Fact]
+    public async Task OmittedOrNullDisplayNamePreservesSavedName()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+        var userId = Guid.NewGuid();
+        var namedRequest = CreateValidRequest(selectedTutorId: null);
+        namedRequest.DisplayName = "Давид";
+        await service.UpdateAsync(userId, namedRequest, TestContext.Current.CancellationToken);
+
+        var omitted = await service.UpdateAsync(userId, CreateValidRequest(selectedTutorId: null), TestContext.Current.CancellationToken);
+        var nullRequest = CreateValidRequest(selectedTutorId: null);
+        nullRequest.DisplayName = null;
+        var explicitNull = await service.UpdateAsync(userId, nullRequest, TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
+
+        Assert.Equal("Давид", omitted.DisplayName);
+        Assert.Equal("Давид", explicitNull.DisplayName);
+        Assert.Equal("Давид", profile.DisplayName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task EmptyOrWhitespaceDisplayNameClearsSavedName(string displayName)
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+        var userId = Guid.NewGuid();
+        var namedRequest = CreateValidRequest(selectedTutorId: null);
+        namedRequest.DisplayName = "David";
+        await service.UpdateAsync(userId, namedRequest, TestContext.Current.CancellationToken);
+        var profile = await dbContext.UserProfiles.SingleAsync(profile => profile.UserId == userId, TestContext.Current.CancellationToken);
+        var originalUpdatedAt = DateTimeOffset.UtcNow.AddDays(-1);
+        profile.UpdatedAt = originalUpdatedAt;
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var clearRequest = CreateValidRequest(selectedTutorId: null);
+        clearRequest.DisplayName = displayName;
+
+        var updated = await service.UpdateAsync(userId, clearRequest, TestContext.Current.CancellationToken);
+        var retrieved = await service.GetOrCreateAsync(userId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(string.Empty, profile.DisplayName);
+        Assert.Equal(string.Empty, updated.DisplayName);
+        Assert.Equal(string.Empty, retrieved.DisplayName);
+        Assert.True(profile.UpdatedAt > originalUpdatedAt);
+    }
+
     [Fact]
     public async Task UpdateWithValidSelectedTutorIdPersistsAndReturnsCanonicalSelectedTutorId()
     {

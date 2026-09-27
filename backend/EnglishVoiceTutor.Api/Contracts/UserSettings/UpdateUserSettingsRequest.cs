@@ -2,6 +2,7 @@ namespace EnglishVoiceTutor.Api.Contracts.UserSettings;
 
 public sealed class UpdateUserSettingsRequest
 {
+    public string? DisplayName { get; set; }
     public string NativeLanguage { get; set; } = string.Empty;
     public string StudyLanguage { get; set; } = string.Empty;
     public string ExplanationLanguage { get; set; } = string.Empty;
