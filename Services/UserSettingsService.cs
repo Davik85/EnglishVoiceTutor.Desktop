@@ -4,6 +4,7 @@ using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Shared.NativeLanguages;
 using EnglishVoiceTutor.Shared.StudyLanguages;
+using EnglishVoiceTutor.Shared.UserProfiles;
 
 namespace EnglishVoiceTutor.Desktop.Services;
 
@@ -62,6 +63,10 @@ public class UserSettingsService
     public void Save(UserSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
+        if (!UserDisplayNamePolicy.TryNormalize(settings.UserDisplayName, out _))
+        {
+            throw new ArgumentException("Use letters only for the learner name.", nameof(settings));
+        }
 
         Normalize(settings);
 
@@ -102,7 +107,9 @@ public class UserSettingsService
         settings.SpeechVoiceId = string.IsNullOrWhiteSpace(settings.SpeechVoiceId)
             ? SpeechVoiceOptions.GetPreferredVoiceIdForTutor(settings.SelectedTutorAvatarId)
             : SpeechVoiceOptions.GetById(settings.SpeechVoiceId).Id;
-        settings.UserDisplayName = NormalizeOptionalText(settings.UserDisplayName);
+        settings.UserDisplayName = UserDisplayNamePolicy.TryNormalize(settings.UserDisplayName, out var normalizedName)
+            ? normalizedName ?? string.Empty
+            : string.Empty;
         settings.LearningGoal = NormalizeOptionalText(settings.LearningGoal);
         settings.BackendBaseUrl = BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(settings.BackendBaseUrl);
         settings.AudioInputDeviceId = string.IsNullOrWhiteSpace(settings.AudioInputDeviceId)

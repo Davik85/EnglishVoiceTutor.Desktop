@@ -297,7 +297,9 @@
 
                                     <TextBlock Text="{Binding UserDisplayNameLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
                                     <TextBox Style="{StaticResource SettingsTextBoxStyle}"
-                                             Text="{Binding UserDisplayName, UpdateSourceTrigger=PropertyChanged}" />
+                                             Text="{Binding UserDisplayName, UpdateSourceTrigger=PropertyChanged}"
+                                             PreviewTextInput="DisplayNameTextBox_OnPreviewTextInput"
+                                             DataObject.Pasting="DisplayNameTextBox_OnPaste" />
 
                                     <TextBlock Text="{Binding LearningGoalLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
                                     <TextBox Style="{StaticResource SettingsTextBoxStyle}"
@@ -521,7 +523,9 @@
 
                                     <TextBlock Text="{Binding AccountDisplayNameLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
                                     <TextBox Style="{StaticResource SettingsTextBoxStyle}"
-                                             Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" />
+                                             Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}"
+                                             PreviewTextInput="DisplayNameTextBox_OnPreviewTextInput"
+                                             DataObject.Pasting="DisplayNameTextBox_OnPaste" />
 
                                     <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
                                         <Button MinWidth="110"

@@ -18,6 +18,7 @@ using EnglishVoiceTutor.Desktop.Services.Updates;
 using EnglishVoiceTutor.Desktop.Services.Auth;
 using EnglishVoiceTutor.Shared.NativeLanguages;
 using EnglishVoiceTutor.Shared.StudyLanguages;
+using EnglishVoiceTutor.Shared.UserProfiles;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -915,7 +916,7 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private async Task SaveAsync()
     {
-        SaveCurrentSettingsLocally();
+        if (!SaveCurrentSettingsLocally()) return;
         BackendBaseUrl = BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(BackendBaseUrl);
         StatusMessage = localizedText.SettingsSavedMessage;
         await SaveBackendUserSettingsAsync();
@@ -1718,6 +1719,12 @@ public partial class SettingsViewModel : ViewModelBase
             return false;
         }
 
+        if (requireDisplayName && !UserDisplayNamePolicy.TryNormalize(DisplayName, out _))
+        {
+            ErrorMessage = localizedText.DisplayNameLettersOnly;
+            return false;
+        }
+
         return true;
     }
 
@@ -2323,11 +2330,18 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    private void SaveCurrentSettingsLocally()
+    private bool SaveCurrentSettingsLocally()
     {
+        if (!UserDisplayNamePolicy.TryNormalize(UserDisplayName, out var normalizedName))
+        {
+            StatusMessage = localizedText.DisplayNameLettersOnly;
+            return false;
+        }
+
         var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Lana;
         var selectedAudioInputDeviceId = SelectedAudioInputDeviceOption?.Id ?? AudioConstants.DefaultAudioInputDeviceId;
-        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguageOption.Id, SelectedStudyLanguage.Id, selectedAvatar.Id, SelectedSpeechVoiceOption.Id, UserDisplayName, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
+        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguageOption.Id, SelectedStudyLanguage.Id, selectedAvatar.Id, SelectedSpeechVoiceOption.Id, normalizedName ?? string.Empty, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
+        return true;
     }
 
     private void SetBackendSettingsSyncStatus(BackendSettingsSyncStatus status)

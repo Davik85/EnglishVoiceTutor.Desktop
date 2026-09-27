@@ -4,6 +4,7 @@ using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Auth;
+using EnglishVoiceTutor.Shared.UserProfiles;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json;
@@ -97,11 +98,20 @@ public static class AuthEndpoints
             return Results.BadRequest(new { error = $"Password must be at least {AuthConstants.MinimumPasswordLength} characters." });
         }
 
+        if (!UserDisplayNamePolicy.TryNormalize(request.DisplayName, out _))
+        {
+            return Results.BadRequest(new { error = "Display name must use letters only." });
+        }
+
         try
         {
             var response = await authService.RegisterAsync(request, cancellationToken);
             logger.LogInformation("Auth register completed. Result=Created");
             return Results.Created(ApiConstants.AuthMeRoute, response);
+        }
+        catch (AuthInvalidDisplayNameException)
+        {
+            return Results.BadRequest(new { error = "Display name must use letters only." });
         }
         catch (AuthDuplicateEmailException)
         {

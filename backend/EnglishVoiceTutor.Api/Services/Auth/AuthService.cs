@@ -5,6 +5,7 @@ using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
 using EnglishVoiceTutor.Shared.NativeLanguages;
+using EnglishVoiceTutor.Shared.UserProfiles;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,11 @@ public sealed class AuthService(
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken)
     {
+        if (!UserDisplayNamePolicy.TryNormalize(request.DisplayName, out var displayName))
+        {
+            throw new AuthInvalidDisplayNameException();
+        }
+
         var normalizedEmail = NormalizeEmail(request.Email);
         var existingUser = await dbContext.Users
             .AsNoTracking()
@@ -48,8 +54,7 @@ public sealed class AuthService(
 
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 
-        var displayName = NormalizeDisplayName(request.DisplayName);
-        if (!string.IsNullOrWhiteSpace(displayName))
+        if (displayName is not null)
         {
             dbContext.UserProfiles.Add(new UserProfileEntity
             {
@@ -285,16 +290,6 @@ public sealed class AuthService(
 
     private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
-    private static string? NormalizeDisplayName(string? displayName)
-    {
-        if (string.IsNullOrWhiteSpace(displayName))
-        {
-            return null;
-        }
-
-        return displayName.Trim();
-    }
-
     private static bool IsUniqueEmailViolation(DbUpdateException exception)
     {
         return exception.InnerException is PostgresException postgresException
@@ -303,3 +298,4 @@ public sealed class AuthService(
 }
 
 public sealed class AuthDuplicateEmailException : Exception;
+public sealed class AuthInvalidDisplayNameException : Exception;

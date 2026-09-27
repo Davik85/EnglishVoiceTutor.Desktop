@@ -83,4 +83,5 @@ public sealed record SettingsLocalizedText(
     string SupportEmailLabel = "Support email",
     string SupportEmailAddress = "support@languagevoicetutor.com",
     string WebsiteLabel = "Website",
-    string WebsiteUrl = "https://languagevoicetutor.com");
+    string WebsiteUrl = "https://languagevoicetutor.com",
+    string DisplayNameLettersOnly = "Use letters only.");

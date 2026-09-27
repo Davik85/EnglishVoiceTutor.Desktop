@@ -1,5 +1,7 @@
 using System;
 using System.Windows.Controls;
+using System.Windows.Input;
+using EnglishVoiceTutor.Shared.UserProfiles;
 using System.Windows;
 using EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -77,6 +79,34 @@ public partial class SettingsView : UserControl
         CurrentPasswordBox.Clear();
         ChangeNewPasswordBox.Clear();
         ChangeConfirmPasswordBox.Clear();
+    }
+
+    private static bool CanInsertDisplayName(TextBox textBox, string text)
+    {
+        var candidate = textBox.Text.Remove(textBox.SelectionStart, textBox.SelectionLength)
+            .Insert(textBox.SelectionStart, text);
+        return UserDisplayNamePolicy.TryNormalize(candidate, out _);
+    }
+
+    private void DisplayNameTextBox_OnPreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        if (sender is TextBox textBox && !CanInsertDisplayName(textBox, e.Text)) e.Handled = true;
+    }
+
+    private void DisplayNameTextBox_OnPaste(object sender, DataObjectPastingEventArgs e)
+    {
+        if (sender is not TextBox textBox)
+        {
+            e.CancelCommand();
+            return;
+        }
+
+        var format = e.DataObject.GetDataPresent(DataFormats.UnicodeText)
+            ? DataFormats.UnicodeText
+            : DataFormats.Text;
+        if (!e.DataObject.GetDataPresent(format) ||
+            e.DataObject.GetData(format) is not string text ||
+            !CanInsertDisplayName(textBox, text)) e.CancelCommand();
     }
 
     private void AccountPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e)
