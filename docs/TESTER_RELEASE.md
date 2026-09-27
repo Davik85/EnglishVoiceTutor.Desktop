@@ -35,9 +35,9 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Historical tester status and current direct release
 
-The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` points to `LanguageVoiceTutorSetup-1.6.exe` with `version` and `minimumSupportedVersion` set to `1.6`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, and `updateMode` set to `manual-confirmation`. The published manifest records SHA-256 `9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3` and size `188959874` bytes; no independent second public-download SHA verification is claimed for 1.6.
+The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` points to `LanguageVoiceTutorSetup-1.7.exe` with `version` and `minimumSupportedVersion` set to `1.7`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, and `updateMode` set to `manual-confirmation`. The published manifest records SHA-256 `86b72f7dad8f7c354c27e8b688f043f8d70d63014066d403440648efe2952b64` and size `188988094` bytes, matching the local installer/checksum; no independent public-download hash is claimed.
 
-Windows Direct Release 1.6 is published on the public direct channel. The manual-confirmation update from installed 1.5 to 1.6 completed successfully; no broader installed-app functional smoke is claimed from that update. Historical tester-release notes in this document are retained only as history; they are not the current active release state. This does not mean every operational area is fully public production-ready.
+Windows Direct Release 1.7 is published on the public direct channel. Manual validation confirmed letter-only learner/display-name behavior in registration and Learning settings. The manual-confirmation update from installed `1.7-test.1` to public `1.7` completed and the installed app displayed 1.7. Historical tester-release notes below remain history, not the current active release state. This does not mean every operational area is fully public production-ready.
 
 ## Release artifact boundary
 
@@ -57,7 +57,7 @@ Release Settings must not show a Diagnostics tab. Release Settings must not show
 
 ## Historical verified tester behavior
 
-The historical tester build verified these behaviors; these are historical tester observations, while the current active release is Windows Direct Release 1.6:
+The historical tester build verified these behaviors; these are historical tester observations, while the current active release is Windows Direct Release 1.7:
 
 - registration and login from installed builds against `https://api.languagevoicetutor.com`;
 - registration on another device;

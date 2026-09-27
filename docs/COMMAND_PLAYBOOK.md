@@ -1,10 +1,10 @@
 # Command Playbook
 
-Review date: 2026-09-13.
+Review date: 2026-09-27.
 
 ## CMS setup-localization draft import
 
-Current production baseline: backend `0.1.35-backend.157` is active, with `.156` retained as rollback; the live `current` and `previous` symlinks remain authoritative. `.157` added the Website CMS sitemap-generator update for the six language-practice URLs and required no EF migration. Historical `.151` established the static-homepage/CMS-ownership architecture, which remains in force. The import procedure below remains for a future older draft only; it is not a pending production operation.
+Current production baseline: backend `0.1.35-backend.160` is active, with `.159` retained as rollback; the live `current` and `previous` symlinks remain authoritative. Historical `.157` added the Website CMS sitemap-generator update, and `.151` established the static-homepage/CMS-ownership architecture. The import procedure below remains for a future older draft only; it is not a pending production operation.
 
 ## Source of truth for current versions
 
@@ -307,7 +307,7 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; the documented current production release is `.157` with `.156` as rollback.
+Historical example: backend `.24` was the active release when these older asset checks were first recorded, with `.23` as its rollback reference. Always use the live `current` and `previous` symlinks now; the documented current production release is `.160` with `.159` as rollback.
 
 Current milestone: CMS published-snapshot runtime is active for published Windows direct lessons. These checks must confirm the active CMS source and clean fallback state without changing release scope.
 
@@ -369,9 +369,9 @@ CmsContent__ContentPackSlug=static-json-v1
 CmsContent__FallbackToStaticJson=true
 ```
 
-For the current Windows Direct Release 1.6, confirm the backend release, health, database health, and that Admin CMS has published version `51`. Runtime status must show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, 26 scenarios, 130 localized setup-message templates, and 625 localized context titles. The prior installed-app localized setup smoke remains historical evidence; the verified 1.5 -> 1.6 manual-confirmation update does not claim broader installed-app functional smoke.
+For the current Windows Direct Release 1.7, confirm the backend release, health, database health, and that Admin CMS has published version `51`. Runtime status must show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, 26 scenarios, 130 localized setup-message templates, and 625 localized context titles.
 
-Rollback remains disabling or removing the CMS runtime flags and restarting the backend, then rerunning the read-only status check and confirming `effectiveSource=StaticJson`. CMS runtime is active for the Windows Direct Release 1.6 phase; do not expand this into broad public release without a separate decision. This process has no billing, Paddle, subscription, entitlement, installer, desktop runtime, lesson JSON, public `latest.json`, deployment-script, or EF migration involvement.
+Rollback remains disabling or removing the CMS runtime flags and restarting the backend, then rerunning the read-only status check and confirming `effectiveSource=StaticJson`. CMS runtime remains active for the Windows Direct Release 1.7 phase; do not treat this as broad paid-launch approval. This process has no billing, Paddle, subscription, entitlement, installer, desktop runtime, lesson JSON, public `latest.json`, deployment-script, or EF migration involvement.
 
 ## CMS-managed level profiles (A1-B2)
 
@@ -384,7 +384,7 @@ Rollback remains disabling or removing the CMS runtime flags and restarting the 
 
 ## Current controlled tester handoff checks after CMS runtime milestone
 
-Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.157`, the `previous` symlink points to `.156`, and the live public direct Windows manifest points to `version=1.6`, `installerFileName=LanguageVoiceTutorSetup-1.6.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.6`, and `updateMode=manual-confirmation`. The live manifest is verified; no independent second public-download SHA verification is claimed for 1.6. For future handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
+Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.160`, the `previous` symlink points to `.159`, and the live public direct Windows manifest points to `version=1.7`, `installerFileName=LanguageVoiceTutorSetup-1.7.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.7`, and `updateMode=manual-confirmation`. For future handoffs, replace these values with the live `latest.json` and server symlink values.
 
 Verify the public direct release manifest before handoff:
 

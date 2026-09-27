@@ -3,7 +3,7 @@
 > Release direction note: this Inno Setup flow remains valid for controlled direct Windows releases until the owner explicitly changes the release flow. Microsoft Store/MSIX was evaluated and discontinued for now. Future Windows trust/signing work should focus on a code signing certificate for the direct EXE/Inno installer. Do not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior for this future-direction note.
 
 
-Review date: 2026-08-24.
+Review date: 2026-09-27.
 
 ## Source of truth for current versions
 
@@ -34,9 +34,9 @@ Inno Setup is the primary Windows direct-download installer track for Language V
 
 ## Current validated release
 
-The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` points to `LanguageVoiceTutorSetup-1.6.exe` with `version` and `minimumSupportedVersion` set to `1.6`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, and `updateMode` set to `manual-confirmation`. The published manifest records installer SHA-256 `9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3` and size `188959874` bytes; no independent second public-download SHA verification is claimed for 1.6. The current backend release and rollback are recorded in [CURRENT_STATE.md](CURRENT_STATE.md); verify the server `current` symlink before handoff. The Windows upload is separate from backend deployment and migrations. Treat this as a controlled direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
+The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` points to `LanguageVoiceTutorSetup-1.7.exe` with `version` and `minimumSupportedVersion` set to `1.7`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, and `updateMode` set to `manual-confirmation`. The published manifest records installer SHA-256 `86b72f7dad8f7c354c27e8b688f043f8d70d63014066d403440648efe2952b64` and size `188988094` bytes; the matching local installer/checksum agrees, without an independent public-download hash claim. The current backend release and rollback are recorded in [CURRENT_STATE.md](CURRENT_STATE.md); verify the server `current` symlink before handoff. The Windows upload is separate from backend deployment and migrations. Treat this as a controlled direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
 
-Windows Direct Release 1.6 is published on the public direct channel. It removes obsolete Desktop Free-limit behavior and presents technical HTTP 429 throttling as a localized temporary wait-and-retry condition without marking the backend unreachable. The 1.5 -> 1.6 manual-confirmation update completed successfully; no broader installed-app functional smoke is claimed. Product identity, stable AppId, and the existing ORRALEN icon/shortcut behavior remain unchanged. This is not a claim that every operational area is broad-production-ready. Code signing remains deferred, so SmartScreen warnings are still expected until a signed installer is published.
+Windows Direct Release 1.7 is published on the public direct channel. Its new scope is letter-only learner/display-name validation at registration and in Learning settings. Manual Desktop checks rejected non-letter names and accepted valid letter-only names. The manual-confirmation update from installed `1.7-test.1` to public `1.7` completed; the installed app displayed 1.7. Earlier 1.6 Free-limit and technical-429 changes remain part of the product, but are not new 1.7 features. Product identity, stable AppId, and existing ORRALEN icon/shortcut behavior remain unchanged. This is not a claim that every operational area is broad-production-ready. Code signing remains deferred, so SmartScreen warnings are still expected until a signed installer is published.
 
 ## Decision
 
@@ -148,7 +148,7 @@ Compare the downloaded installer hash with `checksums.sha256` and the `installer
 
 ## Code signing readiness
 
-Code signing remains a planned release-hardening step, not an implemented packaging behavior. Windows Direct Release 1.6 remains unsigned under a documented owner-accepted exception, so SmartScreen/trust friction is a known release risk. For a future signed direct release, the final Inno Setup installer should be signed and signature verification must be added before upload. See `docs/WINDOWS_CODE_SIGNING_READINESS.md` for the current planning audit, non-secret handling rules, future signing/verification placement, and certificate option comparison.
+Code signing remains a planned release-hardening step, not an implemented packaging behavior. Windows Direct Release 1.7 remains unsigned under a documented owner-accepted exception, so SmartScreen/trust friction is a known release risk. For a future signed direct release, the final Inno Setup installer should be signed and signature verification must be added before upload. See `docs/WINDOWS_CODE_SIGNING_READINESS.md` for the current planning audit, non-secret handling rules, future signing/verification placement, and certificate option comparison.
 
 ## Security notes
 

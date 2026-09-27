@@ -2,7 +2,7 @@
 
 ## Current production baseline and post-release monitoring
 
-Orralen - Language Voice Tutor Android `0.1.0+10` / versionCode 10 is publicly available in Google Play Production. Backend `0.1.35-backend.159` is the latest documented production release with `.158` rollback; verify live state before a new handoff. The earlier `.157` Website CMS sitemap-generator deployment required no EF migration. The completed static language-practice SEO/visual/sitemap publication is not a future deployment: the six independent language pages are live, visually accepted, use `?v=20260913-visual3`, and the controlled CMS Publish produced an exact 17-URL sitemap with all URLs returning HTTP 200. Homepage and language-page assets were preserved by SHA comparison, database health remained HTTP 200, and no rollback was needed. The independent static unit remains `index.html`, `mobile.html`, `styles.css`, the six language pages, and `assets/homepage/**`; Website CMS owns its generated pages, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`.
+Orralen - Language Voice Tutor Android `0.1.0+10` / versionCode 10 is publicly available in Google Play Production. Backend `0.1.35-backend.160` is the latest documented production release with `.159` rollback; verify live state before a new handoff. The earlier `.157` Website CMS sitemap-generator deployment required no EF migration. The completed static language-practice SEO/visual/sitemap publication is not a future deployment: the six independent language pages are live, visually accepted, use `?v=20260913-visual3`, and the controlled CMS Publish produced an exact 17-URL sitemap with all URLs returning HTTP 200. Homepage and language-page assets were preserved by SHA comparison, database health remained HTTP 200, and no rollback was needed. The independent static unit remains `index.html`, `mobile.html`, `styles.css`, the six language pages, and `assets/homepage/**`; Website CMS owns its generated pages, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`.
 
 AI temperature compatibility and independent text-role routing are completed production behavior, not future work. `.152` deployed four independent text-role omit-temperature flags, `.153` corrected Lesson Summary to use the Lesson Tutor Chat effective-temperature policy and was production-validated with a successful Summary, and `.154` routed Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation through their corresponding model settings while intentionally keeping Summary on `LessonTutorChatModel`. The current Active text-role model is `gpt-5.6-luna` for all four roles, with all four omit-temperature flags enabled. `.154` production smoke confirmed lesson start/flow, Hint, and Translation; independent distinct-model routing is proven by automated request-shape tests because production currently uses the same model ID for all four roles.
 
@@ -110,8 +110,8 @@ The backend and Google Play statements in this section record an earlier checkpo
 
 - Backend: production healthy at `https://api.languagevoicetutor.com` on `0.1.35-backend.148`, with `.147` retained as rollback. Historical `.142` applied the additive Google Play trial-deferral foundation; `.146` and `.147` remain preserved incident records, while `.148` closes only their provider-precision validation blocker. Restore Credentials, the applied foundation migration, one free lesson per day, usage telemetry, separate technical rate limiting, and the documented CMS snapshot remain intact. Controlled Google Play Internal testing is enabled, but public rollout still requires separate lifecycle evidence, final review, and explicit owner approval.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
-- Download: Windows Direct 1.6 is available through the manifest-driven download flow. The live manifest and its published SHA-256/size were verified; no independent second public-download SHA verification is claimed for 1.6.
-- Windows installer: current Windows direct public release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`; the successful 1.5 -> 1.6 manual-confirmation update is verified. Obsolete Desktop Free-limit behavior is removed, technical 429 responses are localized as temporary throttling without marking the backend unreachable, and the existing version-specific shortcut-icon mechanism remains unchanged. Code signing and broader Desktop/Mobile product-facing rebranding remain pending separate work.
+- Download: Windows Direct 1.6 was available through the manifest-driven download flow at this historical checkpoint. Its live manifest SHA-256/size were verified; no independent second public-download SHA verification was claimed for 1.6.
+- Windows installer: the then-current Windows direct public release was `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`; the 1.5 -> 1.6 manual-confirmation update was verified. Obsolete Desktop Free-limit behavior was removed, technical 429 responses were localized as temporary throttling without marking the backend unreachable, and the version-specific shortcut-icon mechanism remained unchanged. Code signing and broader Desktop/Mobile product-facing rebranding remained separate work.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: public Privacy, Terms, Seller/Company, Refund, Cancellation, AI & Data Disclosure, Availability, Pricing, and Support pages are published under ORRALEN TECHNOLOGIES LTD; they are not an active synchronization task. This is not legal advice.
 
@@ -182,7 +182,7 @@ Final verification should confirm public pages do not contain placeholder IDs su
 - Footer has primary links: Privacy Policy, Terms of Use, Refund Policy, Cancellation, Support, Pricing.
 - Footer has secondary links: Seller / Company Details, AI & Data Disclosure, Service Status.
 - `seller.html`, `ai-data.html`, and `status.html` exist and are linked from the footer.
-- Verified normal downloads are manifest-driven from `/releases/windows/direct/latest.json` and return Windows 1.6. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
+- Verified normal downloads are manifest-driven from `/releases/windows/direct/latest.json` and return Windows 1.7. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Privacy Policy default/static content includes optional analytics/advertising cookie disclosure. The polished consent banner is controlled by Website CMS Marketing / SEO; analytics is production-verified and Ads remains disabled. Never commit real Google IDs or secrets.
 - Download non-JS fallback text remains: “Current Windows direct release is available through the Download for Windows button.” and “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
 
@@ -192,13 +192,13 @@ Current manifest: `https://languagevoicetutor.com/releases/windows/direct/latest
 
 Expected current values:
 
-- `version`: `1.6`
-- `installerFileName`: `LanguageVoiceTutorSetup-1.6.exe`
+- `version`: `1.7`
+- `installerFileName`: `LanguageVoiceTutorSetup-1.7.exe`
 - `backendBaseUrl`: `https://api.languagevoicetutor.com`
 - `updateMode`: `manual-confirmation`
-- `minimumSupportedVersion`: `1.6`
+- `minimumSupportedVersion`: `1.7`
 
-Windows Direct `1.6`, backend `.141`, and backend `.142` have already been published/deployed and verified. Do not list the legacy product-limit correction, `.141`/`.142` backend deployment, the applied `.142` migration, or 1.6 upload as pending, and do not re-upload or repackage 1.6 unless a new release is intentionally prepared. Direct installer code signing, SmartScreen/trust mitigation, monitoring, customer-feedback triage, legal/support/operational review, and broader readiness remain pending. Google Play controlled Internal-testing enablement is complete; public rollout remains separate and pending.
+Windows Direct `1.7` is public; earlier Windows `1.6` and backend `.141`/`.142` work is historical, not pending. Do not re-upload or repackage a public release without a new reviewed release decision. Direct installer code signing, SmartScreen/trust mitigation, monitoring, customer-feedback triage, legal/support/operational review, and broader paid-launch readiness remain pending.
 
 Historical `1.0` desktop release polish already included Contacts in Settings, Contacts localization for all release-ready UI languages, safe `https`/`mailto` contact links, fixed runtime Contacts localization refresh after interface-language changes, wrapping for long localized situation/subtopic and scenario card text, and the unfinished active-lesson Back confirmation guard matching Finish/End lesson behavior.
 

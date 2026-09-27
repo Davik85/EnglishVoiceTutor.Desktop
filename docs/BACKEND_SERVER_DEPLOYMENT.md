@@ -1,14 +1,20 @@
 # Backend server deployment
 
-Review date: 2026-09-24.
+Review date: 2026-09-27.
 
 ## Current production backend
 
-Production backend `0.1.35-backend.159` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`; `.158` is the verified previous rollback release. `.159` was deployed from accepted source commit `330a7e89967ba909450dbf887a9de1f65624390c` (`Fix tutor identity guard false positives`). The reviewed package SHA-256 was `51C36CAE9D8C4E4ACC6DE2B13FB4E80F420CCBDBAEBAEBC081C1D9C0A762603C`; production deployment reused that package without rebuilding it. No EF migration or database schema/data change occurred.
+Production backend `0.1.35-backend.160` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.160`; `.159` is the verified previous rollback release at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`. Source commit `3add781b3f352e2be68af7b5eff94546efe46663` supplied the reviewed package SHA-256 `5A3EBF4C975A924576A724B4398BB357B4674FDDF283239AE03B52B95FC84962`; the same package was used for dry-run and production deployment. No EF migration or database schema/data change was required or run.
+
+Backend `.160` enforces the shared letter-only display-name policy for backend registration and contains the read-only Admin CMS health strip. Windows Desktop 1.7 separately uses the same shared .NET learner-name policy for registration and Learning settings. Registration display name remains optional at API level; when supplied, it must contain Unicode letters only. Existing registered users were not migrated or rewritten. Pre-deploy backend Linux deployment policy, real `admin.js` syntax, and 55 focused name-validation/Admin health-strip tests passed with zero failures. Production confirmed the service active/running from `.160`, `/health` Healthy, `/api/health/database` Healthy with `canConnect=true`, OpenAI configuration configured, and no critical/fatal/unhandled startup errors in the available journal view. Admin CMS health-strip assets were live, and manual verification showed Backend/API, Database, CMS Runtime, and AI Config all green. AI Config checks configuration only; it is not a live OpenAI provider-health check.
+
+## Historical 2026-09-24 `.159` TutorIdentityGuard production checkpoint
+
+Production backend `0.1.35-backend.159` was current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`; `.158` was the verified previous rollback release at that checkpoint. `.159` was deployed from accepted source commit `330a7e89967ba909450dbf887a9de1f65624390c` (`Fix tutor identity guard false positives`). The reviewed package SHA-256 was `51C36CAE9D8C4E4ACC6DE2B13FB4E80F420CCBDBAEBAEBC081C1D9C0A762603C`; production deployment reused that package without rebuilding it. No EF migration or database schema/data change occurred.
 
 The TutorIdentityGuard false positive came from global `RegexOptions.IgnoreCase` applying to the `[A-Z][a-z]+` candidate-name capture. Lowercase words after `I am`, including `looking` and `interested`, could therefore be mistaken for tutor names and replaced with the active tutor name. `.159` limits case-insensitive matching to the self-introduction prefix, keeping the proper-name capture case-sensitive. Ordinary `I am looking...` and `I am interested...` phrases remain unchanged, while a genuine wrong self-introduction such as `I'm David` with active tutor Lana is still corrected.
 
-Pre-deploy verification passed 10 focused `TutorIdentityGuard` tests with zero failures, `git diff --check`, and the backend Linux deployment policy. Production verification confirmed `current` at `.159`, `previous` at `.158`, `languagevoicetutor-backend.service` active/running, `/health` HTTP 200 `Healthy`, and `/api/health/database` HTTP 200 `Healthy` with `canConnect=true`. Startup logs confirmed content root `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`. Manual production reproduction of the original lesson flow passed. No TutorIdentityGuard rewrite events were observed in the available bounded journal output after `.159` startup during verification. No rollback was required.
+Pre-deploy verification passed 10 focused `TutorIdentityGuard` tests with zero failures, `git diff --check`, and the backend Linux deployment policy. At that checkpoint, production verification confirmed `current` at `.159`, `previous` at `.158`, `languagevoicetutor-backend.service` active/running, `/health` HTTP 200 `Healthy`, and `/api/health/database` HTTP 200 `Healthy` with `canConnect=true`. Startup logs confirmed content root `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`. Manual production reproduction of the original lesson flow passed. No TutorIdentityGuard rewrite events were observed in the available bounded journal output after `.159` startup during verification. No rollback was required.
 
 `.159` made no API contract, authentication, authorization, billing, subscription, Mobile, Desktop UI, Website, AI model configuration, or production secret/configuration change.
 
@@ -67,8 +73,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.159`
-- Previous rollback release: `0.1.35-backend.158`
+- Current release: `0.1.35-backend.160`
+- Previous rollback release: `0.1.35-backend.159`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -84,7 +90,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.158`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.160`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 ## 2026-08-25 `.141` legacy product-limit removal deployment verification
 
@@ -348,10 +354,10 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.159`; verified rollback target `.158` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.160`; verified rollback target `.159` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
-- Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
-- Windows installer: current public direct release is `1.6`, installer `LanguageVoiceTutorSetup-1.6.exe`.
+- Download: the current Windows direct release is manifest-driven with JavaScript; the static/no-JavaScript fallback was not separately verified by this Windows release upload.
+- Windows installer: current public direct release is `1.7`, installer `LanguageVoiceTutorSetup-1.7.exe`.
 - AI Models: persistent production storage is verified; all four Active text roles use `gpt-5.6-luna` with their omit-temperature flags enabled, and `.154` routes the roles independently at runtime.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: website legal/support/seller/AI/status pages are ready for owner/legal final review as drafts, not final legal advice.

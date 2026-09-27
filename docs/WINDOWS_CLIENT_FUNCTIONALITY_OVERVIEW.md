@@ -1,6 +1,6 @@
 # Windows Client Functionality Overview
 
-Review date: 2026-07-06.
+Review date: 2026-09-27.
 
 ## Product summary
 
@@ -74,6 +74,8 @@ The Account settings section currently exposes account and subscription controls
 - Subscription/Premium status display.
 - Buy Premium / upgrade entry point.
 - Refresh status.
+
+In the public Windows Direct 1.7 client, registration rejects non-letter learner/display names and Learning settings blocks non-letter characters in the learner name; valid Unicode letter-only names work normally. Backend registration still allows the display name to be omitted, but validates it when supplied. This does not imply that newer Mobile source-side name validation has shipped to Google Play.
 
 Billing and subscription wording must remain cautious. Controlled Paddle live payment/webhook/Premium activation and selected subscription validation have been documented elsewhere, but broad paid launch and expanded customer portal/subscription management remain follow-up work. Do not present billing as fully complete broad production operations unless a current release-readiness source explicitly says so.
 

@@ -1,6 +1,6 @@
 # Windows release server upload
 
-Review date: 2026-08-25.
+Review date: 2026-09-27.
 
 > **Historical/current boundary.** Use the live manifest and [CURRENT_STATE.md](CURRENT_STATE.md) for current production values. Earlier `.108`/Windows release references in this upload history are historical and must not be treated as the current backend or Android distribution state.
 
@@ -28,21 +28,21 @@ Windows direct release manifest:
 https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
 
-Current public direct release values (verified 2026-08-25):
+Current public direct release values (verified 2026-09-27):
 
 ```text
 channel: direct-public
-version: 1.6
-installerFileName: LanguageVoiceTutorSetup-1.6.exe
-installerRelativeUrl: LanguageVoiceTutorSetup-1.6.exe
-installerSha256: 9eaac1ffa1ead6c3590f2cf072ff6dcabb7edba912c38a6cd1d6875ad5ac1aa3
-installerSizeBytes: 188959874
+version: 1.7
+installerFileName: LanguageVoiceTutorSetup-1.7.exe
+installerRelativeUrl: LanguageVoiceTutorSetup-1.7.exe
+installerSha256: 86b72f7dad8f7c354c27e8b688f043f8d70d63014066d403440648efe2952b64
+installerSizeBytes: 188988094
 backendBaseUrl: https://api.languagevoicetutor.com
 updateMode: manual-confirmation
-minimumSupportedVersion: 1.6
+minimumSupportedVersion: 1.7
 ```
 
-This release passed the real upload and the live manifest was fetched with cache busting. The published manifest SHA-256 and size above are verified facts; no independent second public-download SHA verification is claimed for 1.6. The successful 1.5 -> 1.6 manual-confirmation update is verified without a broader installed-app functional-smoke claim. The current backend release and rollback are recorded in [CURRENT_STATE.md](CURRENT_STATE.md); verify the server `current` symlink before handoff. This Windows upload did not deploy the backend or run migrations.
+This release passed the real upload and the live manifest was fetched with cache busting. The public manifest SHA-256 and size match the local generated checksum and installer; no independent public-installer download hash is claimed. The successful installed `1.7-test.1` -> public `1.7` manual-confirmation update and installed version display were verified. The current backend release and rollback are recorded in [CURRENT_STATE.md](CURRENT_STATE.md); verify the server `current` symlink before handoff. This Windows upload did not deploy the backend or run migrations.
 
 Release/tester installed builds are server-only. The production backend URL for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`.
 
@@ -116,11 +116,11 @@ $manifest.checksums.sha256
 
 Confirm:
 
-- `version` is `1.6` or the intended newly uploaded direct version;
-- `installerFileName` is `LanguageVoiceTutorSetup-1.6.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.6.exe`, or both match the intended installer;
+- `version` is `1.7` or the intended newly uploaded direct version;
+- `installerFileName` is `LanguageVoiceTutorSetup-1.7.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.7.exe`, or both match the intended installer;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
 - `updateMode` is `manual-confirmation`;
-- `minimumSupportedVersion` is `1.6` for this uploaded direct release;
+- `minimumSupportedVersion` is `1.7` for this uploaded direct release;
 - `installerSha256` and `checksums.sha256` are present and agree with the uploaded installer hash.
 
 ## Installer download verification
