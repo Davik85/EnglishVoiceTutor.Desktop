@@ -114,7 +114,9 @@ public sealed class AudioTranscriptionService
             OpenAiConstants.MultipartModelFieldName);
         formContent.Add(
             new StringContent(targetLanguage.TranscriptionLanguageCode),
-            OpenAiConstants.MultipartLanguageFieldName);
+            string.Equals(transcriptionModel, OpenAiConstants.GptTranscribeModel, StringComparison.Ordinal)
+                ? OpenAiConstants.MultipartLanguagesFieldName
+                : OpenAiConstants.MultipartLanguageFieldName);
         var transcriptionPrompt = string.IsNullOrWhiteSpace(transcriptionContext)
             ? $"The learner is practicing {targetLanguage.EnglishName}. Transcribe the learner audio in {targetLanguage.EnglishName}."
             : $"The learner is practicing {targetLanguage.EnglishName}. {transcriptionContext.Trim()}";

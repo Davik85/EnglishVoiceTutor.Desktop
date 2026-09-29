@@ -15,6 +15,12 @@ public sealed class AiModelSettingsServiceTests : IDisposable
     private readonly string _root = Path.Combine(Path.GetTempPath(), "lvt-ai-model-settings-tests", Guid.NewGuid().ToString("N"));
 
     [Fact]
+    public void DefaultSpeechToTextModelUsesGptTranscribe()
+    {
+        Assert.Equal("gpt-transcribe", AiModelSettings.Defaults.SpeechToTextModel);
+    }
+
+    [Fact]
     public async Task HistoricalJsonWithoutTemperatureFlagsLoadsWithLegacyDefaults()
     {
         var releaseRoot = Path.Combine(_root, "backend", "releases", "0.1.35-backend.148");
@@ -54,6 +60,8 @@ public sealed class AiModelSettingsServiceTests : IDisposable
         Assert.Equal("gpt-5.2-feedback", response.Active.FeedbackCorrectionModel);
         Assert.Equal("gpt-5.2-hint", response.Active.LessonHintModel);
         Assert.Equal("gpt-5.2-translation", response.Active.TranslationModel);
+        Assert.Equal("gpt-4o-mini-transcribe", response.Active.SpeechToTextModel);
+        Assert.Equal("gpt-4o-mini-transcribe", response.Draft.SpeechToTextModel);
         Assert.Equal("gpt-5.6-terra", response.Draft.LessonTutorChatModel);
         Assert.False(response.Active.LessonTutorChatOmitTemperature);
         Assert.False(response.Active.FeedbackCorrectionOmitTemperature);
