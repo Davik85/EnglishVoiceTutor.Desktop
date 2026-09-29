@@ -30,6 +30,7 @@ public sealed class OpenAiLessonHintService : ILessonHintService
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly MockLessonHintService _mockLessonHintService;
     private readonly LessonPromptBuilder _lessonPromptBuilder;
+    private readonly TutorBehaviorProfileResolver _tutorBehaviorResolver;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IRequestUserResolver _requestUserResolver;
     private readonly IUsageEventService _usageEventService;
@@ -38,6 +39,7 @@ public sealed class OpenAiLessonHintService : ILessonHintService
         OpenAiOptionsProvider optionsProvider,
         MockLessonHintService mockLessonHintService,
         LessonPromptBuilder lessonPromptBuilder,
+        TutorBehaviorProfileResolver tutorBehaviorResolver,
         IHttpClientFactory httpClientFactory,
         IRequestUserResolver requestUserResolver,
         IUsageEventService usageEventService)
@@ -45,6 +47,7 @@ public sealed class OpenAiLessonHintService : ILessonHintService
         _optionsProvider = optionsProvider;
         _mockLessonHintService = mockLessonHintService;
         _lessonPromptBuilder = lessonPromptBuilder;
+        _tutorBehaviorResolver = tutorBehaviorResolver;
         _httpClientFactory = httpClientFactory;
         _requestUserResolver = requestUserResolver;
         _usageEventService = usageEventService;
@@ -62,11 +65,12 @@ public sealed class OpenAiLessonHintService : ILessonHintService
 
         try
         {
+            var tutorProfile = await _tutorBehaviorResolver.ResolveAsync(request.TutorAvatarId, cancellationToken);
             var apiRequest = new OpenAiResponsesRequest
             {
                 Model = selectedModel,
                 Instructions = OpenAiConstants.LessonHintSystemInstructions,
-                Input = _lessonPromptBuilder.BuildHintInput(request),
+                Input = _lessonPromptBuilder.BuildHintInput(request, tutorProfile),
                 Text = new OpenAiTextOptions
                 {
                     Format = new OpenAiTextFormat

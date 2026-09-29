@@ -16,6 +16,8 @@ public sealed class RealtimeVoiceSessionService
     private readonly OpenAiOptionsProvider optionsProvider;
     private readonly ILogger<RealtimeVoiceSessionService> logger;
     private readonly LessonPromptBuilder lessonPromptBuilder;
+    private readonly TutorBehaviorProfileResolver tutorBehaviorResolver;
+    private TutorAvatarProfile? tutorProfile;
     private readonly IAiModelSettingsService aiModelSettingsService;
     private ClientWebSocket? openAiSocket;
     private WebSocket? desktopSocket;
@@ -65,11 +67,13 @@ public sealed class RealtimeVoiceSessionService
     public RealtimeVoiceSessionService(
         OpenAiOptionsProvider optionsProvider,
         LessonPromptBuilder lessonPromptBuilder,
+        TutorBehaviorProfileResolver tutorBehaviorResolver,
         IAiModelSettingsService aiModelSettingsService,
         ILogger<RealtimeVoiceSessionService> logger)
     {
         this.optionsProvider = optionsProvider;
         this.lessonPromptBuilder = lessonPromptBuilder;
+        this.tutorBehaviorResolver = tutorBehaviorResolver;
         this.aiModelSettingsService = aiModelSettingsService;
         this.logger = logger;
     }
@@ -282,6 +286,7 @@ public sealed class RealtimeVoiceSessionService
             return;
         }
 
+        tutorProfile = await tutorBehaviorResolver.ResolveAsync(request.TutorProfileId, cancellationToken);
         startRequest = request;
         sessionId = request.SessionId;
         learnerTurnCount = request.LearnerTurnCount;
@@ -342,7 +347,7 @@ public sealed class RealtimeVoiceSessionService
             await openAiSocket.ConnectAsync(new Uri(realtimeWebSocketEndpoint), cancellationToken);
             _ = Task.Run(() => ReceiveOpenAiEventsAsync(openAiSocket, cancellationToken), CancellationToken.None);
 
-            var instructions = lessonPromptBuilder.BuildRealtimeInstructions(request);
+            var instructions = lessonPromptBuilder.BuildRealtimeInstructions(request, tutorProfile);
             var resolvedSpeechVoice = ResolveRealtimeSpeechVoice(request.SpeechVoice);
             var sessionUpdateEvent = CreateRealtimeSessionUpdateEvent(instructions, resolvedSpeechVoice, modelSettings);
             LogRealtimeSessionUpdateShape(sessionUpdateEvent, instructions.Length);
@@ -795,12 +800,12 @@ public sealed class RealtimeVoiceSessionService
     {
         return startRequest is null
             ? "Respond now in English. Produce audio and matching audio transcript from this same response. Ask one question at a time."
-            : lessonPromptBuilder.BuildRealtimeResponseInstructions(startRequest);
+            : lessonPromptBuilder.BuildRealtimeResponseInstructions(startRequest, tutorProfile);
     }
 
     private string BuildCorrectiveEnglishOnlyInstructions()
     {
-        return (startRequest is null ? BuildResponseInstructions() : lessonPromptBuilder.BuildRealtimeInstructions(startRequest))
+        return (startRequest is null ? BuildResponseInstructions() : lessonPromptBuilder.BuildRealtimeInstructions(startRequest, tutorProfile))
             + "\nEnglish-only correction: continue the lesson in English only. If the learner asks for another language, refuse briefly in English and continue the lesson.";
     }
 

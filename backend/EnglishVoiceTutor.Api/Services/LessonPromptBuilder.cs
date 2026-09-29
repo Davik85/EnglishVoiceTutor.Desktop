@@ -34,10 +34,10 @@ public sealed class LessonPromptBuilder
         _avatarProfileProvider = avatarProfileProvider;
     }
 
-    public string BuildInput(LessonChatRequest request)
+    public string BuildInput(LessonChatRequest request, TutorAvatarProfile? resolvedProfile = null)
     {
         var prompt = new StringBuilder();
-        var avatarProfile = ResolveRequestTutorProfile(request, _avatarProfileProvider.GetById(request.TutorAvatarId));
+        var avatarProfile = resolvedProfile ?? ResolveRequestTutorProfile(request, _avatarProfileProvider.GetById(request.TutorAvatarId));
 
         AppendLessonContext(prompt, request, avatarProfile);
         AppendTargetStudyLanguage(prompt, request);
@@ -74,11 +74,11 @@ public sealed class LessonPromptBuilder
     }
 
 
-    public string BuildRealtimeInstructions(RealtimeVoiceSessionStartRequest request)
+    public string BuildRealtimeInstructions(RealtimeVoiceSessionStartRequest request, TutorAvatarProfile? resolvedProfile = null)
     {
         var prompt = new StringBuilder();
         var chatRequest = CreateLessonChatRequest(request);
-        var avatarProfile = CreateRealtimeTutorProfile(request, _avatarProfileProvider.GetById(chatRequest.TutorAvatarId));
+        var avatarProfile = resolvedProfile ?? CreateRealtimeTutorProfile(request, _avatarProfileProvider.GetById(chatRequest.TutorAvatarId));
 
         prompt.AppendLine("You are the realtime voice engine for English Voice Tutor Desktop.");
         prompt.AppendLine("Voice-first rule: every assistant response must produce audio and a matching transcript from the same Realtime response id and same turn. Do not rely on separate TTS or separate text generation.");
@@ -105,10 +105,10 @@ public sealed class LessonPromptBuilder
         return prompt.ToString();
     }
 
-    public string BuildRealtimeResponseInstructions(RealtimeVoiceSessionStartRequest request)
+    public string BuildRealtimeResponseInstructions(RealtimeVoiceSessionStartRequest request, TutorAvatarProfile? resolvedProfile = null)
     {
         var chatRequest = CreateLessonChatRequest(request);
-        var avatarProfile = CreateRealtimeTutorProfile(request, _avatarProfileProvider.GetById(chatRequest.TutorAvatarId));
+        var avatarProfile = resolvedProfile ?? CreateRealtimeTutorProfile(request, _avatarProfileProvider.GetById(chatRequest.TutorAvatarId));
         var prompt = new StringBuilder();
 
         prompt.AppendLine($"Respond now as {avatarProfile.DisplayName}, the selected tutor profile.");
@@ -292,10 +292,10 @@ public sealed class LessonPromptBuilder
     }
 
 
-    public string BuildHintInput(LessonChatRequest request)
+    public string BuildHintInput(LessonChatRequest request, TutorAvatarProfile? resolvedProfile = null)
     {
         var prompt = new StringBuilder();
-        var avatarProfile = ResolveRequestTutorProfile(request, _avatarProfileProvider.GetById(request.TutorAvatarId));
+        var avatarProfile = resolvedProfile ?? ResolveRequestTutorProfile(request, _avatarProfileProvider.GetById(request.TutorAvatarId));
 
         AppendLessonContext(prompt, request, avatarProfile, includeNativeLanguage: false);
         AppendTargetStudyLanguage(prompt, request);

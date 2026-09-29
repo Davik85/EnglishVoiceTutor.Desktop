@@ -1,10 +1,13 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Auth;
+using EnglishVoiceTutor.Api.Services.Cms;
 using EnglishVoiceTutor.Api.Services.Usage;
+using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EnglishVoiceTutor.Api.Tests.Services;
@@ -44,7 +47,7 @@ public sealed class AiTextModelRequestShapeTests
         var service = new OpenAiLessonChatService(
             CreateOptionsProvider(settings),
             new LessonPromptBuilder(avatarProvider),
-            avatarProvider,
+            new TutorBehaviorProfileResolver(new StaticRuntimeService(), avatarProvider),
             new TutorIdentityGuard(NullLogger<TutorIdentityGuard>.Instance),
             capture,
             new FakeRequestUserResolver(),
@@ -84,6 +87,7 @@ public sealed class AiTextModelRequestShapeTests
             CreateOptionsProvider(settings),
             new MockLessonHintService(),
             new LessonPromptBuilder(avatarProvider),
+            new TutorBehaviorProfileResolver(new StaticRuntimeService(), avatarProvider),
             capture,
             new FakeRequestUserResolver(),
             usage);
@@ -173,6 +177,58 @@ public sealed class AiTextModelRequestShapeTests
         Assert.DoesNotContain("Hello.", string.Join("\n", capture.RequestBodies), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("feedback")]
+    public async Task LessonAndFeedbackProviderInputUsesPublishedTutorRatherThanClientName(string requestPurpose)
+    {
+        var capture = new CapturingHttpClientFactory(CreateOutputEnvelope(CreateLessonReplyJson()));
+        var avatarProvider = new TutorAvatarProfileProvider(NullLogger<TutorAvatarProfileProvider>.Instance);
+        var service = new OpenAiLessonChatService(
+            CreateOptionsProvider(AiModelSettings.Defaults),
+            new LessonPromptBuilder(avatarProvider),
+            new TutorBehaviorProfileResolver(new PublishedRuntimeService(), avatarProvider),
+            new TutorIdentityGuard(NullLogger<TutorIdentityGuard>.Instance),
+            capture, new FakeRequestUserResolver(), new RecordingUsageEventService(),
+            NullLogger<OpenAiLessonChatService>.Instance);
+
+        await service.CreateReplyAsync(new LessonChatRequest
+        {
+            TutorAvatarId = "lana", TutorDisplayName = "Client Spoof",
+            UserMessage = "Hello", SelectedLevel = "A1", RequestPurpose = requestPurpose
+        }, TestContext.Current.CancellationToken);
+
+        using var document = JsonDocument.Parse(Assert.Single(capture.RequestBodies));
+        var input = document.RootElement.GetProperty("input").GetString()!;
+        Assert.Contains("published-style-only", input);
+        Assert.Contains("You are CmsLana.", input);
+        Assert.DoesNotContain("Client Spoof", input);
+    }
+
+    [Fact]
+    public async Task HintProviderInputUsesTheSamePublishedTutor()
+    {
+        var capture = new CapturingHttpClientFactory(CreateOutputEnvelope("{\"hintText\":\"Try a greeting.\"}"));
+        var avatarProvider = new TutorAvatarProfileProvider(NullLogger<TutorAvatarProfileProvider>.Instance);
+        var service = new OpenAiLessonHintService(
+            CreateOptionsProvider(AiModelSettings.Defaults), new MockLessonHintService(),
+            new LessonPromptBuilder(avatarProvider),
+            new TutorBehaviorProfileResolver(new PublishedRuntimeService(), avatarProvider),
+            capture, new FakeRequestUserResolver(), new RecordingUsageEventService());
+
+        await service.CreateHintAsync(new LessonChatRequest
+        {
+            TutorAvatarId = "lana", TutorDisplayName = "Client Spoof",
+            UserMessage = "Help", SelectedLevel = "A1"
+        }, TestContext.Current.CancellationToken);
+
+        using var document = JsonDocument.Parse(Assert.Single(capture.RequestBodies));
+        var input = document.RootElement.GetProperty("input").GetString()!;
+        Assert.Contains("published-style-only", input);
+        Assert.Contains("You are CmsLana.", input);
+        Assert.DoesNotContain("Client Spoof", input);
+    }
+
     private static OpenAiOptionsProvider CreateOptionsProvider(AiModelSettings settings) =>
         new(new FakeAiModelSettingsService(settings), () => "test-api-key");
 
@@ -257,6 +313,41 @@ public sealed class AiTextModelRequestShapeTests
         public AiModelSettingsValidationResponse Validate(AiModelSettings candidate) => new(true, [], []);
         public Task<AiModelSettingsResponse> PublishAsync(string? updatedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<AiModelSettingsResponse> ResetDraftFromActiveAsync(string? updatedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
+    }
+
+    private sealed class PublishedRuntimeService : ICmsRuntimeLessonContentService
+    {
+        public Task<CmsRuntimeLessonContentReadResult> ReadRuntimeLessonContentAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(new CmsRuntimeLessonContentReadResult
+            {
+                Success = true, Source = CmsContentConstants.Sources.CmsPublishedSnapshot,
+                Content = new CmsRuntimeLessonContent
+                {
+                    TutorBehaviorProfiles = [new CmsPublishedTutorBehaviorProfile
+                    {
+                        TutorId = "lana", DisplayName = "CmsLana", IsActive = true,
+                        TutorProfile = new TutorProfile
+                        {
+                            Id = "lana", DisplayName = "CmsLana", Age = 22,
+                            HomeCity = "London", CountryOrRegion = "United Kingdom",
+                            Studies = "fashion design", Hobbies = ["art"],
+                            CommunicationStyle = ["published-style-only"],
+                            SpeakingRules = new Dictionary<string, string>
+                            {
+                                ["a1"] = "short", ["a2"] = "short",
+                                ["b1"] = "natural", ["b2"] = "nuanced"
+                            },
+                            IdentityRules = ["Always use this identity."]
+                        }
+                    }]
+                }
+            });
+    }
+
+    private sealed class StaticRuntimeService : ICmsRuntimeLessonContentService
+    {
+        public Task<CmsRuntimeLessonContentReadResult> ReadRuntimeLessonContentAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(new CmsRuntimeLessonContentReadResult { Success = false });
     }
 
     private sealed class FakeRequestUserResolver : IRequestUserResolver

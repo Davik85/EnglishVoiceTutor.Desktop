@@ -75,7 +75,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly LessonPromptBuilder _lessonPromptBuilder;
-    private readonly TutorAvatarProfileProvider _avatarProfileProvider;
+    private readonly TutorBehaviorProfileResolver _tutorBehaviorResolver;
     private readonly TutorIdentityGuard _tutorIdentityGuard;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<OpenAiLessonChatService> _logger;
@@ -85,7 +85,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
     public OpenAiLessonChatService(
         OpenAiOptionsProvider optionsProvider,
         LessonPromptBuilder lessonPromptBuilder,
-        TutorAvatarProfileProvider avatarProfileProvider,
+        TutorBehaviorProfileResolver tutorBehaviorResolver,
         TutorIdentityGuard tutorIdentityGuard,
         IHttpClientFactory httpClientFactory,
         IRequestUserResolver requestUserResolver,
@@ -94,7 +94,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
     {
         _optionsProvider = optionsProvider;
         _lessonPromptBuilder = lessonPromptBuilder;
-        _avatarProfileProvider = avatarProfileProvider;
+        _tutorBehaviorResolver = tutorBehaviorResolver;
         _tutorIdentityGuard = tutorIdentityGuard;
         _httpClientFactory = httpClientFactory;
         _requestUserResolver = requestUserResolver;
@@ -113,6 +113,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             throw new InvalidOperationException(OpenAiApiKeyMissingMessage);
         }
 
+        var tutorProfile = await _tutorBehaviorResolver.ResolveAsync(request.TutorAvatarId, cancellationToken);
         var operation = ResolveOperation(request.RequestPurpose);
         var textRole = ResolveTextRole(request.RequestPurpose);
         var selectedModel = textRole == AiTextModelRole.FeedbackCorrection
@@ -126,7 +127,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             OpenAiResponsesResponse openAiResponse;
             try
             {
-                openAiResponse = await SendResponsesApiRequestAsync(request, options, textRole, selectedModel, validationReason, cancellationToken);
+                openAiResponse = await SendResponsesApiRequestAsync(request, tutorProfile, options, textRole, selectedModel, validationReason, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -167,8 +168,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             lessonReply = CreateSafeFallbackLessonReply(request);
         }
 
-        var guardTutorProfile = ResolveGuardTutorProfile(request, _avatarProfileProvider.GetById(request.TutorAvatarId));
-        var guardedReply = _tutorIdentityGuard.PreventWrongTutorSelfIntroduction(lessonReply, guardTutorProfile, operation);
+        var guardedReply = _tutorIdentityGuard.PreventWrongTutorSelfIntroduction(lessonReply, tutorProfile, operation);
         var isEnglishTargetLanguage = string.IsNullOrWhiteSpace(request.TargetLanguageId)
             || string.Equals(request.TargetLanguageId, "en", StringComparison.OrdinalIgnoreCase);
         if (AssistantOutputLanguageGuard.IsLanguageSwitchRequest(request.UserMessage)
@@ -201,13 +201,14 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
     private async Task<OpenAiResponsesResponse> SendResponsesApiRequestAsync(
         LessonChatRequest request,
+        TutorAvatarProfile tutorProfile,
         OpenAiOptions options,
         AiTextModelRole textRole,
         string selectedModel,
         string? previousValidationReason,
         CancellationToken cancellationToken)
     {
-        var input = _lessonPromptBuilder.BuildInput(request);
+        var input = _lessonPromptBuilder.BuildInput(request, tutorProfile);
         var omitTemperature = textRole == AiTextModelRole.FeedbackCorrection
             ? options.FeedbackCorrectionOmitTemperature
             : options.LessonTutorChatOmitTemperature;
@@ -642,28 +643,6 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
         validationReason = string.Empty;
         return true;
-    }
-
-    private static TutorAvatarProfile ResolveGuardTutorProfile(LessonChatRequest request, TutorAvatarProfile fallbackProfile)
-    {
-        if (string.IsNullOrWhiteSpace(request.TutorDisplayName))
-        {
-            return fallbackProfile;
-        }
-
-        return new TutorAvatarProfile
-        {
-            Id = fallbackProfile.Id,
-            DisplayName = request.TutorDisplayName.Trim(),
-            Age = fallbackProfile.Age,
-            HomeCity = fallbackProfile.HomeCity,
-            CountryOrRegion = fallbackProfile.CountryOrRegion,
-            Studies = fallbackProfile.Studies,
-            Hobbies = fallbackProfile.Hobbies,
-            CommunicationStyle = fallbackProfile.CommunicationStyle,
-            SpeakingRules = fallbackProfile.SpeakingRules,
-            IdentityRules = fallbackProfile.IdentityRules
-        };
     }
 
     private static LessonChatResponse CreateSafeFallbackLessonReply(LessonChatRequest request)
