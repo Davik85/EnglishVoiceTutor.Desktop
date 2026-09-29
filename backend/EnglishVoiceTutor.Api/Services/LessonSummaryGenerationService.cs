@@ -8,6 +8,7 @@ using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services.Cms;
 using EnglishVoiceTutor.Api.Services.Usage;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -21,6 +22,7 @@ public sealed class LessonSummaryGenerationService(
     ILogger<LessonSummaryGenerationService> logger) : ILessonSummaryGenerationService
 {
     private const int MaxTranscriptCharacters = 24000;
+    private const string SessionSummaryConstraintName = "IX_lesson_summaries_SessionId";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly JsonElement Schema = JsonSerializer.Deserialize<JsonElement>("""
     {"type":"object","additionalProperties":false,"properties":{"summary":{"type":"string"},"strengths":{"type":"array","items":{"type":"string"}},"improvements":{"type":"array","items":{"type":"string"}},"vocabulary":{"type":"array","items":{"type":"string"}},"grammar":{"type":"array","items":{"type":"string"}},"nextSteps":{"type":"array","items":{"type":"string"}}},"required":["summary","strengths","improvements","vocabulary","grammar","nextSteps"]}
@@ -86,13 +88,28 @@ public sealed class LessonSummaryGenerationService(
             if (string.IsNullOrWhiteSpace(generated.Summary)) throw new InvalidOperationException("Lesson summary provider response is incomplete.");
 
             var now = DateTimeOffset.UtcNow;
-            dbContext.LessonSummaries.Add(new LessonSummaryEntity
+            var summary = new LessonSummaryEntity
             {
                 Id = Guid.NewGuid(), SessionId = session.Id, Summary = generated.Summary.Trim(),
                 Strengths = Join(generated.Strengths), Improvements = Join(generated.Improvements), Vocabulary = Join(generated.Vocabulary),
                 Grammar = Join(generated.Grammar), NextSteps = Join(generated.NextSteps), CreatedAt = now, UpdatedAt = now
-            });
-            await dbContext.SaveChangesAsync(cancellationToken);
+            };
+            dbContext.LessonSummaries.Add(summary);
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException exception)
+            {
+                // A failed insert must not be retried by the usage event's SaveChanges.
+                dbContext.Entry(summary).State = EntityState.Detached;
+                if (!IsSessionSummaryDuplicate(exception)
+                    || !await dbContext.LessonSummaries.AsNoTracking()
+                        .AnyAsync(item => item.SessionId == sessionId, cancellationToken))
+                {
+                    throw;
+                }
+            }
             await RecordUsageAsync(session, UsageConstants.Statuses.Success, selectedModel, providerResponse.Usage, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
@@ -102,6 +119,13 @@ public sealed class LessonSummaryGenerationService(
             logger.LogWarning(exception, "Lesson summary generation failed. SessionId={SessionId}; ErrorType={ErrorType}.", sessionId, exception.GetType().Name);
         }
     }
+
+    private static bool IsSessionSummaryDuplicate(DbUpdateException exception) =>
+        exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: SessionSummaryConstraintName
+        };
 
     private async Task<string?> GetSafeRuntimeGoalAsync(string lessonContentId, CancellationToken cancellationToken)
     {

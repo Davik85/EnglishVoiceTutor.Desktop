@@ -14,7 +14,10 @@ using EnglishVoiceTutor.Api.Services.Subscriptions;
 using EnglishVoiceTutor.Api.Services.Usage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
 
 namespace EnglishVoiceTutor.Api.Tests.Services;
 
@@ -40,6 +43,127 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         Assert.Equal("Good progress.", summary.Summary);
         Assert.Equal(LessonSessionConstants.FinishedStatus, (await db.LessonSessions.FindAsync([session.Id], TestContext.Current.CancellationToken))!.Status);
         Assert.Contains(usage.Records, item => item.Status == UsageConstants.Statuses.Success);
+    }
+
+    [Fact]
+    public async Task ExistingSummarySkipsProviderAndPreservesPersistedSummary()
+    {
+        await using var db = CreateDbContext();
+        var session = await SeedFinishedSessionWithMessageAsync(db);
+        var existing = new LessonSummaryEntity
+        {
+            Id = Guid.NewGuid(), SessionId = session.Id, Summary = "Previously saved.",
+            CreatedAt = DateTimeOffset.UtcNow, UpdatedAt = DateTimeOffset.UtcNow
+        };
+        db.LessonSummaries.Add(existing);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+        var httpClientFactory = new SingleResponseHttpClientFactory(TopLevelEnvelope(ValidSummaryJson));
+        var usage = new RecordingUsageEventService();
+        var service = CreateGenerator(db, TopLevelEnvelope(ValidSummaryJson), usage,
+            new RecordingLogger<LessonSummaryGenerationService>(), httpClientFactory: httpClientFactory);
+
+        await service.TryGenerateForFinishedSessionAsync(session.Id, TestContext.Current.CancellationToken);
+        await service.TryGenerateForFinishedSessionAsync(session.Id, TestContext.Current.CancellationToken);
+
+        var persisted = await db.LessonSummaries.AsNoTracking().SingleAsync(
+            item => item.SessionId == session.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(existing.Id, persisted.Id);
+        Assert.Equal("Previously saved.", persisted.Summary);
+        Assert.Empty(httpClientFactory.RequestBodies);
+        Assert.Empty(usage.Records);
+    }
+
+    [Fact]
+    public async Task DuplicateSessionSummaryInsertDetachesLoserAndPersistsProviderUsage()
+    {
+        var setup = await CreateSummarySaveFailureContextAsync(
+            "IX_lesson_summaries_SessionId", insertWinner: true);
+        await using var db = setup.Db;
+        var logger = new RecordingLogger<LessonSummaryGenerationService>();
+        var usageService = new UsageEventService(db, new UsageStudyLanguageNormalizer(),
+            NullLogger<UsageEventService>.Instance);
+        var envelope = TopLevelEnvelopeWithUsage(ValidSummaryJson, 17, 5);
+        var service = CreateGenerator(db, envelope, usageService, logger);
+
+        await service.TryGenerateForFinishedSessionAsync(setup.Session.Id, TestContext.Current.CancellationToken);
+
+        var persisted = await db.LessonSummaries.AsNoTracking().SingleAsync(
+            item => item.SessionId == setup.Session.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(setup.Interceptor.WinnerSummaryId, persisted.Id);
+        Assert.Equal("Concurrent winner.", persisted.Summary);
+        Assert.Equal(1, setup.Interceptor.SummaryInsertAttempts);
+        Assert.DoesNotContain(db.ChangeTracker.Entries<LessonSummaryEntity>(),
+            entry => entry.State == EntityState.Added);
+        var recorded = await db.UsageEvents.AsNoTracking().SingleAsync(
+            item => item.SessionId == setup.Session.Id && item.Operation == UsageConstants.Operations.LessonSummary,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(UsageConstants.Statuses.Success, recorded.Status);
+        Assert.Equal(17, recorded.InputTokens);
+        Assert.Equal(5, recorded.OutputTokens);
+        Assert.DoesNotContain(logger.Entries,
+            entry => entry.Message.Contains("Lesson summary generation failed", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("IX_other_unique_constraint", true, "23505")]
+    [InlineData("IX_lesson_summaries_SessionId", false, "23505")]
+    [InlineData("IX_lesson_summaries_SessionId", true, "23503")]
+    [InlineData(null, true, null)]
+    public async Task UnrelatedOrUnverifiedSaveFailureIsNotTreatedAsDuplicate(
+        string? constraintName, bool insertWinner, string? sqlState)
+    {
+        var setup = await CreateSummarySaveFailureContextAsync(constraintName, insertWinner, sqlState);
+        await using var db = setup.Db;
+        var logger = new RecordingLogger<LessonSummaryGenerationService>();
+        var usageService = new UsageEventService(db, new UsageStudyLanguageNormalizer(),
+            NullLogger<UsageEventService>.Instance);
+        var service = CreateGenerator(db, TopLevelEnvelope(ValidSummaryJson), usageService, logger);
+
+        var exception = await Record.ExceptionAsync(() => service.TryGenerateForFinishedSessionAsync(
+            setup.Session.Id, TestContext.Current.CancellationToken));
+
+        Assert.Null(exception);
+        Assert.Equal(1, setup.Interceptor.SummaryInsertAttempts);
+        Assert.DoesNotContain(db.ChangeTracker.Entries<LessonSummaryEntity>(),
+            entry => entry.State == EntityState.Added);
+        var persisted = await db.LessonSummaries.AsNoTracking()
+            .Where(item => item.SessionId == setup.Session.Id)
+            .ToListAsync(TestContext.Current.CancellationToken);
+        if (insertWinner)
+        {
+            Assert.Equal(setup.Interceptor.WinnerSummaryId, Assert.Single(persisted).Id);
+            Assert.Equal("Concurrent winner.", persisted[0].Summary);
+        }
+        else
+        {
+            Assert.Empty(persisted);
+        }
+        var usage = await db.UsageEvents.AsNoTracking().SingleAsync(
+            item => item.SessionId == setup.Session.Id && item.Operation == UsageConstants.Operations.LessonSummary,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(UsageConstants.Statuses.Failed, usage.Status);
+        Assert.DoesNotContain(db.UsageEvents, item => item.Status == UsageConstants.Statuses.Success);
+        Assert.Contains(logger.Entries, entry =>
+            entry.Exception is DbUpdateException
+            && entry.Message.Contains("Lesson summary generation failed", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task CancellationRemainsPropagated()
+    {
+        await using var db = CreateDbContext();
+        var session = await SeedFinishedSessionWithMessageAsync(db);
+        var usage = new RecordingUsageEventService();
+        var service = CreateGenerator(db, TopLevelEnvelope(ValidSummaryJson), usage,
+            new RecordingLogger<LessonSummaryGenerationService>());
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            service.TryGenerateForFinishedSessionAsync(session.Id, cancellation.Token));
+
+        Assert.Empty(usage.Records);
     }
 
     [Fact]
@@ -173,15 +297,49 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         Assert.Empty(await db.LessonSummaries.Where(item => item.SessionId == session.Id).ToListAsync(TestContext.Current.CancellationToken));
     }
 
+    [Fact]
+    public async Task FinishReturnsFinishedWhenSummaryInsertFails()
+    {
+        var setup = await CreateSummarySaveFailureContextAsync(
+            "IX_other_unique_constraint", insertWinner: false);
+        await using var db = setup.Db;
+        var session = await db.LessonSessions.SingleAsync(
+            item => item.Id == setup.Session.Id, TestContext.Current.CancellationToken);
+        session.Status = LessonSessionConstants.ActiveStatus;
+        session.FinishedAt = null;
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var usageService = new UsageEventService(db, new UsageStudyLanguageNormalizer(),
+            NullLogger<UsageEventService>.Instance);
+        var generator = CreateGenerator(db, TopLevelEnvelope(ValidSummaryJson), usageService,
+            new RecordingLogger<LessonSummaryGenerationService>());
+        var finish = new LessonSessionService(db, new FakeRequestUserResolver(session.UserId),
+            new FakeAccessDecisionService(), generator, new RecordingLogger<LessonSessionService>());
+
+        var response = await finish.FinishLessonSessionAsync(session.Id,
+            new FinishLessonSessionRequest(1), TestContext.Current.CancellationToken);
+
+        Assert.Equal(LessonSessionConstants.FinishedStatus, response.Status);
+        Assert.Equal(LessonSessionConstants.FinishedStatus, (await db.LessonSessions.AsNoTracking()
+            .SingleAsync(item => item.Id == session.Id, TestContext.Current.CancellationToken)).Status);
+        Assert.Equal(1, setup.Interceptor.SummaryInsertAttempts);
+        Assert.Empty(await db.LessonSummaries.AsNoTracking()
+            .Where(item => item.SessionId == session.Id).ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(UsageConstants.Statuses.Failed, (await db.UsageEvents.AsNoTracking()
+            .SingleAsync(item => item.SessionId == session.Id && item.Operation == UsageConstants.Operations.LessonSummary,
+                TestContext.Current.CancellationToken)).Status);
+        Assert.DoesNotContain(db.ChangeTracker.Entries<LessonSummaryEntity>(),
+            entry => entry.State == EntityState.Added);
+    }
+
     public void Dispose() => Environment.SetEnvironmentVariable(OpenAiConstants.ApiKeyEnvironmentVariableName, _originalApiKey);
 
     private static LessonSummaryGenerationService CreateGenerator(
         AppDbContext db,
         string providerEnvelope,
-        RecordingUsageEventService usage,
+        IUsageEventService usage,
         RecordingLogger<LessonSummaryGenerationService> logger,
         AiModelSettings? settings = null,
-        SingleResponseHttpClientFactory? httpClientFactory = null) =>
+        IHttpClientFactory? httpClientFactory = null) =>
         new(
             db,
             new OpenAiOptionsProvider(new FakeAiModelSettingsService(settings)),
@@ -193,8 +351,32 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
     private static string TopLevelEnvelope(string outputText) =>
         "{\"id\":\"resp-top-level\",\"output_text\":" + System.Text.Json.JsonSerializer.Serialize(outputText) + ",\"output\":[]}";
 
+    private static string TopLevelEnvelopeWithUsage(string outputText, int inputTokens, int outputTokens) =>
+        "{\"id\":\"resp-with-usage\",\"output_text\":" + JsonSerializer.Serialize(outputText)
+        + ",\"output\":[],\"usage\":{\"input_tokens\":" + inputTokens
+        + ",\"output_tokens\":" + outputTokens + "}}";
+
     private static string NestedEnvelope(string outputText) =>
         "{\"id\":\"resp-nested\",\"output\":[{\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":" + System.Text.Json.JsonSerializer.Serialize(outputText) + "}]}]}";
+
+    private static async Task<(AppDbContext Db, LessonSessionEntity Session, SummarySaveFailureInterceptor Interceptor)>
+        CreateSummarySaveFailureContextAsync(string? constraintName, bool insertWinner, string? sqlState = PostgresErrorCodes.UniqueViolation)
+    {
+        var databaseName = Guid.NewGuid().ToString("N");
+        var databaseRoot = new InMemoryDatabaseRoot();
+        var winnerOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName, databaseRoot).Options;
+        LessonSessionEntity session;
+        await using (var seedDb = new AppDbContext(winnerOptions))
+        {
+            session = await SeedFinishedSessionWithMessageAsync(seedDb);
+        }
+
+        var interceptor = new SummarySaveFailureInterceptor(winnerOptions, constraintName, insertWinner, sqlState);
+        var losingOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName, databaseRoot).AddInterceptors(interceptor).Options;
+        return (new AppDbContext(losingOptions), session, interceptor);
+    }
 
     private static AppDbContext CreateDbContext() => new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString("N")).ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning)).Options);
 
@@ -213,6 +395,41 @@ public sealed class LessonSummaryGenerationServiceResponsesApiTests : IDisposabl
         db.LessonSessions.Add(session);
         await db.SaveChangesAsync();
         return session;
+    }
+
+    private sealed class SummarySaveFailureInterceptor(
+        DbContextOptions<AppDbContext> winnerOptions, string? constraintName, bool insertWinner, string? sqlState)
+        : SaveChangesInterceptor
+    {
+        public int SummaryInsertAttempts { get; private set; }
+        public Guid? WinnerSummaryId { get; private set; }
+
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            var pending = eventData.Context?.ChangeTracker.Entries<LessonSummaryEntity>()
+                .SingleOrDefault(entry => entry.State == EntityState.Added);
+            if (pending is null) return result;
+            SummaryInsertAttempts++;
+
+            if (insertWinner)
+            {
+                await using var winnerDb = new AppDbContext(winnerOptions);
+                var winner = new LessonSummaryEntity
+                {
+                    Id = Guid.NewGuid(), SessionId = pending.Entity.SessionId, Summary = "Concurrent winner.",
+                    CreatedAt = DateTimeOffset.UtcNow, UpdatedAt = DateTimeOffset.UtcNow
+                };
+                winnerDb.LessonSummaries.Add(winner);
+                await winnerDb.SaveChangesAsync(cancellationToken);
+                WinnerSummaryId = winner.Id;
+            }
+
+            if (sqlState is null) throw new DbUpdateException("Other persistence failure.");
+            throw new DbUpdateException("Simulated PostgreSQL save failure.",
+                new PostgresException("duplicate key", "ERROR", "ERROR", sqlState,
+                    constraintName: constraintName));
+        }
     }
 
     private sealed class SingleResponseHttpClientFactory(string envelope) : IHttpClientFactory
