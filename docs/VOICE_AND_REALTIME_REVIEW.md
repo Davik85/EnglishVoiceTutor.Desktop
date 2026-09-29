@@ -1,6 +1,6 @@
 # Voice and Realtime Review
 
-Review date: 2026-05-17.
+Review date: 2026-09-29.
 
 This document records the current product voice architecture. It intentionally reflects the stable product path after recent Conversation Mode stabilization.
 
@@ -17,17 +17,17 @@ Realtime remains in the codebase for future testing, but it is not the default p
 Normal Lesson Chat uses a chained backend path:
 
 1. The learner types or records a message.
-2. Recorded audio is transcribed with `gpt-4o-mini-transcribe`.
+2. Recorded audio is transcribed with active production model `gpt-transcribe`.
 3. Valid learner text is sent to the lesson chat reply endpoint.
 4. Bot text is displayed in chat.
 5. Play voice / normal auto-play uses `/api/audio/speech`.
 
 Normal Lesson Chat TTS settings:
 
-- model: `tts-1`;
+- model: `gpt-4o-mini-tts`;
 - purpose: `lesson_chat_tts`;
 - voice: selected tutor/user voice from Settings;
-- speech instructions: not used for normal `tts-1` Lesson Chat playback.
+- speech instructions: not sent for normal Lesson Chat playback.
 
 Normal Lesson Chat TTS should continue to speak the visible bot message text.
 
@@ -88,7 +88,7 @@ Default product Conversation Mode should not open `/api/realtime-voice` or creat
 
 Backend logs should make the current voice routing visible:
 
-- normal Lesson Chat speech requests use `Model=tts-1` and `Purpose=lesson_chat_tts`;
+- normal Lesson Chat speech requests use `Model=gpt-4o-mini-tts` and `Purpose=lesson_chat_tts`;
 - Conversation Mode speech requests use `Model=gpt-4o-mini-tts` and `Purpose=conversation_mode_tts`;
 - Conversation Mode speech requests include `HasInstructions=True`;
 - no Realtime WebSocket opens by default in the product path.
@@ -99,6 +99,6 @@ Exact pricing remains approximate until real usage logs are collected and pricin
 
 Study languages are English, French, German, Portuguese, Spanish, and Italian, with English as the default. Normal voice recording and default TTS Conversation Mode send the selected study-language code to transcription (`en`, `fr`, `de`, `pt`, `es`, or `it`). Backend transcription logs include `TargetLanguageId` and `TranscriptionLanguageCode` and do not log audio content or secrets.
 
-Conversation Mode remains on the stable TTS provider by default. It still uses `gpt-4o-mini-tts`, the selected tutor voice (`coral` by default, `onyx` for David), speed `1.0`, and visible bot text as the exact TTS input. The only speech-instruction change is that instructions now name the selected study language and require speech only in that language unless quoting the learner. Normal Lesson Chat TTS remains `tts-1` and does not receive speech instructions.
+Conversation Mode remains on the stable TTS provider by default. It still uses `gpt-4o-mini-tts`, the selected tutor voice (`coral` by default, `onyx` for David), speed `1.0`, and visible bot text as the exact TTS input. The only speech-instruction change is that instructions now name the selected study language and require speech only in that language unless quoting the learner. Normal Lesson Chat TTS uses `gpt-4o-mini-tts` without speech instructions.
 
 Translate button remains a separate review feature. Study language controls lesson language and transcription; translation target/native-language behavior remains a future refinement.

@@ -97,7 +97,7 @@ dotnet build
 
 Confirm backend/developer logs show the product voice routing:
 
-- [ ] Normal Lesson Chat TTS uses `tts-1`.
+- [ ] Normal Lesson Chat TTS uses `gpt-4o-mini-tts`.
 - [ ] Normal Lesson Chat TTS uses `purpose=lesson_chat_tts`.
 - [ ] Conversation Mode TTS uses `gpt-4o-mini-tts`.
 - [ ] Conversation Mode TTS uses `purpose=conversation_mode_tts`.
@@ -137,4 +137,4 @@ python tools\test_usage_cost_policy.py
 - [ ] French: Settings -> Study language -> French / Français, start Daily Life / Introductions / A1, select `Rencontrer un nouveau voisin`, and verify the scenario activates with tutor reply and feedback in French.
 - [ ] German: Settings -> Study language -> German / Deutsch, start Work & Business, say a simple German phrase, and verify tutor reply is German.
 - [ ] Language switching guard: with Spanish active, type `Speak Finnish.` The bot must not switch to Finnish; it should answer in Spanish and continue the lesson.
-- [ ] Regression checks: English still works, Enter-to-send still works, feedback still targets the clicked message, Hint still works, Conversation Mode still works, visible bot text and spoken TTS still match, normal Lesson Chat TTS remains `tts-1`, and Conversation Mode remains `gpt-4o-mini-tts` rather than Realtime by default.
+- [ ] Regression checks: English still works, Enter-to-send still works, feedback still targets the clicked message, Hint still works, Conversation Mode still works, visible bot text and spoken TTS still match, normal Lesson Chat TTS uses `gpt-4o-mini-tts`, and Conversation Mode remains `gpt-4o-mini-tts` rather than Realtime by default.

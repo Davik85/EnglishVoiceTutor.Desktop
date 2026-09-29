@@ -1,10 +1,20 @@
 # Backend server deployment
 
-Review date: 2026-09-27.
+Review date: 2026-09-29.
 
 ## Current production backend
 
-Production backend `0.1.35-backend.160` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.160`; `.159` is the verified previous rollback release at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`. Source commit `3add781b3f352e2be68af7b5eff94546efe46663` supplied the reviewed package SHA-256 `5A3EBF4C975A924576A724B4398BB357B4674FDDF283239AE03B52B95FC84962`; the same package was used for dry-run and production deployment. No EF migration or database schema/data change was required or run.
+Production backend `0.1.35-backend.163` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.163`; `.162` is the verified previous rollback release at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.162`. Source commit `d2514ddfa2dca079333bc47f0cabab1caa838a20` supplied the reviewed `LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.163.zip` package, SHA-256 `DDF15035537BE230EE501B3D4650BE134DDADD43C01E7BBB5A6BEA8F9DF56026`. Local and uploaded hashes matched; the reviewed package was used for the deployment without rebuilding. Backend Linux deployment, desktop/backend release-lock, repository desktop release-gate, and package/deployment dry-run policies passed. No EF migration or database schema/data migration was required or run. `languagevoicetutor-backend.service` is active/running, public `/health` returned HTTP 200 `Healthy`, and public `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`.
+
+Relative to `.162`, `.163` adds Lesson Summary duplicate-insert idempotency for the exact `SessionId` unique-constraint race with a persisted winner, `gpt-transcribe` multipart `languages[]` support while retaining legacy-model `language`, and Voice Scenario Resolution use of the configured Lesson Tutor Chat omit-temperature flag. After healthy deployment, Admin CMS AI Models was deliberately published with `gpt-transcribe` as Speech-to-text; successful production audio transcription was logged under the old model before that publication and under the new model afterward. Manual Voice Scenario selection succeeded before and after the switch, with no failure in the bounded post-switch log window. Deployment did not rewrite persistent AI Models settings or require a client release.
+
+## Historical 2026-09-29 `.162` published tutor behavior checkpoint
+
+At this checkpoint, backend `0.1.35-backend.162` was current with `.161` as previous rollback release. It contained accepted source commit `9a8f2e626cd27d986f4971c94f847e83d3aad99a` (`Use published CMS tutor behavior at runtime`); `.162` later became the verified rollback target for `.163`.
+
+## Historical 2026-09-27 `.160` display-name and Admin health-strip checkpoint
+
+At this checkpoint, production backend `0.1.35-backend.160` was current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.160`; `.159` was the verified previous rollback release at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`. Source commit `3add781b3f352e2be68af7b5eff94546efe46663` supplied the reviewed package SHA-256 `5A3EBF4C975A924576A724B4398BB357B4674FDDF283239AE03B52B95FC84962`; the same package was used for dry-run and production deployment. No EF migration or database schema/data change was required or run.
 
 Backend `.160` enforces the shared letter-only display-name policy for backend registration and contains the read-only Admin CMS health strip. Windows Desktop 1.7 separately uses the same shared .NET learner-name policy for registration and Learning settings. Registration display name remains optional at API level; when supplied, it must contain Unicode letters only. Existing registered users were not migrated or rewritten. Pre-deploy backend Linux deployment policy, real `admin.js` syntax, and 55 focused name-validation/Admin health-strip tests passed with zero failures. Production confirmed the service active/running from `.160`, `/health` Healthy, `/api/health/database` Healthy with `canConnect=true`, OpenAI configuration configured, and no critical/fatal/unhandled startup errors in the available journal view. Admin CMS health-strip assets were live, and manual verification showed Backend/API, Database, CMS Runtime, and AI Config all green. AI Config checks configuration only; it is not a live OpenAI provider-health check.
 
@@ -73,8 +83,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.160`
-- Previous rollback release: `0.1.35-backend.159`
+- Current release: `0.1.35-backend.163`
+- Previous rollback release: `0.1.35-backend.162`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -90,7 +100,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.160`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.159`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.163`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.162`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 ## 2026-08-25 `.141` legacy product-limit removal deployment verification
 
@@ -282,9 +292,9 @@ Results: `dotnet test` passed `89/89`; all listed Python policy checks passed. T
 
 AI Models CMS active/draft runtime settings are persistent server data/config, not release artifacts. The configured `AiModelSettings:StorageJsonPath` defaults to `site/content/ai-model-settings.json` and is resolved outside the versioned release content root, so production stores it under the persistent backend data tree (`/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`) rather than `/opt/languagevoicetutor/backend/current/site/content/` or `/opt/languagevoicetutor/backend/releases/<version>/site/content/`. Backend startup/deploy must not overwrite an existing active settings file with packaged defaults, and future backend deploys must not rely on release-folder AI Models JSON as the source of truth. If the persistent file is missing but a legacy release-content file exists, the backend imports that file once; otherwise defaults seed the in-memory draft/active values until an admin saves or publishes.
 
-Persistence verification: the persistent file exists at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`, was seeded from `/opt/languagevoicetutor/backend/current/site/content/ai-model-settings.json` only as a one-time data/config correction, has mode `644`, and survived a backend service restart. At that historical persistence checkpoint it contained `gpt-5.5` plus `gpt-5.2` and matched the then-current release file by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`. Current Active text-role values are now `gpt-5.6-luna` for Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation, with all four omit-temperature flags enabled. The persistence correction was not a backend deploy, database migration, Website CMS publish, or Windows installer upload.
+Persistence verification: the persistent file exists at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`, was seeded from a release-content file only as a one-time historical data/config correction, has mode `644`, and survived a backend service restart. At that earlier checkpoint it contained `gpt-5.5` plus `gpt-5.2` and matched the then-current release file by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`. Current Active text-role values are `gpt-5.6-luna` for Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation, with all four omit-temperature flags enabled. After deliberate post-`.163` publication, Active and Draft `SpeechToTextModel` are both `gpt-transcribe` at revision `36` (updated `2026-09-29T20:07:55.5008736+00:00`); lesson chat and Conversation Mode TTS are `gpt-4o-mini-tts`, and Realtime voice is `gpt-realtime`. The deployment itself did not publish AI Models settings.
 
-After backend deploy, Super Admin should verify **Admin CMS → System → AI Models → Load AI Models**: Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation each remain `gpt-5.6-luna`, and all four **Omit temperature parameter** flags remain enabled; then run **Validate format**. Test provider access only if settings changed, and do not publish unless changes are intentional. API keys remain environment secrets and are never stored in AI Models CMS JSON.
+After backend deploy, Super Admin should verify **Admin CMS → System → AI Models → Load AI Models**: Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation each remain `gpt-5.6-luna` with all four **Omit temperature parameter** flags enabled, and Speech-to-text remains `gpt-transcribe`; then run **Validate format**. Test provider access only if settings changed, and do not publish unless changes are intentional. API keys remain environment secrets and are never stored in AI Models CMS JSON.
 
 ## Rollback
 
@@ -354,11 +364,11 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.160`; verified rollback target `.159` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.163`; verified rollback target `.162` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: the current Windows direct release is manifest-driven with JavaScript; the static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Windows installer: current public direct release is `1.7`, installer `LanguageVoiceTutorSetup-1.7.exe`.
-- AI Models: persistent production storage is verified; all four Active text roles use `gpt-5.6-luna` with their omit-temperature flags enabled, and `.154` routes the roles independently at runtime.
+- AI Models: persistent production storage is verified; all four Active text roles use `gpt-5.6-luna` with their omit-temperature flags enabled, Speech-to-text uses `gpt-transcribe`, both TTS roles use `gpt-4o-mini-tts`, and `.154` routes the text roles independently at runtime.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: website legal/support/seller/AI/status pages are ready for owner/legal final review as drafts, not final legal advice.
 
@@ -410,7 +420,7 @@ Admin RBAC note: Production Admin RBAC / persistent role management is completed
 
 ## 2026-07-13 backend voice scenario semantic resolution release
 
-This section is historical for the `.113`/`.115` voice scenario releases; the current production backend has since advanced to `0.1.35-backend.128`. Backend `0.1.35-backend.113` was deployed successfully from source commit `c850f4b` (`feat: add voice scenario semantic resolution`), with rollback release `0.1.35-backend.112`. That historical note describes the original additive endpoint deployment only. The latest voice scenario structured-output validation fix is in backend `0.1.35-backend.115`, not `.113` or `.114`.
+This section is historical for the `.113`/`.115` voice scenario releases; at a later documented checkpoint, production had advanced to `0.1.35-backend.128`. Backend `0.1.35-backend.113` was deployed successfully from source commit `c850f4b` (`feat: add voice scenario semantic resolution`), with rollback release `0.1.35-backend.112`. That historical note describes the original additive endpoint deployment only. The latest voice scenario structured-output validation fix is in backend `0.1.35-backend.115`, not `.113` or `.114`.
 
 Backend `0.1.35-backend.115` was deployed and verified in production with previous release `0.1.35-backend.114` for the dated voice scenario structured-output validation fix. The live `current` symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.115`, and the live `previous` symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.114`; these symlink values were the source of truth for that dated `.115` verification. Backend `0.1.35-backend.114` was already active before the `.115` deployment and must not be described as containing the `.115` fix. `languagevoicetutor-backend.service` is active and running, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or database schema change was required or run, and no website or Windows installer deployment was performed.
 

@@ -1,15 +1,15 @@
 # Cost and Usage Instrumentation Model
 
-Review date: 2026-05-17.
+Review date: 2026-09-29.
 
-This document describes the current product model usage and the developer-only usage/cost instrumentation. Pricing and cost estimates remain approximate where pricing constants are missing or incomplete.
+This document describes the current product model usage and the developer-only usage/cost instrumentation. The dated Conversation Mode cost comparison below preserves the earlier `tts-1` baseline. Pricing and cost estimates remain approximate where pricing constants are missing or incomplete.
 
 ## Current model usage
 
 - Lesson chat reply: the current chat model configured and used by the backend lesson chat service.
 - Feedback, hint, and summary: backend lesson-related OpenAI calls as configured by the current backend services.
-- Transcription: `gpt-4o-mini-transcribe`.
-- Normal Lesson Chat TTS: `tts-1` with `purpose=lesson_chat_tts`.
+- Transcription: `gpt-transcribe` (legacy configured models remain compatible).
+- Normal Lesson Chat TTS: `gpt-4o-mini-tts` with `purpose=lesson_chat_tts`.
 - Conversation Mode TTS: `gpt-4o-mini-tts` with `purpose=conversation_mode_tts`.
 - Realtime: `gpt-realtime` is not default for product; keep for future cost review if/when Realtime is re-enabled as a provider option.
 
@@ -42,13 +42,13 @@ Developer logs and usage records are intended to capture:
 
 ## Conversation Mode cost note
 
-Conversation Mode may cost more after switching from `tts-1` to `gpt-4o-mini-tts`, but quality improved because `gpt-4o-mini-tts` supports calmer instruction-based speech. Exact monthly and unit economics should be recalculated later from real usage logs instead of estimates alone.
+At the earlier Conversation Mode switch, Conversation Mode may have cost more than its `tts-1` baseline after moving to `gpt-4o-mini-tts`, but quality improved because `gpt-4o-mini-tts` supports calmer instruction-based speech. Exact monthly and unit economics should be recalculated later from real usage logs instead of estimates alone.
 
 ## Log checks for smoke testing
 
 During the regression smoke-test, confirm logs show:
 
-- normal Lesson Chat speech uses `Model=tts-1` and `Purpose=lesson_chat_tts`;
+- normal Lesson Chat speech uses `Model=gpt-4o-mini-tts` and `Purpose=lesson_chat_tts`;
 - Conversation Mode speech uses `Model=gpt-4o-mini-tts` and `Purpose=conversation_mode_tts`;
 - Conversation Mode speech uses `Voice=coral`, `SpeechSpeed=1.0`, and `HasInstructions=True`;
 - no Realtime WebSocket opens by default.

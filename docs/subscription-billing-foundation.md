@@ -1,6 +1,6 @@
 # Subscription & Billing Foundation (Current State)
 
-> **Current release pointer (2026-09-03).** Production backend is `.151` with `.150` rollback, Google Play Billing/RTDN/reconciliation are enabled, and Android v8 is publicly available. The dated `.148` and earlier checkpoints below are historical billing-validation evidence, not current deployment claims.
+> **Historical release pointer (2026-09-03).** At this checkpoint, production backend was `.151` with `.150` rollback, Google Play Billing/RTDN/reconciliation were enabled, and Android v8 was publicly available. See [CURRENT_STATE.md](CURRENT_STATE.md) for current release versions. The dated `.148` and earlier checkpoints below are historical billing-validation evidence, not current deployment claims.
 
 This document describes the current implemented foundation for account, trial, subscription, entitlement, free-limit enforcement, development test accounts, provider-agnostic checkout, Paddle billing/webhook ingestion, Paddle subscription/payment snapshots, entitlement activation/extension, canceled/paused expiry policy, and local Development CMS/admin support.
 
@@ -617,7 +617,7 @@ In production backend `0.1.35-backend.108`, full Paddle refunds are treated as a
 
 Normal cancel-renewal behavior is unchanged: scheduled cancellation keeps Premium through the paid period end. Partial refunds are conservative in this slice: the event is safely recorded/processed for review and Premium is left unchanged unless the adjustment is full or a chargeback. Provider history is preserved; payment and subscription records are not deleted, and refund processing does not fake Paddle webhook events or expose raw provider payloads, webhook signatures, tokens, cookies, secrets, API keys, or full card/payment data in Admin Activity evidence.
 
-Full-refund Premium revocation is production-verified on current production backend `0.1.35-backend.108`: the operator reprocess of stored provider event `evt_01kwhgmvh1v9k8ve70gvnfeskm` returned `Result=Revoked`, `RevokedCount=1`, and `BlockReason=(null)`; Admin User Lookup confirmed Free/no Premium/no Trial; Admin Activity showed `paddle_full_refund_premium_revoke` succeeded for the refunded user. Broad public paid launch is no longer blocked by full-refund revoke, but remains pending final release-readiness review and remaining blockers. Expanded customer portal/subscription management is deferred and is not a current blocker. Direct installer code signing remains pending.
+Full-refund Premium revocation is production-verified on then-current production backend `0.1.35-backend.108`: the operator reprocess of stored provider event `evt_01kwhgmvh1v9k8ve70gvnfeskm` returned `Result=Revoked`, `RevokedCount=1`, and `BlockReason=(null)`; Admin User Lookup confirmed Free/no Premium/no Trial; Admin Activity showed `paddle_full_refund_premium_revoke` succeeded for the refunded user. Broad public paid launch is no longer blocked by full-refund revoke, but remains pending final release-readiness review and remaining blockers. Expanded customer portal/subscription management is deferred and is not a current blocker. Direct installer code signing remains pending.
 
 
 ### 2026-07-02 production refund replay blocker and fix candidate

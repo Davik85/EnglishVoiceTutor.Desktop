@@ -78,7 +78,7 @@ RealtimeMicrophoneCaptureService -> RealtimeVoiceConversationEngine
 
 Normal Lesson Chat and Realtime share CMS-first assembled lesson behavior plus backend guardrails. The backend assembles the active runtime content source and enforces non-editable protections; normal wording/style changes should be made in CMS. They differ in audio transport:
 
-- Normal Lesson Chat uses `/api/lesson-chat/reply` for text and `/api/audio/speech` for manual Play, auto-play, and chained TTS fallback. Normal TTS currently uses `tts-1`.
+- Normal Lesson Chat uses `/api/lesson-chat/reply` for text and `/api/audio/speech` for manual Play, auto-play, and chained TTS fallback. Normal TTS currently uses the backend-configured `gpt-4o-mini-tts` model.
 - Realtime uses `/api/realtime-voice` and OpenAI Realtime with `gpt-realtime`. Realtime assistant audio and transcript must come from the same Realtime response and generated Realtime turns must not use `/api/audio/speech`.
 
 ## Message review vs lesson input state

@@ -1,6 +1,6 @@
 # Decisions
 
-Review date: 2026-05-17.
+Review date: 2026-09-29.
 
 - Admin/tester behavior feedback is triaged through the CMS behavior tuning playbook: choose one CMS area, make a draft edit with paste-ready wording, validate/preview, publish, start a new lesson, and restore the previous published version if worse.
 - `static-json-v1` / `Static JSON Baseline` is a CMS pack/seed identity; the decisive active runtime fields are `Actual learner runtime source` and `Currently using static JSON fallback`.
@@ -9,8 +9,8 @@ Review date: 2026-05-17.
 
 - Normal Lesson Chat uses CMS published prompt/scenario/tutor/level content for editable teaching behavior, with `LessonPromptBuilder` responsible for assembly and backend-owned guardrails in the backend lesson chat flow.
 - Conversation Mode now uses the same lesson methodology and lesson chat reply flow as normal Lesson Chat.
-- Normal Lesson Chat TTS remains `tts-1` with `purpose=lesson_chat_tts`.
-- Normal voice transcription remains `gpt-4o-mini-transcribe`.
+- Normal Lesson Chat TTS uses `gpt-4o-mini-tts` with `purpose=lesson_chat_tts`.
+- Normal voice transcription uses the active production `gpt-transcribe` model; legacy configured transcription models remain compatible.
 - Conversation Mode uses the stable TTS provider by default: microphone recording -> audio transcription -> lesson chat reply -> `gpt-4o-mini-tts` playback.
 - Conversation Mode TTS uses `model=gpt-4o-mini-tts`, `voice=coral`, `purpose=conversation_mode_tts`, speed `1.0`, and calm speech instructions.
 - Conversation Mode spoken text must match the visible bot text exactly; do not shorten, summarize, rewrite, or chunk spoken text.

@@ -199,7 +199,7 @@ The CMS runtime read path is intentionally controlled and reversible. CMS publis
 
 - Readable Validation & Preview UI is complete for the deployed Admin CMS. Validation now shows Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON instead of dumping raw JSON in the main result area. Preview now shows readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON.
 - Admin static asset cache busting and no-cache behavior are complete for `/admin` assets. `admin.js` and `admin.css` use the `admin-cms-20260613-raw-json-fix` version token, and no-cache headers apply to `/admin` static files only.
-- Backend `0.1.35-backend.11` is the deployed backend containing the latest Admin CMS UI/cache fixes. The current backend symlink points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`; rollback reference is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8`.
+- At this 2026-06-13 checkpoint, backend `0.1.35-backend.11` contained the Admin CMS UI/cache fixes. The then-current backend symlink pointed to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`; rollback reference is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8`.
 - Health and database health are green after deploy. Build is green. Admin shell audit is green. EF model check reports no pending model changes. No EF migration was required.
 
 ### Current state
