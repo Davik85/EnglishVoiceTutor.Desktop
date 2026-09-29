@@ -1,4 +1,7 @@
+using System.Net;
+using System.Text;
 using System.Text.Json;
+using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services;
 
@@ -46,6 +49,58 @@ public sealed class OpenAiVoiceScenarioResolutionServiceTests
     }
 
     [Theory]
+    [InlineData("gpt-5.6-luna", true, null)]
+    [InlineData("gpt-5.6-luna", false, 0.3)]
+    [InlineData("gpt-5.2", false, 0.3)]
+    public async Task RuntimeRequestUsesConfiguredLessonTutorTemperaturePolicy(
+        string model, bool omitTemperature, double? expectedTemperature)
+    {
+        var settings = AiModelSettings.Defaults with
+        {
+            LessonTutorChatModel = model,
+            LessonTutorChatOmitTemperature = omitTemperature
+        };
+        var responseText = JsonSerializer.Serialize(new { result = Published("schema-a") }, JsonOptions);
+        var envelope = JsonSerializer.Serialize(new
+        {
+            output = new[] { new { content = new[] { new { text = responseText } } } }
+        }, JsonOptions);
+        var capture = new CapturingHttpClientFactory(envelope);
+        var service = new OpenAiVoiceScenarioResolutionService(
+            new OpenAiOptionsProvider(new FakeAiModelSettingsService(settings), () => "test-api-key"),
+            capture);
+
+        var result = await service.ResolveAsync(
+            Request("schema", "choose a situation", Candidates("schema")),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal("schema-a", result.MatchedContextId);
+        Assert.Equal(HttpMethod.Post, capture.Method);
+        Assert.Equal(OpenAiConstants.ResponsesEndpoint, capture.RequestUri?.ToString());
+        using var document = JsonDocument.Parse(Assert.Single(capture.RequestBodies));
+        var request = document.RootElement;
+        Assert.Equal(model, request.GetProperty("model").GetString());
+        if (expectedTemperature.HasValue)
+        {
+            Assert.Equal(expectedTemperature.Value, request.GetProperty("temperature").GetDouble());
+        }
+        else
+        {
+            Assert.False(request.TryGetProperty("temperature", out _));
+        }
+
+        Assert.Contains("Classify an initial spoken lesson-scenario selection",
+            request.GetProperty("instructions").GetString());
+        using var input = JsonDocument.Parse(request.GetProperty("input").GetString()!);
+        Assert.Equal("choose a situation", input.RootElement.GetProperty("recognizedText").GetString());
+        var format = request.GetProperty("text").GetProperty("format");
+        Assert.Equal(OpenAiConstants.JsonSchemaFormatType, format.GetProperty("type").GetString());
+        Assert.Equal("voice_scenario_resolution", format.GetProperty("name").GetString());
+        Assert.True(format.GetProperty("strict").GetBoolean());
+        Assert.Equal("result", format.GetProperty("schema").GetProperty("required")[0].GetString());
+    }
+
+    [Theory]
     [MemberData(nameof(DynamicFixtures))]
     public void UsesDynamicCandidateContractAcrossUnrelatedFixtures(
         string group, string recognizedText, string decision, string? matchedId)
@@ -63,7 +118,7 @@ public sealed class OpenAiVoiceScenarioResolutionServiceTests
 
         var result = Parse(output, candidates.Select(candidate => candidate.Id));
         var providerRequest = OpenAiVoiceScenarioResolutionService.CreateProviderRequest(
-            Request(group, recognizedText, candidates), "mocked-model");
+            Request(group, recognizedText, candidates), "mocked-model", omitTemperature: false);
         var suppliedRequest = JsonSerializer.Deserialize<VoiceScenarioResolutionRequest>(providerRequest.Input, JsonOptions);
 
         Assert.Equal(decision, result.Decision);
@@ -158,7 +213,7 @@ public sealed class OpenAiVoiceScenarioResolutionServiceTests
     public void StructuredOutputSchemaBranchesMatchValidationContract()
     {
         var request = OpenAiVoiceScenarioResolutionService.CreateProviderRequest(
-            Request("schema", "choose a situation", Candidates("schema")), "mocked-model");
+            Request("schema", "choose a situation", Candidates("schema")), "mocked-model", omitTemperature: false);
         var schema = request.Text!.Format!.Schema;
         var branches = schema.GetProperty("properties").GetProperty("result").GetProperty("anyOf").EnumerateArray().ToArray();
 
@@ -219,6 +274,44 @@ public sealed class OpenAiVoiceScenarioResolutionServiceTests
         var source = File.ReadAllText(Path.Combine(root, "Services", "OpenAiVoiceScenarioResolutionService.cs"));
         foreach (var phrase in new[] { "language school", "meeting neighbor", "meeting a friend in a park", "hobby club", "doctor", "manager" })
             Assert.DoesNotContain(phrase, source, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private sealed class CapturingHttpClientFactory(string responseBody) : IHttpClientFactory
+    {
+        private readonly CapturingHandler _handler = new(responseBody);
+        public HttpMethod? Method => _handler.Method;
+        public Uri? RequestUri => _handler.RequestUri;
+        public IReadOnlyList<string> RequestBodies => _handler.RequestBodies;
+        public HttpClient CreateClient(string name) => new(_handler, disposeHandler: false);
+    }
+
+    private sealed class CapturingHandler(string responseBody) : HttpMessageHandler
+    {
+        public HttpMethod? Method { get; private set; }
+        public Uri? RequestUri { get; private set; }
+        public List<string> RequestBodies { get; } = [];
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Method = request.Method;
+            RequestUri = request.RequestUri;
+            RequestBodies.Add(await request.Content!.ReadAsStringAsync(cancellationToken));
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(responseBody, Encoding.UTF8, OpenAiConstants.ContentTypeJson)
+            };
+        }
+    }
+
+    private sealed class FakeAiModelSettingsService(AiModelSettings settings) : IAiModelSettingsService
+    {
+        public AiModelSettings GetActiveSettings() => settings;
+        public Task<AiModelSettingsResponse> GetAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<AiModelSettingsResponse> SaveDraftAsync(AiModelSettings draft, string? updatedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public AiModelSettingsValidationResponse Validate(AiModelSettings candidate) => throw new NotSupportedException();
+        public Task<AiModelSettingsResponse> PublishAsync(string? updatedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<AiModelSettingsResponse> ResetDraftFromActiveAsync(string? updatedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     private static void AddGroup(TheoryData<string, string, string, string?> data, string group, string title, string partial, string free)

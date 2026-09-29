@@ -121,7 +121,7 @@ Return only JSON matching the strict schema.
             throw new InvalidOperationException("Voice scenario resolution is not configured.");
         }
 
-        var providerRequest = CreateProviderRequest(request, options.Model);
+        var providerRequest = CreateProviderRequest(request, options.Model, options.LessonTutorChatOmitTemperature);
 
         var client = _httpClientFactory.CreateClient();
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, OpenAiConstants.ResponsesEndpoint);
@@ -142,12 +142,13 @@ Return only JSON matching the strict schema.
 
     internal static OpenAiResponsesRequest CreateProviderRequest(
         VoiceScenarioResolutionRequest request,
-        string model) => new()
+        string model,
+        bool omitTemperature) => new()
     {
         Model = model,
         Instructions = Instructions,
         Input = JsonSerializer.Serialize(request, JsonOptions),
-        Temperature = OpenAiLessonChatService.ResolveTemperature(model),
+        Temperature = AiTextModelTemperaturePolicy.Resolve(AiTextModelRole.LessonTutorChat, model, omitTemperature),
         Text = new OpenAiTextOptions
         {
             Format = new OpenAiTextFormat
