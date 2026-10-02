@@ -163,8 +163,8 @@ public sealed class UserSettingsServiceTests
         Assert.Equal("fr", settings.ExplanationLanguage);
         Assert.Equal("nelli", settings.SelectedTutorId);
         Assert.Equal("verse", settings.SpeechVoice);
-        Assert.Equal(1.25m, settings.SpeechSpeed);
-        Assert.False(settings.ConversationModeEnabled);
+        Assert.Equal(1.0m, settings.SpeechSpeed);
+        Assert.True(settings.ConversationModeEnabled);
     }
 
     [Fact]
@@ -195,8 +195,8 @@ public sealed class UserSettingsServiceTests
         Assert.Equal("fr", settings.ExplanationLanguage);
         Assert.Equal("nelli", settings.SelectedTutorId);
         Assert.Equal("verse", settings.SpeechVoice);
-        Assert.Equal(1.25m, settings.SpeechSpeed);
-        Assert.False(settings.ConversationModeEnabled);
+        Assert.Equal(1.0m, settings.SpeechSpeed);
+        Assert.True(settings.ConversationModeEnabled);
     }
 
     [Fact]
@@ -376,9 +376,90 @@ public sealed class UserSettingsServiceTests
         Assert.Equal(StudyLanguageConstants.Spanish, settings.StudyLanguage);
         Assert.Equal("fr", settings.ExplanationLanguage);
         Assert.Equal("ballad", settings.SpeechVoice);
-        Assert.Equal(1.25m, settings.SpeechSpeed);
-        Assert.False(settings.ConversationModeEnabled);
+        Assert.Equal(1.0m, settings.SpeechSpeed);
+        Assert.True(settings.ConversationModeEnabled);
         Assert.Equal("lana", settings.SelectedTutorId);
+    }
+
+    public static IEnumerable<object[]> HistoricalSettingsRequests =>
+        from speed in new[] { 0.5m, 0.9m, 1.0m, 1.25m, 1.5m, 2.0m }
+        from conversationMode in new[] { false, true }
+        select new object[] { speed, conversationMode };
+
+    [Theory]
+    [MemberData(nameof(HistoricalSettingsRequests))]
+    public async Task UpdateAcceptsHistoricalValuesButPersistsAndReturnsProductInvariants(decimal speed, bool conversationMode)
+    {
+        await using var db = CreateDbContext();
+        var request = CreateValidRequest(selectedTutorId: null);
+        request.SpeechSpeed = speed;
+        request.ConversationModeEnabled = conversationMode;
+
+        var response = await CreateService(db).UpdateAsync(Guid.NewGuid(), request, TestContext.Current.CancellationToken);
+
+        db.ChangeTracker.Clear();
+        var stored = await db.UserSettings.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(1.0m, response.SpeechSpeed);
+        Assert.Equal(1.0m, stored.SpeechSpeed);
+        Assert.True(response.ConversationModeEnabled);
+        Assert.True(stored.ConversationModeEnabled);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("0.49")]
+    [InlineData("2.01")]
+    [InlineData("-1")]
+    public async Task UpdateRejectsOutOfRangeSpeedWithoutChangingStoredSettings(string speed)
+    {
+        await using var db = CreateDbContext();
+        var service = CreateService(db);
+        var id = Guid.NewGuid();
+        var before = await service.GetOrCreateAsync(id, TestContext.Current.CancellationToken);
+        var request = CreateValidRequest(selectedTutorId: null);
+        request.SpeechSpeed = decimal.Parse(speed, System.Globalization.CultureInfo.InvariantCulture);
+
+        var exception = await Assert.ThrowsAsync<UserSettingsValidationException>(() =>
+            service.UpdateAsync(id, request, TestContext.Current.CancellationToken));
+
+        Assert.Equal($"Speech speed must be between {UserSettingsService.MinSpeechSpeed:0.0} and {UserSettingsService.MaxSpeechSpeed:0.0}.", exception.Message);
+        db.ChangeTracker.Clear();
+        var stored = await db.UserSettings.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(before.UpdatedAt, stored.UpdatedAt);
+        Assert.Equal(1.0m, stored.SpeechSpeed);
+        Assert.True(stored.ConversationModeEnabled);
+    }
+
+    [Theory]
+    [InlineData("0.5", true)]
+    [InlineData("1.0", false)]
+    public async Task LoadRepairsSpeedOrConversationFlagWithCanonicalVoice(string speed, bool conversationMode)
+    {
+        await using var db = CreateDbContext();
+        var service = CreateService(db);
+        var id = Guid.NewGuid();
+        var before = await service.GetOrCreateAsync(id, TestContext.Current.CancellationToken);
+        var row = await db.UserSettings.SingleAsync(TestContext.Current.CancellationToken);
+        var oldTimestamp = DateTimeOffset.UtcNow.AddDays(-1);
+        row.SpeechSpeed = decimal.Parse(speed, System.Globalization.CultureInfo.InvariantCulture);
+        row.ConversationModeEnabled = conversationMode;
+        row.UpdatedAt = oldTimestamp;
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        var response = await service.GetOrCreateAsync(id, TestContext.Current.CancellationToken);
+
+        db.ChangeTracker.Clear();
+        var stored = await db.UserSettings.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(before.SpeechVoice, stored.SpeechVoice);
+        Assert.Equal(1.0m, stored.SpeechSpeed);
+        Assert.True(stored.ConversationModeEnabled);
+        Assert.Equal(stored.UpdatedAt, response.UpdatedAt);
+        Assert.True(stored.UpdatedAt > oldTimestamp);
+        Assert.Equal(before.CreatedAt, stored.CreatedAt);
+        db.ChangeTracker.Clear();
+        var second = await service.GetOrCreateAsync(id, TestContext.Current.CancellationToken);
+        Assert.Equal(response.UpdatedAt, second.UpdatedAt);
     }
 
     private static UserSettingsService CreateService(AppDbContext dbContext) => new(dbContext, new DevUserProvider());

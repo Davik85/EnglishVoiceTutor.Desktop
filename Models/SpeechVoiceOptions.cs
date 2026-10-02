@@ -77,6 +77,14 @@ public static class SpeechVoiceOptions
         Cedar
     ];
 
+    public static bool IsLegacyVoiceId(string? voiceId)
+    {
+        var trimmedVoiceId = voiceId?.Trim();
+        return string.Equals(trimmedVoiceId, "nova", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(trimmedVoiceId, "onyx", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(trimmedVoiceId, "fable", StringComparison.OrdinalIgnoreCase);
+    }
+
     public static bool TryGetSupportedId(string? voiceId, out string canonicalId)
     {
         var supportedVoice = All.FirstOrDefault(voice => string.Equals(voice.Id, voiceId?.Trim(), StringComparison.OrdinalIgnoreCase));

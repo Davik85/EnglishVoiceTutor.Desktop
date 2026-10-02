@@ -29,14 +29,38 @@ public sealed class SpeechVoiceSettingsTests
         Assert.Equal(expected, (await db.UserSettings.SingleAsync(TestContext.Current.CancellationToken)).SpeechVoice);
     }
 
+    public static IEnumerable<object[]> LegacyRequests =>
+        from voice in new[] { "nova", "onyx", "fable", " NOVA ", " OnYx ", " FABLE " }
+        from tutor in new[] { "david", "lana", "nelli" }
+        from changeTutor in new[] { false, true }
+        select new object[] { voice, tutor, changeTutor, tutor == "david" ? "cedar" : "coral" };
+
     [Theory]
-    [InlineData("nova")]
-    [InlineData("onyx")]
-    [InlineData("fable")]
-    [InlineData(" NOVA ")]
-    [InlineData(" ONYX ")]
-    [InlineData(" FABLE ")]
+    [MemberData(nameof(LegacyRequests))]
+    public async Task UpdateAcceptsLegacyVoiceUsingEffectiveTutor(string voice, string tutor, bool changeTutor, string expected)
+    {
+        await using var db = CreateDbContext();
+        var service = CreateService(db);
+        var id = Guid.NewGuid();
+        var initial = Request("alloy");
+        initial.SelectedTutorId = changeTutor ? (tutor == "david" ? "lana" : "david") : tutor;
+        await service.UpdateAsync(id, initial, TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+        var request = Request(voice);
+        request.SelectedTutorId = changeTutor ? $" {tutor.ToUpperInvariant()} " : null;
+
+        var response = await service.UpdateAsync(id, request, TestContext.Current.CancellationToken);
+
+        db.ChangeTracker.Clear();
+        Assert.Equal(tutor, response.SelectedTutorId);
+        Assert.Equal(expected, response.SpeechVoice);
+        Assert.Equal(expected, (await db.UserSettings.SingleAsync(TestContext.Current.CancellationToken)).SpeechVoice);
+    }
+
+    [Theory]
     [InlineData("random-voice")]
+    [InlineData("unknown")]
+    [InlineData("cedar2")]
     public async Task UpdateRejectsUnsupportedVoiceWithoutChangingExistingSettings(string input)
     {
         await using var db = CreateDbContext();
@@ -69,7 +93,7 @@ public sealed class SpeechVoiceSettingsTests
     [MemberData(nameof(PersistedVoices))]
     [InlineData(" CEDAR ", "lana", "cedar")]
     [InlineData(" ALLOY ", "david", "alloy")]
-    public async Task LoadRepairsPersistedVoiceUsingTutorAndPersistsOnlyOneRepair(string input, string tutor, string expected)
+    public async Task LoadRepairsPersistedInvariantsUsingTutorAndPersistsOnlyOneRepair(string input, string tutor, string expected)
     {
         await using var db = CreateDbContext();
         var service = CreateService(db);
@@ -80,6 +104,8 @@ public sealed class SpeechVoiceSettingsTests
         var oldTimestamp = DateTimeOffset.UtcNow.AddDays(-1);
         var createdAt = row.CreatedAt;
         row.SpeechVoice = input;
+        row.SpeechSpeed = 1.25m;
+        row.ConversationModeEnabled = false;
         row.UpdatedAt = oldTimestamp;
         profile.SelectedTutorId = tutor;
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -89,6 +115,8 @@ public sealed class SpeechVoiceSettingsTests
         db.ChangeTracker.Clear();
         var persisted = await db.UserSettings.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(expected, response.SpeechVoice);
+        Assert.Equal(1.0m, response.SpeechSpeed);
+        Assert.True(response.ConversationModeEnabled);
         Assert.Equal(expected, persisted.SpeechVoice);
         Assert.True(persisted.UpdatedAt > oldTimestamp);
         Assert.Equal(persisted.UpdatedAt, response.UpdatedAt);
@@ -98,6 +126,8 @@ public sealed class SpeechVoiceSettingsTests
 
         var secondResponse = await service.GetOrCreateAsync(id, TestContext.Current.CancellationToken);
         Assert.Equal(expected, secondResponse.SpeechVoice);
+        Assert.Equal(1.0m, secondResponse.SpeechSpeed);
+        Assert.True(secondResponse.ConversationModeEnabled);
         Assert.Equal(response.UpdatedAt, secondResponse.UpdatedAt);
     }
 
@@ -112,6 +142,9 @@ public sealed class SpeechVoiceSettingsTests
         db.ChangeTracker.Clear();
         var after = await service.GetOrCreateAsync(id, TestContext.Current.CancellationToken);
         Assert.Equal(voice, after.SpeechVoice);
+        Assert.Equal(1.0m, after.SpeechSpeed);
+        Assert.True(after.ConversationModeEnabled);
+        Assert.Equal(before.CreatedAt, after.CreatedAt);
         Assert.Equal(before.UpdatedAt, after.UpdatedAt);
     }
 

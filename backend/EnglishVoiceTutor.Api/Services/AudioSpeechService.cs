@@ -172,16 +172,8 @@ public sealed class AudioSpeechService
 
     private static double ResolveSpeechSpeed(string purpose, double? requestedSpeechSpeed)
     {
-        if (string.Equals(purpose, ConversationModeTtsPurpose, StringComparison.OrdinalIgnoreCase))
-        {
-            return requestedSpeechSpeed is > 0 and <= 1.0
-                ? requestedSpeechSpeed.Value
-                : OpenAiConstants.ConversationModeTtsSpeechSpeed;
-        }
-
-        return requestedSpeechSpeed is > 0
-            ? requestedSpeechSpeed.Value
-            : OpenAiConstants.DefaultSpeechSpeed;
+        // Retain old-client input compatibility; all purposes synthesize at the fixed normal rate.
+        return OpenAiConstants.DefaultSpeechSpeed;
     }
 
     private static string ResolveSpeechModel(string purpose, AiModelSettings modelSettings)

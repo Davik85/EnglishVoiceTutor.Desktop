@@ -29,7 +29,7 @@ public sealed class AudioSpeechServiceStreamRoutingTests
         Assert.Equal(expectedModel, request.GetProperty("model").GetString());
         Assert.Equal("A tutor reply.", request.GetProperty("input").GetString());
         Assert.Equal("sage", request.GetProperty("voice").GetString());
-        Assert.Equal(0.8, request.GetProperty("speed").GetDouble());
+        Assert.Equal(1.0, request.GetProperty("speed").GetDouble());
         Assert.Equal("Speak calmly.", request.GetProperty("instructions").GetString());
         Assert.Equal(OpenAiConstants.PcmSpeechResponseFormat, request.GetProperty("response_format").GetString());
         Assert.Equal(Fixture.Audio, output.ToArray());
@@ -84,19 +84,41 @@ public sealed class AudioSpeechServiceStreamRoutingTests
         }
     }
 
+    public static IEnumerable<object[]> HistoricalSpeechSpeeds =>
+        from model in new[] { "gpt-4o-mini-tts", "tts-1", "custom-tts" }
+        from purpose in new string?[] { "lesson_chat_tts", "conversation_mode_tts", "realtime_pre_start_opening", "unknown-purpose", null }
+        from speed in new double?[] { null, 0.0, 0.5, 0.9, 1.0, 1.25, 2.0 }
+        from streaming in new[] { false, true }
+        select new object[] { model, purpose!, speed!, streaming };
+
     [Theory]
-    [InlineData("conversation_mode_tts", 1.2, 1.0)]
-    [InlineData("conversation_mode_tts", 0.0, 1.0)]
-    [InlineData("lesson_chat_tts", 1.2, 1.2)]
-    public async Task SpeedUsesExistingPurposeRules(string purpose, double speed, double expectedSpeed)
+    [MemberData(nameof(HistoricalSpeechSpeeds))]
+    public async Task BothHttpSpeechPathsAlwaysSendFixedSpeed(string model, string? purpose, double? speed, bool streaming)
     {
-        using var fixture = new Fixture();
+        using var fixture = new Fixture(AiModelSettings.Defaults with
+        {
+            LessonChatTextToSpeechModel = model,
+            ConversationModeTextToSpeechModel = model
+        });
         await using var output = new MemoryStream();
+        if (streaming)
+        {
+            await fixture.Service.StreamSpeechAsync("Tutor reply.", output, purpose,
+                TestContext.Current.CancellationToken, speechSpeed: speed);
+            Assert.Equal(Fixture.Audio, output.ToArray());
+        }
+        else
+        {
+            var audio = await fixture.Service.CreateSpeechAsync("Tutor reply.", purpose, speechSpeed: speed,
+                clientCancellationToken: TestContext.Current.CancellationToken);
+            Assert.Equal(Fixture.Audio, audio);
+        }
 
-        await fixture.Service.StreamSpeechAsync("Tutor reply.", output, purpose,
-            TestContext.Current.CancellationToken, speechSpeed: speed);
-
-        Assert.Equal(expectedSpeed, Assert.Single(fixture.Http.Requests).GetProperty("speed").GetDouble());
+        var request = Assert.Single(fixture.Http.Requests);
+        Assert.Equal(model, request.GetProperty("model").GetString());
+        Assert.Equal(1.0, request.GetProperty("speed").GetDouble());
+        Assert.Equal(streaming ? OpenAiConstants.PcmSpeechResponseFormat : OpenAiConstants.WavSpeechResponseFormat,
+            request.GetProperty("response_format").GetString());
     }
 
     [Fact]
@@ -138,7 +160,7 @@ public sealed class AudioSpeechServiceStreamRoutingTests
         Assert.Equal("  Tutor reply.  ", request.GetProperty("input").GetString());
         Assert.Equal(OpenAiConstants.WavSpeechResponseFormat, request.GetProperty("response_format").GetString());
         Assert.Equal("sage", request.GetProperty("voice").GetString());
-        Assert.Equal(0.8, request.GetProperty("speed").GetDouble());
+        Assert.Equal(1.0, request.GetProperty("speed").GetDouble());
         Assert.Equal("Speak calmly.", request.GetProperty("instructions").GetString());
         Assert.Equal(Fixture.Audio, audio);
         var usage = Assert.Single(fixture.Usage.Records);

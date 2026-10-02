@@ -72,8 +72,8 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         settings.StudyLanguage = StudyLanguageConstants.ToCanonicalValue(request.StudyLanguage);
         settings.ExplanationLanguage = NativeLanguageCatalog.GetByIdOrName(request.ExplanationLanguage).Id;
         settings.SpeechVoice = SpeechVoiceOptions.ResolveSupportedVoiceId(request.SpeechVoice, profile.SelectedTutorId);
-        settings.SpeechSpeed = request.SpeechSpeed;
-        settings.ConversationModeEnabled = request.ConversationModeEnabled;
+        settings.SpeechSpeed = DefaultSpeechSpeed;
+        settings.ConversationModeEnabled = DefaultConversationModeEnabled;
         settings.UpdatedAt = now;
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -178,9 +178,13 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         else
         {
             var canonicalSpeechVoice = SpeechVoiceOptions.ResolveSupportedVoiceId(user.Settings.SpeechVoice, user.Profile.SelectedTutorId);
-            if (!string.Equals(user.Settings.SpeechVoice, canonicalSpeechVoice, StringComparison.Ordinal))
+            if (!string.Equals(user.Settings.SpeechVoice, canonicalSpeechVoice, StringComparison.Ordinal)
+                || user.Settings.SpeechSpeed != DefaultSpeechSpeed
+                || user.Settings.ConversationModeEnabled != DefaultConversationModeEnabled)
             {
                 user.Settings.SpeechVoice = canonicalSpeechVoice;
+                user.Settings.SpeechSpeed = DefaultSpeechSpeed;
+                user.Settings.ConversationModeEnabled = DefaultConversationModeEnabled;
                 user.Settings.UpdatedAt = now;
             }
         }
@@ -231,7 +235,8 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
             throw new UserSettingsValidationException("Speech voice is required.");
         }
 
-        if (!SpeechVoiceOptions.TryGetSupportedId(request.SpeechVoice, out _))
+        if (!SpeechVoiceOptions.TryGetSupportedId(request.SpeechVoice, out _)
+            && !SpeechVoiceOptions.IsLegacyVoiceId(request.SpeechVoice))
         {
             throw new UserSettingsValidationException($"Speech voice must be one of: {string.Join(", ", SpeechVoiceOptions.All.Select(voice => voice.Id))}.");
         }

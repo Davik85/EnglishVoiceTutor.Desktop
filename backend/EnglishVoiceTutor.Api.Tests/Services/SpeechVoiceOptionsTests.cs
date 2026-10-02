@@ -21,6 +21,33 @@ public sealed class SpeechVoiceOptionsTests
     }
 
     [Theory]
+    [InlineData("nova")]
+    [InlineData("onyx")]
+    [InlineData("fable")]
+    [InlineData(" NOVA ")]
+    [InlineData(" OnYx ")]
+    [InlineData(" FABLE ")]
+    public void KnownLegacyVoicesAreRecognizedOnlyAsCompatibilityInput(string voice)
+    {
+        Assert.True(SpeechVoiceOptions.IsLegacyVoiceId(voice));
+        Assert.False(SpeechVoiceOptions.TryGetSupportedId(voice, out _));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("random-voice")]
+    [InlineData("unknown")]
+    [InlineData("cedar2")]
+    [InlineData("cedar")]
+    [InlineData("novaa")]
+    public void OtherVoiceIdsAreNotLegacy(string? voice)
+    {
+        Assert.False(SpeechVoiceOptions.IsLegacyVoiceId(voice));
+    }
+
+    [Theory]
     [MemberData(nameof(SupportedVoices))]
     public void SupportedVoicesResolveCanonicallyWithoutChangingTutorPreference(string voice)
     {

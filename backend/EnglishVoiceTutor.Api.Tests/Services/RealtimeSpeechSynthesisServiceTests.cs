@@ -361,14 +361,30 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         Assert.Equal(2, second.Sent.Count);
     }
 
-    [Fact]
-    public async Task NumericSpeedIsRecordedWithoutClaimingProviderSupport()
+    [Theory]
+    [InlineData(false, "lesson_chat_tts")]
+    [InlineData(true, "lesson_chat_tts")]
+    [InlineData(false, "conversation_mode_tts")]
+    [InlineData(true, "conversation_mode_tts")]
+    public async Task BothRealtimeSpeechPathsReceiveFixedSpeedWithoutNumericProviderConfiguration(bool streaming, string purpose)
     {
         using var fixture = new Fixture();
-        await fixture.Audio.CreateSpeechAsync(FinalText, speechSpeed: 1.2, clientCancellationToken: TestContext.Current.CancellationToken);
+        await using var output = new MemoryStream();
+        if (streaming)
+        {
+            await fixture.Audio.StreamSpeechAsync(FinalText, output, purpose,
+                TestContext.Current.CancellationToken, speechSpeed: 1.2);
+        }
+        else
+        {
+            await fixture.Audio.CreateSpeechAsync(FinalText, purpose, speechSpeed: 1.2,
+                clientCancellationToken: TestContext.Current.CancellationToken);
+        }
+        Assert.Equal(2, fixture.Socket.Sent.Count);
         Assert.DoesNotContain("\"speed\"", string.Join("", fixture.Socket.Sent));
+        Assert.Empty(fixture.Http.Requests);
         var diagnostic = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("RequestedSpeed"));
-        Assert.Equal(1.2, diagnostic.Fields["RequestedSpeed"]);
+        Assert.Equal(1.0, diagnostic.Fields["RequestedSpeed"]);
         Assert.Contains("NumericSpeedApplied=False", diagnostic.Message);
     }
 
