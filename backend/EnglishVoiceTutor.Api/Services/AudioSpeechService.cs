@@ -28,6 +28,7 @@ public sealed class AudioSpeechService
     private readonly IRequestUserResolver _requestUserResolver;
     private readonly IUsageEventService _usageEventService;
     private readonly IAiModelSettingsService _aiModelSettingsService;
+    private readonly RealtimeSpeechSynthesisService? _realtimeSpeechSynthesisService;
 
     public AudioSpeechService(
         OpenAiOptionsProvider optionsProvider,
@@ -35,7 +36,8 @@ public sealed class AudioSpeechService
         IRequestUserResolver requestUserResolver,
         IUsageEventService usageEventService,
         IAiModelSettingsService aiModelSettingsService,
-        ILogger<AudioSpeechService> logger)
+        ILogger<AudioSpeechService> logger,
+        RealtimeSpeechSynthesisService? realtimeSpeechSynthesisService = null)
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
@@ -43,6 +45,7 @@ public sealed class AudioSpeechService
         _usageEventService = usageEventService;
         _aiModelSettingsService = aiModelSettingsService;
         _logger = logger;
+        _realtimeSpeechSynthesisService = realtimeSpeechSynthesisService;
     }
 
     public async Task<byte[]> CreateSpeechAsync(string text, string? purpose = null, double? speechSpeed = null, string? model = null, string? instructions = null, string? speechVoice = null, string? targetLanguageName = null, string? targetLanguageId = null, CancellationToken clientCancellationToken = default)
@@ -74,6 +77,30 @@ public sealed class AudioSpeechService
             Speed = resolvedSpeechSpeed,
             ResponseFormat = OpenAiConstants.DefaultSpeechResponseFormat
         };
+
+        if (UsesRealtimeSpeechTransport(resolvedModel))
+        {
+            var renderer = _realtimeSpeechSynthesisService ?? throw new InvalidOperationException(MissingApiKeyMessage);
+            var studyLanguage = ResolveStudyLanguage(targetLanguageName, targetLanguageId);
+            var result = await renderer.CreateSpeechAsync(request, options.ApiKey, normalizedPurpose, studyLanguage, clientCancellationToken);
+            await _usageEventService.TryRecordAsync(new UsageEventRecord
+            {
+                UserId = _requestUserResolver.ResolveCurrentUser().UserId,
+                Operation = UsageConstants.Operations.Tts,
+                Model = resolvedModel,
+                StudyLanguage = studyLanguage,
+                Status = UsageConstants.Statuses.Success,
+                EstimatedCost = 0m,
+                InputCharacters = request.Input.Length,
+                OutputBytes = result.AudioBytes.Length,
+                EstimatedDurationSeconds = (decimal)EstimateWavDurationSeconds(result.AudioBytes.LongLength),
+                InputTokens = result.Usage.InputTokens,
+                OutputTokens = result.Usage.OutputTokens,
+                AudioInputTokens = result.Usage.AudioInputTokens,
+                AudioOutputTokens = result.Usage.AudioOutputTokens
+            }, clientCancellationToken);
+            return result.AudioBytes;
+        }
 
         return await SendAudioSpeechRequestAsync(request, options.ApiKey, normalizedPurpose, ResolveStudyLanguage(targetLanguageName, targetLanguageId), clientCancellationToken);
     }
@@ -117,6 +144,13 @@ public sealed class AudioSpeechService
             Speed = resolvedSpeechSpeed,
             ResponseFormat = OpenAiConstants.DefaultBotVoiceStreamResponseFormat
         };
+
+        if (UsesRealtimeSpeechTransport(resolvedModel))
+        {
+            var renderer = _realtimeSpeechSynthesisService ?? throw new InvalidOperationException(MissingApiKeyMessage);
+            return await renderer.StreamSpeechAsync(request, options.ApiKey, normalizedPurpose, outputStream,
+                ResolveStudyLanguage(targetLanguageName, targetLanguageId), clientCancellationToken);
+        }
 
         return await StreamAudioSpeechRequestAsync(request, options.ApiKey, outputStream, normalizedPurpose, ResolveStudyLanguage(targetLanguageName, targetLanguageId), clientCancellationToken);
     }
@@ -172,7 +206,12 @@ public sealed class AudioSpeechService
 
     private static bool SpeechModelSupportsInstructions(string model)
     {
-        return string.Equals(model, AiModelSettings.Defaults.ConversationModeTextToSpeechModel, StringComparison.Ordinal) || model.Contains("tts", StringComparison.OrdinalIgnoreCase);
+        return UsesRealtimeSpeechTransport(model) || string.Equals(model, AiModelSettings.Defaults.ConversationModeTextToSpeechModel, StringComparison.Ordinal) || model.Contains("tts", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool UsesRealtimeSpeechTransport(string model)
+    {
+        return string.Equals(model, OpenAiConstants.RealtimeSpeechSynthesisModel, StringComparison.Ordinal);
     }
 
     private static string ResolveSpeechVoice(string? requestedSpeechVoice)

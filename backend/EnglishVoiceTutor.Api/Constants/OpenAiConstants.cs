@@ -12,6 +12,7 @@ public static class OpenAiConstants
     public const string DefaultTranscriptionModel = GptTranscribeModel;
     public const string TranscriptionLanguage = "en";
     public const string HighQualitySpeechModel = "gpt-4o-mini-tts";
+    public const string RealtimeSpeechSynthesisModel = "gpt-realtime-2.1-mini";
     public const string NormalChatTtsModel = "tts-1";
     public const string ConversationModeTtsModel = HighQualitySpeechModel;
     public const string DefaultBotVoiceSpeechModel = NormalChatTtsModel;

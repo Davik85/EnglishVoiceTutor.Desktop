@@ -186,6 +186,8 @@ builder.Services.AddScoped<ILessonHintService, OpenAiLessonHintService>();
 builder.Services.AddScoped<IVoiceScenarioResolutionService, OpenAiVoiceScenarioResolutionService>();
 builder.Services.AddScoped<AudioTranscriptionService>();
 builder.Services.AddScoped<TranslationService>();
+builder.Services.AddSingleton<IRealtimeSpeechSocketConnector, RealtimeSpeechSocketConnector>();
+builder.Services.AddScoped<RealtimeSpeechSynthesisService>();
 builder.Services.AddScoped<AudioSpeechService>();
 builder.Services.AddScoped<RealtimeVoiceSessionService>();
 builder.Services.AddScoped<DevUserProvider>();
