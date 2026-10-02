@@ -1,10 +1,10 @@
 # Command Playbook
 
-Review date: 2026-09-29.
+Review date: 2026-10-02.
 
 ## CMS setup-localization draft import
 
-Current production baseline: backend `0.1.35-backend.163` is active, with `.162` retained as rollback; the live `current` and `previous` symlinks remain authoritative. Historical `.157` added the Website CMS sitemap-generator update, and `.151` established the static-homepage/CMS-ownership architecture. The import procedure below remains for a future older draft only; it is not a pending production operation.
+Current production baseline: backend `0.1.35-backend.164` is active, with `.163` retained as rollback; the live `current` and `previous` symlinks remain authoritative. Historical `.157` added the Website CMS sitemap-generator update, and `.151` established the static-homepage/CMS-ownership architecture. The import procedure below remains for a future older draft only; it is not a pending production operation.
 
 ## Source of truth for current versions
 
@@ -369,9 +369,9 @@ CmsContent__ContentPackSlug=static-json-v1
 CmsContent__FallbackToStaticJson=true
 ```
 
-For the current Windows Direct Release 1.7, confirm the backend release, health, database health, and that Admin CMS has published version `51`. Runtime status must show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, 26 scenarios, 130 localized setup-message templates, and 625 localized context titles.
+For the current Windows Direct Release 1.8, confirm the backend release, health, database health, and that Admin CMS has published version `51`. Runtime status must show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, 26 scenarios, 130 localized setup-message templates, and 625 localized context titles.
 
-Rollback remains disabling or removing the CMS runtime flags and restarting the backend, then rerunning the read-only status check and confirming `effectiveSource=StaticJson`. CMS runtime remains active for the Windows Direct Release 1.7 phase; do not treat this as broad paid-launch approval. This process has no billing, Paddle, subscription, entitlement, installer, desktop runtime, lesson JSON, public `latest.json`, deployment-script, or EF migration involvement.
+Rollback remains disabling or removing the CMS runtime flags and restarting the backend, then rerunning the read-only status check and confirming `effectiveSource=StaticJson`. CMS runtime remains active for the Windows Direct Release 1.8 phase; do not treat this as broad paid-launch approval. This process has no billing, Paddle, subscription, entitlement, installer, desktop runtime, lesson JSON, public `latest.json`, deployment-script, or EF migration involvement.
 
 ## CMS-managed level profiles (A1-B2)
 
@@ -384,7 +384,7 @@ Rollback remains disabling or removing the CMS runtime flags and restarting the 
 
 ## Current controlled tester handoff checks after CMS runtime milestone
 
-Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.163`, the `previous` symlink points to `.162`, and the live public direct Windows manifest points to `version=1.7`, `installerFileName=LanguageVoiceTutorSetup-1.7.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.7`, and `updateMode=manual-confirmation`. For future handoffs, replace these values with the live `latest.json` and server symlink values.
+Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.164`, the `previous` symlink points to `.163`, and the live public direct Windows manifest points to `version=1.8`, `installerFileName=LanguageVoiceTutorSetup-1.8.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.8`, and `updateMode=manual-confirmation`. For future handoffs, replace these values with the live `latest.json` and server symlink values.
 
 Verify the public direct release manifest before handoff:
 
@@ -406,7 +406,7 @@ The active Windows release flow is Direct EXE/Inno plus the direct `latest.json`
 
 ## AI Models CMS post-deploy verification
 
-After a backend deploy, open **Admin CMS → System → AI Models → Load AI Models** as Super Admin. Confirm Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation each remain `gpt-5.6-luna`; confirm all four **Omit temperature parameter** flags remain enabled; confirm Speech-to-text is `gpt-transcribe`, lesson chat and Conversation Mode TTS are both `gpt-4o-mini-tts`, and Realtime voice is `gpt-realtime`; run **Validate format**; run **Test provider access** only if model settings changed; and do not publish unless the changes are intentional. AI Models CMS JSON is persistent server data/config at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` resolved outside versioned backend release folders, not a packaged release artifact. Historical persistence verification confirmed the file survived backend restart and matched its then-current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`; future deploys must not use `/opt/languagevoicetutor/backend/current/site/content/ai-model-settings.json` or `/opt/languagevoicetutor/backend/releases/<version>/site/content/ai-model-settings.json` as the source of truth.
+After a backend deploy, open **Admin CMS → System → AI Models → Load AI Models** as Super Admin. Confirm Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation each remain `gpt-5.6-luna`; confirm all four **Omit temperature parameter** flags remain enabled; confirm Speech-to-text is `gpt-transcribe`, lesson chat and Conversation Mode TTS are both `gpt-realtime-2.1-mini`, and dormant full-Realtime voice is `gpt-realtime`; run **Validate format**; run **Test provider access** only if model settings changed; and do not publish unless the changes are intentional. AI Models CMS JSON is persistent server data/config at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` resolved outside versioned backend release folders, not a packaged release artifact. Historical persistence verification confirmed the file survived backend restart and matched its then-current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`; future deploys must not use `/opt/languagevoicetutor/backend/current/site/content/ai-model-settings.json` or `/opt/languagevoicetutor/backend/releases/<version>/site/content/ai-model-settings.json` as the source of truth.
 
 ## Do not mix release operations
 

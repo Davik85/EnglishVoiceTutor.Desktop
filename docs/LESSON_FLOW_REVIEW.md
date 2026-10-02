@@ -1,6 +1,6 @@
 # Lesson Flow Review
 
-Review date: 2026-05-17.
+Review date: 2026-10-02.
 
 This document records the current lesson flow contract for guided roleplay, Conversation Mode, feedback, and summary behavior.
 
@@ -61,16 +61,16 @@ Current product voice decision:
 
 Conversation Mode uses the stable TTS provider by default:
 
-`microphone recording -> audio transcription -> lesson chat reply -> gpt-4o-mini-tts playback`
+`learner audio -> gpt-transcribe -> validated learner text -> gpt-5.6-luna lesson reply -> exact final visible tutor text -> gpt-realtime-2.1-mini speech rendering`
 
-Realtime remains in the codebase for future testing, but it is not the default product path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
+Full Realtime Conversation Mode remains dormant and is not being restored. Realtime-mini uses a short-lived server-to-server socket only to render the already-final reply, with no learner microphone stream or lesson history for answer generation. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
 
 Conversation Mode uses the same lesson methodology and the same chat reply flow as normal Lesson Chat:
 
 - the same selected level/topic/subtopic/scenario guides the reply;
 - valid transcribed learner speech becomes a learner turn when phase policy allows it;
 - the lesson chat reply endpoint generates the visible bot reply;
-- Conversation Mode TTS speaks that visible bot reply exactly with `gpt-4o-mini-tts`;
+- Conversation Mode TTS speaks that visible bot reply exactly with `gpt-realtime-2.1-mini`;
 - transcript messages remain available for feedback after returning to Lesson Chat.
 
 ## Button state expectations

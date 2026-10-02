@@ -1,6 +1,6 @@
 # Historical tester release workflow
 
-Review date: 2026-09-03.
+Review date: 2026-10-02.
 
 ## Source of truth for current versions
 
@@ -35,9 +35,9 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Historical tester status and current direct release
 
-The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` points to `LanguageVoiceTutorSetup-1.7.exe` with `version` and `minimumSupportedVersion` set to `1.7`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, and `updateMode` set to `manual-confirmation`. The published manifest records SHA-256 `86b72f7dad8f7c354c27e8b688f043f8d70d63014066d403440648efe2952b64` and size `188988094` bytes, matching the local installer/checksum; no independent public-download hash is claimed.
+Current public Windows Direct Release is `1.8`, verified from the public `latest.json` on 2026-10-02: `LanguageVoiceTutorSetup-1.8.exe`, SHA-256 `980a3e5f72f0c5c2ee01b5271dccc6cda3d8a97cc0307143520f750c1edefe35`, `188988708` bytes, `minimumSupportedVersion=1.8`, `backendBaseUrl=https://api.languagevoicetutor.com`, and `updateMode=manual-confirmation`. Completed release verification also includes an independently downloaded public installer hash match and successful manual installation over the previous client. Provider models and OpenAI credentials remain backend-owned. Future local builds are not public/live unless the live website manifest points to them. See [Current State](CURRENT_STATE.md) for current backend and rollback values.
 
-Windows Direct Release 1.7 is published on the public direct channel. Manual validation confirmed letter-only learner/display-name behavior in registration and Learning settings. The manual-confirmation update from installed `1.7-test.1` to public `1.7` completed and the installed app displayed 1.7. Historical tester-release notes below remain history, not the current active release state. This does not mean every operational area is fully public production-ready.
+Windows Direct Release 1.8 is public; installation over the previous client and voice playback were manually verified. Historical 1.7 validation covered letter-only names and the installed `1.7-test.1` -> public `1.7` manual-confirmation update/display. These bounded observations do not establish broad public production readiness.
 
 ## Release artifact boundary
 
@@ -57,7 +57,7 @@ Release Settings must not show a Diagnostics tab. Release Settings must not show
 
 ## Historical verified tester behavior
 
-The historical tester build verified these behaviors; these are historical tester observations, while the current active release is Windows Direct Release 1.7:
+The historical tester build verified these behaviors; these are historical tester observations, while the current active release is Windows Direct Release 1.8:
 
 - registration and login from installed builds against `https://api.languagevoicetutor.com`;
 - registration on another device;

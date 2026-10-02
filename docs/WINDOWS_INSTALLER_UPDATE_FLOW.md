@@ -1,6 +1,6 @@
 # Windows installer and manual update flow
 
-Review date: 2026-09-27.
+Review date: 2026-10-02.
 
 ## Source of truth for current versions
 
@@ -31,9 +31,9 @@ Inno Setup is the primary Windows direct-download installer foundation for Langu
 
 ## Current update status
 
-The public Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-1.7.exe`, uses `version: 1.7`, keeps `minimumSupportedVersion` at `1.7`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. The public manifest records installer SHA-256 `86b72f7dad8f7c354c27e8b688f043f8d70d63014066d403440648efe2952b64` and size `188988094` bytes, matching the local installer/checksum; no independent public-download hash is claimed. Future local builds are not public/live unless the live website manifest points to them.
+Current public Windows Direct Release is `1.8`, verified from the public `latest.json` on 2026-10-02: `LanguageVoiceTutorSetup-1.8.exe`, SHA-256 `980a3e5f72f0c5c2ee01b5271dccc6cda3d8a97cc0307143520f750c1edefe35`, `188988708` bytes, `minimumSupportedVersion=1.8`, `backendBaseUrl=https://api.languagevoicetutor.com`, and `updateMode=manual-confirmation`. Completed release verification also includes an independently downloaded public installer hash match and successful manual installation over the previous client. Provider models and OpenAI credentials remain backend-owned. Future local builds are not public/live unless the live website manifest points to them. See [Current State](CURRENT_STATE.md) for current backend and rollback values.
 
-The installed 1.1-to-1.2 update path was historically verified, and the 1.5-to-1.6 manual-confirmation update also completed. For the current release, the manual-confirmation update from installed `1.7-test.1` to public `1.7` completed successfully, and the installed app displayed version 1.7. The flow remains SHA-256 protected and does not silently auto-update.
+Manual installation of public 1.8 over the previous client succeeded. The flow remains SHA-256 protected, uses manual-confirmation, and does not silently auto-update. Historical successful updates include 1.1 -> 1.2, 1.5 -> 1.6, and `1.7-test.1` -> public `1.7` (installed display 1.7).
 
 The desktop release UX has a simple user-facing **Check for updates** button in Settings. The old technical update dashboard in Diagnostics is not part of release UX. Release Settings must not expose Diagnostics or Backend URL editing.
 

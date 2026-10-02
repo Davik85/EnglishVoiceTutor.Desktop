@@ -1,6 +1,6 @@
 # Windows Client Functionality Overview
 
-Review date: 2026-09-27.
+Review date: 2026-10-02.
 
 ## Product summary
 
@@ -17,8 +17,8 @@ This document describes current product behavior only. It does not claim that br
 ## Current supported platforms
 
 - Current client platform: Windows desktop app.
-- Current public distribution path: Windows direct-download release, with the live manifest as the release source of truth.
-- Android is publicly available in Google Play Production. iOS remains a future platform.
+- Current public distribution path: Windows Direct Release 1.8, with the live manifest as the release source of truth; installation over the previous client and voice playback were manually verified.
+- Mobile v12 is submitted to Google Play Production and in Google review; v12 is not yet claimed public. iOS remains a future platform.
 - The desktop client is backend-driven for account, lesson, subscription/Premium, AI, transcription, translation, TTS, progress/history, and settings sync behavior where those features require server state.
 
 ## Main user flow
@@ -55,7 +55,8 @@ Important boundary: the broad native/explanation language catalog is not the sam
 The Learning settings section lets the learner configure tutor and voice behavior:
 
 - Choose a tutor avatar.
-- Choose the tutor speech voice.
+- Choose the tutor speech voice from exactly `alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`, and `cedar`. David preference/fallback is `cedar`; other tutors use `coral`. Desktop 1.8 removes `nova`, `onyx`, and `fable` choices; the backend accepts those IDs only as legacy settings input.
+- Speech speed is fixed at `1.0`. The legacy `ConversationModeEnabled` settings field stays true for compatibility; entering/exiting the overlay remains a runtime navigation action.
 - View the selected avatar profile, including age, location, role/background, interests, personality, and speaking style.
 
 Current tutor content includes JSON tutor profiles for David, Lana, and Nelli. Tutor profiles provide stable identity/background rules and level-specific speaking guidance so the AI tutor can remain consistent while adapting to the selected lesson scenario.
@@ -75,7 +76,7 @@ The Account settings section currently exposes account and subscription controls
 - Buy Premium / upgrade entry point.
 - Refresh status.
 
-In the public Windows Direct 1.7 client, registration rejects non-letter learner/display names and Learning settings blocks non-letter characters in the learner name; valid Unicode letter-only names work normally. Backend registration still allows the display name to be omitted, but validates it when supplied. This does not imply that newer Mobile source-side name validation has shipped to Google Play.
+In the public Windows Direct 1.8 client, registration rejects non-letter learner/display names and Learning settings blocks non-letter characters in the learner name; valid Unicode letter-only names work normally. Backend registration still allows the display name to be omitted, but validates it when supplied. This does not claim that Mobile v12, currently in Google review, is already public.
 
 Billing and subscription wording must remain cautious. Controlled Paddle live payment/webhook/Premium activation and selected subscription validation have been documented elsewhere, but broad paid launch and expanded customer portal/subscription management remain follow-up work. Do not present billing as fully complete broad production operations unless a current release-readiness source explicitly says so.
 
@@ -88,7 +89,7 @@ The Audio settings section supports:
 - Microphone test.
 - Saving the selected microphone for lesson recording.
 
-In Lesson Chat, the learner can record voice, stop recording, and send recorded speech through the backend transcription and lesson-reply flow. OpenAI/API credentials are backend-only and must never be stored in the desktop client.
+In Lesson Chat, the learner can record voice, stop recording, and send recorded speech through the backend transcription and lesson-reply flow. OpenAI/API credentials are backend-only and must never be stored in the desktop client. Provider/model selection remains backend-owned. The current chain is `learner audio -> gpt-transcribe -> validated learner text -> gpt-5.6-luna lesson reply -> exact final visible tutor text -> gpt-realtime-2.1-mini speech rendering`. The backend renderer uses a short-lived server-to-server WebSocket, no learner microphone stream or lesson history for answer generation, and no numeric provider speed. Non-streaming speech remains WAV; streaming remains PCM from internal PCM 24 kHz output.
 
 ## Progress tracking
 
@@ -159,6 +160,8 @@ The normal lesson flow calls the backend lesson-chat endpoint. If the backend or
 
 Conversation Mode is a lesson-chat mode designed for a more immersive speaking experience with the tutor/avatar. It keeps the same selected lesson context and backend-owned lesson behavior while changing the interaction feel and layout for conversation practice.
 
+The project decision is not to return full Realtime Conversation Mode. Dormant `RealtimeVoiceModel=gpt-realtime` and `/api/realtime-voice` code do not describe this current product flow. Realtime-mini speaks already-final visible text and does not generate lesson content, learner corrections, or conversation decisions.
+
 Conversation Mode should not be treated as a separate product, separate account model, or separate lesson engine. It is part of the same Windows client lesson flow and should be mirrored thoughtfully in future mobile UX if mobile voice ergonomics support it.
 
 ## Translation, voice playback, hints, and corrections
@@ -191,7 +194,7 @@ Current source-of-truth boundaries:
 
 Keep external/customer-facing wording honest:
 
-- Android is available in Google Play Production; do not claim iOS App Store or Microsoft Store availability.
+- Mobile v12 is submitted/in Google review; do not claim v12 public availability, iOS App Store availability, or Microsoft Store availability.
 - Do not claim broad public production readiness. Current docs describe a public Windows direct release and a healthy production backend, but broader paid-launch/public-readiness work remains cautious and follow-up driven.
 - Do not claim production billing operations or expanded customer portal/subscription management are fully complete; broad paid launch remains pending final review.
 - Do not claim the full native/explanation catalog has complete UI localization. Only the 14 release-ready interface languages are exposed as interface languages for this phase.

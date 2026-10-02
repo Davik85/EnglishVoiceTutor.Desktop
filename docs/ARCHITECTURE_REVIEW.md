@@ -1,6 +1,6 @@
 # Architecture Review
 
-Review date: 2026-05-16.
+Review date: 2026-10-02.
 
 This review documents current architecture boundaries after the stabilization fixes. It recommends small future extractions only after behavior is pinned by smoke tests; it does not recommend a rewrite.
 
@@ -52,7 +52,7 @@ AudioRecordingService -> LessonChatBackendService -> /api/audio/transcribe
 LessonChatViewModel -> LessonChatBackendService -> /api/audio/speech -> AudioPlaybackService
 ```
 
-Realtime Conversation Mode:
+Dormant old full-Realtime Conversation Mode (not the current product path):
 
 ```text
 LessonChatViewModel -> RealtimeVoiceConversationEngine -> /api/realtime-voice
@@ -72,14 +72,14 @@ RealtimeMicrophoneCaptureService -> RealtimeVoiceConversationEngine
 - Lesson state: mostly `LessonChatViewModel`, including phase, turn counts, setup context selection, completion, and button state.
 - Audio recording: `AudioRecordingService` owns file-based recording for chained voice; `RealtimeMicrophoneCaptureService` owns realtime PCM capture.
 - Bot voice playback: `LessonChatViewModel` orchestrates manual/auto-play; `LessonChatBackendService` requests speech; `AudioPlaybackService` saves/plays files; `AudioSpeechService` generates backend speech.
-- Realtime: `LessonChatViewModel` decides when to start/stop; `RealtimeVoiceConversationEngine` owns desktop WebSocket; `RealtimeVoiceSessionService` owns backend gateway and OpenAI Realtime session; `RealtimeAudioPlaybackService` owns PCM playback.
+- Dormant full-Realtime code: `LessonChatViewModel` decides when to start/stop; `RealtimeVoiceConversationEngine` owns desktop WebSocket; `RealtimeVoiceSessionService` owns backend gateway and OpenAI Realtime session; `RealtimeAudioPlaybackService` owns PCM playback.
 
 ## Teaching policy vs audio transport
 
-Normal Lesson Chat and Realtime share CMS-first assembled lesson behavior plus backend guardrails. The backend assembles the active runtime content source and enforces non-editable protections; normal wording/style changes should be made in CMS. They differ in audio transport:
+Current Lesson Chat and Conversation Mode share CMS-first lesson replies and backend guardrails. The current chain is `learner audio -> gpt-transcribe -> validated learner text -> gpt-5.6-luna lesson reply -> exact final visible tutor text -> gpt-realtime-2.1-mini speech rendering`. Realtime-mini renders only final visible text; it does not generate teaching content or corrections. The project decision is not to return full Realtime Conversation Mode. Current and dormant transports are distinct:
 
-- Normal Lesson Chat uses `/api/lesson-chat/reply` for text and `/api/audio/speech` for manual Play, auto-play, and chained TTS fallback. Normal TTS currently uses the backend-configured `gpt-4o-mini-tts` model.
-- Realtime uses `/api/realtime-voice` and OpenAI Realtime with `gpt-realtime`. Realtime assistant audio and transcript must come from the same Realtime response and generated Realtime turns must not use `/api/audio/speech`.
+- Normal Lesson Chat uses `/api/lesson-chat/reply` for text and `/api/audio/speech` for manual Play, auto-play, and chained TTS fallback. Both current TTS roles use backend-configured `gpt-realtime-2.1-mini` through a short-lived server-to-server WebSocket, with no learner microphone stream or lesson history for answer generation. Internal audio is PCM 24 kHz; backend non-streaming remains WAV and streaming remains PCM. Speed is fixed `1.0` without a numeric Realtime speed property.
+- Dormant old full-Realtime code uses `/api/realtime-voice` and OpenAI Realtime with `gpt-realtime`. Realtime assistant audio and transcript must come from the same Realtime response and generated Realtime turns must not use `/api/audio/speech`.
 
 ## Message review vs lesson input state
 
@@ -127,16 +127,16 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 - `LessonCommandStateService`: compute Send, Record, Hint, Back, Finish, Conversation Mode, View Feedback, Translate, and Play Voice enablement from phase and busy flags.
 - `BotVoicePlaybackCoordinator`: own manual Play, auto-play, exact-text validation, prefetch, cancellation, and playback logs.
 - `ChainedVoiceInputCoordinator`: own record/transcribe/validate/auto-send flow.
-- `ConversationModeVoiceCoordinator`: own default TTS-provider Conversation Mode state, transcript handling, exact visible-text playback, and cleanup; keep Realtime-specific coordination separate for future provider-switch work.
+- `ConversationModeVoiceCoordinator`: own default TTS-provider Conversation Mode state, transcript handling, exact visible-text playback, and cleanup; keep dormant full-Realtime client coordination separate from the current backend speech renderer.
 - `LessonBackendRequestFactory`: build chat, hint, feedback, summary/recent-message, and realtime request DTOs from lesson state.
 - `LessonPromptPolicy` / `LevelRulePolicy`: only if backend-owned guardrails or assembly boundaries become hard to maintain in `LessonPromptBuilder`; do not move normal editable tutor behavior out of CMS or duplicate numeric timing in prompt templates.
 
 ## What should NOT be changed immediately
 
 - Do not rewrite the whole `LessonChatViewModel`.
-- Do not redesign Realtime transport before long-session and latency measurements.
+- Preserve the current final-text Realtime-mini renderer; dormant full-Realtime transport is outside the product decision.
 - Do not change OpenAI model choices during the documentation update.
-- Do not make Realtime the default product Conversation Mode provider.
+- Do not restore full Realtime Conversation Mode; keep lesson decisions in the chained text flow.
 - Do not hardcode Lana or any tutor identity in lesson JSON.
 - Do not put A1-only rules directly into each scenario JSON unless documenting current `levelProfiles` behavior.
 - Do not add subscriptions, avatar expansion, broad UI polish, or all-lesson JSON migration until smoke tests are reliable.
@@ -146,9 +146,9 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 - Single large ViewModel creates high regression risk.
 - Command can-execute attributes and manual `RefreshAllCommandStates()` are easy to miss.
 - Lesson phase and button state are coupled but not fully represented as a formal state machine.
-- Realtime and default TTS-provider Conversation Mode share some UI flags but use different lifecycles.
+- Dormant full-Realtime code and chained Conversation Mode share some UI flags but have different lifecycles; backend speech-rendering sockets are a separate boundary.
 - Exact spoken text is protected by code/logging, but voice playback coordination remains in the ViewModel.
-- Realtime is non-default for product and still needs future long-session/provider-switch testing before it can be reconsidered.
+- Full Realtime Conversation Mode remains dormant and is not being restored; current Realtime-mini rendering needs representative latency/fidelity monitoring beyond the bounded smoke.
 - Mock fallback services are present and useful for degraded operation, but must be clearly distinguished from production OpenAI paths.
 
 ## 2026-05-16 codebase inventory

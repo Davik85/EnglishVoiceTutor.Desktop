@@ -1,6 +1,6 @@
 # Windows release server upload
 
-Review date: 2026-09-27.
+Review date: 2026-10-02.
 
 > **Historical/current boundary.** Use the live manifest and [CURRENT_STATE.md](CURRENT_STATE.md) for current production values. Earlier `.108`/Windows release references in this upload history are historical and must not be treated as the current backend or Android distribution state.
 
@@ -27,6 +27,26 @@ Windows direct release manifest:
 ```text
 https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
+
+Current public direct release values (verified 2026-10-02):
+
+```text
+channel: direct-public
+version: 1.8
+installerFileName: LanguageVoiceTutorSetup-1.8.exe
+installerRelativeUrl: LanguageVoiceTutorSetup-1.8.exe
+installerSha256: 980a3e5f72f0c5c2ee01b5271dccc6cda3d8a97cc0307143520f750c1edefe35
+installerSizeBytes: 188988708
+backendBaseUrl: https://api.languagevoicetutor.com
+updateMode: manual-confirmation
+minimumSupportedVersion: 1.8
+```
+
+Windows Direct Release `1.8` is public on `direct-public`, from source commit `1b12dea047fee5a7e7e424499a7cc82c5bfef7a1`. Installer `LanguageVoiceTutorSetup-1.8.exe` is `188988708` bytes with SHA-256 `980a3e5f72f0c5c2ee01b5271dccc6cda3d8a97cc0307143520f750c1edefe35`; `backendBaseUrl=https://api.languagevoicetutor.com`, `updateMode=manual-confirmation`, and `minimumSupportedVersion=1.8`. The public manifest was re-read on 2026-10-02. The completed release evidence includes an independently downloaded public installer hash match, download-page verification, successful manual installation over the previous client, and voice playback verification. Desktop 1.8 offers the canonical voice choices and removes `nova`/`onyx`/`fable` choices. New voices were manually reported to sound good after the server-side TTS switch. Provider model selection and OpenAI credentials remain backend-owned.
+
+The backend release/rollback are recorded in [CURRENT_STATE.md](CURRENT_STATE.md); verify live symlinks before any separate backend operation. Windows publication did not deploy the backend or run migrations.
+
+### Historical 2026-09-27 Windows 1.7 upload evidence
 
 Current public direct release values (verified 2026-09-27):
 
@@ -116,11 +136,11 @@ $manifest.checksums.sha256
 
 Confirm:
 
-- `version` is `1.7` or the intended newly uploaded direct version;
-- `installerFileName` is `LanguageVoiceTutorSetup-1.7.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.7.exe`, or both match the intended installer;
+- `version` is `1.8` or the intended newly uploaded direct version;
+- `installerFileName` is `LanguageVoiceTutorSetup-1.8.exe` and `installerRelativeUrl` is `LanguageVoiceTutorSetup-1.8.exe`, or both match the intended installer;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
 - `updateMode` is `manual-confirmation`;
-- `minimumSupportedVersion` is `1.7` for this uploaded direct release;
+- `minimumSupportedVersion` is `1.8` for this uploaded direct release;
 - `installerSha256` and `checksums.sha256` are present and agree with the uploaded installer hash.
 
 ## Installer download verification

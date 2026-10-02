@@ -194,12 +194,12 @@ Current known-good AI model configuration:
 | Lesson hint | `gpt-5.6-luna` |
 | Translation | `gpt-5.6-luna` |
 | Speech-to-text | `gpt-transcribe` |
-| Lesson chat text-to-speech | `gpt-4o-mini-tts` |
-| Conversation Mode text-to-speech | `gpt-4o-mini-tts` |
-| Realtime voice | `gpt-realtime` |
+| Lesson chat text-to-speech | `gpt-realtime-2.1-mini` |
+| Conversation Mode text-to-speech | `gpt-realtime-2.1-mini` |
+| Dormant full-Realtime voice | `gpt-realtime` |
 
 
-All four text roles have **Omit temperature parameter** enabled. After the deliberate post-`.163` publication, Active and Draft `SpeechToTextModel` are both `gpt-transcribe` at revision `36` (updated `2026-09-29T20:07:55.5008736+00:00`). Post-deploy verification: after any backend deploy, a Super Admin should open **Admin CMS → System → AI Models → Load AI Models** and confirm the models and omit-temperature flags above remain active. Run **Validate format**. Run **Test provider access** only if model settings changed. Do not publish unless the loaded draft changes are intentional.
+All four text roles have **Omit temperature parameter** enabled. Read-only verification on 2026-10-02 found persistent Active and Draft model IDs and all four omit-temperature flags identical at revision `39`. The 2026-10-02 TTS publication selected Realtime-mini only to speak already-final tutor text; it does not generate lesson content or restore full Realtime Conversation Mode. Post-deploy verification: after any backend deploy, a Super Admin should open **Admin CMS → System → AI Models → Load AI Models** and confirm the models and omit-temperature flags above remain active. Run **Validate format**. Run **Test provider access** only if model settings changed. Do not publish unless the loaded draft changes are intentional.
 
 Recommended Super Admin workflow: Load AI Models → Edit draft → Save draft → Validate format → Test provider access → Review compatibility diagnostics → Publish / Make active only if relevant runtime diagnostics pass → run a small real lesson after publishing. **Validate format** checks syntax only: non-empty model IDs, reasonable length, and safe model-ID characters. It does not prove provider access. **Test provider access** performs provider-level checks against draft settings, does not publish settings, and uses safe dummy input rather than real lesson or user text. Audio and realtime roles may be reported as `not_tested` when not covered by lightweight provider tests.
 

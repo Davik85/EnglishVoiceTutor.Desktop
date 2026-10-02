@@ -2,13 +2,13 @@
 
 ## Current production baseline and post-release monitoring
 
-Orralen - Language Voice Tutor Android `0.1.0+11` / versionCode 11 is publicly available in Google Play Production. Backend `0.1.35-backend.163` is the current production release with `.162` as the verified rollback target; verify live state before a new handoff. The earlier `.157` Website CMS sitemap-generator deployment required no EF migration. The completed static language-practice SEO/visual/sitemap publication is not a future deployment: the six independent language pages are live, visually accepted, use `?v=20260913-visual3`, and the controlled CMS Publish produced an exact 17-URL sitemap with all URLs returning HTTP 200. Homepage and language-page assets were preserved by SHA comparison, database health remained HTTP 200, and no rollback was needed. The independent static unit remains `index.html`, `mobile.html`, `styles.css`, the six language pages, and `assets/homepage/**`; Website CMS owns its generated pages, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`.
+Mobile v12 is submitted to Google Play Production and in Google review; v12 is not yet claimed public. Windows Direct 1.8 is public. Backend `0.1.35-backend.164` is the current production release with `.163` as the verified rollback target; verify live state before a new handoff. The earlier `.157` Website CMS sitemap-generator deployment required no EF migration. The completed static language-practice SEO/visual/sitemap publication is not a future deployment: the six independent language pages are live, visually accepted, use `?v=20260913-visual3`, and the controlled CMS Publish produced an exact 17-URL sitemap with all URLs returning HTTP 200. Homepage and language-page assets were preserved by SHA comparison, database health remained HTTP 200, and no rollback was needed. The independent static unit remains `index.html`, `mobile.html`, `styles.css`, the six language pages, and `assets/homepage/**`; Website CMS owns its generated pages, `robots.txt`, `sitemap.xml`, optional `llms.txt`, and `marketing-consent.js`.
 
 AI temperature compatibility and independent text-role routing are completed production behavior, not future work. `.152` deployed four independent text-role omit-temperature flags, `.153` corrected Lesson Summary to use the Lesson Tutor Chat effective-temperature policy and was production-validated with a successful Summary, and `.154` routed Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation through their corresponding model settings while intentionally keeping Summary on `LessonTutorChatModel`. The current Active text-role model is `gpt-5.6-luna` for all four roles, with all four omit-temperature flags enabled. `.154` production smoke confirmed lesson start/flow, Hint, and Translation; independent distinct-model routing is proven by automated request-shape tests because production currently uses the same model ID for all four roles.
 
 The homepage SEO/social-preview rollout is closed production work: visual parity and previews in Telegram, LinkedIn, Facebook, and WhatsApp are confirmed, and no additional homepage/social-preview rollout is a current release task. Consent-aware Google Analytics is also completed production work: Website CMS is the configuration source, the shared runtime defaults consent to denied, the independent homepage uses that runtime without a GA ID, Google Ads is disabled, and a consented first visit was verified in Google Analytics Realtime. The next work is monitoring rather than a pending production rollout: observe the normal real-money renewal scheduled for 2026-10-08, pending payment, explicit cancellation, fresh-install billing restore, refund/voided-purchase, chargeback, and other lifecycle evidence if and when it occurs. Do not represent these observations as closed release gates or as evidence that all billing lifecycles are production-verified. Crash-reporting integration remains separate work.
 
-Review date: 2026-09-29.
+Review date: 2026-10-02.
 
 ## Coordinated ORRALEN client rebrand — future audited work
 
@@ -177,12 +177,12 @@ Final verification should confirm public pages do not contain placeholder IDs su
 
 ## Website/public review checklist
 
-- Home shows logo, study language flags, Windows desktop app card, and “Android and iOS apps are planned but are not currently available.”
-- Home does not say “Mobile version coming soon” and does not claim mobile apps are currently available.
+- Home shows logo, study language flags, Windows desktop app card, and factual mobile wording; Mobile v12 is in Google review, not yet claimed public, and iOS remains a future platform.
+- Home does not say “Mobile version coming soon” and does not claim Mobile v12 or iOS public availability.
 - Footer has primary links: Privacy Policy, Terms of Use, Refund Policy, Cancellation, Support, Pricing.
 - Footer has secondary links: Seller / Company Details, AI & Data Disclosure, Service Status.
 - `seller.html`, `ai-data.html`, and `status.html` exist and are linked from the footer.
-- Verified normal downloads are manifest-driven from `/releases/windows/direct/latest.json` and return Windows 1.7. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
+- Verified normal downloads are manifest-driven from `/releases/windows/direct/latest.json` and return Windows 1.8. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Privacy Policy default/static content includes optional analytics/advertising cookie disclosure. The polished consent banner is controlled by Website CMS Marketing / SEO; analytics is production-verified and Ads remains disabled. Never commit real Google IDs or secrets.
 - Download non-JS fallback text remains: “Current Windows direct release is available through the Download for Windows button.” and “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
 
@@ -192,13 +192,13 @@ Current manifest: `https://languagevoicetutor.com/releases/windows/direct/latest
 
 Expected current values:
 
-- `version`: `1.7`
-- `installerFileName`: `LanguageVoiceTutorSetup-1.7.exe`
+- `version`: `1.8`
+- `installerFileName`: `LanguageVoiceTutorSetup-1.8.exe`
 - `backendBaseUrl`: `https://api.languagevoicetutor.com`
 - `updateMode`: `manual-confirmation`
-- `minimumSupportedVersion`: `1.7`
+- `minimumSupportedVersion`: `1.8`
 
-Windows Direct `1.7` is public; earlier Windows `1.6` and backend `.141`/`.142` work is historical, not pending. Do not re-upload or repackage a public release without a new reviewed release decision. Direct installer code signing, SmartScreen/trust mitigation, monitoring, customer-feedback triage, legal/support/operational review, and broader paid-launch readiness remain pending.
+Windows Direct `1.8` is public; earlier Windows `1.6`/`1.7` and backend `.141`/`.142` work is historical, not pending. Do not re-upload or repackage a public release without a new reviewed release decision. Direct installer code signing, SmartScreen/trust mitigation, monitoring, customer-feedback triage, legal/support/operational review, and broader paid-launch readiness remain pending.
 
 Historical `1.0` desktop release polish already included Contacts in Settings, Contacts localization for all release-ready UI languages, safe `https`/`mailto` contact links, fixed runtime Contacts localization refresh after interface-language changes, wrapping for long localized situation/subtopic and scenario card text, and the unfinished active-lesson Back confirmation guard matching Finish/End lesson behavior.
 
@@ -225,7 +225,7 @@ AI model IDs are editable by Super Admin / Bootstrap Admin in **Admin → System
 
 The production persistent AI Models file is verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`. Historical persistence validation confirmed that it survived a backend service restart and, at that checkpoint, contained `gpt-5.5` plus `gpt-5.2` and matched the then-current release file by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`. The current Active values are recorded below. Treat this file as server data/config, not a release artifact; future deploys must not use release-folder AI Models JSON as the source of truth.
 
-Current known-good model configuration: lesson tutor chat `gpt-5.6-luna`; feedback/correction `gpt-5.6-luna`; lesson hint `gpt-5.6-luna`; translation `gpt-5.6-luna`; all four text-role omit-temperature flags enabled; speech-to-text `gpt-transcribe`; lesson chat and Conversation Mode TTS both `gpt-4o-mini-tts`; Realtime voice `gpt-realtime`.
+Current known-good model configuration: Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation use `gpt-5.6-luna`, with all four omit-temperature flags enabled; `SpeechToTextModel=gpt-transcribe`; `LessonChatTextToSpeechModel=gpt-realtime-2.1-mini`; `ConversationModeTextToSpeechModel=gpt-realtime-2.1-mini`; `RealtimeVoiceModel=gpt-realtime` belongs to the dormant old full-Realtime path. Read-only verification on 2026-10-02 found persistent Active and Draft model IDs and all four omit-temperature flags identical at revision `39`. The chained architecture and final-text-only rendering are recorded in [Voice and Realtime Review](VOICE_AND_REALTIME_REVIEW.md); the project decision is not to return full Realtime Conversation Mode.
 
 Operational workflow before changing production models: Load AI Models → Edit draft → Save draft → Validate format → Test provider access → Review compatibility diagnostics → Publish / Make active only if relevant runtime diagnostics pass → run a small real lesson. Validate format checks syntax only and does not prove provider access. Test provider access performs provider-level checks using draft settings, does not publish, and uses safe dummy input rather than real lesson/user text. Audio and realtime roles may be marked `not_tested` if not covered by lightweight checks.
 
@@ -247,7 +247,7 @@ Windows release work stays on the Direct EXE/Inno installer. Updates continue th
 
 ### Top remaining tasks in recommended order
 
-1. Complete final clean-machine and update-over-existing-install smoke for the current Direct EXE/Inno installer.
+1. Complete clean-machine smoke and wider update coverage for the current Direct EXE/Inno installer; manual 1.8 installation over the previous client already passed.
 2. Purchase/select a Windows code signing certificate and plan integration for the direct Inno installer.
 3. Prepare a signed direct installer release candidate only after signing is approved; validate, upload, and verify via the existing direct-release helper flow.
 4. Treat the published website, pricing, subscription, terms, privacy, refunds, cancellation, support, seller/company, AI/data, and status pages as synchronized unless new Google, legal, or product evidence requires a separately approved update; do not schedule a routine republish.
@@ -256,7 +256,7 @@ Windows release work stays on the Direct EXE/Inno installer. Updates continue th
 7. Controlled Paddle live payment, webhook delivery, Premium activation, failed-payment non-activation, desktop cancel-renewal, and full-refund Premium revocation are documented as completed for the 2026-07-02 owner-led test; do not claim paid public launch until final release-readiness review, remaining release smoke/signing, and owner release decision are complete.
 8. Collect controlled tester feedback, triage severity, and make an explicit release decision before broader public distribution.
 9. Before any future tester handoff, re-verify the live Windows direct manifest points to the intended release, production backend URL, and `manual-confirmation`.
-10. Keep backend current-state docs aligned with current production: production is `0.1.35-backend.163`; verify the live rollback target, `/health`, and `/api/health/database` before any separate backend operation. The 2026-07-11 `.112`/`.111` verification remains historical only.
+10. Keep backend current-state docs aligned with current production: production is `0.1.35-backend.164`; verify the live rollback target, `/health`, and `/api/health/database` before any separate backend operation. The 2026-07-11 `.112`/`.111` verification remains historical only.
 11. Keep the AI Models persistence risk closed: preserve `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` as persistent server data/config, do not package release-folder JSON as the production source of truth, and verify it after future backend deploys.
 12. Keep Store/MSIX removed/discontinued; do not recreate `packaging/windows-msix`, Store channel logic, Store update messaging, WACK commands, or Partner Center planning.
 13. Run backend deploy only for an approved backend runtime/configuration change; do not deploy backend for Website CMS publish, Windows installer upload, AI Models persistence correction, or docs-only work.

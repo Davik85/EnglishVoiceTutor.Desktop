@@ -1,104 +1,67 @@
 # Voice and Realtime Review
 
-Review date: 2026-09-29.
+Review date: 2026-10-02.
 
-This document records the current product voice architecture. It intentionally reflects the stable product path after recent Conversation Mode stabilization.
+## Current chained product decision
 
-## Current product voice decision
+Normal Lesson Chat and Conversation Mode share the existing transcription and lesson-reply flow:
 
-Conversation Mode uses the stable TTS provider by default:
+`learner audio -> gpt-transcribe -> validated learner text -> gpt-5.6-luna lesson reply -> exact final visible tutor text -> gpt-realtime-2.1-mini speech rendering`
 
-`microphone recording -> audio transcription -> lesson chat reply -> gpt-4o-mini-tts playback`
+`gpt-realtime-2.1-mini` is a speech renderer only. It does not generate lesson content, learner corrections, or conversation decisions. The learner hears the exact final text displayed in chat; do not shorten, summarize, rewrite, or chunk it. The project decision is not to return full Realtime Conversation Mode.
 
-Realtime remains in the codebase for future testing, but it is not the default product path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
+## Current production models and ownership
 
-## Normal Lesson Chat voice path
+Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation use `gpt-5.6-luna`, with all four omit-temperature flags enabled; `SpeechToTextModel=gpt-transcribe`; `LessonChatTextToSpeechModel=gpt-realtime-2.1-mini`; `ConversationModeTextToSpeechModel=gpt-realtime-2.1-mini`; `RealtimeVoiceModel=gpt-realtime` belongs to the dormant old full-Realtime path.
 
-Normal Lesson Chat uses a chained backend path:
+Read-only verification on 2026-10-02 found persistent Active and Draft model IDs and all four omit-temperature flags identical at revision `39`.
 
-1. The learner types or records a message.
-2. Recorded audio is transcribed with active production model `gpt-transcribe`.
-3. Valid learner text is sent to the lesson chat reply endpoint.
-4. Bot text is displayed in chat.
-5. Play voice / normal auto-play uses `/api/audio/speech`.
+The Admin AI Models TTS publication occurred on 2026-10-02 and is separate from backend `.164` deployment and Windows 1.8 publication. Desktop and Mobile call backend endpoints; provider model selection and OpenAI credentials remain backend-owned.
 
-Normal Lesson Chat TTS settings:
+## Lesson Chat and Conversation Mode voice paths
 
-- model: `gpt-4o-mini-tts`;
-- purpose: `lesson_chat_tts`;
-- voice: selected tutor/user voice from Settings;
-- speech instructions: not sent for normal Lesson Chat playback.
+1. The learner types or records a message. Recorded audio uses the normal backend transcription endpoint with `gpt-transcribe`.
+2. Validated learner text enters the same lesson chat reply flow in both modes; `gpt-5.6-luna` generates the final tutor reply.
+3. The reply is displayed in Lesson Chat or the Conversation Mode bubble and retained in the lesson transcript.
+4. The exact displayed text reaches backend speech with `purpose=lesson_chat_tts` or `purpose=conversation_mode_tts`.
+5. The backend renders speech with `gpt-realtime-2.1-mini`, and the client plays the returned audio.
 
-Normal Lesson Chat TTS should continue to speak the visible bot message text.
+Conversation Mode retains its avatar overlay, record/exit controls, latest user and tutor bubbles, and Hint. Optional calm, friendly study-language speech instructions affect delivery only. Normal Lesson Chat does not add those Conversation Mode speech-style instructions. Neither mode sends learner microphone audio to the speech renderer.
 
-## Conversation Mode voice path
+## Current Realtime-mini speech renderer
 
-Default product Conversation Mode uses the stable TTS provider, not Realtime:
+The backend opens a short-lived server-to-server Realtime WebSocket to render already-final tutor text. It sends no learner microphone stream or lesson conversation history to generate an answer; instructions require exact-text speech without additions, omissions, or paraphrasing. Internal output is PCM 24 kHz; the non-streaming backend contract remains WAV and the streaming contract remains PCM. No numeric speed property is sent in `session.update` or `response.create`; product speed is normal/default `1.0`, with `RequestedSpeed=1.0` and `NumericSpeedApplied=False`. The renderer does not generate lesson content, learner corrections, or conversation decisions. The project decision is not to return full Realtime Conversation Mode; the dormant `/api/realtime-voice` architecture remains separate.
 
-1. The learner enters Conversation Mode from Lesson Chat.
-2. The overlay shows the full avatar mode with the red record button, exit/back button, latest user phrase bubble, latest bot phrase bubble, and bottom-left Hint button.
-3. The learner records audio.
-4. Audio is transcribed through the normal transcription endpoint.
-5. The transcript is sent through the same lesson chat reply flow as normal Lesson Chat.
-6. The bot reply is displayed in the Conversation Mode bot bubble and persisted into the lesson transcript.
-7. The displayed bot reply is sent to `/api/audio/speech` with Conversation Mode TTS settings.
-8. The returned audio is played back.
-9. Multiple turns repeat the same flow.
+The exact model ID selects the dedicated renderer. Legacy non-Realtime speech models retain `/v1/audio/speech` HTTP transport and speed `1.0`; that compatibility path does not describe the current active production TTS roles.
 
-Conversation Mode TTS settings:
+## Voice catalog and legacy settings compatibility
 
-- model: `gpt-4o-mini-tts`;
-- purpose: `conversation_mode_tts`;
-- voice: selected tutor/user voice from Settings (`coral` by default, `onyx` for David);
-- speed: `1.0`;
-- instructions: calm speech instructions for natural, friendly learner-facing delivery.
+The canonical selectable voice catalog is exactly `alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`, and `cedar`. `nova`, `onyx`, and `fable` are trimmed, case-insensitive legacy settings-input compatibility IDs only, never selectable canonical voices. Canonical IDs are stored lowercase; legacy input uses the effective tutor after any same-request tutor change: David -> `cedar`, every other tutor -> `coral`. Blank and arbitrary unknown settings-input voices remain rejected. UserSettings persist/return speech speed `1.0` and `ConversationModeEnabled=true`; legacy API/storage fields remain. Historical incoming speeds in the existing 0.5–2.0 range remain accepted but normalize to `1.0`. Load repairs voice/speed/flag together, preserves `CreatedAt`, updates `UpdatedAt` only when repair is needed, and leaves a subsequent unchanged load untouched. Both `/api/audio/speech` and `/api/audio/speech-stream` enforce request/provider speed `1.0` regardless of stale caller values.
 
-The visible text and spoken text must match exactly. Conversation Mode must not use spoken-only shortening, summarization, rewriting, or chunking.
+The permanently true legacy settings field does not restore any runtime dependency on stored false values or change Lesson Chat/Conversation Mode navigation.
 
-## Why the product uses the TTS provider
+## Dormant old full-Realtime architecture
 
-Realtime was too unstable for the product lifecycle. The TTS provider path is more stable because it reuses the already-working transcription, lesson chat reply, and speech playback endpoints. Switching Conversation Mode speech to `gpt-4o-mini-tts` also improved speech calmness because the request can include speech instructions.
+The old desktop WebSocket engine, microphone capture, backend `/api/realtime-voice` gateway, GA schema, recovery tests, and diagnostics remain in the repository. Its `RealtimeVoiceModel=gpt-realtime` field belongs to that dormant product path. It historically handled learner audio and assistant conversation generation within one Realtime session. It is separate from the current short-lived server-to-server speech renderer and is not the current lesson/conversation architecture. The current client flow should not open `/api/realtime-voice`.
 
-This decision prioritizes predictable product testing over lower-latency future experiments.
+## Bounded production smoke — 2026-10-02
 
-## Realtime status
+The bounded 2026-10-02 production smoke after the Admin AI Models publication recorded 7 Realtime-mini speech starts and 7 completions, 0 failed/canceled requests, and 0 transcript-fidelity mismatches (`TranscriptMatches=True` for the verified samples). It included 5 `lesson_chat_tts` and 2 `conversation_mode_tts` completions, voices `coral`, `cedar`, and `marin`, and approximately 1.2–2.2 seconds to first audio. Backend remained `.164`, the service active, health Healthy, and database Healthy with `canConnect=true`. This sample does not guarantee future request success or every voice/language combination.
 
-Realtime is implemented/partially stabilized and remains in the repository for future work. It should be treated as a provider-switch/future option, not the default product Conversation Mode provider.
+## Feedback, hint, transcript, and study-language behavior
 
-Realtime assets that remain useful for future testing include:
+- Feedback remains tied to the clicked message through `sourceMessageId` and `sourceMessageKind`; context-selection feedback remains phrase-level.
+- Conversation Mode transcript messages remain reviewable after returning to Lesson Chat; Hint works in both views.
+- Invalid retry/status messages remain excluded from learner-turn counts and summary input.
+- Study languages remain English, French, German, Portuguese, Spanish, and Italian. Transcription uses the selected language code; safe logs record language IDs without audio content or secrets.
+- Translation remains a separate review feature; the speech renderer does not make translation or lesson decisions.
 
-- desktop WebSocket client/coordinator code;
-- backend Realtime gateway;
-- GA schema work;
-- logging and stop-reason diagnostics;
-- fallback/recovery policy tests;
-- overlay policy coverage.
+## Deprecation and cost references
 
-Default product Conversation Mode should not open `/api/realtime-voice` or create an OpenAI Realtime session.
+OpenAI announced on 2026-10-01 that the listed deprecated text-to-speech models (`tts-1`, `tts-1-hd`, and the listed `gpt-4o-mini-tts` snapshots) are scheduled for removal on 2027-01-06 and recommends `gpt-realtime-2.1-mini`. Sources checked on 2026-10-02: [OpenAI deprecations](https://developers.openai.com/api/docs/deprecations) and [GPT-Realtime-2.1 Mini model documentation](https://developers.openai.com/api/docs/models/gpt-realtime-2.1-mini).
 
-## Feedback, hint, and transcript behavior in voice flows
+Current token pricing and measurement limits are recorded in [Cost Model](COST_MODEL.md); no precise per-minute rendering cost is claimed from this smoke.
 
-- Feedback is tied to the clicked message through `sourceMessageId` and `sourceMessageKind`.
-- Context-selection feedback is phrase-level and does not treat the phrase as an active roleplay answer.
-- Conversation Mode transcript messages should be reviewable after returning to Lesson Chat.
-- Hint works in normal Lesson Chat and in the Conversation Mode overlay.
-- Invalid retry/status messages should not count as learner turns and should stay excluded from summary input.
+## Historical 2026-09-29 TTS decision
 
-## Cost and logging expectations
-
-Backend logs should make the current voice routing visible:
-
-- normal Lesson Chat speech requests use `Model=gpt-4o-mini-tts` and `Purpose=lesson_chat_tts`;
-- Conversation Mode speech requests use `Model=gpt-4o-mini-tts` and `Purpose=conversation_mode_tts`;
-- Conversation Mode speech requests include `HasInstructions=True`;
-- no Realtime WebSocket opens by default in the product path.
-
-Exact pricing remains approximate until real usage logs are collected and pricing constants are completed.
-
-## Study-language voice behavior
-
-Study languages are English, French, German, Portuguese, Spanish, and Italian, with English as the default. Normal voice recording and default TTS Conversation Mode send the selected study-language code to transcription (`en`, `fr`, `de`, `pt`, `es`, or `it`). Backend transcription logs include `TargetLanguageId` and `TranscriptionLanguageCode` and do not log audio content or secrets.
-
-Conversation Mode remains on the stable TTS provider by default. It still uses `gpt-4o-mini-tts`, the selected tutor voice (`coral` by default, `onyx` for David), speed `1.0`, and visible bot text as the exact TTS input. The only speech-instruction change is that instructions now name the selected study language and require speech only in that language unless quoting the learner. Normal Lesson Chat TTS uses `gpt-4o-mini-tts` without speech instructions.
-
-Translate button remains a separate review feature. Study language controls lesson language and transcription; translation target/native-language behavior remains a future refinement.
+At that checkpoint both TTS roles used `gpt-4o-mini-tts`; transcription, lesson reply generation, and speech playback were already chained, while full Realtime Conversation Mode was outside the default product path. The earlier `tts-1` -> `gpt-4o-mini-tts` switch supported calmer instruction-based delivery. The 2026-10-02 change replaces only the final speech renderer and preserves that chained product decision.

@@ -1,65 +1,62 @@
 # Cost and Usage Instrumentation Model
 
-Review date: 2026-09-29.
+Review date: 2026-10-02.
 
-This document describes the current product model usage and the developer-only usage/cost instrumentation. The dated Conversation Mode cost comparison below preserves the earlier `tts-1` baseline. Pricing and cost estimates remain approximate where pricing constants are missing or incomplete.
+This document records current product model usage and developer-only cost instrumentation. Official token prices below are current as checked on this date; actual cost estimates remain approximate where runtime pricing/accounting is incomplete.
 
 ## Current model usage
 
-- Lesson chat reply: the current chat model configured and used by the backend lesson chat service.
-- Feedback, hint, and summary: backend lesson-related OpenAI calls as configured by the current backend services.
-- Transcription: `gpt-transcribe` (legacy configured models remain compatible).
-- Normal Lesson Chat TTS: `gpt-4o-mini-tts` with `purpose=lesson_chat_tts`.
-- Conversation Mode TTS: `gpt-4o-mini-tts` with `purpose=conversation_mode_tts`.
-- Realtime: `gpt-realtime` is not default for product; keep for future cost review if/when Realtime is re-enabled as a provider option.
+Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation use `gpt-5.6-luna`, with all four omit-temperature flags enabled; `SpeechToTextModel=gpt-transcribe`; `LessonChatTextToSpeechModel=gpt-realtime-2.1-mini`; `ConversationModeTextToSpeechModel=gpt-realtime-2.1-mini`; `RealtimeVoiceModel=gpt-realtime` belongs to the dormant old full-Realtime path.
+
+Read-only verification on 2026-10-02 found persistent Active and Draft model IDs and all four omit-temperature flags identical at revision `39`.
+
+Lesson Summary intentionally follows the Lesson Tutor Chat model/temperature policy. Both TTS purposes render already-final visible tutor text; neither generates lesson content, corrections, or conversation decisions.
 
 ## Current product voice decision
 
-Conversation Mode uses the stable TTS provider by default:
+`learner audio -> gpt-transcribe -> validated learner text -> gpt-5.6-luna lesson reply -> exact final visible tutor text -> gpt-realtime-2.1-mini speech rendering`
 
-`microphone recording -> audio transcription -> lesson chat reply -> gpt-4o-mini-tts playback`
+The speech renderer uses a short-lived backend Realtime WebSocket, with no learner microphone stream or lesson history for answer generation. Internal PCM is 24 kHz, backend non-streaming output remains WAV, streaming remains PCM, and product speech speed is fixed `1.0` with no numeric provider speed configuration. Full Realtime Conversation Mode is dormant and the project decision is not to return it.
 
-Realtime remains in the codebase for future testing, but it is not the default product path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
+## Current official Realtime-mini token pricing
+
+Prices checked on 2026-10-02 from [GPT-Realtime-2.1 Mini model documentation](https://developers.openai.com/api/docs/models/gpt-realtime-2.1-mini), in USD per 1 million tokens:
+
+| Token type | Input | Cached input | Output |
+| --- | ---: | ---: | ---: |
+| Text | $0.60 | $0.06 | $2.40 |
+| Audio | $10.00 | $0.30 | $20.00 |
+
+The renderer sends text and receives audio. Listing audio-input pricing does not mean learner audio is sent to this renderer. Use provider-returned usage by modality and cache status for accounting; do not convert these token prices to a precise per-minute rate without sourced token/time measurements.
+
+OpenAI announced on 2026-10-01 that the listed deprecated text-to-speech models (`tts-1`, `tts-1-hd`, and the listed `gpt-4o-mini-tts` snapshots) are scheduled for removal on 2027-01-06 and recommends `gpt-realtime-2.1-mini`. Sources checked on 2026-10-02: [OpenAI deprecations](https://developers.openai.com/api/docs/deprecations) and [GPT-Realtime-2.1 Mini model documentation](https://developers.openai.com/api/docs/models/gpt-realtime-2.1-mini).
 
 ## What is measured
 
-Developer logs and usage records are intended to capture:
-
-- lesson chat operation/model identifiers;
-- input/output/total token counts when returned by the provider;
-- cached input token counts when returned by the provider;
-- transcription model, language, uploaded audio bytes, transcript length, and estimated audio duration;
-- speech model, voice, purpose, input character count, output byte count, estimated duration, speed, and instruction presence;
-- `gpt-realtime` session metrics when Realtime is explicitly used in future testing.
+Developer logs and usage records capture operation/model/purpose identifiers; available input/output/total/cached token counts; transcription language, audio bytes, and estimated duration; speech voice, input character count, output bytes, estimated duration, instruction presence, and first-audio timing. Realtime-mini diagnostics include `Transport=realtime_speech`, `RequestedSpeed=1.0`, `NumericSpeedApplied=False`, and transcript-fidelity results. Returned Realtime usage includes available text/audio token detail fields; the current renderer's cost diagnostics still mark `CostEstimateApproximate=True` and `MissingCostFields=realtime_pricing`. Existing streaming accounting remains diagnostic-only; official prices in this document do not complete runtime cost accounting.
 
 ## What remains approximate
 
-- Exact pricing is approximate or missing where pricing constants are not configured.
-- Audio duration may be estimated from byte counts and sample rates.
-- TTS duration may be approximate because compressed/container formats do not always map cleanly to duration.
-- Realtime cost comparison is deferred because Realtime is not the default product path.
-- Monthly and unit economics should be recalculated later from real usage logs.
+- Provider usage may omit token detail fields; input text length is not a token count.
+- Audio duration may be estimated from PCM bytes and sample rate; WAV/container byte counts require format-aware accounting.
+- The bounded smoke latency is not a cost/time conversion or a future latency guarantee.
+- Dormant full-Realtime session economics are separate from the current final-text renderer.
+- Monthly, per-lesson, and per-minute economics require representative measured usage, durations, and completed runtime pricing accounting.
 
-## Conversation Mode cost note
+## Historical Conversation Mode cost/pricing context
 
-At the earlier Conversation Mode switch, Conversation Mode may have cost more than its `tts-1` baseline after moving to `gpt-4o-mini-tts`, but quality improved because `gpt-4o-mini-tts` supports calmer instruction-based speech. Exact monthly and unit economics should be recalculated later from real usage logs instead of estimates alone.
+Before 2026-10-02, both TTS roles used `gpt-4o-mini-tts`. The earlier move from `tts-1` may have increased Conversation Mode cost while improving calm instruction-based delivery; that comparison is historical and is not the current renderer's measured unit economics. No historical numerical price is silently relabeled as a current Realtime-mini price.
 
-## Log checks for smoke testing
+## Current smoke log checks
 
-During the regression smoke-test, confirm logs show:
+- Both `lesson_chat_tts` and `conversation_mode_tts` use `Model=gpt-realtime-2.1-mini` and `Transport=realtime_speech`.
+- Selected canonical voice reaches the renderer; David fallback is `cedar`, others `coral`.
+- Effective speed is `1.0`; no numeric speed is added to Realtime payloads.
+- Optional Conversation Mode instructions affect delivery only; transcript fidelity checks compare against final visible text.
+- Short-lived server-to-server rendering sockets are expected; client `/api/realtime-voice` sessions remain outside the current product flow.
 
-- normal Lesson Chat speech uses `Model=gpt-4o-mini-tts` and `Purpose=lesson_chat_tts`;
-- Conversation Mode speech uses `Model=gpt-4o-mini-tts` and `Purpose=conversation_mode_tts`;
-- Conversation Mode speech uses `Voice=coral`, `SpeechSpeed=1.0`, and `HasInstructions=True`;
-- no Realtime WebSocket opens by default.
+The 2026-10-02 smoke had 7/7 completions, 0 failed/canceled requests, and 0 transcript mismatches; this is bounded evidence, not universal reliability or cost validation.
 
 ## Future cost work
 
-Before pricing, subscriptions, or usage limits are finalized:
-
-1. Run representative test lessons across levels and topics.
-2. Export or collect real usage logs.
-3. Recalculate per-lesson, per-minute, and per-month costs.
-4. Separate normal Lesson Chat, transcription, normal TTS, Conversation Mode TTS, and any future Realtime experiment.
-5. Add missing pricing constants where appropriate.
-6. Revisit usage limits and subscription tiers with measured data.
+Collect representative lessons across levels, languages, and voices; retain safe provider usage and duration measurements; reconcile non-streaming and streaming accounting; then calculate unit economics and review usage limits. Any pricing-constant implementation, billing change, or production operation is separate from this documentation synchronization.

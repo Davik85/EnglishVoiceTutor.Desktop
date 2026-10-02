@@ -72,7 +72,7 @@ Copy the installer to another Windows device or clean VM, install it, choose a c
 
 ## Generated release artifacts
 
-Latest verified status (not a local-artifact claim): Windows Direct 1.7 is the current public release. The cache-busted live manifest records `LanguageVoiceTutorSetup-1.7.exe`, SHA-256 `86b72f7dad8f7c354c27e8b688f043f8d70d63014066d403440648efe2952b64`, size `188988094` bytes, `minimumSupportedVersion: 1.7`, production backend `https://api.languagevoicetutor.com`, and `manual-confirmation`. The local checksum and installer hash/size match, without a claimed independent public-download hash. The manual-confirmation update from installed `1.7-test.1` to public 1.7 completed successfully and the installed app displayed 1.7.
+Current public Windows Direct Release is `1.8`, verified from the public `latest.json` on 2026-10-02: `LanguageVoiceTutorSetup-1.8.exe`, SHA-256 `980a3e5f72f0c5c2ee01b5271dccc6cda3d8a97cc0307143520f750c1edefe35`, `188988708` bytes, `minimumSupportedVersion=1.8`, `backendBaseUrl=https://api.languagevoicetutor.com`, and `updateMode=manual-confirmation`. Completed release verification also includes an independently downloaded public installer hash match and successful manual installation over the previous client. Provider models and OpenAI credentials remain backend-owned. Future local builds are not public/live unless the live website manifest points to them. See [Current State](CURRENT_STATE.md) for current backend and rollback values.
 
 `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, installers, packages, and other files under `artifacts/` are generated outputs. Validate them locally and upload through the Windows direct release flow when intended, but do not commit them.
 

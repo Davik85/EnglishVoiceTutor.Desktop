@@ -1,8 +1,16 @@
 # Backend server deployment
 
-Review date: 2026-09-29.
+Review date: 2026-10-02.
 
-## Current production backend
+## Current production backend — 2026-10-02 `.164` checkpoint
+
+Production backend `0.1.35-backend.164` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.164`; `/opt/languagevoicetutor/backend/releases/0.1.35-backend.163` is the verified rollback release. Accepted/deployed source commit is `1b12dea047fee5a7e7e424499a7cc82c5bfef7a1`. The local `LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.164.zip` package SHA-256 calculated on 2026-10-02 is `31CAFF493D8E8E5252597C233DCD1F01D71D3D4E1FFDB8EEB755D53B4A3EE5DC`. No EF migration or database schema migration was required. Read-only production verification confirmed `current` at `.164`, `previous` at `.163`, `languagevoicetutor-backend.service` active, public `/health` Healthy, and `/api/health/database` Healthy with `canConnect=true`.
+
+`.164` adds legacy voice settings-input normalization to the tutor-aware canonical fallback, fixes stored speed at `1.0` and `ConversationModeEnabled=true`, repairs existing rows on load, and forces speed `1.0` at both backend speech boundaries. API/storage contracts remain compatible.
+
+Admin AI Models publication on 2026-10-02 was a separate operation. Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation use `gpt-5.6-luna`, with all four omit-temperature flags enabled; `SpeechToTextModel=gpt-transcribe`; `LessonChatTextToSpeechModel=gpt-realtime-2.1-mini`; `ConversationModeTextToSpeechModel=gpt-realtime-2.1-mini`; `RealtimeVoiceModel=gpt-realtime` belongs to the dormant old full-Realtime path. Read-only verification on 2026-10-02 found persistent Active and Draft model IDs and all four omit-temperature flags identical at revision `39`. The current chained product uses Realtime-mini only to speak already-final visible text; full Realtime Conversation Mode is not being restored. See [Voice and Realtime Review](VOICE_AND_REALTIME_REVIEW.md) for transport and bounded smoke evidence.
+
+## Historical 2026-09-29 `.163` production checkpoint
 
 Production backend `0.1.35-backend.163` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.163`; `.162` is the verified previous rollback release at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.162`. Source commit `d2514ddfa2dca079333bc47f0cabab1caa838a20` supplied the reviewed `LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.163.zip` package, SHA-256 `DDF15035537BE230EE501B3D4650BE134DDADD43C01E7BBB5A6BEA8F9DF56026`. Local and uploaded hashes matched; the reviewed package was used for the deployment without rebuilding. Backend Linux deployment, desktop/backend release-lock, repository desktop release-gate, and package/deployment dry-run policies passed. No EF migration or database schema/data migration was required or run. `languagevoicetutor-backend.service` is active/running, public `/health` returned HTTP 200 `Healthy`, and public `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`.
 
@@ -83,8 +91,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.163`
-- Previous rollback release: `0.1.35-backend.162`
+- Current release: `0.1.35-backend.164`
+- Previous rollback release: `0.1.35-backend.163`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -100,7 +108,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.163`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.162`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.164`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.163`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 ## 2026-08-25 `.141` legacy product-limit removal deployment verification
 
@@ -292,7 +300,7 @@ Results: `dotnet test` passed `89/89`; all listed Python policy checks passed. T
 
 AI Models CMS active/draft runtime settings are persistent server data/config, not release artifacts. The configured `AiModelSettings:StorageJsonPath` defaults to `site/content/ai-model-settings.json` and is resolved outside the versioned release content root, so production stores it under the persistent backend data tree (`/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`) rather than `/opt/languagevoicetutor/backend/current/site/content/` or `/opt/languagevoicetutor/backend/releases/<version>/site/content/`. Backend startup/deploy must not overwrite an existing active settings file with packaged defaults, and future backend deploys must not rely on release-folder AI Models JSON as the source of truth. If the persistent file is missing but a legacy release-content file exists, the backend imports that file once; otherwise defaults seed the in-memory draft/active values until an admin saves or publishes.
 
-Persistence verification: the persistent file exists at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`, was seeded from a release-content file only as a one-time historical data/config correction, has mode `644`, and survived a backend service restart. At that earlier checkpoint it contained `gpt-5.5` plus `gpt-5.2` and matched the then-current release file by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`. Current Active text-role values are `gpt-5.6-luna` for Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation, with all four omit-temperature flags enabled. After deliberate post-`.163` publication, Active and Draft `SpeechToTextModel` are both `gpt-transcribe` at revision `36` (updated `2026-09-29T20:07:55.5008736+00:00`); lesson chat and Conversation Mode TTS are `gpt-4o-mini-tts`, and Realtime voice is `gpt-realtime`. The deployment itself did not publish AI Models settings.
+Persistence verification: the persistent file exists at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`, was seeded from a release-content file only as a one-time historical data/config correction, has mode `644`, and survived a backend service restart. At that earlier checkpoint it contained `gpt-5.5` plus `gpt-5.2` and matched the then-current release file by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`. Current production roles: Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation use `gpt-5.6-luna`, with all four omit-temperature flags enabled; `SpeechToTextModel=gpt-transcribe`; `LessonChatTextToSpeechModel=gpt-realtime-2.1-mini`; `ConversationModeTextToSpeechModel=gpt-realtime-2.1-mini`; `RealtimeVoiceModel=gpt-realtime` belongs to the dormant old full-Realtime path. Read-only verification on 2026-10-02 found persistent Active and Draft model IDs and all four omit-temperature flags identical at revision `39`. The 2026-09-29 post-`.163` publication remains a historical checkpoint above; deployment itself does not publish AI Models settings.
 
 After backend deploy, Super Admin should verify **Admin CMS → System → AI Models → Load AI Models**: Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation each remain `gpt-5.6-luna` with all four **Omit temperature parameter** flags enabled, and Speech-to-text remains `gpt-transcribe`; then run **Validate format**. Test provider access only if settings changed, and do not publish unless changes are intentional. API keys remain environment secrets and are never stored in AI Models CMS JSON.
 
@@ -364,11 +372,11 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.163`; verified rollback target `.162` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.164`; verified rollback `.163` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: the current Windows direct release is manifest-driven with JavaScript; the static/no-JavaScript fallback was not separately verified by this Windows release upload.
-- Windows installer: current public direct release is `1.7`, installer `LanguageVoiceTutorSetup-1.7.exe`.
-- AI Models: persistent production storage is verified; all four Active text roles use `gpt-5.6-luna` with their omit-temperature flags enabled, Speech-to-text uses `gpt-transcribe`, both TTS roles use `gpt-4o-mini-tts`, and `.154` routes the text roles independently at runtime.
+- Windows installer: current public direct release is `1.8`, installer `LanguageVoiceTutorSetup-1.8.exe`; manifest and independent public-installer hash verification passed.
+- AI Models: persistent production storage is verified. Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation use `gpt-5.6-luna`, with all four omit-temperature flags enabled; `SpeechToTextModel=gpt-transcribe`; `LessonChatTextToSpeechModel=gpt-realtime-2.1-mini`; `ConversationModeTextToSpeechModel=gpt-realtime-2.1-mini`; `RealtimeVoiceModel=gpt-realtime` belongs to the dormant old full-Realtime path. Read-only verification on 2026-10-02 found persistent Active and Draft model IDs and all four omit-temperature flags identical at revision `39`.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: website legal/support/seller/AI/status pages are ready for owner/legal final review as drafts, not final legal advice.
 
