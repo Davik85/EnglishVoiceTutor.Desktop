@@ -1945,7 +1945,13 @@ static async Task<IResult> HandleAudioSpeechStreamAsync(
     {
         await EnsureRequestBackendSessionIsActiveAsync(request.BackendSessionId, lessonSessionService, cancellationToken);
 
-        var metrics = await audioSpeechService.StreamSpeechAsync(request.Text, response.Body, request.Purpose, cancellationToken);
+        var metrics = await audioSpeechService.StreamSpeechAsync(
+            request.Text, response.Body, request.Purpose, cancellationToken,
+            speechSpeed: request.SpeechSpeed,
+            instructions: request.Instructions,
+            speechVoice: request.SpeechVoice,
+            targetLanguageName: request.TargetLanguageName,
+            targetLanguageId: request.TargetLanguageId);
         logger.LogInformation(
             "Audio speech stream endpoint completed. Endpoint={Endpoint}; FirstHeaderMs={FirstHeaderMs}; FirstChunkMs={FirstChunkMs}; FirstChunkWrittenMs={FirstChunkWrittenMs}; TotalMs={TotalMs}; TotalBytes={TotalBytes}.",
             "audio/speech-stream",

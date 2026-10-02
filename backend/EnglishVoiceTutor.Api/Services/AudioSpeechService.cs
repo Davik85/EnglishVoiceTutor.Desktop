@@ -83,7 +83,12 @@ public sealed class AudioSpeechService
         string text,
         Stream outputStream,
         string? purpose = null,
-        CancellationToken clientCancellationToken = default)
+        CancellationToken clientCancellationToken = default,
+        double? speechSpeed = null,
+        string? instructions = null,
+        string? speechVoice = null,
+        string? targetLanguageName = null,
+        string? targetLanguageId = null)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -98,17 +103,22 @@ public sealed class AudioSpeechService
         }
 
         var normalizedPurpose = NormalizePurpose(purpose);
+        var resolvedSpeechSpeed = ResolveSpeechSpeed(normalizedPurpose, speechSpeed);
+        var modelSettings = _aiModelSettingsService.GetActiveSettings();
+        var resolvedModel = ResolveSpeechModel(normalizedPurpose, modelSettings);
+        var resolvedInstructions = ResolveSpeechInstructions(resolvedModel, instructions);
 
         var request = new OpenAiAudioSpeechRequest
         {
-            Model = _aiModelSettingsService.GetActiveSettings().LessonChatTextToSpeechModel,
+            Model = resolvedModel,
             Input = text.Trim(),
-            Voice = OpenAiConstants.DefaultSpeechVoice,
-            Speed = OpenAiConstants.DefaultSpeechSpeed,
+            Voice = ResolveSpeechVoice(speechVoice),
+            Instructions = resolvedInstructions,
+            Speed = resolvedSpeechSpeed,
             ResponseFormat = OpenAiConstants.DefaultBotVoiceStreamResponseFormat
         };
 
-        return await StreamAudioSpeechRequestAsync(request, options.ApiKey, outputStream, normalizedPurpose, null, clientCancellationToken);
+        return await StreamAudioSpeechRequestAsync(request, options.ApiKey, outputStream, normalizedPurpose, ResolveStudyLanguage(targetLanguageName, targetLanguageId), clientCancellationToken);
     }
 
     private static string NormalizePurpose(string? purpose)
@@ -525,7 +535,7 @@ public sealed class AudioSpeechService
                 false,
                 false);
 
-            _logger.LogInformation("Developer usage summary: Operation=tts_stream; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputCharacters={InputCharacters}; OutputBytes={OutputBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", request.Model, request.Voice, request.ResponseFormat, purpose, request.Input.Length, totalBytes, EstimatePcmDurationSeconds(totalBytes), PricingConstants.OpenAi.Tts1PerMillionCharactersUsd == 0m ? "tts_pricing" : string.Empty);
+            _logger.LogInformation("Developer usage summary: Operation=tts_stream; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; StudyLanguage={StudyLanguage}; InputCharacters={InputCharacters}; OutputBytes={OutputBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", request.Model, request.Voice, request.ResponseFormat, purpose, studyLanguage, request.Input.Length, totalBytes, EstimatePcmDurationSeconds(totalBytes), PricingConstants.OpenAi.Tts1PerMillionCharactersUsd == 0m ? "tts_pricing" : string.Empty);
 
             return new BotVoiceStreamMetrics(firstHeaderMs, firstChunkMs, firstChunkWrittenMs, stopwatch.ElapsedMilliseconds, totalBytes);
         }

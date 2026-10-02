@@ -13,3 +13,6 @@ artifacts/
 *.pvk
 *.snk
 *.cer
+
+__pycache__/
+*.py[cod]

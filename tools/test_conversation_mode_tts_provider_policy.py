@@ -18,14 +18,11 @@ def require_text(text: str, needle: str, path: str) -> None:
 
 
 def method_body(text: str, method_name: str) -> str:
-    markers = [f"private async Task {method_name}(" , f"private Task {method_name}(", f"{method_name}("]
-    start = -1
-    for marker in markers:
-        start = text.find(marker)
-        if start >= 0:
-            break
-    require(start >= 0, f"Missing method {method_name}")
-    brace_start = text.find("{", start)
+    declaration = re.search(
+        r"(?:public|private|static)\s+(?:(?:static|async)\s+)*[\w<>?\[\]]+\s+"
+        + re.escape(method_name) + r"\s*\(", text)
+    require(declaration is not None, f"Missing method {method_name}")
+    brace_start = text.find("{", declaration.end())
     depth = 0
     for index in range(brace_start, len(text)):
         char = text[index]
@@ -36,6 +33,47 @@ def method_body(text: str, method_name: str) -> str:
             if depth == 0:
                 return text[brace_start:index + 1]
     raise AssertionError(f"Could not parse method {method_name}")
+
+
+def require_speech_routing(constants: str, backend_speech: str, program: str) -> None:
+    require('DefaultConversationModeVoiceProvider = "Tts1"' in constants, "TTS must remain the default")
+    for name, description in [
+        ("LessonChatTtsModel", "backend-configured lesson chat TTS model"),
+        ("ConversationModeTtsModel", "backend-configured conversation TTS model"),
+    ]:
+        require(f'{name} = "{description}"' in constants, f"{name} must describe its backend-configured role")
+
+    resolver = method_body(backend_speech, "ResolveSpeechModel")
+    require("purpose, ConversationModeTtsPurpose" in resolver, "TTS model selection must check purpose")
+    require("return modelSettings.ConversationModeTextToSpeechModel;" in resolver, "Conversation TTS must use active settings")
+    require("return modelSettings.LessonChatTextToSpeechModel;" in resolver, "Lesson Chat TTS must use active settings")
+    for name in ["CreateSpeechAsync", "StreamSpeechAsync"]:
+        body = method_body(backend_speech, name)
+        for expression in [
+            "NormalizePurpose(purpose)", "ResolveSpeechSpeed(normalizedPurpose, speechSpeed)",
+            "_aiModelSettingsService.GetActiveSettings()", "ResolveSpeechModel(normalizedPurpose, modelSettings)",
+            "ResolveSpeechInstructions(resolvedModel, instructions)", "Model = resolvedModel",
+            "Voice = ResolveSpeechVoice(speechVoice)", "Instructions = resolvedInstructions",
+            "Speed = resolvedSpeechSpeed", "ResolveStudyLanguage(targetLanguageName, targetLanguageId)",
+        ]:
+            require(expression in body, f"{name} must preserve {expression}")
+        require("Model = model" not in body, f"{name} must not use the client's descriptive model")
+
+    speech_endpoint = method_body(program, "HandleAudioSpeechAsync")
+    stream_endpoint = method_body(program, "HandleAudioSpeechStreamAsync")
+    for name, method, body in [
+        ("speech", "CreateSpeechAsync", speech_endpoint),
+        ("speech-stream", "StreamSpeechAsync", stream_endpoint),
+    ]:
+        call = re.search(r"audioSpeechService\." + method + r"\((.*?)\);", body, re.DOTALL)
+        require(call is not None, f"{name} must call {method}")
+        for field in ["Purpose", "SpeechSpeed", "Instructions", "SpeechVoice", "TargetLanguageName", "TargetLanguageId"]:
+            require(f"request.{field}" in call.group(1), f"{name} must forward {field}")
+    require("request.Model" not in stream_endpoint, "Stream model selection must remain backend-authoritative")
+    transport = method_body(backend_speech, "StreamAudioSpeechRequestAsync")
+    require("HttpMethod.Post, OpenAiConstants.AudioSpeechEndpoint" in transport, "Streaming must retain HTTP speech transport")
+    require("HttpCompletionOption.ResponseHeadersRead" in transport, "Streaming must retain incremental reads")
+    require("ResponseFormat = OpenAiConstants.DefaultBotVoiceStreamResponseFormat" in method_body(backend_speech, "StreamSpeechAsync"), "Streaming must retain its audio format")
 
 
 def main() -> None:
@@ -91,8 +129,7 @@ def main() -> None:
     require_text(constants, "LessonChatReplyEndpoint", backend_constants_path)
     require_text(service, "CreateBotSpeechAsync", service_path)
     require_text(constants, "AudioSpeechEndpoint", backend_constants_path)
-    require_text(constants, 'LessonChatTtsModel = "tts-1"', backend_constants_path)
-    require_text(constants, 'ConversationModeTtsModel = "gpt-4o-mini-tts"', backend_constants_path)
+    require_speech_routing(constants, backend_speech, read("backend/EnglishVoiceTutor.Api/Program.cs"))
     require_text(constants, 'ConversationModeTtsPurpose = "conversation_mode_tts"', backend_constants_path)
     require_text(vm, "BackendConstants.ConversationModeTtsPurpose", vm_path)
     require_text(service, "SpeechSpeed = speechSpeed", service_path)
@@ -105,7 +142,7 @@ def main() -> None:
 
     speed_match = re.search(r"ConversationModeTtsSpeechSpeed\s*=\s*([0-9.]+)", constants)
     require(speed_match is not None, "Conversation Mode TTS speed must be a named constant")
-    require(float(speed_match.group(1)) == 1.0, "Conversation Mode TTS speed should start at 1.0 for gpt-4o-mini-tts testing")
+    require(float(speed_match.group(1)) == 1.0, "Conversation Mode TTS default speed must remain 1.0")
     require_text(vm, "ConversationModeTtsSpeechSpeed", vm_path)
 
     require_text(vm, "CancelCurrentBotVoice(BotVoiceCancellationReasons.NewerMessageCancel)", vm_path)

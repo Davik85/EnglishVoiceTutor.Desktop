@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from test_conversation_mode_tts_provider_policy import method_body, require_speech_routing
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -35,8 +37,7 @@ def main() -> None:
     backend_service = read(backend_service_path)
     program = read(program_path)
 
-    require_text(constants, 'ConversationModeTtsModel = "gpt-4o-mini-tts"', constants_path)
-    require_text(constants, 'LessonChatTtsModel = "tts-1"', constants_path)
+    require_speech_routing(constants, backend_service, program)
     require_text(constants, 'ConversationModeTtsSpeechSpeed = 1.0', constants_path)
     require_text(constants, 'ConversationModeTtsPurpose = "conversation_mode_tts"', constants_path)
     for word in ["calm", "even pace", "Do not shout", "Do not rush", "Pronounce clearly"]:
@@ -69,8 +70,12 @@ def main() -> None:
     require_text(service, "SpeechModelSupportsInstructions(resolvedModel)", service_path)
     require_text(backend_service, "ResolveSpeechInstructions", backend_service_path)
     require_text(backend_service, "SpeechModelSupportsInstructions", backend_service_path)
-    require_text(backend_service, "OpenAiConstants.NormalChatTtsModel", backend_service_path)
-    require_text(backend_service, "OpenAiConstants.ConversationModeTtsModel", backend_service_path)
+    instruction_resolver = method_body(backend_service, "ResolveSpeechInstructions")
+    require("SpeechModelSupportsInstructions(model)" in instruction_resolver, "Instructions must follow the effective model's capabilities")
+    require("return instructions;" in instruction_resolver, "Supported optional instructions must remain intact")
+    capability = method_body(backend_service, "SpeechModelSupportsInstructions")
+    require("AiModelSettings.Defaults.ConversationModeTextToSpeechModel" in capability, "Default Conversation Mode TTS must support instructions")
+    require('model.Contains("tts", StringComparison.OrdinalIgnoreCase)' in capability, "TTS model instruction support must remain")
     require_text(program, "HasInstructions", program_path)
     require_text(program, "InstructionsLength", program_path)
 
