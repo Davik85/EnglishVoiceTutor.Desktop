@@ -71,7 +71,7 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
 
         settings.StudyLanguage = StudyLanguageConstants.ToCanonicalValue(request.StudyLanguage);
         settings.ExplanationLanguage = NativeLanguageCatalog.GetByIdOrName(request.ExplanationLanguage).Id;
-        settings.SpeechVoice = request.SpeechVoice.Trim();
+        settings.SpeechVoice = SpeechVoiceOptions.ResolveSupportedVoiceId(request.SpeechVoice, profile.SelectedTutorId);
         settings.SpeechSpeed = request.SpeechSpeed;
         settings.ConversationModeEnabled = request.ConversationModeEnabled;
         settings.UpdatedAt = now;
@@ -175,6 +175,15 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
 
             dbContext.UserSettings.Add(user.Settings);
         }
+        else
+        {
+            var canonicalSpeechVoice = SpeechVoiceOptions.ResolveSupportedVoiceId(user.Settings.SpeechVoice, user.Profile.SelectedTutorId);
+            if (!string.Equals(user.Settings.SpeechVoice, canonicalSpeechVoice, StringComparison.Ordinal))
+            {
+                user.Settings.SpeechVoice = canonicalSpeechVoice;
+                user.Settings.UpdatedAt = now;
+            }
+        }
 
         return user;
     }
@@ -220,6 +229,11 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         if (string.IsNullOrWhiteSpace(request.SpeechVoice))
         {
             throw new UserSettingsValidationException("Speech voice is required.");
+        }
+
+        if (!SpeechVoiceOptions.TryGetSupportedId(request.SpeechVoice, out _))
+        {
+            throw new UserSettingsValidationException($"Speech voice must be one of: {string.Join(", ", SpeechVoiceOptions.All.Select(voice => voice.Id))}.");
         }
 
         if (request.SpeechSpeed is < MinSpeechSpeed or > MaxSpeechSpeed)

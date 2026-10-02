@@ -503,7 +503,7 @@ public partial class SettingsViewModel : ViewModelBase
         selectedNativeLanguageOption = NativeLanguageCatalog.GetByIdOrName(currentNativeLanguage);
         selectedStudyLanguage = StudyLanguageCatalog.GetById(currentStudyLanguageId);
         selectedTutorAvatarOption = TutorAvatarOptions.GetById(currentTutorAvatarId);
-        selectedSpeechVoiceOption = SpeechVoiceOptions.GetById(string.IsNullOrWhiteSpace(currentSpeechVoiceId) ? SpeechVoiceOptions.GetPreferredVoiceIdForTutor(selectedTutorAvatarOption.Id) : currentSpeechVoiceId);
+        selectedSpeechVoiceOption = SpeechVoiceOptions.GetById(currentSpeechVoiceId, selectedTutorAvatarOption.Id);
         backendSettingsSpeechVoice = selectedSpeechVoiceOption.Id;
         userDisplayName = currentUserDisplayName;
         learningGoal = currentLearningGoal;
@@ -1229,7 +1229,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     partial void OnSelectedSpeechVoiceOptionChanged(SpeechVoiceOption value)
     {
-        backendSettingsSpeechVoice = SpeechVoiceOptions.GetById(value?.Id).Id;
+        backendSettingsSpeechVoice = SpeechVoiceOptions.ResolveSupportedVoiceId(value?.Id, SelectedTutorAvatarOption?.Id);
 
         if (isApplyingBackendSettings)
         {
@@ -1936,7 +1936,7 @@ public partial class SettingsViewModel : ViewModelBase
                 NativeLanguage = SelectedNativeLanguageOption.Id,
                 StudyLanguage = GetSupportedBackendStudyLanguage(SelectedStudyLanguage),
                 ExplanationLanguage = SelectedInterfaceLanguageOption.Id,
-                SpeechVoice = SpeechVoiceOptions.GetById(backendSettingsSpeechVoice).Id,
+                SpeechVoice = SpeechVoiceOptions.ResolveSupportedVoiceId(backendSettingsSpeechVoice, SelectedTutorAvatarOption?.Id),
                 SpeechSpeed = backendSettingsSpeechSpeed <= 0
                     ? BackendConstants.DefaultBackendSettingsSpeechSpeed
                     : backendSettingsSpeechSpeed,
@@ -2303,9 +2303,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     private void ApplyBackendUserSettings(BackendUserSettingsResponse settings)
     {
-        backendSettingsSpeechVoice = string.IsNullOrWhiteSpace(settings.SpeechVoice)
-            ? SpeechVoiceOptions.GetPreferredVoiceIdForTutor(SelectedTutorAvatarOption?.Id)
-            : SpeechVoiceOptions.GetById(settings.SpeechVoice).Id;
+        backendSettingsSpeechVoice = SpeechVoiceOptions.ResolveSupportedVoiceId(settings.SpeechVoice, SelectedTutorAvatarOption?.Id);
         backendSettingsSpeechSpeed = settings.SpeechSpeed <= 0
             ? BackendConstants.DefaultBackendSettingsSpeechSpeed
             : settings.SpeechSpeed;

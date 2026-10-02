@@ -104,9 +104,7 @@ public class UserSettingsService
 
         settings.StudyLanguageId = StudyLanguageCatalog.GetById(settings.StudyLanguageId).Id;
         settings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(settings.SelectedTutorAvatarId).Id;
-        settings.SpeechVoiceId = string.IsNullOrWhiteSpace(settings.SpeechVoiceId)
-            ? SpeechVoiceOptions.GetPreferredVoiceIdForTutor(settings.SelectedTutorAvatarId)
-            : SpeechVoiceOptions.GetById(settings.SpeechVoiceId).Id;
+        settings.SpeechVoiceId = SpeechVoiceOptions.ResolveSupportedVoiceId(settings.SpeechVoiceId, settings.SelectedTutorAvatarId);
         settings.UserDisplayName = UserDisplayNamePolicy.TryNormalize(settings.UserDisplayName, out var normalizedName)
             ? normalizedName ?? string.Empty
             : string.Empty;

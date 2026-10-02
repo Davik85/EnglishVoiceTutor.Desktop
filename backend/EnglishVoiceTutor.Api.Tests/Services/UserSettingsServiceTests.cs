@@ -367,7 +367,7 @@ public sealed class UserSettingsServiceTests
             NativeLanguage = "es",
             StudyLanguage = "Spanish",
             ExplanationLanguage = "fr",
-            SpeechVoice = "nova",
+            SpeechVoice = "ballad",
             SpeechSpeed = 1.25m,
             ConversationModeEnabled = false
         }, TestContext.Current.CancellationToken);
@@ -375,7 +375,7 @@ public sealed class UserSettingsServiceTests
         Assert.Equal("es", settings.NativeLanguage);
         Assert.Equal(StudyLanguageConstants.Spanish, settings.StudyLanguage);
         Assert.Equal("fr", settings.ExplanationLanguage);
-        Assert.Equal("nova", settings.SpeechVoice);
+        Assert.Equal("ballad", settings.SpeechVoice);
         Assert.Equal(1.25m, settings.SpeechSpeed);
         Assert.False(settings.ConversationModeEnabled);
         Assert.Equal("lana", settings.SelectedTutorId);

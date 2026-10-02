@@ -108,7 +108,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     private static readonly ConversationModeVoiceProvider CurrentConversationModeVoiceProvider = ResolveConversationModeVoiceProvider(BackendConstants.DefaultConversationModeVoiceProvider);
     private const double ConversationModeTtsSpeechSpeed = BackendConstants.ConversationModeTtsSpeechSpeed;
 
-    private string CurrentSpeechVoiceId => SpeechVoiceOptions.GetById(speechVoiceId).Id;
+    private string CurrentSpeechVoiceId => SpeechVoiceOptions.ResolveSupportedVoiceId(speechVoiceId, tutorAvatarId);
 
     private static ConversationModeVoiceProvider ResolveConversationModeVoiceProvider(string providerName)
     {
@@ -642,7 +642,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         LearningGoal = NormalizeOptionalText(learningGoal);
         this.tutorAvatar = tutorAvatar;
         tutorAvatarId = tutorAvatar.Id;
-        this.speechVoiceId = SpeechVoiceOptions.GetById(string.IsNullOrWhiteSpace(speechVoiceId) ? SpeechVoiceOptions.GetPreferredVoiceIdForTutor(tutorAvatar.Id) : speechVoiceId).Id;
+        this.speechVoiceId = SpeechVoiceOptions.ResolveSupportedVoiceId(speechVoiceId, tutorAvatar.Id);
         this.tutorProfile = tutorProfile ?? new TutorProfile { Id = tutorAvatar.Id, DisplayName = tutorAvatar.DisplayName };
         TutorAvatarDisplayName = string.IsNullOrWhiteSpace(this.tutorProfile.DisplayName)
             ? tutorAvatar.DisplayName

@@ -228,7 +228,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         userSettings.NativeLanguageName = NativeLanguageCatalog.GetByIdOrName(nativeLanguage).Id;
         userSettings.StudyLanguageId = StudyLanguageCatalog.GetById(studyLanguageId).Id;
         userSettings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(tutorAvatarId).Id;
-        userSettings.SpeechVoiceId = SpeechVoiceOptions.GetById(speechVoiceId).Id;
+        userSettings.SpeechVoiceId = SpeechVoiceOptions.ResolveSupportedVoiceId(speechVoiceId, userSettings.SelectedTutorAvatarId);
         userSettings.UserDisplayName = userDisplayName;
         userSettings.LearningGoal = learningGoal;
         userSettings.BackendBaseUrl = BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(backendBaseUrl);
@@ -620,7 +620,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
             TutorAvatarOptions.GetById(userSettings.SelectedTutorAvatarId),
-            SpeechVoiceOptions.GetById(userSettings.SpeechVoiceId).Id,
+            SpeechVoiceOptions.ResolveSupportedVoiceId(userSettings.SpeechVoiceId, userSettings.SelectedTutorAvatarId),
             tutorProfile,
             lessonScenario,
             lessonChatBackendService,

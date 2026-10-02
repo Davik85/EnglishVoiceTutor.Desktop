@@ -12,6 +12,8 @@
     <Compile Include="../../Models/LessonContent/**/*.cs" Link="Models/LessonContent/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../Models/TutorAvatarOption.cs" Link="Models/TutorAvatarOption.cs" />
     <Compile Include="../../Models/TutorAvatarOptions.cs" Link="Models/TutorAvatarOptions.cs" />
+    <Compile Include="../../Models/SpeechVoiceOption.cs" Link="Models/SpeechVoiceOption.cs" />
+    <Compile Include="../../Models/SpeechVoiceOptions.cs" Link="Models/SpeechVoiceOptions.cs" />
   </ItemGroup>
 
   <ItemGroup>
