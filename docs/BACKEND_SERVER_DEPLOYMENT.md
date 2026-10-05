@@ -1,10 +1,32 @@
 # Backend server deployment
 
-Review date: 2026-10-02.
+Review date: 2026-10-05.
 
-## Current production backend — 2026-10-02 `.164` checkpoint
+## Current production backend — 2026-10-05 `.166` checkpoint
 
-Production backend `0.1.35-backend.164` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.164`; `/opt/languagevoicetutor/backend/releases/0.1.35-backend.163` is the verified rollback release. Accepted/deployed source commit is `1b12dea047fee5a7e7e424499a7cc82c5bfef7a1`. The local `LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.164.zip` package SHA-256 calculated on 2026-10-02 is `31CAFF493D8E8E5252597C233DCD1F01D71D3D4E1FFDB8EEB755D53B4A3EE5DC`. No EF migration or database schema migration was required. Read-only production verification confirmed `current` at `.164`, `previous` at `.163`, `languagevoicetutor-backend.service` active, public `/health` Healthy, and `/api/health/database` Healthy with `canConnect=true`.
+Production backend `0.1.35-backend.166` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.166`; `/opt/languagevoicetutor/backend/releases/0.1.35-backend.165` is the verified rollback release. Accepted/deployed source commit is `d49a8eb039f3ec556057226d957853bda77daf2f`. The verified 2026-10-05 production checkpoint confirmed `languagevoicetutor-backend.service` active/running, the deployed process running from the `.166` release directory, public `/health` HTTP 200, and public `/api/health/database` HTTP 200. No EF migration or database schema/data migration was required for `.165` or `.166`.
+
+The local `LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.166.zip` package SHA-256 calculated directly on 2026-10-05 is `8137579D6108556239912F539E21B1C35C84EEDBF2FD3EB643B57484AEC033B2`. This is a local-package fact only; no remote-upload hash match is asserted.
+
+Persistent AI Models configuration remained unchanged at revision `39`. Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation remain `gpt-5.6-luna`, with all four omit-temperature flags enabled; `SpeechToTextModel=gpt-transcribe`; `LessonChatTextToSpeechModel=gpt-realtime-2.1-mini`; `ConversationModeTextToSpeechModel=gpt-realtime-2.1-mini`; `RealtimeVoiceModel=gpt-realtime` remains reserved for the dormant old full-Realtime path. Provider model selection and OpenAI credentials remain backend-owned.
+
+### `.165` and `.166` speech reliability release notes
+
+`.165` (source commit `0725c5265e300c7da5a3dbb09db3f034dc4bf208`) added one bounded non-streaming retry for a first-audio startup stall: Attempt 1 had an 8-second deadline, and Attempt 2 was allowed only with zero PCM, no client cancellation, and time remaining in the original shared overall timeout. The retry reused that remaining budget rather than resetting it; streaming was unchanged. Accepted release verification recorded 62 focused `RealtimeSpeechSynthesisService` tests passed and a passing Release backend build.
+
+`.166` (source commit `d49a8eb039f3ec556057226d957853bda77daf2f`) extended this bounded non-streaming recovery to zero-audio WebSocket transport failures, with at most 3 attempts. Accepted release verification recorded 77/77 focused `RealtimeSpeechSynthesisService` tests passed, a passing Release backend build with 0 warnings/errors, and `git diff --check` passed. These are release-verification results, not checks rerun by this documentation update.
+
+Non-streaming Realtime speech allows at most 3 total WebSocket attempts inside the same original 20-second overall speech budget; the budget is never reset. Attempt 1 retains an 8-second first-audio startup deadline. A zero-audio startup timeout may open Attempt 2, and a `WebSocketException` may open another attempt only when the request is non-streaming, another attempt remains, no first audio has been received, `PcmBytes=0`, client cancellation has not occurred, and the original overall timeout has not expired. Attempt 2 and Attempt 3 use only the remaining overall budget, with no independent 8-second startup deadline. No retry is allowed after audio/PCM starts, after client cancellation, or after overall timeout; no fourth attempt is possible. Streaming remains exactly one attempt with its existing timeout behavior. Socket cleanup completes before the next attempt. Structured retry reasons are `first_audio_startup_timeout` and `websocket_transport_failure`; retry logs do not expose transcript/provider response text or exception messages.
+
+The exact final visible tutor text, model, voice, purpose, study language, speed behavior, WAV contract, transcript fidelity, and one application-level usage record remain unchanged. The chained lesson architecture and exact-text speech-rendering decision remain in force; full Realtime Conversation Mode remains dormant.
+
+After `.166` deployment, physical Android lesson testing reported that the previously failing first-message voice flow worked correctly. This is bounded production evidence; it does not guarantee every future request or exclude provider failures.
+
+See [Voice and Realtime Review](VOICE_AND_REALTIME_REVIEW.md) for the motivating `.165` production failure sequence.
+
+## Historical 2026-10-02 `.164` production checkpoint
+
+At this checkpoint, production backend `0.1.35-backend.164` was current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.164`; `/opt/languagevoicetutor/backend/releases/0.1.35-backend.163` is the verified rollback release. Accepted/deployed source commit is `1b12dea047fee5a7e7e424499a7cc82c5bfef7a1`. The local `LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.164.zip` package SHA-256 calculated on 2026-10-02 is `31CAFF493D8E8E5252597C233DCD1F01D71D3D4E1FFDB8EEB755D53B4A3EE5DC`. No EF migration or database schema migration was required. Read-only production verification confirmed `current` at `.164`, `previous` at `.163`, `languagevoicetutor-backend.service` active, public `/health` Healthy, and `/api/health/database` Healthy with `canConnect=true`.
 
 `.164` adds legacy voice settings-input normalization to the tutor-aware canonical fallback, fixes stored speed at `1.0` and `ConversationModeEnabled=true`, repairs existing rows on load, and forces speed `1.0` at both backend speech boundaries. API/storage contracts remain compatible.
 
@@ -91,8 +113,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.164`
-- Previous rollback release: `0.1.35-backend.163`
+- Current release: `0.1.35-backend.166`
+- Previous rollback release: `0.1.35-backend.165`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -108,7 +130,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.164`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.163`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.166`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.165`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 ## 2026-08-25 `.141` legacy product-limit removal deployment verification
 
@@ -372,7 +394,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.164`; verified rollback `.163` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.166`; verified rollback `.165` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: the current Windows direct release is manifest-driven with JavaScript; the static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Windows installer: current public direct release is `1.8`, installer `LanguageVoiceTutorSetup-1.8.exe`; manifest and independent public-installer hash verification passed.
