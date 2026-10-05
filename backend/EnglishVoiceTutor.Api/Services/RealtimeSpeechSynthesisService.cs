@@ -19,7 +19,7 @@ public sealed class RealtimeSpeechSynthesisService(
     private const int BytesPerSample = 2;
     private const int MaximumEventBytes = 1024 * 1024;
     private const int NonStreamingFirstAudioTimeoutSeconds = 8;
-    private const int NonStreamingMaxAttempts = 2;
+    private const int NonStreamingMaxAttempts = 3;
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
     public async Task<RealtimeSpeechSynthesisResult> CreateSpeechAsync(
@@ -79,6 +79,15 @@ public sealed class RealtimeSpeechSynthesisService(
         logger.LogInformation(
             "Speech renderer started. Operation={Operation}; Transport=realtime_speech; Model={Model}; Voice={Voice}; Purpose={Purpose}; StudyLanguage={StudyLanguage}; RequestedSpeed={RequestedSpeed}; NumericSpeedApplied=False; ProviderSpeechRate=normal; InputCharacters={InputCharacters}; Attempt={Attempt}; MaxAttempts={MaxAttempts}.",
             operation, request.Model, request.Voice, purpose, studyLanguage, request.Speed, request.Input.Length, attempt, maxAttempts);
+
+        void LogRetry(string reason)
+        {
+            var elapsed = _timeProvider.GetElapsedTime(startedAt);
+            logger.LogWarning(
+                "Speech renderer retrying. Transport=realtime_speech; Attempt={Attempt}; MaxAttempts={MaxAttempts}; RetryReason={RetryReason}; Model={Model}; Voice={Voice}; Purpose={Purpose}; PcmBytes={PcmBytes}; ElapsedMs={ElapsedMs}; RemainingOverallBudgetMs={RemainingOverallBudgetMs}.",
+                attempt, maxAttempts, reason, request.Model, request.Voice, purpose, pcmBytes, elapsed.TotalMilliseconds,
+                Math.Max(0, TimeSpan.FromSeconds(OpenAiConstants.OpenAiSpeechTimeoutSeconds).TotalMilliseconds - elapsed.TotalMilliseconds));
+        }
 
         try
         {
@@ -214,16 +223,12 @@ public sealed class RealtimeSpeechSynthesisService(
         }
         catch (Exception exception) when (exception is OperationCanceledException || linked.IsCancellationRequested)
         {
-            // Only a zero-audio startup deadline can retry. The shared overall timer never resets.
+            // A zero-audio startup deadline can retry. The shared overall timer never resets.
             if (!streaming && attempt < maxAttempts && firstAudioTimeout.IsCancellationRequested
                 && firstAudioMs is null && pcmBytes == 0
                 && !clientCancellationToken.IsCancellationRequested && !overallTimeout.IsCancellationRequested)
             {
-                var elapsed = _timeProvider.GetElapsedTime(startedAt);
-                logger.LogWarning(
-                    "Speech renderer retrying. Transport=realtime_speech; Attempt={Attempt}; MaxAttempts={MaxAttempts}; RetryReason={RetryReason}; Model={Model}; Voice={Voice}; Purpose={Purpose}; PcmBytes={PcmBytes}; ElapsedMs={ElapsedMs}; RemainingOverallBudgetMs={RemainingOverallBudgetMs}.",
-                    attempt, maxAttempts, "first_audio_startup_timeout", request.Model, request.Voice, purpose, pcmBytes, elapsed.TotalMilliseconds,
-                    Math.Max(0, TimeSpan.FromSeconds(OpenAiConstants.OpenAiSpeechTimeoutSeconds).TotalMilliseconds - elapsed.TotalMilliseconds));
+                LogRetry("first_audio_startup_timeout");
                 return null; // finally aborts/disposes this socket before another connection is opened.
             }
             var internalTimeout = overallTimeout.IsCancellationRequested || firstAudioTimeout.IsCancellationRequested;
@@ -233,6 +238,13 @@ public sealed class RealtimeSpeechSynthesisService(
                 internalTimeout, firstAudioTimeout.IsCancellationRequested, attempt, maxAttempts);
             throw new AudioSpeechRequestCanceledException("OpenAI speech generation request was canceled.",
                 new OperationCanceledException("Speech renderer canceled."), internalTimeout, clientCancellationToken.IsCancellationRequested);
+        }
+        catch (WebSocketException) when (!streaming && attempt < maxAttempts
+            && firstAudioMs is null && pcmBytes == 0
+            && !clientCancellationToken.IsCancellationRequested && !overallTimeout.IsCancellationRequested)
+        {
+            LogRetry("websocket_transport_failure");
+            return null; // finally cleans up this attempt before the next connection.
         }
         catch (Exception exception)
         {

@@ -401,7 +401,7 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         Assert.Equal(wav.Length, usage.OutputBytes);
         var retry = Assert.Single(fixture.Logger.Entries, entry => entry.Message.Contains("renderer retrying", StringComparison.Ordinal));
         Assert.Equal(1, retry.Fields["Attempt"]);
-        Assert.Equal(2, retry.Fields["MaxAttempts"]);
+        Assert.Equal(3, retry.Fields["MaxAttempts"]);
         Assert.Equal(0L, retry.Fields["PcmBytes"]);
         Assert.Equal("first_audio_startup_timeout", retry.Fields["RetryReason"]);
         Assert.Equal(8000d, retry.Fields["ElapsedMs"]);
@@ -560,13 +560,23 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         AssertSafeLogs(fixture.Logger);
     }
 
-    [Fact]
-    public async Task RetryProviderFailureDoesNotOpenThirdSocket()
+    [Theory]
+    [InlineData("provider-error")]
+    [InlineData("malformed-json")]
+    [InlineData("invalid-base64")]
+    [InlineData("application")]
+    public async Task RetryContentOrApplicationFailureDoesNotOpenThirdSocket(string failure)
     {
         var time = new ManualTimeProvider();
         using var fixture = new Fixture(timeProvider: time);
-        var second = new ScriptedWebSocket([SessionCreated, SessionUpdated, ResponseCreated,
-            Event(new { type = "error", error = new { message = FinalText + TestKey } })]);
+        var failureEvent = failure switch
+        {
+            "malformed-json" => "{invalid " + FinalText + TestKey,
+            "invalid-base64" => Event(new { type = "response.output_audio.delta", delta = "invalid%%%" }),
+            _ => Event(new { type = "error", error = new { message = FinalText + TestKey } })
+        };
+        var second = new ScriptedWebSocket([SessionCreated, SessionUpdated, ResponseCreated, failureEvent]);
+        if (failure == "application") second.BeforeReceive = (_, _) => throw new InvalidOperationException(FinalText + TestKey);
         fixture.Connector.Sockets.Enqueue(second);
         fixture.Socket.BeforeReceive = (_, token) =>
         {
@@ -580,6 +590,235 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         Assert.Empty(fixture.Usage.Records);
         AssertClosed(fixture.Socket, expectCloseFrame: false);
         AssertClosed(second);
+        AssertSafeLogs(fixture.Logger);
+    }
+
+    [Theory]
+    [InlineData("lesson_chat_tts", "Café is ready. Are you joining?", true)]
+    [InlineData("conversation_mode_tts", "Café is ready. Are you joining?", true)]
+    [InlineData("lesson_chat_tts", "Café is ready! Are you joining?", false)]
+    public async Task StartupTimeoutThenZeroAudioTransportFailureRecoversOnThirdAttempt(
+        string purpose, string transcript, bool matches)
+    {
+        var time = new ManualTimeProvider();
+        var abandonedTranscript = Event(new { type = "response.output_audio_transcript.delta", delta = FinalText + TestKey });
+        using var fixture = new Fixture(timeProvider: time,
+            events: [SessionCreated, SessionUpdated, ResponseCreated, Delta([]), abandonedTranscript]);
+        var second = new ScriptedWebSocket([SessionCreated, SessionUpdated, ResponseCreated, Delta([]), abandonedTranscript]);
+        var third = new ScriptedWebSocket(SuccessEvents(transcript, transcriptDone: false));
+        fixture.Connector.Sockets.Enqueue(second);
+        fixture.Connector.Sockets.Enqueue(third);
+        fixture.Connector.BeforeConnect = index =>
+        {
+            if (index >= 1) AssertClosed(fixture.Socket, expectCloseFrame: false);
+            if (index == 2) AssertClosed(second);
+        };
+        fixture.Socket.BeforeReceive = (index, token) =>
+        {
+            if (index == 5)
+            {
+                time.Advance(TimeSpan.FromSeconds(8));
+                token.ThrowIfCancellationRequested();
+            }
+            return Task.CompletedTask;
+        };
+        second.BeforeReceive = (index, _) =>
+        {
+            if (index == 5)
+            {
+                time.Advance(TimeSpan.FromSeconds(1));
+                throw new WebSocketException(FinalText + TestKey);
+            }
+            return Task.CompletedTask;
+        };
+        third.BeforeReceive = (index, token) =>
+        {
+            if (index == 0) time.Advance(TimeSpan.FromSeconds(2));
+            Assert.False(token.IsCancellationRequested);
+            return Task.CompletedTask;
+        };
+
+        var wav = await fixture.Audio.CreateSpeechAsync(FinalText, purpose, speechSpeed: 1.2,
+            instructions: "Speak calmly.", speechVoice: "sage", targetLanguageName: "French",
+            clientCancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(Pcm, wav[44..]);
+        Assert.Equal(44 + Pcm.Length, wav.Length);
+        Assert.Equal(TimeSpan.FromSeconds(11), time.Elapsed);
+        Assert.Equal(3, fixture.Connector.Endpoints.Count);
+        Assert.Single(fixture.Connector.Endpoints.Distinct());
+        Assert.Equal(fixture.Socket.Sent.Select(value => value.GetRawText()), second.Sent.Select(value => value.GetRawText()));
+        Assert.Equal(second.Sent.Select(value => value.GetRawText()), third.Sent.Select(value => value.GetRawText()));
+        var retries = fixture.Logger.Entries.Where(entry => entry.Fields.ContainsKey("RetryReason")).ToArray();
+        Assert.Equal(["first_audio_startup_timeout", "websocket_transport_failure"], retries.Select(entry => entry.Fields["RetryReason"]));
+        Assert.Equal([1, 2], retries.Select(entry => entry.Fields["Attempt"]));
+        Assert.Equal([8000d, 9000d], retries.Select(entry => entry.Fields["ElapsedMs"]));
+        Assert.Equal([12000d, 11000d], retries.Select(entry => entry.Fields["RemainingOverallBudgetMs"]));
+        Assert.All(retries, entry =>
+        {
+            Assert.Equal(3, entry.Fields["MaxAttempts"]);
+            Assert.Equal(0L, entry.Fields["PcmBytes"]);
+            Assert.Equal(OpenAiConstants.RealtimeSpeechSynthesisModel, entry.Fields["Model"]);
+            Assert.Equal("sage", entry.Fields["Voice"]);
+            Assert.Equal(purpose, entry.Fields["Purpose"]);
+        });
+        var completed = Assert.Single(fixture.Logger.Entries, entry => entry.Message.Contains("renderer completed", StringComparison.Ordinal));
+        Assert.Equal(3, completed.Fields["Attempt"]);
+        var fidelity = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("TranscriptMatches"));
+        Assert.Equal(matches, fidelity.Fields["TranscriptMatches"]);
+        Assert.Equal(transcript.Length, fidelity.Fields["TranscriptCharacters"]);
+        Assert.Equal(matches ? LogLevel.Information : LogLevel.Warning, fidelity.Level);
+        var usage = Assert.Single(fixture.Usage.Records);
+        Assert.Equal(UsageConstants.Statuses.Success, usage.Status);
+        Assert.Equal(UsageConstants.Operations.Tts, usage.Operation);
+        Assert.Equal("French", usage.StudyLanguage);
+        Assert.Equal(wav.Length, usage.OutputBytes);
+        Assert.Equal(10, usage.InputTokens);
+        Assert.Equal(8, usage.OutputTokens);
+        Assert.Equal(6, usage.AudioOutputTokens);
+        var providerUsage = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("CachedInputTokens"));
+        Assert.Equal(true, providerUsage.Fields["HasExactUsage"]);
+        Assert.Equal(18L, providerUsage.Fields["TotalTokens"]);
+        AssertClosed(third);
+        AssertSafeLogs(fixture.Logger, transcript);
+    }
+
+    [Fact]
+    public async Task ZeroAudioTransportFailuresOnAllThreeAttemptsNeverOpenFourthSocket()
+    {
+        using var fixture = new Fixture();
+        var second = new ScriptedWebSocket(SuccessEvents(FinalText));
+        var third = new ScriptedWebSocket(SuccessEvents(FinalText));
+        fixture.Connector.Sockets.Enqueue(second);
+        fixture.Connector.Sockets.Enqueue(third);
+        foreach (var socket in new[] { fixture.Socket, second, third })
+            socket.BeforeReceive = (_, _) => throw new WebSocketException(FinalText + TestKey);
+        fixture.Connector.BeforeConnect = index =>
+        {
+            if (index >= 1) AssertClosed(fixture.Socket);
+            if (index == 2) AssertClosed(second);
+        };
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => fixture.Audio.CreateSpeechAsync(
+            FinalText, clientCancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(3, fixture.Connector.Endpoints.Count);
+        Assert.Equal(2, fixture.Logger.Entries.Count(entry => entry.Fields.ContainsKey("RetryReason")));
+        var failure = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("FailureKind"));
+        Assert.Equal(nameof(WebSocketException), failure.Fields["FailureKind"]);
+        Assert.Equal(3, failure.Fields["Attempt"]);
+        Assert.DoesNotContain(FinalText, exception.ToString());
+        Assert.DoesNotContain(TestKey, exception.ToString());
+        Assert.Empty(fixture.Usage.Records);
+        AssertClosed(third);
+        AssertSafeLogs(fixture.Logger);
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task TransportFailureNeverRetriesAfterAudioOrForStreaming(bool streaming, bool afterAudio)
+    {
+        using var fixture = new Fixture();
+        fixture.Socket.BeforeReceive = (index, _) =>
+        {
+            if (index == (afterAudio ? 4 : 3)) throw new WebSocketException(FinalText + TestKey);
+            return Task.CompletedTask;
+        };
+        await using var output = new MemoryStream();
+        await Assert.ThrowsAsync<HttpRequestException>(async () =>
+        {
+            if (streaming) await fixture.Audio.StreamSpeechAsync(FinalText, output, clientCancellationToken: TestContext.Current.CancellationToken);
+            else await fixture.Audio.CreateSpeechAsync(FinalText, clientCancellationToken: TestContext.Current.CancellationToken);
+        });
+        Assert.Single(fixture.Connector.Endpoints);
+        Assert.DoesNotContain(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("RetryReason"));
+        Assert.Equal(streaming && afterAudio ? Pcm[..4] : [], output.ToArray());
+        var failure = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("FailureKind"));
+        Assert.Equal(afterAudio ? 4L : 0L, failure.Fields["PcmBytes"]);
+        Assert.Equal(streaming ? 1 : 3, failure.Fields["MaxAttempts"]);
+        Assert.Empty(fixture.Usage.Records);
+        AssertClosed(fixture.Socket);
+        AssertSafeLogs(fixture.Logger);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task TransportFailureCannotRetryWhenClientOrOverallCancellationOccurs(bool overall, bool duringCleanup)
+    {
+        var time = new ManualTimeProvider();
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        using var fixture = new Fixture(timeProvider: time);
+        var second = new ScriptedWebSocket(SuccessEvents(FinalText));
+        fixture.Connector.Sockets.Enqueue(second);
+        fixture.Socket.BeforeReceive = (_, token) =>
+        {
+            time.Advance(TimeSpan.FromSeconds(8));
+            token.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        void Cancel()
+        {
+            if (overall) time.Advance(TimeSpan.FromSeconds(12));
+            else cancellation.Cancel();
+        }
+        second.BeforeReceive = (_, _) =>
+        {
+            if (!duringCleanup) Cancel();
+            throw new WebSocketException(FinalText + TestKey);
+        };
+        if (duringCleanup) second.OnDispose = Cancel;
+        var exception = await Assert.ThrowsAsync<AudioSpeechRequestCanceledException>(() => fixture.Audio.CreateSpeechAsync(
+            FinalText, clientCancellationToken: cancellation.Token));
+        Assert.Equal(overall, exception.InternalTimeoutReached);
+        Assert.Equal(!overall, exception.ClientCancellationRequested);
+        Assert.Equal(2, fixture.Connector.Endpoints.Count);
+        Assert.Equal(duringCleanup ? 2 : 1, fixture.Logger.Entries.Count(entry => entry.Fields.ContainsKey("RetryReason")));
+        Assert.Empty(fixture.Usage.Records);
+        AssertClosed(fixture.Socket, expectCloseFrame: false);
+        AssertClosed(second, expectCloseFrame: duringCleanup);
+        AssertSafeLogs(fixture.Logger);
+    }
+
+    [Fact]
+    public async Task ThirdAttemptUsesRemainingSharedBudgetAndHasNoNewStartupDeadline()
+    {
+        var time = new ManualTimeProvider();
+        using var fixture = new Fixture(timeProvider: time);
+        var second = new ScriptedWebSocket(SuccessEvents(FinalText));
+        var third = new ScriptedWebSocket(SuccessEvents(FinalText));
+        fixture.Connector.Sockets.Enqueue(second);
+        fixture.Connector.Sockets.Enqueue(third);
+        fixture.Socket.BeforeReceive = (_, token) =>
+        {
+            time.Advance(TimeSpan.FromSeconds(8));
+            token.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        second.BeforeReceive = (_, _) =>
+        {
+            time.Advance(TimeSpan.FromSeconds(1));
+            throw new WebSocketException(FinalText + TestKey);
+        };
+        third.BeforeReceive = (_, token) =>
+        {
+            time.Advance(TimeSpan.FromSeconds(10));
+            Assert.False(token.IsCancellationRequested); // Neither retry receives a new 8-second deadline.
+            Assert.Equal(TimeSpan.FromSeconds(19), time.Elapsed);
+            time.Advance(TimeSpan.FromSeconds(1));
+            throw new WebSocketException(FinalText + TestKey);
+        };
+        var exception = await Assert.ThrowsAsync<AudioSpeechRequestCanceledException>(() => fixture.Audio.CreateSpeechAsync(
+            FinalText, clientCancellationToken: TestContext.Current.CancellationToken));
+        Assert.True(exception.InternalTimeoutReached);
+        Assert.False(exception.ClientCancellationRequested);
+        Assert.Equal(TimeSpan.FromSeconds(OpenAiConstants.OpenAiSpeechTimeoutSeconds), time.Elapsed);
+        Assert.Equal(3, fixture.Connector.Endpoints.Count);
+        Assert.Empty(fixture.Usage.Records);
+        AssertClosed(fixture.Socket, expectCloseFrame: false);
+        AssertClosed(second);
+        AssertClosed(third, expectCloseFrame: false);
         AssertSafeLogs(fixture.Logger);
     }
 
@@ -693,10 +932,12 @@ public sealed class RealtimeSpeechSynthesisServiceTests
     {
         public Queue<WebSocket> Sockets { get; } = new([socket]);
         public List<Uri> Endpoints { get; } = [];
+        public Action<int>? BeforeConnect { get; set; }
         public Task<WebSocket> ConnectAsync(Uri endpoint, string apiKey, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             Assert.Equal(TestKey, apiKey);
+            BeforeConnect?.Invoke(Endpoints.Count);
             Endpoints.Add(endpoint);
             return Task.FromResult(Sockets.Dequeue());
         }
