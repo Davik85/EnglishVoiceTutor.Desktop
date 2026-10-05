@@ -138,6 +138,8 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         Assert.Equal(Pcm.Length, BinaryPrimitives.ReadInt32LittleEndian(wav.AsSpan(40)));
         Assert.Equal(Pcm, wav[44..]);
         Assert.Equal(wav.Length, Assert.Single(fixture.Usage.Records).OutputBytes);
+        Assert.Single(fixture.Connector.Endpoints);
+        Assert.DoesNotContain(fixture.Logger.Entries, entry => entry.Message.Contains("renderer retrying", StringComparison.Ordinal));
         AssertClosed(fixture.Socket);
     }
 
@@ -314,6 +316,7 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         });
         Assert.True(exception.ClientCancellationRequested);
         Assert.False(exception.InternalTimeoutReached);
+        Assert.Single(fixture.Connector.Endpoints);
         AssertClosed(fixture.Socket, expectCloseFrame: false);
     }
 
@@ -343,8 +346,241 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         Assert.True(exception.InternalTimeoutReached);
         Assert.False(exception.ClientCancellationRequested);
         var diagnostic = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("FirstAudioTimeoutReached"));
-        Assert.Equal(streaming && !afterAudio, diagnostic.Fields["FirstAudioTimeoutReached"]);
+        Assert.Equal(!afterAudio, diagnostic.Fields["FirstAudioTimeoutReached"]);
+        Assert.Single(fixture.Connector.Endpoints);
         AssertClosed(fixture.Socket, expectCloseFrame: false);
+    }
+
+    [Theory]
+    [InlineData("lesson_chat_tts", "Café is ready. Are you joining?", true)]
+    [InlineData("conversation_mode_tts", "Café is ready. Are you joining?", true)]
+    [InlineData("lesson_chat_tts", "Café is ready! Are you joining?", false)]
+    public async Task ZeroAudioStartupRetriesOnceWithIdenticalSpeechAndSingleSuccessfulUsage(
+        string purpose, string transcript, bool transcriptMatches)
+    {
+        var time = new ManualTimeProvider();
+        using var fixture = new Fixture(timeProvider: time, events: [SessionCreated, SessionUpdated, ResponseCreated,
+            Delta([]), Event(new { type = "response.output_audio_transcript.delta", delta = "Abandoned attempt transcript" })]);
+        var second = new ScriptedWebSocket(SuccessEvents(transcript, transcriptDone: false));
+        fixture.Connector.Sockets.Enqueue(second);
+        fixture.Socket.BeforeReceive = (index, token) =>
+        {
+            if (index == 5)
+            {
+                time.Advance(TimeSpan.FromMilliseconds(7999));
+                Assert.False(token.IsCancellationRequested);
+                time.Advance(TimeSpan.FromMilliseconds(1));
+                token.ThrowIfCancellationRequested();
+            }
+            return Task.CompletedTask;
+        };
+        second.BeforeReceive = (_, _) =>
+        {
+            AssertClosed(fixture.Socket, expectCloseFrame: false);
+            return Task.CompletedTask;
+        };
+
+        var wav = await fixture.Audio.CreateSpeechAsync(FinalText, purpose, speechSpeed: 1.2,
+            instructions: "Speak calmly.", speechVoice: "sage", targetLanguageName: "French",
+            clientCancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(Pcm, wav[44..]);
+        Assert.Equal(44 + Pcm.Length, wav.Length);
+        Assert.Equal(2, fixture.Connector.Endpoints.Count);
+        Assert.Equal(fixture.Connector.Endpoints[0], fixture.Connector.Endpoints[1]);
+        Assert.Equal(fixture.Socket.Sent.Select(value => value.GetRawText()), second.Sent.Select(value => value.GetRawText()));
+        var usage = Assert.Single(fixture.Usage.Records);
+        Assert.Equal(UsageConstants.Statuses.Success, usage.Status);
+        Assert.Equal(UsageConstants.Operations.Tts, usage.Operation);
+        Assert.Equal(OpenAiConstants.RealtimeSpeechSynthesisModel, usage.Model);
+        Assert.Equal("French", usage.StudyLanguage);
+        Assert.Equal(10, usage.InputTokens);
+        Assert.Equal(8, usage.OutputTokens);
+        Assert.Equal(0, usage.AudioInputTokens);
+        Assert.Equal(6, usage.AudioOutputTokens);
+        Assert.Equal(wav.Length, usage.OutputBytes);
+        var retry = Assert.Single(fixture.Logger.Entries, entry => entry.Message.Contains("renderer retrying", StringComparison.Ordinal));
+        Assert.Equal(1, retry.Fields["Attempt"]);
+        Assert.Equal(2, retry.Fields["MaxAttempts"]);
+        Assert.Equal(0L, retry.Fields["PcmBytes"]);
+        Assert.Equal("first_audio_startup_timeout", retry.Fields["RetryReason"]);
+        Assert.Equal(8000d, retry.Fields["ElapsedMs"]);
+        Assert.Equal(12000d, retry.Fields["RemainingOverallBudgetMs"]);
+        var completed = Assert.Single(fixture.Logger.Entries, entry => entry.Message.Contains("renderer completed", StringComparison.Ordinal));
+        Assert.Equal(2, completed.Fields["Attempt"]);
+        var fidelity = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("TranscriptMatches"));
+        Assert.Equal(transcriptMatches, fidelity.Fields["TranscriptMatches"]);
+        Assert.Equal(transcriptMatches ? LogLevel.Information : LogLevel.Warning, fidelity.Level);
+        var providerUsage = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("CachedInputTokens"));
+        Assert.Equal(true, providerUsage.Fields["HasExactUsage"]);
+        Assert.Equal(18L, providerUsage.Fields["TotalTokens"]);
+        Assert.Equal(2L, providerUsage.Fields["CachedInputTokens"]);
+        AssertClosed(second);
+        AssertSafeLogs(fixture.Logger, transcript);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RetrySharesOriginalOverallDeadlineEvenAfterSecondAttemptAudio(bool afterAudio)
+    {
+        var time = new ManualTimeProvider();
+        using var fixture = new Fixture(timeProvider: time);
+        var second = new ScriptedWebSocket(SuccessEvents(FinalText));
+        fixture.Connector.Sockets.Enqueue(second);
+        fixture.Socket.BeforeReceive = (_, token) =>
+        {
+            time.Advance(TimeSpan.FromSeconds(8));
+            token.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        second.BeforeReceive = (index, token) =>
+        {
+            if (index == (afterAudio ? 4 : 0))
+            {
+                AssertClosed(fixture.Socket, expectCloseFrame: false);
+                time.Advance(TimeSpan.FromSeconds(11));
+                Assert.False(token.IsCancellationRequested); // Attempt 2 has no new first-audio deadline.
+                Assert.Equal(TimeSpan.FromSeconds(19), time.Elapsed);
+                time.Advance(TimeSpan.FromSeconds(1));
+                token.ThrowIfCancellationRequested();
+            }
+            return Task.CompletedTask;
+        };
+
+        var exception = await Assert.ThrowsAsync<AudioSpeechRequestCanceledException>(() => fixture.Audio.CreateSpeechAsync(
+            FinalText, clientCancellationToken: TestContext.Current.CancellationToken));
+        Assert.True(exception.InternalTimeoutReached);
+        Assert.False(exception.ClientCancellationRequested);
+        Assert.Equal(TimeSpan.FromSeconds(OpenAiConstants.OpenAiSpeechTimeoutSeconds), time.Elapsed);
+        Assert.Equal(2, fixture.Connector.Endpoints.Count);
+        Assert.Empty(fixture.Usage.Records);
+        var canceled = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("InternalTimeoutReached"));
+        Assert.Equal(2, canceled.Fields["Attempt"]);
+        Assert.Equal(false, canceled.Fields["FirstAudioTimeoutReached"]);
+        Assert.Equal(afterAudio ? 4L : 0L, canceled.Fields["PcmBytes"]);
+        AssertClosed(fixture.Socket, expectCloseFrame: false);
+        AssertClosed(second, expectCloseFrame: false);
+        AssertSafeLogs(fixture.Logger);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NonStreamingFailureAfterPcmNeverRetriesOrReturnsPartialWav(bool timeout)
+    {
+        var time = new ManualTimeProvider();
+        using var fixture = new Fixture(timeProvider: time, events: [SessionCreated, SessionUpdated, ResponseCreated, Delta(Pcm[..4]), null]);
+        fixture.Socket.BeforeReceive = (index, token) =>
+        {
+            if (index == 4)
+            {
+                time.Advance(TimeSpan.FromSeconds(8));
+                Assert.False(token.IsCancellationRequested); // First PCM disables the startup timer.
+                if (timeout)
+                {
+                    time.Advance(TimeSpan.FromSeconds(12));
+                    token.ThrowIfCancellationRequested();
+                }
+            }
+            return Task.CompletedTask;
+        };
+        if (timeout)
+        {
+            var exception = await Assert.ThrowsAsync<AudioSpeechRequestCanceledException>(() => fixture.Audio.CreateSpeechAsync(
+                FinalText, clientCancellationToken: TestContext.Current.CancellationToken));
+            Assert.True(exception.InternalTimeoutReached);
+        }
+        else
+        {
+            await Assert.ThrowsAsync<HttpRequestException>(() => fixture.Audio.CreateSpeechAsync(
+                FinalText, clientCancellationToken: TestContext.Current.CancellationToken));
+        }
+        Assert.Single(fixture.Connector.Endpoints);
+        Assert.Empty(fixture.Usage.Records);
+        Assert.DoesNotContain(fixture.Logger.Entries, entry => entry.Message.Contains("renderer retrying", StringComparison.Ordinal));
+        var failure = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("PcmBytes"));
+        Assert.Equal(4L, failure.Fields["PcmBytes"]);
+        AssertClosed(fixture.Socket, expectCloseFrame: !timeout);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CancellationWinsStartupDeadlineAndNeverOpensRetry(bool duringCleanup)
+    {
+        var time = new ManualTimeProvider();
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        using var fixture = new Fixture(timeProvider: time);
+        fixture.Socket.BeforeReceive = (_, token) =>
+        {
+            if (!duringCleanup) cancellation.Cancel();
+            time.Advance(TimeSpan.FromSeconds(8));
+            token.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        if (duringCleanup) fixture.Socket.OnDispose = cancellation.Cancel;
+        var exception = await Assert.ThrowsAsync<AudioSpeechRequestCanceledException>(() => fixture.Audio.CreateSpeechAsync(
+            FinalText, clientCancellationToken: cancellation.Token));
+        Assert.True(exception.ClientCancellationRequested);
+        Assert.Equal(!duringCleanup, exception.InternalTimeoutReached);
+        Assert.Single(fixture.Connector.Endpoints);
+        AssertClosed(fixture.Socket, expectCloseFrame: false);
+        Assert.Empty(fixture.Usage.Records);
+    }
+
+    [Fact]
+    public async Task ClientCancellationDuringRetryAbortsSecondSocketWithoutAnotherAttempt()
+    {
+        var time = new ManualTimeProvider();
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        using var fixture = new Fixture(timeProvider: time);
+        var second = new ScriptedWebSocket(SuccessEvents(FinalText));
+        fixture.Connector.Sockets.Enqueue(second);
+        fixture.Socket.BeforeReceive = (_, token) =>
+        {
+            time.Advance(TimeSpan.FromSeconds(8));
+            token.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        second.BeforeReceive = (_, token) =>
+        {
+            cancellation.Cancel();
+            token.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        var exception = await Assert.ThrowsAsync<AudioSpeechRequestCanceledException>(() => fixture.Audio.CreateSpeechAsync(
+            FinalText, clientCancellationToken: cancellation.Token));
+        Assert.True(exception.ClientCancellationRequested);
+        Assert.False(exception.InternalTimeoutReached);
+        Assert.Equal(2, fixture.Connector.Endpoints.Count);
+        AssertClosed(fixture.Socket, expectCloseFrame: false);
+        AssertClosed(second, expectCloseFrame: false);
+        Assert.Empty(fixture.Usage.Records);
+        AssertSafeLogs(fixture.Logger);
+    }
+
+    [Fact]
+    public async Task RetryProviderFailureDoesNotOpenThirdSocket()
+    {
+        var time = new ManualTimeProvider();
+        using var fixture = new Fixture(timeProvider: time);
+        var second = new ScriptedWebSocket([SessionCreated, SessionUpdated, ResponseCreated,
+            Event(new { type = "error", error = new { message = FinalText + TestKey } })]);
+        fixture.Connector.Sockets.Enqueue(second);
+        fixture.Socket.BeforeReceive = (_, token) =>
+        {
+            time.Advance(TimeSpan.FromSeconds(8));
+            token.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        await Assert.ThrowsAsync<HttpRequestException>(() => fixture.Audio.CreateSpeechAsync(
+            FinalText, clientCancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(2, fixture.Connector.Endpoints.Count);
+        Assert.Empty(fixture.Usage.Records);
+        AssertClosed(fixture.Socket, expectCloseFrame: false);
+        AssertClosed(second);
+        AssertSafeLogs(fixture.Logger);
     }
 
     [Fact]
@@ -480,13 +716,14 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         public bool Aborted { get; private set; }
         public bool CloseFrameSent { get; private set; }
         public bool DoneReceived { get; private set; }
+        public Action? OnDispose { get; set; }
         public int ActiveReceives { get; private set; }
         public override WebSocketCloseStatus? CloseStatus => _state == WebSocketState.CloseReceived ? WebSocketCloseStatus.NormalClosure : null;
         public override string? CloseStatusDescription => FinalText + TestKey;
         public override WebSocketState State => _state;
         public override string? SubProtocol => null;
         public override void Abort() { Aborted = true; _state = WebSocketState.Aborted; }
-        public override void Dispose() { Disposed = true; _state = WebSocketState.Closed; }
+        public override void Dispose() { Disposed = true; _state = WebSocketState.Closed; OnDispose?.Invoke(); }
         public override Task CloseAsync(WebSocketCloseStatus closeStatus, string? statusDescription, CancellationToken cancellationToken) => CloseOutputAsync(closeStatus, statusDescription, cancellationToken);
         public override Task CloseOutputAsync(WebSocketCloseStatus closeStatus, string? statusDescription, CancellationToken cancellationToken)
         {
@@ -570,6 +807,9 @@ public sealed class RealtimeSpeechSynthesisServiceTests
     {
         private readonly List<ManualTimer> _timers = [];
         private TimeSpan _elapsed;
+        public TimeSpan Elapsed => _elapsed;
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+        public override long GetTimestamp() => _elapsed.Ticks;
         public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
         {
             var timer = new ManualTimer(this, callback, state);

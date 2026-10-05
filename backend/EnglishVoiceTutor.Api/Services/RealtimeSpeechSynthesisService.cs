@@ -18,6 +18,8 @@ public sealed class RealtimeSpeechSynthesisService(
     private const int SampleRate = OpenAiConstants.RealtimeOutputAudioSampleRate;
     private const int BytesPerSample = 2;
     private const int MaximumEventBytes = 1024 * 1024;
+    private const int NonStreamingFirstAudioTimeoutSeconds = 8;
+    private const int NonStreamingMaxAttempts = 2;
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
     public async Task<RealtimeSpeechSynthesisResult> CreateSpeechAsync(
@@ -41,12 +43,29 @@ public sealed class RealtimeSpeechSynthesisService(
     {
         using var overallTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(streaming
             ? OpenAiConstants.BotVoiceStreamOverallTimeoutSeconds : OpenAiConstants.OpenAiSpeechTimeoutSeconds), _timeProvider);
-        using var firstAudioTimeout = streaming
-            ? new CancellationTokenSource(TimeSpan.FromSeconds(OpenAiConstants.BotVoiceFirstAudioTimeoutSeconds), _timeProvider)
+        var stopwatch = Stopwatch.StartNew();
+        var startedAt = _timeProvider.GetTimestamp();
+        var maxAttempts = streaming ? 1 : NonStreamingMaxAttempts;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            var result = await SynthesizeAttemptAsync(request, apiKey, purpose, studyLanguage, output,
+                streaming, clientCancellationToken, overallTimeout, stopwatch, startedAt, attempt, maxAttempts);
+            if (result is not null) return result;
+        }
+        throw ProviderFailure();
+    }
+
+    private async Task<SynthesisResult?> SynthesizeAttemptAsync(
+        OpenAiAudioSpeechRequest request, string apiKey, string purpose, string? studyLanguage, Stream output,
+        bool streaming, CancellationToken clientCancellationToken, CancellationTokenSource overallTimeout,
+        Stopwatch stopwatch, long startedAt, int attempt, int maxAttempts)
+    {
+        using var firstAudioTimeout = streaming || attempt == 1
+            ? new CancellationTokenSource(TimeSpan.FromSeconds(streaming
+                ? OpenAiConstants.BotVoiceFirstAudioTimeoutSeconds : NonStreamingFirstAudioTimeoutSeconds), _timeProvider)
             : new CancellationTokenSource();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(
             clientCancellationToken, overallTimeout.Token, firstAudioTimeout.Token);
-        var stopwatch = Stopwatch.StartNew();
         WebSocket? socket = null;
         long? connectedMs = null;
         long? firstAudioMs = null;
@@ -58,11 +77,12 @@ public sealed class RealtimeSpeechSynthesisService(
         var operation = streaming ? "tts_stream" : UsageConstants.Operations.Tts;
 
         logger.LogInformation(
-            "Speech renderer started. Operation={Operation}; Transport=realtime_speech; Model={Model}; Voice={Voice}; Purpose={Purpose}; StudyLanguage={StudyLanguage}; RequestedSpeed={RequestedSpeed}; NumericSpeedApplied=False; ProviderSpeechRate=normal; InputCharacters={InputCharacters}.",
-            operation, request.Model, request.Voice, purpose, studyLanguage, request.Speed, request.Input.Length);
+            "Speech renderer started. Operation={Operation}; Transport=realtime_speech; Model={Model}; Voice={Voice}; Purpose={Purpose}; StudyLanguage={StudyLanguage}; RequestedSpeed={RequestedSpeed}; NumericSpeedApplied=False; ProviderSpeechRate=normal; InputCharacters={InputCharacters}; Attempt={Attempt}; MaxAttempts={MaxAttempts}.",
+            operation, request.Model, request.Voice, purpose, studyLanguage, request.Speed, request.Input.Length, attempt, maxAttempts);
 
         try
         {
+            linked.Token.ThrowIfCancellationRequested();
             socket = await connector.ConnectAsync(new Uri(EndpointBase + Uri.EscapeDataString(request.Model)), apiKey, linked.Token);
             using var abortOnCancellation = linked.Token.Register(socket.Abort);
             connectedMs = stopwatch.ElapsedMilliseconds;
@@ -88,6 +108,7 @@ public sealed class RealtimeSpeechSynthesisService(
             while (true)
             {
                 using var message = await ReceiveAsync(socket, linked.Token);
+                linked.Token.ThrowIfCancellationRequested();
                 var root = message.RootElement;
                 var type = RequiredString(root, "type");
                 if (root.TryGetProperty("response", out var responseState)
@@ -171,9 +192,9 @@ public sealed class RealtimeSpeechSynthesisService(
                             "Speech transcript fidelity. Transport=realtime_speech; Model={Model}; Purpose={Purpose}; InputCharacters={InputCharacters}; TranscriptCharacters={TranscriptCharacters}; TranscriptMatches={TranscriptMatches}.",
                             request.Model, purpose, request.Input.Length, transcript.Length, matches);
                         logger.LogInformation(
-                            "Speech renderer completed. Operation={Operation}; Transport=realtime_speech; Model={Model}; Voice={Voice}; Purpose={Purpose}; ResponseId={ResponseId}; CompletionState=completed; FirstAudioDeltaMs={FirstAudioDeltaMs}; PcmBytes={PcmBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; TotalMs={TotalMs}.",
+                            "Speech renderer completed. Operation={Operation}; Transport=realtime_speech; Model={Model}; Voice={Voice}; Purpose={Purpose}; ResponseId={ResponseId}; CompletionState=completed; FirstAudioDeltaMs={FirstAudioDeltaMs}; PcmBytes={PcmBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; TotalMs={TotalMs}; Attempt={Attempt}; MaxAttempts={MaxAttempts}.",
                             operation, request.Model, request.Voice, purpose, responseId, firstAudioMs, pcmBytes,
-                            pcmBytes / (double)(SampleRate * BytesPerSample), stopwatch.ElapsedMilliseconds);
+                            pcmBytes / (double)(SampleRate * BytesPerSample), stopwatch.ElapsedMilliseconds, attempt, maxAttempts);
                         logger.LogInformation(
                             "Developer usage summary. Operation={Operation}; Transport=realtime_speech; Model={Model}; Purpose={Purpose}; InputTokens={InputTokens}; OutputTokens={OutputTokens}; TotalTokens={TotalTokens}; CachedInputTokens={CachedInputTokens}; AudioInputTokens={AudioInputTokens}; AudioOutputTokens={AudioOutputTokens}; HasExactUsage={HasExactUsage}; CostEstimateApproximate=True; MissingCostFields=realtime_pricing.",
                             operation, request.Model, purpose, usage.InputTokens, usage.OutputTokens, usage.TotalTokens,
@@ -193,19 +214,31 @@ public sealed class RealtimeSpeechSynthesisService(
         }
         catch (Exception exception) when (exception is OperationCanceledException || linked.IsCancellationRequested)
         {
+            // Only a zero-audio startup deadline can retry. The shared overall timer never resets.
+            if (!streaming && attempt < maxAttempts && firstAudioTimeout.IsCancellationRequested
+                && firstAudioMs is null && pcmBytes == 0
+                && !clientCancellationToken.IsCancellationRequested && !overallTimeout.IsCancellationRequested)
+            {
+                var elapsed = _timeProvider.GetElapsedTime(startedAt);
+                logger.LogWarning(
+                    "Speech renderer retrying. Transport=realtime_speech; Attempt={Attempt}; MaxAttempts={MaxAttempts}; RetryReason={RetryReason}; Model={Model}; Voice={Voice}; Purpose={Purpose}; PcmBytes={PcmBytes}; ElapsedMs={ElapsedMs}; RemainingOverallBudgetMs={RemainingOverallBudgetMs}.",
+                    attempt, maxAttempts, "first_audio_startup_timeout", request.Model, request.Voice, purpose, pcmBytes, elapsed.TotalMilliseconds,
+                    Math.Max(0, TimeSpan.FromSeconds(OpenAiConstants.OpenAiSpeechTimeoutSeconds).TotalMilliseconds - elapsed.TotalMilliseconds));
+                return null; // finally aborts/disposes this socket before another connection is opened.
+            }
             var internalTimeout = overallTimeout.IsCancellationRequested || firstAudioTimeout.IsCancellationRequested;
             logger.LogWarning(
-                "Speech renderer canceled. Transport=realtime_speech; Model={Model}; Voice={Voice}; Purpose={Purpose}; PcmBytes={PcmBytes}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; FirstAudioTimeoutReached={FirstAudioTimeoutReached}.",
+                "Speech renderer canceled. Transport=realtime_speech; Model={Model}; Voice={Voice}; Purpose={Purpose}; PcmBytes={PcmBytes}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; FirstAudioTimeoutReached={FirstAudioTimeoutReached}; Attempt={Attempt}; MaxAttempts={MaxAttempts}.",
                 request.Model, request.Voice, purpose, pcmBytes, clientCancellationToken.IsCancellationRequested,
-                internalTimeout, firstAudioTimeout.IsCancellationRequested);
+                internalTimeout, firstAudioTimeout.IsCancellationRequested, attempt, maxAttempts);
             throw new AudioSpeechRequestCanceledException("OpenAI speech generation request was canceled.",
                 new OperationCanceledException("Speech renderer canceled."), internalTimeout, clientCancellationToken.IsCancellationRequested);
         }
         catch (Exception exception)
         {
             // Provider error bodies, JSON values, close descriptions and exception messages may contain text.
-            logger.LogWarning("Speech renderer failed. Transport=realtime_speech; Model={Model}; Voice={Voice}; Purpose={Purpose}; CompletionState=failed; FailureKind={FailureKind}; PcmBytes={PcmBytes}.",
-                request.Model, request.Voice, purpose, exception.GetType().Name, pcmBytes);
+            logger.LogWarning("Speech renderer failed. Transport=realtime_speech; Model={Model}; Voice={Voice}; Purpose={Purpose}; CompletionState=failed; FailureKind={FailureKind}; PcmBytes={PcmBytes}; Attempt={Attempt}; MaxAttempts={MaxAttempts}.",
+                request.Model, request.Voice, purpose, exception.GetType().Name, pcmBytes, attempt, maxAttempts);
             throw ProviderFailure();
         }
         finally
@@ -217,7 +250,11 @@ public sealed class RealtimeSpeechSynthesisService(
                     if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
                     {
                         // Send the close frame without starting another receive loop or waiting for its peer.
-                        using var closeTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+                        using var closeTimeout = streaming
+                            ? new CancellationTokenSource(TimeSpan.FromSeconds(1))
+                            : CancellationTokenSource.CreateLinkedTokenSource(clientCancellationToken, overallTimeout.Token);
+                        if (!streaming) closeTimeout.CancelAfter(TimeSpan.FromSeconds(1));
+                        using var abortOnCloseCancellation = (streaming ? CancellationToken.None : closeTimeout.Token).Register(socket.Abort);
                         await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "speech_finished", closeTimeout.Token);
                     }
                 }
