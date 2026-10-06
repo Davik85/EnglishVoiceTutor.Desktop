@@ -419,10 +419,8 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         AssertSafeLogs(fixture.Logger, transcript);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task RetrySharesOriginalOverallDeadlineEvenAfterSecondAttemptAudio(bool afterAudio)
+    [Fact]
+    public async Task RetrySharesOriginalOverallDeadlineAfterSecondAttemptAudio()
     {
         var time = new ManualTimeProvider();
         using var fixture = new Fixture(timeProvider: time);
@@ -436,11 +434,11 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         };
         second.BeforeReceive = (index, token) =>
         {
-            if (index == (afterAudio ? 4 : 0))
+            if (index == 4)
             {
                 AssertClosed(fixture.Socket, expectCloseFrame: false);
                 time.Advance(TimeSpan.FromSeconds(11));
-                Assert.False(token.IsCancellationRequested); // Attempt 2 has no new first-audio deadline.
+                Assert.False(token.IsCancellationRequested); // Attempt 2 PCM disables its startup deadline.
                 Assert.Equal(TimeSpan.FromSeconds(19), time.Elapsed);
                 time.Advance(TimeSpan.FromSeconds(1));
                 token.ThrowIfCancellationRequested();
@@ -458,9 +456,116 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         var canceled = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("InternalTimeoutReached"));
         Assert.Equal(2, canceled.Fields["Attempt"]);
         Assert.Equal(false, canceled.Fields["FirstAudioTimeoutReached"]);
-        Assert.Equal(afterAudio ? 4L : 0L, canceled.Fields["PcmBytes"]);
+        Assert.Equal(4L, canceled.Fields["PcmBytes"]);
         AssertClosed(fixture.Socket, expectCloseFrame: false);
         AssertClosed(second, expectCloseFrame: false);
+        AssertSafeLogs(fixture.Logger);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BothZeroAudioStartupDeadlinesLeaveThirdAttemptOnlyOriginalRemainingBudget(bool thirdSucceeds)
+    {
+        var time = new ManualTimeProvider();
+        using var fixture = new Fixture(timeProvider: time);
+        var second = new ScriptedWebSocket(SuccessEvents(FinalText));
+        var third = new ScriptedWebSocket(SuccessEvents(FinalText));
+        fixture.Connector.Sockets.Enqueue(second);
+        fixture.Connector.Sockets.Enqueue(third);
+        fixture.Connector.BeforeConnect = index =>
+        {
+            if (index >= 1) AssertClosed(fixture.Socket, expectCloseFrame: false);
+            if (index == 2) AssertClosed(second, expectCloseFrame: false);
+        };
+        fixture.Socket.BeforeReceive = (_, token) =>
+        {
+            time.Advance(TimeSpan.FromMilliseconds(7999));
+            Assert.False(token.IsCancellationRequested);
+            time.Advance(TimeSpan.FromMilliseconds(1));
+            token.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        second.BeforeReceive = (_, token) =>
+        {
+            time.Advance(TimeSpan.FromMilliseconds(5999));
+            Assert.False(token.IsCancellationRequested);
+            time.Advance(TimeSpan.FromMilliseconds(1));
+            token.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        third.BeforeReceive = (index, token) =>
+        {
+            if (index == 0)
+            {
+                Assert.Equal(TimeSpan.FromSeconds(14), time.Elapsed);
+                time.Advance(TimeSpan.FromMilliseconds(5999));
+                Assert.False(token.IsCancellationRequested);
+                if (!thirdSucceeds)
+                {
+                    time.Advance(TimeSpan.FromMilliseconds(1));
+                    token.ThrowIfCancellationRequested();
+                }
+            }
+            return Task.CompletedTask;
+        };
+
+        if (thirdSucceeds)
+        {
+            var wav = await fixture.Audio.CreateSpeechAsync(FinalText, clientCancellationToken: TestContext.Current.CancellationToken);
+            Assert.Equal(Pcm, wav[44..]);
+            Assert.Single(fixture.Usage.Records);
+            Assert.Equal(TimeSpan.FromMilliseconds(19999), time.Elapsed);
+        }
+        else
+        {
+            var exception = await Assert.ThrowsAsync<AudioSpeechRequestCanceledException>(() => fixture.Audio.CreateSpeechAsync(
+                FinalText, clientCancellationToken: TestContext.Current.CancellationToken));
+            Assert.True(exception.InternalTimeoutReached);
+            Assert.False(exception.ClientCancellationRequested);
+            Assert.Empty(fixture.Usage.Records);
+            Assert.Equal(TimeSpan.FromSeconds(20), time.Elapsed);
+            var canceled = Assert.Single(fixture.Logger.Entries, entry => entry.Fields.ContainsKey("InternalTimeoutReached"));
+            Assert.Equal(3, canceled.Fields["Attempt"]);
+            Assert.Equal(false, canceled.Fields["FirstAudioTimeoutReached"]);
+        }
+        Assert.Equal(3, fixture.Connector.Endpoints.Count);
+        var retries = fixture.Logger.Entries.Where(entry => entry.Fields.ContainsKey("RetryReason")).ToArray();
+        Assert.Equal([1, 2], retries.Select(entry => entry.Fields["Attempt"]));
+        Assert.All(retries, entry => Assert.Equal("first_audio_startup_timeout", entry.Fields["RetryReason"]));
+        Assert.Equal([8000d, 14000d], retries.Select(entry => entry.Fields["ElapsedMs"]));
+        Assert.Equal([12000d, 6000d], retries.Select(entry => entry.Fields["RemainingOverallBudgetMs"]));
+        AssertClosed(third, expectCloseFrame: thirdSucceeds);
+        AssertSafeLogs(fixture.Logger);
+    }
+
+    [Fact]
+    public async Task SecondAttemptFirstAudioBeforeSixSecondsDisablesStartupDeadlineAndCompletes()
+    {
+        var time = new ManualTimeProvider();
+        using var fixture = new Fixture(timeProvider: time);
+        var second = new ScriptedWebSocket(SuccessEvents(FinalText));
+        fixture.Connector.Sockets.Enqueue(second);
+        fixture.Socket.BeforeReceive = (_, token) =>
+        {
+            time.Advance(TimeSpan.FromSeconds(8));
+            token.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        };
+        second.BeforeReceive = (index, token) =>
+        {
+            if (index == 3) time.Advance(TimeSpan.FromMilliseconds(5999));
+            if (index == 4) time.Advance(TimeSpan.FromSeconds(4));
+            Assert.False(token.IsCancellationRequested);
+            return Task.CompletedTask;
+        };
+        var wav = await fixture.Audio.CreateSpeechAsync(FinalText, clientCancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(Pcm, wav[44..]);
+        Assert.Equal(TimeSpan.FromMilliseconds(17999), time.Elapsed);
+        Assert.Equal(2, fixture.Connector.Endpoints.Count);
+        Assert.Single(fixture.Usage.Records);
+        AssertClosed(fixture.Socket, expectCloseFrame: false);
+        AssertClosed(second);
         AssertSafeLogs(fixture.Logger);
     }
 
@@ -804,7 +909,7 @@ public sealed class RealtimeSpeechSynthesisServiceTests
         third.BeforeReceive = (_, token) =>
         {
             time.Advance(TimeSpan.FromSeconds(10));
-            Assert.False(token.IsCancellationRequested); // Neither retry receives a new 8-second deadline.
+            Assert.False(token.IsCancellationRequested); // Attempt 3 has no independent startup deadline.
             Assert.Equal(TimeSpan.FromSeconds(19), time.Elapsed);
             time.Advance(TimeSpan.FromSeconds(1));
             throw new WebSocketException(FinalText + TestKey);

@@ -27,6 +27,9 @@ public sealed class OpenAiLessonHintService : ILessonHintService
 }
 """;
 
+    private const int ProviderTimeoutSeconds = 7;
+    private readonly TimeProvider _timeProvider;
+    private readonly ILogger<OpenAiLessonHintService> _logger;
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly MockLessonHintService _mockLessonHintService;
     private readonly LessonPromptBuilder _lessonPromptBuilder;
@@ -42,7 +45,9 @@ public sealed class OpenAiLessonHintService : ILessonHintService
         TutorBehaviorProfileResolver tutorBehaviorResolver,
         IHttpClientFactory httpClientFactory,
         IRequestUserResolver requestUserResolver,
-        IUsageEventService usageEventService)
+        IUsageEventService usageEventService,
+        ILogger<OpenAiLessonHintService>? logger = null,
+        TimeProvider? timeProvider = null)
     {
         _optionsProvider = optionsProvider;
         _mockLessonHintService = mockLessonHintService;
@@ -51,6 +56,8 @@ public sealed class OpenAiLessonHintService : ILessonHintService
         _httpClientFactory = httpClientFactory;
         _requestUserResolver = requestUserResolver;
         _usageEventService = usageEventService;
+        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<OpenAiLessonHintService>.Instance;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task<LessonHintResponse> CreateHintAsync(LessonChatRequest request, CancellationToken cancellationToken = default)
@@ -62,6 +69,12 @@ public sealed class OpenAiLessonHintService : ILessonHintService
         {
             return await _mockLessonHintService.CreateHintAsync(request, cancellationToken);
         }
+
+        var startedAt = _timeProvider.GetTimestamp();
+        var providerTimedOut = false;
+        void LogOutcome(LogLevel level, string outcome, string reason) => _logger.Log(level,
+            "Lesson hint provider completed. Outcome={Outcome}; Reason={Reason}; Model={Model}; ElapsedMs={ElapsedMs}.",
+            outcome, reason, selectedModel, _timeProvider.GetElapsedTime(startedAt).TotalMilliseconds);
 
         try
         {
@@ -92,13 +105,27 @@ public sealed class OpenAiLessonHintService : ILessonHintService
             httpRequest.Headers.Authorization = new AuthenticationHeaderValue(OpenAiConstants.AuthorizationScheme, options.ApiKey);
             httpRequest.Content = new StringContent(JsonSerializer.Serialize(apiRequest, JsonOptions), Encoding.UTF8, OpenAiConstants.ContentTypeJson);
 
-            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+            string responseJson;
+            startedAt = _timeProvider.GetTimestamp();
+            using (var providerTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(ProviderTimeoutSeconds), _timeProvider))
+            using (var providerCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, providerTimeout.Token))
+            {
+                try
+                {
+                    using var response = await httpClient.SendAsync(httpRequest, providerCancellation.Token);
+                    response.EnsureSuccessStatusCode();
+                    responseJson = await response.Content.ReadAsStringAsync(providerCancellation.Token);
+                }
+                catch (OperationCanceledException) when (providerTimeout.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+                {
+                    providerTimedOut = true;
+                    throw;
+                }
+            }
             var parsedResponse = JsonSerializer.Deserialize<OpenAiResponsesResponse>(responseJson, JsonOptions);
             if (parsedResponse is null)
             {
+                LogOutcome(LogLevel.Warning, "fallback", "empty_provider_response");
                 return await _mockLessonHintService.CreateHintAsync(request, cancellationToken);
             }
 
@@ -119,13 +146,22 @@ public sealed class OpenAiLessonHintService : ILessonHintService
 
             if (hint is null || string.IsNullOrWhiteSpace(hint.HintText))
             {
+                LogOutcome(LogLevel.Warning, "fallback", "empty_hint");
                 return await _mockLessonHintService.CreateHintAsync(request, cancellationToken);
             }
 
+            LogOutcome(LogLevel.Information, "success", "provider_success");
             return hint;
         }
-        catch
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            LogOutcome(LogLevel.Information, "canceled", "caller_cancellation");
+            throw;
+        }
+        catch (Exception exception)
+        {
+            // Exception messages and provider bodies can contain user content or secrets.
+            LogOutcome(LogLevel.Warning, "fallback", providerTimedOut ? "provider_timeout" : exception.GetType().Name);
             return await _mockLessonHintService.CreateHintAsync(request, cancellationToken);
         }
     }

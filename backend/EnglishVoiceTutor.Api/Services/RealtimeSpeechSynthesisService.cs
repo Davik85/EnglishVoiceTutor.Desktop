@@ -19,6 +19,7 @@ public sealed class RealtimeSpeechSynthesisService(
     private const int BytesPerSample = 2;
     private const int MaximumEventBytes = 1024 * 1024;
     private const int NonStreamingFirstAudioTimeoutSeconds = 8;
+    private const int NonStreamingSecondAttemptFirstAudioTimeoutSeconds = 6;
     private const int NonStreamingMaxAttempts = 3;
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
@@ -60,9 +61,10 @@ public sealed class RealtimeSpeechSynthesisService(
         bool streaming, CancellationToken clientCancellationToken, CancellationTokenSource overallTimeout,
         Stopwatch stopwatch, long startedAt, int attempt, int maxAttempts)
     {
-        using var firstAudioTimeout = streaming || attempt == 1
+        using var firstAudioTimeout = streaming || attempt <= 2
             ? new CancellationTokenSource(TimeSpan.FromSeconds(streaming
-                ? OpenAiConstants.BotVoiceFirstAudioTimeoutSeconds : NonStreamingFirstAudioTimeoutSeconds), _timeProvider)
+                ? OpenAiConstants.BotVoiceFirstAudioTimeoutSeconds
+                : attempt == 1 ? NonStreamingFirstAudioTimeoutSeconds : NonStreamingSecondAttemptFirstAudioTimeoutSeconds), _timeProvider)
             : new CancellationTokenSource();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(
             clientCancellationToken, overallTimeout.Token, firstAudioTimeout.Token);
