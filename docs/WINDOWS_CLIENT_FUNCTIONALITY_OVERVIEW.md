@@ -1,6 +1,6 @@
 # Windows Client Functionality Overview
 
-Review date: 2026-10-02.
+Review date: 2026-10-07.
 
 ## Product summary
 
@@ -18,7 +18,7 @@ This document describes current product behavior only. It does not claim that br
 
 - Current client platform: Windows desktop app.
 - Current public distribution path: Windows Direct Release 1.8, with the live manifest as the release source of truth; installation over the previous client and voice playback were manually verified.
-- Mobile v12 is submitted to Google Play Production and in Google review; v12 is not yet claimed public. iOS remains a future platform.
+- Android `0.1.0` / versionCode `13` is current in Google Play Production at 100% rollout. iOS remains a future platform.
 - The desktop client is backend-driven for account, lesson, subscription/Premium, AI, transcription, translation, TTS, progress/history, and settings sync behavior where those features require server state.
 
 ## Main user flow
@@ -76,7 +76,7 @@ The Account settings section currently exposes account and subscription controls
 - Buy Premium / upgrade entry point.
 - Refresh status.
 
-In the public Windows Direct 1.8 client, registration rejects non-letter learner/display names and Learning settings blocks non-letter characters in the learner name; valid Unicode letter-only names work normally. Backend registration still allows the display name to be omitted, but validates it when supplied. This does not claim that Mobile v12, currently in Google review, is already public.
+In the public Windows Direct 1.8 client, registration rejects non-letter learner/display names and Learning settings blocks non-letter characters in the learner name; valid Unicode letter-only names work normally. Backend registration still allows the display name to be omitted, but validates it when supplied. Android `0.1.0` / versionCode `13` is separately current in Google Play Production at 100% rollout.
 
 Billing and subscription wording must remain cautious. Controlled Paddle live payment/webhook/Premium activation and selected subscription validation have been documented elsewhere, but broad paid launch and expanded customer portal/subscription management remain follow-up work. Do not present billing as fully complete broad production operations unless a current release-readiness source explicitly says so.
 
@@ -194,7 +194,7 @@ Current source-of-truth boundaries:
 
 Keep external/customer-facing wording honest:
 
-- Mobile v12 is submitted/in Google review; do not claim v12 public availability, iOS App Store availability, or Microsoft Store availability.
+- Android `0.1.0` / versionCode `13` is current in Google Play Production at 100% rollout; iOS App Store and Microsoft Store availability are not claimed.
 - Do not claim broad public production readiness. Current docs describe a public Windows direct release and a healthy production backend, but broader paid-launch/public-readiness work remains cautious and follow-up driven.
 - Do not claim production billing operations or expanded customer portal/subscription management are fully complete; broad paid launch remains pending final review.
 - Do not claim the full native/explanation catalog has complete UI localization. Only the 14 release-ready interface languages are exposed as interface languages for this phase.

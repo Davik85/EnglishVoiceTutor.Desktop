@@ -1,6 +1,6 @@
 # Voice and Realtime Review
 
-Review date: 2026-10-05.
+Review date: 2026-10-07.
 
 ## Current chained product decision
 
@@ -8,15 +8,17 @@ Normal Lesson Chat and Conversation Mode share the existing transcription and le
 
 `learner audio -> gpt-transcribe -> validated learner text -> gpt-5.6-luna lesson reply -> exact final visible tutor text -> gpt-realtime-2.1-mini speech rendering`
 
-`gpt-realtime-2.1-mini` is a speech renderer only. It does not generate lesson content, learner corrections, or conversation decisions. The learner hears the exact final text displayed in chat; do not shorten, summarize, rewrite, or chunk it. The project decision is not to return full Realtime Conversation Mode.
+`gpt-realtime-2.1-mini` is a speech renderer only. It does not generate lesson content, learner corrections, or conversation decisions. The required behavior is to speak the exact final text displayed in chat without shortening, summarizing, rewriting, or chunking it; the observed transcript mismatch remains an unresolved fidelity defect below. The project decision is not to return full Realtime Conversation Mode.
 
 ## Current production models and ownership
 
-Production backend `0.1.35-backend.166` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.166`; `/opt/languagevoicetutor/backend/releases/0.1.35-backend.165` is the verified rollback release. Accepted/deployed source commit is `d49a8eb039f3ec556057226d957853bda77daf2f`. The verified 2026-10-05 production checkpoint confirmed `languagevoicetutor-backend.service` active/running, the deployed process running from the `.166` release directory, public `/health` HTTP 200, and public `/api/health/database` HTTP 200. No EF migration or database schema/data migration was required for `.165` or `.166`.
+Production backend `0.1.35-backend.167` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.167`; `/opt/languagevoicetutor/backend/releases/0.1.35-backend.166` is the verified rollback release. Accepted/deployed source commit is `959a3dffe2fde97c2b92717665291b6afbc909ea` (`Improve cold-start AI recovery`). After deployment, `languagevoicetutor-backend.service` was active/running from the `.167` release directory; public `/health` returned HTTP 200 `Healthy`, and public `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`. `.166` remains the rollback target.
+
+The reviewed `.167` package SHA-256 is `D2CFAD52A8D6DA0D0161409CA69E9C1A2E37E6B4E7D55123A69B9A0942646CB3`; the uploaded package hash matched the reviewed local package. No EF migration, database schema/data migration, AI model publication, production secret/configuration change, Mobile artifact, or Desktop artifact was required by `.167`.
 
 Lesson Tutor Chat, Feedback / correction, Lesson Hint, and Translation use `gpt-5.6-luna`, with all four omit-temperature flags enabled; `SpeechToTextModel=gpt-transcribe`; `LessonChatTextToSpeechModel=gpt-realtime-2.1-mini`; `ConversationModeTextToSpeechModel=gpt-realtime-2.1-mini`; `RealtimeVoiceModel=gpt-realtime` belongs to the dormant old full-Realtime path.
 
-Read-only verification on 2026-10-02 found persistent Active and Draft model IDs and all four omit-temperature flags identical at revision `39`. The verified 2026-10-05 `.165`/`.166` production checkpoint retained that configuration and revision unchanged.
+Read-only verification on 2026-10-02 found persistent Active and Draft model IDs and all four omit-temperature flags identical at revision `39`. The `.167` production checkpoint retains that configuration and revision unchanged.
 
 The Admin AI Models TTS publication occurred on 2026-10-02 and is separate from backend `.164` deployment and Windows 1.8 publication. Desktop and Mobile call backend endpoints; provider model selection and OpenAI credentials remain backend-owned.
 
@@ -36,11 +38,31 @@ The backend opens a short-lived server-to-server Realtime WebSocket to render al
 
 The exact model ID selects the dedicated renderer. Legacy non-Realtime speech models retain `/v1/audio/speech` HTTP transport and speed `1.0`; that compatibility path does not describe the current active production TTS roles.
 
-## Current `.166` bounded non-streaming retry contract — 2026-10-05
+## Current `.167` bounded non-streaming retry contract — 2026-10-07
 
-Non-streaming Realtime speech allows at most 3 total WebSocket attempts inside the same original 20-second overall speech budget; the budget is never reset. Attempt 1 retains an 8-second first-audio startup deadline. A zero-audio startup timeout may open Attempt 2, and a `WebSocketException` may open another attempt only when the request is non-streaming, another attempt remains, no first audio has been received, `PcmBytes=0`, client cancellation has not occurred, and the original overall timeout has not expired. Attempt 2 and Attempt 3 use only the remaining overall budget, with no independent 8-second startup deadline. No retry is allowed after audio/PCM starts, after client cancellation, or after overall timeout; no fourth attempt is possible. Streaming remains exactly one attempt with its existing timeout behavior. Socket cleanup completes before the next attempt. Structured retry reasons are `first_audio_startup_timeout` and `websocket_transport_failure`; retry logs do not expose transcript/provider response text or exception messages.
+Non-streaming Realtime speech retains one shared 20-second overall budget and at most 3 total WebSocket attempts; the budget is never reset. Attempt 1 has an 8-second zero-audio startup deadline; Attempt 2 has a 6-second zero-audio startup deadline. Attempt 3 has no independent startup deadline or new budget and can use only the time remaining from the original shared 20-second budget. Once first audio/PCM is received, that attempt's startup deadline is disabled and the response may continue under the original overall budget. Startup-timeout and existing safe `WebSocketException` transport recovery require zero audio/PCM, another attempt remaining, no client cancellation, and unexpired overall time. No retry occurs after audio starts, no fourth attempt is possible, and client cancellation and the original overall timeout remain authoritative. Streaming remains single-attempt behavior and was not changed. Socket cleanup completes before the next attempt; structured retry reasons remain `first_audio_startup_timeout` and `websocket_transport_failure`, without logging user content or secrets.
 
-The exact final visible tutor text, model, voice, purpose, study language, speed behavior, WAV contract, transcript fidelity, and one application-level usage record remain unchanged. The chained lesson architecture and exact-text speech-rendering decision remain in force; full Realtime Conversation Mode remains dormant.
+The requested final visible tutor text, model, voice, purpose, study language, speed behavior, WAV contract, and one application-level usage record remain unchanged. `.167` does not resolve the transcript-fidelity mismatch. The chained lesson architecture and exact-text speech-rendering decision remain in force; full Realtime Conversation Mode remains dormant.
+
+## Current `.167` Lesson Hint provider deadline
+
+OpenAI Lesson Hint provider work now has a backend-owned 7-second deadline. When that provider deadline is reached, the backend returns the existing deterministic language-aware `MockLessonHintService` fallback instead of waiting tens of seconds. Normal provider responses before the deadline remain unchanged, and ordinary provider failures still use the existing fallback. Client cancellation propagates separately and is not a provider-timeout fallback. The public Lesson Hint route and response contract, model selection, prompt construction, schema, temperature policy, and language-aware fallback content remain unchanged. Safe diagnostics distinguish provider success, internal provider timeout/fallback, and other provider failure/fallback without logging user content or secrets.
+
+## Accepted `.167` verification and bounded post-idle Android evidence
+
+Accepted `.167` automated release verification: the focused command covering `RealtimeSpeechSynthesisServiceTests` and Lesson Hint tests passed 112 tests; the backend Release build passed with 0 warnings and 0 errors; `git diff --check`, backend Linux deployment policy, package build, and upload dry-run passed before deployment. These are accepted release results, not application checks rerun by this documentation update.
+
+Immediate post-deploy Android smoke succeeded across multiple study languages. After a genuine several-hour idle period, the user opened the application/lesson again and the first flow started normally; the previously observed cold/idle startup failure did not reproduce in that post-idle test. This is bounded real production evidence, not a guarantee against another external-provider latency or outage incident; no broader external-user or Play-installed v13 smoke is inferred.
+
+## Open transcript-fidelity follow-up
+
+Transcript fidelity remains unresolved and is the next separate bounded backend voice reliability follow-up. Previously captured production evidence showed a completed speech request with `InputCharacters=318`, `TranscriptCharacters=318`, and `TranscriptMatches=False`. Current behavior can still log that mismatch and return the WAV successfully; `.167` does not fix it. No fix design or future release number is selected.
+
+## Historical cold/idle evidence motivating `.167`
+
+Under `.166`, after several hours of low/no use, Attempt 1 could reach its 8-second TTS startup deadline and Attempt 2 could consume essentially all remaining shared time, producing a 504 before Attempt 3 had a meaningful opportunity. During the same idle period, the first Lesson Hint provider request took roughly 39 seconds against Mobile's normal API budget of about 10 seconds; subsequent provider calls were fast. The backend service had not restarted. The exact external-provider cause was not isolated; this does not establish an OpenAI model cold start, DNS, TLS, or network root cause.
+
+Under `.166`, only Attempt 1 had an 8-second startup deadline; Attempts 2 and 3 used the remaining original overall budget without independent startup deadlines. `.167` adds the Attempt 2 6-second deadline while retaining safe zero-audio transport recovery.
 
 ### Historical `.165` startup retry and production failure
 
@@ -48,7 +70,7 @@ The exact final visible tutor text, model, voice, purpose, study language, speed
 
 On 2026-10-05, a real `lesson_chat_tts` request with 289 characters started Attempt 1 under `.165`. It produced zero PCM and reached `first_audio_startup_timeout` after approximately 8.13 seconds. `.165` correctly opened Attempt 2, but that attempt failed almost immediately with `WebSocketException` and zero PCM, so the request failed while time remained in the original overall budget. A fresh request for the same 289-character text shortly afterward succeeded on Attempt 1, with first audio in approximately 2.042 seconds and total completion in approximately 3.833 seconds. This sequence motivated the `.166` zero-audio transport retry.
 
-### Accepted `.166` verification and bounded Android evidence
+### Historical accepted `.166` verification and bounded Android evidence
 
 `.166` (source commit `d49a8eb039f3ec556057226d957853bda77daf2f`) extended this bounded non-streaming recovery to zero-audio WebSocket transport failures, with at most 3 attempts. Accepted release verification recorded 77/77 focused `RealtimeSpeechSynthesisService` tests passed, a passing Release backend build with 0 warnings/errors, and `git diff --check` passed. These are release-verification results, not checks rerun by this documentation update.
 
