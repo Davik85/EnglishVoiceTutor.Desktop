@@ -13,7 +13,7 @@ namespace EnglishVoiceTutor.Api.Tests.Services;
 
 public sealed class GooglePlaySubscriptionLifecycleProjectionTests
 {
-    private static readonly DateTimeOffset Now = new(2026, 8, 7, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset Now = DateTimeOffset.UtcNow;
     private static readonly DateTimeOffset StartedAt = Now.AddDays(-30);
     private static readonly DateTimeOffset FutureExpiry = Now.AddDays(30);
     private static readonly DateTimeOffset PastExpiry = Now.AddDays(-1);

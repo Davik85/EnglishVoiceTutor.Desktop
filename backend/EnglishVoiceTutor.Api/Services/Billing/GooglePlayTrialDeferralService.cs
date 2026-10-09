@@ -39,7 +39,12 @@ public sealed class GooglePlayTrialDeferralService(
         if (plan is null) return Result(GooglePlayTrialDeferralResultCode.NotRequired);
         if (plan.UserId != userId) return await MarkAmbiguousAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderStateDiverged, cancellationToken);
         if (plan.Status == GooglePlayTrialDeferralStatuses.Completed) return Result(GooglePlayTrialDeferralResultCode.Completed);
-        if (plan.Status == GooglePlayTrialDeferralStatuses.AmbiguousTerminal) return Result(GooglePlayTrialDeferralResultCode.AmbiguousTerminal);
+        if (plan.Status == GooglePlayTrialDeferralStatuses.AmbiguousTerminal)
+        {
+            return Result(await IsHistoricalTerminalSupersededAsync(plan, fingerprint, cancellationToken)
+                ? GooglePlayTrialDeferralResultCode.NotRequired
+                : GooglePlayTrialDeferralResultCode.AmbiguousTerminal);
+        }
 
         var now = utcClock.UtcNow;
         if (plan.NextAttemptAtUtc > now) return Result(GooglePlayTrialDeferralResultCode.Pending);
@@ -50,6 +55,30 @@ public sealed class GooglePlayTrialDeferralService(
             GooglePlayTrialDeferralStatuses.ProviderAppliedAwaitingRefresh => await RefreshAuthoritativeStateAsync(plan, purchaseToken, protectedPurchaseToken, cancellationToken),
             _ => await MarkAmbiguousAsync(plan, GooglePlayTrialDeferralSafeErrorCodes.ProviderStateDiverged, cancellationToken)
         };
+    }
+
+    private async Task<bool> IsHistoricalTerminalSupersededAsync(
+        GooglePlayInitialPremiumDeferralEntity plan,
+        string fingerprint,
+        CancellationToken cancellationToken)
+    {
+        var originalBoundary = new[]
+        {
+            plan.BaselineProviderExpiryUtc,
+            plan.TargetProviderExpiryUtc,
+            plan.ProviderResponseExpiryUtc ?? plan.BaselineProviderExpiryUtc,
+            plan.AuthoritativeProviderExpiryUtc ?? plan.BaselineProviderExpiryUtc
+        }.Max();
+        var currentPeriodEndUtc = await dbContext.Subscriptions.AsNoTracking()
+            .Where(item => item.UserId == plan.UserId
+                && item.ProviderSubscriptionId == fingerprint
+                && item.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+                && item.Provider == SubscriptionConstants.BillingProviders.GooglePlay)
+            .Select(item => item.CurrentPeriodEndUtc)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        // Later verified persistence supersedes this attempt without rewriting its evidence.
+        return currentPeriodEndUtc is { } periodEnd && periodEnd > originalBoundary;
     }
 
     private async Task<GooglePlayTrialDeferralResult> PrepareAndIssueAsync(

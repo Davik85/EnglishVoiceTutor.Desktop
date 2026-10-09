@@ -201,6 +201,33 @@ public sealed class GooglePlayReconciliationIterationServiceTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => CreateIteration(db, new RecordingProcessor(GooglePlayPurchaseProcessingResultCode.Verified)).RunOnceAsync(cancellation.Token));
     }
 
+    [Theory]
+    [InlineData(GooglePlayPurchaseProcessingResultCode.Verified, GooglePlayRtdnEventStatuses.Processed, null)]
+    [InlineData(GooglePlayPurchaseProcessingResultCode.InvalidPurchase, GooglePlayRtdnEventStatuses.PermanentFailure, GooglePlayRtdnSafeErrorCodes.ProviderRejected)]
+    [InlineData(GooglePlayPurchaseProcessingResultCode.UnsupportedProduct, GooglePlayRtdnEventStatuses.PermanentFailure, GooglePlayRtdnSafeErrorCodes.ProviderRejected)]
+    [InlineData(GooglePlayPurchaseProcessingResultCode.OwnershipConflict, GooglePlayRtdnEventStatuses.PermanentFailure, GooglePlayRtdnSafeErrorCodes.ProviderRejected)]
+    [InlineData(GooglePlayPurchaseProcessingResultCode.AcknowledgementInconsistent, GooglePlayRtdnEventStatuses.PermanentFailure, GooglePlayRtdnSafeErrorCodes.ProviderRejected)]
+    [InlineData(GooglePlayPurchaseProcessingResultCode.TrialDeferralAmbiguous, GooglePlayRtdnEventStatuses.PermanentFailure, GooglePlayRtdnSafeErrorCodes.ProviderRejected)]
+    public async Task RenewalRtdnPreservesVerifiedAndGenuinePermanentFailureClassification(
+        GooglePlayPurchaseProcessingResultCode resultCode,
+        string expectedStatus,
+        string? expectedSafeError)
+    {
+        await using var db = CreateDb();
+        var secret = await AddSecretAsync(db, acknowledgementPending: false, next: Now.AddDays(1), attempts: 0, id: "renewal");
+        var item = Event("renewal", secret.PurchaseTokenFingerprint, GooglePlayRtdnEventStatuses.Received, Now);
+        item.NotificationKind = "subscription_renewed";
+        db.GooglePlayRtdnEvents.Add(item);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var processor = new RecordingProcessor(resultCode);
+
+        await CreateIteration(db, processor).RunOnceAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, processor.Calls);
+        Assert.Equal(expectedStatus, item.Status);
+        Assert.Equal(expectedSafeError, item.SafeErrorCode);
+    }
+
     private static GooglePlayReconciliationIterationService CreateIteration(AppDbContext db, IGooglePlayPurchaseProcessor processor, int maximumAttempts = 10, int initialRetry = 60, int maximumRetry = 3600, int leaseSeconds = 300, IGooglePlayPurchaseTokenProtectionService? protection = null) => new(db, new GooglePlayRtdnEventPersistenceService(db, new TestClock()), new GooglePlayPurchaseTokenSecretPersistenceService(db, new TestClock()), protection ?? new FakeProtection(), processor, new TestClock(), Microsoft.Extensions.Options.Options.Create(Options(maximumAttempts, initialRetry, maximumRetry, leaseSeconds)), NullLogger<GooglePlayReconciliationIterationService>.Instance);
     private static GooglePlayReconciliationOptions Options(int maximumAttempts = 10, int initialRetry = 60, int maximumRetry = 3600, int leaseSeconds = 300) => new() { BatchSize = 20, MaximumAttempts = maximumAttempts, InitialRetrySeconds = initialRetry, MaximumRetrySeconds = maximumRetry, ProcessingLeaseSeconds = leaseSeconds };
     private static GooglePlayRtdnEventEntity Event(string id, string fingerprint, string status, DateTimeOffset processingStarted) => new() { Id = Guid.NewGuid(), Provider = "google_play", PubSubMessageId = id, PubSubSubscription = "sub", PackageName = "pkg", NotificationKind = "subscription_notification", PurchaseTokenFingerprint = fingerprint, Status = status, ReceivedAtUtc = Now, ProcessingStartedAtUtc = processingStarted };

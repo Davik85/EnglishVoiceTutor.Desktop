@@ -173,6 +173,30 @@ public sealed class GooglePlayPurchaseProcessorTests
         Assert.Equal(["verify", "persist", "acknowledge"], sequence);
     }
 
+    [Theory]
+    [InlineData(GooglePlayTrialDeferralResultCode.NotRequired, GooglePlayPurchaseProcessingResultCode.Verified)]
+    [InlineData(GooglePlayTrialDeferralResultCode.Completed, GooglePlayPurchaseProcessingResultCode.Verified)]
+    [InlineData(GooglePlayTrialDeferralResultCode.Pending, GooglePlayPurchaseProcessingResultCode.TrialDeferralPending)]
+    [InlineData(GooglePlayTrialDeferralResultCode.AmbiguousTerminal, GooglePlayPurchaseProcessingResultCode.TrialDeferralAmbiguous)]
+    public async Task TrialDeferralResultPreservesVerifiedPendingAndAmbiguousClassification(
+        GooglePlayTrialDeferralResultCode deferralCode,
+        GooglePlayPurchaseProcessingResultCode expected)
+    {
+        var sequence = new List<string>();
+        var processor = new GooglePlayPurchaseProcessor(
+            new Verifier(sequence, GooglePlayPurchaseVerificationResultCode.Verified, true),
+            new Persistence(sequence, GooglePlayVerifiedPurchasePersistenceResultCode.Applied),
+            new Protector(),
+            new Client(sequence, null),
+            NullLogger<GooglePlayPurchaseProcessor>.Instance,
+            new Deferral(sequence, deferralCode));
+
+        var result = await processor.ProcessAsync(Guid.NewGuid(), "fake-token", TestContext.Current.CancellationToken);
+
+        Assert.Equal(expected, result.Code);
+        Assert.Equal(["verify", "persist", "defer"], sequence);
+    }
+
     private static GooglePlayPurchaseProcessor Create(List<string> sequence, GooglePlayPurchaseVerificationResultCode verificationCode = GooglePlayPurchaseVerificationResultCode.Verified, GooglePlayVerifiedPurchasePersistenceResultCode persistenceCode = GooglePlayVerifiedPurchasePersistenceResultCode.Applied, bool acknowledged = false, GooglePlaySubscriptionsV2ClientFailure? acknowledgementFailure = null) => new(new Verifier(sequence, verificationCode, acknowledged), new Persistence(sequence, persistenceCode), new Protector(), new Client(sequence, acknowledgementFailure), NullLogger<GooglePlayPurchaseProcessor>.Instance);
     private static IConfiguration Configuration(params (string Key, string Value)[] values) => new ConfigurationBuilder().AddInMemoryCollection(values.ToDictionary(value => value.Key, value => (string?)value.Value)).Build();
     private static GooglePlayVerifiedPurchase Purchase(bool acknowledged = false) => new("com.example.test", "server-product", DateTimeOffset.Parse("2026-07-27T10:00:00Z"), DateTimeOffset.Parse("2026-08-27T10:00:00Z"), acknowledged ? GooglePlayPurchaseAcknowledgementState.Acknowledged : GooglePlayPurchaseAcknowledgementState.Pending, false);
