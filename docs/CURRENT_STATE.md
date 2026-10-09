@@ -1,12 +1,24 @@
 # Current State
 
-Review date: 2026-10-07.
+Review date: 2026-10-09.
 
 Android `0.1.0` / versionCode `13` is the current Google Play Production release at 100% rollout. The next Android artifact, if required, must use versionCode `>= 14`. Earlier public Android release checkpoints below remain historical.
 
-## 2026-10-07 backend `.167` cold/idle recovery production checkpoint
+## 2026-10-09 backend `.168` production and Google Play monthly renewal checkpoint
 
-Production backend `0.1.35-backend.167` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.167`; `/opt/languagevoicetutor/backend/releases/0.1.35-backend.166` is the verified rollback release. Accepted/deployed source commit is `959a3dffe2fde97c2b92717665291b6afbc909ea` (`Improve cold-start AI recovery`). After deployment, `languagevoicetutor-backend.service` was active/running from the `.167` release directory; public `/health` returned HTTP 200 `Healthy`, and public `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`. `.166` remains the rollback target.
+Production backend `0.1.35-backend.168` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.168`; previous/rollback release is `0.1.35-backend.167`. Deployed source commit is `a0f51db46f1827f1a34ca6565b9a1ad7a7c928d7`. The service was active/running from `.168`; public `/health` and `/api/health/database` both returned HTTP 200, with `canConnect=true`. No migration, production configuration change, or client update was required.
+
+The `.168` package SHA-256 is `498E6AD5A90CD10B17014DA61E262B47A25A8E77C50391D2244E3115CF682D20`; the uploaded package SHA-256 matched the local package. Accepted mandatory billing regression gate: 382 passed, 0 failed. These are supplied verified deployment/release facts, not production operations or application checks rerun by this documentation update.
+
+The fix prevents a historical `ambiguous_terminal` initial-deferral record from falsely rejecting a later verified Google Play period. Only the exact same user's Google Play Premium subscription with the same purchase-token fingerprint can supersede that terminal decision, and only when `CurrentPeriodEndUtc` is strictly greater than the maximum stored baseline, target, provider-response, and authoritative deferral expiry. The decision returns `NotRequired` -> processor `Verified`; equality or unproven ownership remains fail-closed. Historical terminal evidence is preserved. This bypass makes no provider call and does not modify subscription/entitlement expiry or grant extra time; the later period comes from the existing verified-provider persistence path.
+
+The real monthly renewal on 2026-10-08 was verified by Google. The Google Play subscription and its `provider_event` Premium entitlement are active through `2026-11-08T11:10:43.333Z`, with `CancelAtPeriodEnd=false`. This renewal evidence predates `.168` and does not prove post-deployment RTDN classification.
+
+Five historical matching RTDN rows remain `permanent_failure` / `provider_rejected`, dated 2026-09-01, 2026-10-05, and 2026-10-08; all predate `.168`. No production RTDN records were repaired or replayed. No new matching RTDN event after `.168` has yet been observed, so successful classification of a new live renewal RTDN remains unverified. The next expected monthly renewal is 2026-11-08; pending payment, cancellation, fresh-install billing restore, refund/void, and chargeback evidence remain separately scoped.
+
+## Historical 2026-10-07 backend `.167` cold/idle recovery production checkpoint
+
+At this checkpoint, production backend `0.1.35-backend.167` was current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.167`; `/opt/languagevoicetutor/backend/releases/0.1.35-backend.166` is the verified rollback release. Accepted/deployed source commit is `959a3dffe2fde97c2b92717665291b6afbc909ea` (`Improve cold-start AI recovery`). After deployment, `languagevoicetutor-backend.service` was active/running from the `.167` release directory; public `/health` returned HTTP 200 `Healthy`, and public `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`. At that checkpoint, `.166` was the rollback target.
 
 The reviewed `.167` package SHA-256 is `D2CFAD52A8D6DA0D0161409CA69E9C1A2E37E6B4E7D55123A69B9A0942646CB3`; the uploaded package hash matched the reviewed local package. No EF migration, database schema/data migration, AI model publication, production secret/configuration change, Mobile artifact, or Desktop artifact was required by `.167`.
 
@@ -403,7 +415,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is healthy on `0.1.35-backend.167`, with `.166` retained as rollback. `.167` cold/idle recovery is deployed and post-idle production-validated: TTS uses 8-second / 6-second / remaining-budget attempts within the original shared 20-second budget, and Lesson Hint has a 7-second provider deadline/fallback. Streaming remains single-attempt. Transcript fidelity remains a separate open follow-up. `.164` voice compatibility, fixed settings invariants, and speed enforcement remain deployed. No EF migration or database schema/data migration was required for `.165`/`.166`/`.167`. Earlier Summary, transcription, temperature-policy, CMS, auth, and billing foundations remain deployed. Android `0.1.0` / versionCode `13` is current in Google Play Production at 100% rollout.
+- Backend: production is healthy on `0.1.35-backend.168`, with `.167` retained as rollback. The historical-terminal renewal classification fix is deployed; a new live renewal RTDN after `.168` remains unverified. `.167` cold/idle recovery is deployed and post-idle production-validated: TTS uses 8-second / 6-second / remaining-budget attempts within the original shared 20-second budget, and Lesson Hint has a 7-second provider deadline/fallback. Streaming remains single-attempt. Transcript fidelity remains a separate open follow-up. `.164` voice compatibility, fixed settings invariants, and speed enforcement remain deployed. No EF migration or database schema/data migration was required for `.165`/`.166`/`.167`/`.168`. Earlier Summary, transcription, temperature-policy, CMS, auth, and billing foundations remain deployed. Android `0.1.0` / versionCode `13` is current in Google Play Production at 100% rollout.
 - Website: Website CMS-generated pages and the independent homepage/language-practice static pages are live; the six-page visual and sitemap publication checkpoint is complete.
 - Download: Windows Direct Release 1.8 is available through `/releases/windows/direct/latest.json`; public manifest and independently downloaded public installer hash verification passed. The download page was verified. The static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Windows installer: current public release is `1.8`, installer `LanguageVoiceTutorSetup-1.8.exe`; updates remain manual-confirmation and do not silently auto-update. Manual installation over the previous client and voice playback passed.
@@ -433,7 +445,7 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-The current backend release is `0.1.35-backend.167`, with `.166` retained as rollback. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`; Google Play foundation migrations and `20260831080122_AddRestoreCredentialsFoundation` are applied. Public backend and database health returned HTTP 200; `.142` applied the additive Google Play trial-deferral foundation migration, `.152` through `.160` required no migration, and `.163`/`.164`/`.165`/`.166`/`.167` likewise required none. Backend Data Protection is enabled in production with its persistent key ring and active certificate outside release directories. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
+The current backend release is `0.1.35-backend.168`, with `.167` retained as rollback. The deployed account-deletion flow includes migrations `20260722132656_AddAccountAnonymizationPreflightFoundation` and `20260723045852_AddAccountAnonymizationExecution`; Google Play foundation migrations and `20260831080122_AddRestoreCredentialsFoundation` are applied. Public backend and database health returned HTTP 200; `.142` applied the additive Google Play trial-deferral foundation migration, `.152` through `.160` required no migration, and `.163`/`.164`/`.165`/`.166`/`.167`/`.168` likewise required none. Backend Data Protection is enabled in production with its persistent key ring and active certificate outside release directories. Previous backend rollback reference must always be verified from `/opt/languagevoicetutor/backend/previous` before rollback.
 
 Backend deployment uses:
 
@@ -773,14 +785,14 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 ### Current release point
 
 - Windows direct release: `1.8`, public manifest verified on 2026-10-02 with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.8.exe`, production backend URL, `minimumSupportedVersion=1.8`, and manual-confirmation. SHA-256 `980a3e5f72f0c5c2ee01b5271dccc6cda3d8a97cc0307143520f750c1edefe35`; size `188988708` bytes. Completed release evidence includes an independently downloaded public installer hash match and successful installation over the previous client.
-- Backend release in tracked release docs: current production is `0.1.35-backend.167`, with `.166` as rollback; public health and database health are verified Healthy. Older dated checkpoints remain historical.
+- Backend release in tracked release docs: current production is `0.1.35-backend.168`, with `.167` as rollback; public health and database health are verified Healthy. Older dated checkpoints remain historical.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`. Current Active text roles all use `gpt-5.6-luna`, with all four omit-temperature flags enabled; `.154` routes the four text roles independently and keeps Lesson Summary on the Lesson Tutor Chat model policy.
 
 ### What is ready, partial, and blocked
 
 Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, verified persistent AI Models production storage, Website CMS draft/publish mechanics, and documented secret boundaries.
 
-Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.167`, with `.166` retained as rollback and deploys, health checks, database health checks, and migrations kept as separate operations.
+Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.168`, with `.167` retained as rollback and deploys, health checks, database health checks, and migrations kept as separate operations.
 
 Blocked before broad public paid release: code signing for the direct installer, clean-machine and wider update smoke coverage beyond the verified 1.8 installation over the previous client, final website/legal/support/pricing approval, monitoring/privacy/release-readiness review, and explicit release decision after controlled tester feedback. Controlled Paddle live payment/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed, but they are not a broad launch decision; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 

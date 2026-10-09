@@ -1,10 +1,22 @@
 # Backend server deployment
 
-Review date: 2026-10-07.
+Review date: 2026-10-09.
 
-## Current production backend — 2026-10-07 `.167` checkpoint
+## 2026-10-09 backend `.168` production and Google Play monthly renewal checkpoint
 
-Production backend `0.1.35-backend.167` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.167`; `/opt/languagevoicetutor/backend/releases/0.1.35-backend.166` is the verified rollback release. Accepted/deployed source commit is `959a3dffe2fde97c2b92717665291b6afbc909ea` (`Improve cold-start AI recovery`). After deployment, `languagevoicetutor-backend.service` was active/running from the `.167` release directory; public `/health` returned HTTP 200 `Healthy`, and public `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`. `.166` remains the rollback target.
+Production backend `0.1.35-backend.168` is current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.168`; previous/rollback release is `0.1.35-backend.167`. Deployed source commit is `a0f51db46f1827f1a34ca6565b9a1ad7a7c928d7`. The service was active/running from `.168`; public `/health` and `/api/health/database` both returned HTTP 200, with `canConnect=true`. No migration, production configuration change, or client update was required.
+
+The `.168` package SHA-256 is `498E6AD5A90CD10B17014DA61E262B47A25A8E77C50391D2244E3115CF682D20`; the uploaded package SHA-256 matched the local package. Accepted mandatory billing regression gate: 382 passed, 0 failed. These are supplied verified deployment/release facts, not production operations or application checks rerun by this documentation update.
+
+The fix prevents a historical `ambiguous_terminal` initial-deferral record from falsely rejecting a later verified Google Play period. Only the exact same user's Google Play Premium subscription with the same purchase-token fingerprint can supersede that terminal decision, and only when `CurrentPeriodEndUtc` is strictly greater than the maximum stored baseline, target, provider-response, and authoritative deferral expiry. The decision returns `NotRequired` -> processor `Verified`; equality or unproven ownership remains fail-closed. Historical terminal evidence is preserved. This bypass makes no provider call and does not modify subscription/entitlement expiry or grant extra time; the later period comes from the existing verified-provider persistence path.
+
+The real monthly renewal on 2026-10-08 was verified by Google. The Google Play subscription and its `provider_event` Premium entitlement are active through `2026-11-08T11:10:43.333Z`, with `CancelAtPeriodEnd=false`. This renewal evidence predates `.168` and does not prove post-deployment RTDN classification.
+
+Five historical matching RTDN rows remain `permanent_failure` / `provider_rejected`, dated 2026-09-01, 2026-10-05, and 2026-10-08; all predate `.168`. No production RTDN records were repaired or replayed. No new matching RTDN event after `.168` has yet been observed, so successful classification of a new live renewal RTDN remains unverified. The next expected monthly renewal is 2026-11-08; pending payment, cancellation, fresh-install billing restore, refund/void, and chargeback evidence remain separately scoped.
+
+## Historical 2026-10-07 `.167` production checkpoint
+
+At this checkpoint, production backend `0.1.35-backend.167` was current at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.167`; `/opt/languagevoicetutor/backend/releases/0.1.35-backend.166` is the verified rollback release. Accepted/deployed source commit is `959a3dffe2fde97c2b92717665291b6afbc909ea` (`Improve cold-start AI recovery`). After deployment, `languagevoicetutor-backend.service` was active/running from the `.167` release directory; public `/health` returned HTTP 200 `Healthy`, and public `/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`. At that checkpoint, `.166` was the rollback target.
 
 The reviewed `.167` package SHA-256 is `D2CFAD52A8D6DA0D0161409CA69E9C1A2E37E6B4E7D55123A69B9A0942646CB3`; the uploaded package hash matched the reviewed local package. No EF migration, database schema/data migration, AI model publication, production secret/configuration change, Mobile artifact, or Desktop artifact was required by `.167`.
 
@@ -133,8 +145,8 @@ The active certificate protects newly created Data Protection keys. `UnprotectCe
 
 The persistent key ring and every certificate must remain outside versioned release directories and outside the `current` symlink. Do not place certificate values or passwords in committed `appsettings.json` files.
 
-- Current release: `0.1.35-backend.167`
-- Previous rollback release: `0.1.35-backend.166`
+- Current release: `0.1.35-backend.168`
+- Previous rollback release: `0.1.35-backend.167`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -150,7 +162,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.167`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.166`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
+Expected baseline for the current deployment is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.168`; the verified rollback target is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.167`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live and must not be committed.
 
 ## 2026-08-25 `.141` legacy product-limit removal deployment verification
 
@@ -414,7 +426,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.167`; verified rollback `.166` remains subject to live `previous` symlink verification.
+- Backend: production healthy, current release `0.1.35-backend.168`; verified rollback `.167` remains subject to live `previous` symlink verification.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: the current Windows direct release is manifest-driven with JavaScript; the static/no-JavaScript fallback was not separately verified by this Windows release upload.
 - Windows installer: current public direct release is `1.8`, installer `LanguageVoiceTutorSetup-1.8.exe`; manifest and independent public-installer hash verification passed.
